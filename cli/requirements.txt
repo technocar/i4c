@@ -1,0 +1,5 @@
+PyYAML
+jsonpath_ng
+click
+jinja2==2.11.3
+pynacl
