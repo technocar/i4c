@@ -11,7 +11,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:5000/log/snapshot/1?ts=2021-05-19T07:26:49.509Z&device=mill",
+					"raw": "http://localhost:5000/log/snapshot?ts=2021-05-19T07:26:49.509Z&device=mill",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -19,8 +19,7 @@
 					"port": "5000",
 					"path": [
 						"log",
-						"snapshot",
-						"1"
+						"snapshot"
 					],
 					"query": [
 						{

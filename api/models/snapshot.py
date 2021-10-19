@@ -75,7 +75,7 @@ def calc_secs(base, *data_times) -> float:
     return min(((base - i).total_seconds() for i in data_times if i), default=None) if base else None
 
 
-async def get_snapshot(credentials, cell, ts, device, *, pconn=None):
+async def get_snapshot(credentials, ts, device, *, pconn=None):
     try:
         conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
         rs = await conn.fetch(view_snapshot_sql, device, ts)
