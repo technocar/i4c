@@ -75,11 +75,11 @@ def calc_secs(base, *data_times) -> float:
     return min(((base - i).total_seconds() for i in data_times if i), default=None) if base else None
 
 
-async def get_snapshot(credentials, dev, ts, *, pconn=None):
+async def get_snapshot(credentials, cell, ts, device, *, pconn=None):
     try:
         conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
-        rs = await conn.fetch(view_snapshot_sql, dev, ts)
-        rse = await conn.fetch(view_snapshot_events_sql, dev, ts)
+        rs = await conn.fetch(view_snapshot_sql, device, ts)
+        rse = await conn.fetch(view_snapshot_events_sql, device, ts)
         if pconn is None:
             await conn.close()
     except Exception as e:
@@ -108,11 +108,11 @@ async def get_snapshot(credentials, dev, ts, *, pconn=None):
 
         lin_axes = []
         rot_axes = []
-        if dev == 'lathe':
+        if device == 'lathe':
             lin_axes.append(add_axis('X', 'xaxisstate', 'xpw', 'xf', 'xl'))
             lin_axes.append(add_axis('Z', 'zaxisstate', 'zpw', 'zf', 'zl'))
             rot_axes.append(add_axis('C', 'caxisstate', 'cposw', 'cs', 'sl'))
-        elif dev == 'mill':
+        elif device == 'mill':
             lin_axes.append(add_axis('X', 'xaxisstate', 'xpw', 'xf', 'xl'))
             lin_axes.append(add_axis('Y', 'yaxisstate', 'ypw', 'yf', 'yl'))
             lin_axes.append(add_axis('Z', 'zaxisstate', 'zpw', 'zf', 'zl'))
