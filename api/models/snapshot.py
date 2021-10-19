@@ -172,6 +172,7 @@ async def get_simple_snapshot(credentials, ts, device, *, pconn=None):
 
 async def get_snapshot(credentials, ts, device, *, pconn=None):
     s = Snapshot()
+    # todo 1: device == 'auto'
     if device == 'mill':
         s.mill = await get_mazak_snapshot(credentials, ts, device, pconn=pconn)
     if device == 'lathe':

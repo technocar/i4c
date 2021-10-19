@@ -6,6 +6,76 @@
 	},
 	"item": [
 		{
+			"name": "find",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/log/find?device=lathe&after=2021-08-24T07:54:00.957133Z&val=37&val=8&val=1&val=11&name=xl",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"find"
+					],
+					"query": [
+						{
+							"key": "device",
+							"value": "lathe"
+						},
+						{
+							"key": "after",
+							"value": "2021-08-24T07:54:00.957133Z",
+							"description": "timestamp"
+						},
+						{
+							"key": "categ",
+							"value": "111",
+							"disabled": true
+						},
+						{
+							"key": "rel",
+							"value": "*!=",
+							"disabled": true
+						},
+						{
+							"key": "extra",
+							"value": "11",
+							"disabled": true
+						},
+						{
+							"key": "before",
+							"value": "2021-08-24T07:56:00.957133Z",
+							"disabled": true
+						},
+						{
+							"key": "val",
+							"value": "37"
+						},
+						{
+							"key": "val",
+							"value": "8"
+						},
+						{
+							"key": "val",
+							"value": "1"
+						},
+						{
+							"key": "val",
+							"value": "11"
+						},
+						{
+							"key": "name",
+							"value": "xl"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "log",
 			"request": {
 				"method": "GET",
