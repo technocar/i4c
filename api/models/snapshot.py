@@ -67,8 +67,8 @@ class MazakSnapshot(MyBaseModel):
     conditions: List[SnapshotCondition]
 
 
-view_snapshot_sql = open("view_snapshot.sql").read()
-view_snapshot_events_sql = open("view_snapshot_events.sql").read()
+view_snapshot_sql = open("models\\snapshot.sql").read()
+view_snapshot_events_sql = open("models\\snapshot_events.sql").read()
 
 
 def calc_secs(base, *data_times) -> float:
