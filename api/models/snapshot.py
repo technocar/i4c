@@ -1,17 +1,142 @@
+from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from common import MyBaseModel, dbcfg
+import asyncpg
+from fastapi import HTTPException
 
 
-class SnapshotBase(BaseModel):
-    pass
+class SnapshotStatusStatus(MyBaseModel):
+    value: Optional[str]
+    since: Optional[float]
 
 
-class Axis(BaseModel):
-    pass
+class SnapshotStatusNCS(MyBaseModel):
+    name: Optional[str]
+    comment: Optional[str]
+    since: Optional[float]
 
 
-class MazakSnapshot(SnapshotBase):
-    # todo 1: basic fields
-    field1: Optional[str] = None
+class SnapshotStatusInt(MyBaseModel):
+    num: Optional[int]
+    since: Optional[float]
 
-    #axes: List[Axis] = []
+
+class SnapshotStatusStr(MyBaseModel):
+    status: Optional[str]
+    since: Optional[float]
+
+
+class SnapshotAxis(MyBaseModel):
+    name: Optional[str]
+    mode: Optional[str]
+    pos: Optional[float]
+    load: Optional[float]
+    rate: Optional[float]
+
+
+class SnapshotStatus(MyBaseModel):
+    status: SnapshotStatusStatus
+    program: SnapshotStatusNCS
+    subprogram: SnapshotStatusNCS
+    unit: SnapshotStatusInt
+    sequence: SnapshotStatusInt
+    tool: SnapshotStatusInt
+    door: SnapshotStatusStr
+    lin_axes: List[SnapshotAxis]
+    rot_axes: List[SnapshotAxis]
+
+
+class SnapshotEvent(MyBaseModel):
+    data_id: str
+    name: Optional[str]
+    timestamp: Optional[datetime]
+    value: Optional[str]
+
+
+class SnapshotCondition(MyBaseModel):
+    severity: str
+    data_id: str
+    name: Optional[str]
+    message: Optional[str]
+    since: Optional[float]
+
+
+class MazakSnapshot(MyBaseModel):
+    status: SnapshotStatus
+    event_log: List[SnapshotEvent]
+    conditions: List[SnapshotCondition]
+
+
+view_snapshot_sql = open("view_snapshot.sql").read()
+view_snapshot_events_sql = open("view_snapshot_events.sql").read()
+
+
+def calc_secs(base, *data_times) -> float:
+    return min(((base - i).total_seconds() for i in data_times if i), default=None) if base else None
+
+
+async def get_snapshot(credentials, dev, ts, *, pconn=None):
+    try:
+        conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
+        rs = await conn.fetch(view_snapshot_sql, dev, ts)
+        rse = await conn.fetch(view_snapshot_events_sql, dev, ts)
+        if pconn is None:
+            await conn.close()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+
+    try:
+        params = {r['data_id']: r for r in rs}
+
+        def value(col: str):
+            r = params[col]['value_num'] if params[col]["category"] == 'SAMPLE' else params[col]['value_text']
+            return r if r != "UNAVAILABLE" else None
+
+        def timstamp(col: str):
+            return params[col]['timestamp']
+
+        if value('connect') != "Normal":
+            status = SnapshotStatusStatus(value="NOT CONNECTED", since=calc_secs(ts, timstamp('connect')))
+        elif value('avail') == "UNAVAILABLE":
+            status = SnapshotStatusStatus(value="UNAVAILABLE", since=calc_secs(ts, timstamp('avail')))
+        else:
+            status = SnapshotStatusStatus(value=value('exec'), since=calc_secs(ts, timstamp('exec')))
+
+        def add_axis(name, mode, pos, rate, load):
+            return SnapshotAxis(name=name, mode=value(mode), pos=value(pos), rate=value(rate), load=value(load))
+
+        lin_axes = []
+        rot_axes = []
+        if dev == 'lathe':
+            lin_axes.append(add_axis('X', 'xaxisstate', 'xpw', 'xf', 'xl'))
+            lin_axes.append(add_axis('Z', 'zaxisstate', 'zpw', 'zf', 'zl'))
+            rot_axes.append(add_axis('C', 'caxisstate', 'cposw', 'cs', 'sl'))
+        elif dev == 'mill':
+            lin_axes.append(add_axis('X', 'xaxisstate', 'xpw', 'xf', 'xl'))
+            lin_axes.append(add_axis('Y', 'yaxisstate', 'ypw', 'yf', 'yl'))
+            lin_axes.append(add_axis('Z', 'zaxisstate', 'zpw', 'zf', 'zl'))
+            rot_axes.append(add_axis('B', 'baxisstate', 'aposw', 'af', 'al'))
+            rot_axes.append(add_axis('C', 'caxisstate', 'cposw', 'cs', 'sl'))
+
+        s = SnapshotStatus(
+                status=status,
+                program=SnapshotStatusNCS(name=value('pgm'),
+                                          comment=value('pcmt'),
+                                          since=calc_secs(ts, timstamp('pgm'), timstamp('pcmt'))),
+                subprogram=SnapshotStatusNCS(name=value('spgm'),
+                                          comment=value('spcmt'),
+                                          since=calc_secs(ts, timstamp('spgm'), timstamp('spcmt'))),
+                unit=SnapshotStatusInt(num=value("unit"), since=calc_secs(ts, timstamp('unit'))),
+                sequence=SnapshotStatusInt(num=value("seq"), since=calc_secs(ts, timstamp('seq'))),
+                tool=SnapshotStatusInt(num=value("tid"), since=calc_secs(ts, timstamp('tid'))),
+                door=SnapshotStatusStr(status=value("door"), since=calc_secs(ts, timstamp('door'))),
+                lin_axes=lin_axes,
+                rot_axes=rot_axes)
+        e = [SnapshotEvent(data_id=e['data_id'], name=e['name'], timestamp=e['timestamp'], value=e['value']) for e in rse]
+        c = [SnapshotCondition(severity=r['value_text'], data_id=r['data_id'], name=r['name'], message=r['value_extra'], since=calc_secs(ts, r['timestamp']))
+             for r in rs if r["category"] == 'CONDITION' and r["value_text"] is not None and r["value_text"] not in ('Unavailable', 'Normal')]
+
+        return MazakSnapshot(status=s, event_log=e, conditions=c)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Data process error: {e}")

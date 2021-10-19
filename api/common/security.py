@@ -4,6 +4,7 @@ from starlette import status
 
 basic_security = HTTPBasic()
 
+
 async def security_checker(credentials: HTTPBasicCredentials = Depends(basic_security)):
     if credentials.username != 'aaa':
         raise HTTPException(
