@@ -1,1 +1,1 @@
-from .snapshot import MazakSnapshot, get_snapshot
+from .snapshot import Snapshot, get_snapshot

@@ -67,6 +67,17 @@ class MazakSnapshot(MyBaseModel):
     conditions: List[SnapshotCondition]
 
 
+class SimpleSnapshot(MyBaseModel):
+    event_log: List[SnapshotEvent]
+
+
+class Snapshot(MyBaseModel):
+    mill: Optional[MazakSnapshot]
+    lathe: Optional[MazakSnapshot]
+    gom: Optional[SimpleSnapshot]
+    robot: Optional[SimpleSnapshot]
+
+
 view_snapshot_sql = open("models\\snapshot.sql").read()
 view_snapshot_events_sql = open("models\\snapshot_events.sql").read()
 
@@ -75,7 +86,7 @@ def calc_secs(base, *data_times) -> float:
     return min(((base - i).total_seconds() for i in data_times if i), default=None) if base else None
 
 
-async def get_snapshot(credentials, ts, device, *, pconn=None):
+async def get_mazak_snapshot(credentials, ts, device, *, pconn=None):
     try:
         conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
         rs = await conn.fetch(view_snapshot_sql, device, ts)
@@ -140,3 +151,33 @@ async def get_snapshot(credentials, ts, device, *, pconn=None):
         return MazakSnapshot(status=s, event_log=e, conditions=c)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Data process error: {e}")
+
+
+async def get_simple_snapshot(credentials, ts, device, *, pconn=None):
+    try:
+        conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
+        rse = await conn.fetch(view_snapshot_events_sql, device, ts)
+        if pconn is None:
+            await conn.close()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+
+    try:
+        e = [SnapshotEvent(data_id=e['data_id'], name=e['name'], timestamp=e['timestamp'], value=e['value']) for e in rse]
+        return SimpleSnapshot(event_log=e)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Data process error: {e}")
+
+
+async def get_snapshot(credentials, ts, device, *, pconn=None):
+    s = Snapshot()
+    if device == 'mill':
+        s.mill = await get_mazak_snapshot(credentials, ts, device, pconn=pconn)
+    if device == 'lathe':
+        s.lathe = await get_mazak_snapshot(credentials, ts, device, pconn=pconn)
+    if device == 'gom':
+        s.gom = await get_simple_snapshot(credentials, ts, device, pconn=pconn)
+    if device == 'robot':
+        s.robot = await get_simple_snapshot(credentials, ts, device, pconn=pconn)
+    return s

@@ -7,7 +7,7 @@ import common
 router = APIRouter()
 
 
-@router.get("/snapshot", response_model=models.MazakSnapshot)
+@router.get("/snapshot", response_model=models.Snapshot)
 async def snapshot(
     credentials: HTTPBasicCredentials = Depends(common.security_checker),
     ts: datetime = Query(..., title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
