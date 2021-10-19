@@ -1,0 +1,75 @@
+{
+	"info": {
+		"_postman_id": "e774159a-7869-423d-b708-1702fa66e338",
+		"name": "i4c",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "log",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/log/snapshot/1?ts=2021-05-19T07:26:49.509Z&device=mill",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"snapshot",
+						"1"
+					],
+					"query": [
+						{
+							"key": "ts",
+							"value": "2021-05-19T07:26:49.509Z"
+						},
+						{
+							"key": "device",
+							"value": "mill"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "1234",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "aaa",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
