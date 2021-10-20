@@ -22,7 +22,7 @@ async def snapshot(
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
         device: str = Query(..., title="device"),
-        timestamp: datetime = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
+        timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
         sequence: Optional[int] = Query(None, description="sequence excluding this"),
         before_count: Optional[int] = Query(None),
         after_count: Optional[int] = Query(None, description="when before_count and after_count both are None, then it defaults to after=1"),

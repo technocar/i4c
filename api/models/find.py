@@ -49,23 +49,25 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
     if before_count is not None:
         count = before_count
-        params.append(timestamp)
-        wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp < ${len(params)}::timestamp with time zone)')
-        if sequence is not None:
+        if timestamp is not None:
             params.append(timestamp)
-            params.append(sequence)
-            wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                          f'           and (l.sequence < ${len(params)}::timestamp)))')
+            wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp < ${len(params)}::timestamp with time zone)')
+            if sequence is not None:
+                params.append(timestamp)
+                params.append(sequence)
+                wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
+                              f'           and (l.sequence < ${len(params)}::timestamp)))')
     if after_count is not None:
         rank_direction = 'asc'
         count = after_count
-        params.append(timestamp)
-        wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp > ${len(params)}::timestamp with time zone)')
-        if sequence is not None:
+        if timestamp is not None:
             params.append(timestamp)
-            params.append(sequence)
-            wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                          f'           and (l.sequence > ${len(params)}::timestamp)))')
+            wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp > ${len(params)}::timestamp with time zone)')
+            if sequence is not None:
+                params.append(timestamp)
+                params.append(sequence)
+                wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
+                              f'           and (l.sequence > ${len(params)}::timestamp)))')
     if categ is not None:
         params.append(categ)
         wheres.append(f'and (m.category = ${len(params)})')
