@@ -1,3 +1,4 @@
 /api/.idea
 __pycache__
 /api/log
+/api/debug
