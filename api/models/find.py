@@ -1,20 +1,29 @@
 from datetime import datetime
+from typing import Optional
 
 import asyncpg
 from fastapi import HTTPException
-from common import MyBaseModel, dbcfg
+from common import MyBaseModel, dbcfg, write_debug_sql
 
 view_find_sql = open("models\\find.sql").read()
 
 
 class FindResult(MyBaseModel):
     timestamp: datetime
+    sequence: int
+    device: str
+    data_id: str
+    value_num: Optional[float]
+    value_text: Optional[str]
+    value_extra: Optional[str]
+    value_aux: Optional[str]
 
 
-async def get_find(credentials, device, before, after, categ, name, val, extra, rel, *, pconn=None):
+def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel):
+    # todo 1: timestamp, sequence, before_count, after_count
     wheres = []
-    params = [device]
     rank_direction = 'desc'
+    count = None
     if rel is None:
         rel = '='
     if rel not in ('=','<','>','<=','>=','!=','*=','*!='):
@@ -29,16 +38,38 @@ async def get_find(credentials, device, before, after, categ, name, val, extra, 
     if categ is None and name is None:
         raise HTTPException(status_code=400, detail=f"categ or name parameter must be sent")
 
-    if before is not None and after is not None:
-        raise HTTPException(status_code=400, detail=f"before and after parameters exclude each other")
+    if before_count is None and after_count is None:
+        before_count = 1
 
-    if before is not None:
-        params.append(before)
-        wheres.append(f'and (l.timestamp <= ${len(params)}::timestamp with time zone)')
-    if after is not None:
-        params.append(after)
-        wheres.append(f'and (l.timestamp >= ${len(params)}::timestamp with time zone)')
+    if before_count is not None and after_count is not None:
+        sql_before = get_find_sql(params, timestamp, sequence, before_count, None, categ, name, val, extra, rel)
+        sql_after = get_find_sql(params, timestamp, sequence, None, after_count, categ, name, val, extra, rel)
+        return f'with before as ({sql_before}), '\
+               f'after as ({sql_after}) ' \
+               f'select * from before ' \
+               f'union all ' \
+               f'select * from after ' \
+               f'order by timestamp desc, "sequence" desc'
+
+    if before_count is not None:
+        count = before_count
+        params.append(timestamp)
+        wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp < ${len(params)}::timestamp with time zone)')
+        if sequence is not None:
+            params.append(timestamp)
+            params.append(sequence)
+            wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
+                          f'           and (l.sequence < ${len(params)}::timestamp)))')
+    if after_count is not None:
         rank_direction = 'asc'
+        count = after_count
+        params.append(timestamp)
+        wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp > ${len(params)}::timestamp with time zone)')
+        if sequence is not None:
+            params.append(timestamp)
+            params.append(sequence)
+            wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
+                          f'           and (l.sequence > ${len(params)}::timestamp)))')
     if categ is not None:
         params.append(categ)
         wheres.append(f'and (m.category = ${len(params)})')
@@ -65,11 +96,23 @@ async def get_find(credentials, device, before, after, categ, name, val, extra, 
         wheres.append(f'and ((m.category = \'CONDITION\') and (l.value_extra {srel.replace("<val>",f"${len(params)}")}))')
 
     sql = view_find_sql.replace("<rank_direction>", rank_direction)\
-                       .replace("<wheres>", '\n'.join(wheres))
+                       .replace("<wheres>", '\n'.join(wheres)) \
+                       .replace("<count>", str(count))
+
+    return sql
+
+
+
+async def get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *, pconn=None):
+    params = [device]
+
+    sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+
+    write_debug_sql('debug\\debug_get_find.sql', sql, params)
 
     try:
         conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
-        rs = await conn.fetchrow(sql,*params)
+        rs = await conn.fetch(sql,*params)
         if pconn is None:
             await conn.close()
     except Exception as e:
