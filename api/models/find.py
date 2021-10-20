@@ -20,7 +20,6 @@ class FindResult(MyBaseModel):
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel):
-    # todo 1: timestamp, sequence, before_count, after_count
     wheres = []
     rank_direction = 'desc'
     count = None
