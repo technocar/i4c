@@ -2,6 +2,7 @@ select
   l.timestamp,
   l.sequence,
   m.device,
+  l.instance,
   m.data_id,
   l.value_num,
   l.value_text,
