@@ -16,7 +16,7 @@ class FindResult(MyBaseModel):
     value_num: Optional[float]
     value_text: Optional[str]
     value_extra: Optional[str]
-    value_aux: Optional[str]
+    value_add: Optional[str]
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel):
