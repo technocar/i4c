@@ -1,3 +1,4 @@
 from .snapshot import Snapshot, get_snapshot
-from .find import FindResult, get_find
+from .find import DataPoint, get_find
 from .meta import Meta, get_meta
+from .log_write import put_log_write

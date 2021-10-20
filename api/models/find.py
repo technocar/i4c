@@ -8,7 +8,7 @@ from common import MyBaseModel, dbcfg, write_debug_sql
 view_find_sql = open("models\\find.sql").read()
 
 
-class FindResult(MyBaseModel):
+class DataPoint(MyBaseModel):
     timestamp: datetime
     sequence: int
     device: str

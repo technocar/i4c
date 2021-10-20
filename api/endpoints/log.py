@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Body
 from fastapi.security import HTTPBasicCredentials
 import models
 import common
@@ -18,7 +18,7 @@ async def snapshot(
     return await models.get_snapshot(credentials, ts, device)
 
 
-@router.get("/find", response_model=List[models.FindResult])
+@router.get("/find", response_model=List[models.DataPoint])
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
         device: str = Query(..., title="device"),
@@ -37,3 +37,10 @@ async def find(
 @router.get("/meta", response_model=List[models.Meta])
 async def meta(credentials: HTTPBasicCredentials = Depends(common.security_checker)):
     return await models.get_meta(credentials)
+
+
+@router.put("/", response_model=List[models.Meta])
+async def log_write(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker),
+        datapoints: List[models.DataPoint] = Body(...)):
+    return await models.put_log_write(credentials, datapoints)
