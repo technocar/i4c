@@ -32,3 +32,8 @@ async def find(
         extra: Optional[str] = Query(None),
         rel: Optional[str] = Query(None)):
     return await models.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+
+
+@router.get("/meta", response_model=List[models.Meta])
+async def meta(credentials: HTTPBasicCredentials = Depends(common.security_checker)):
+    return await models.get_meta(credentials)

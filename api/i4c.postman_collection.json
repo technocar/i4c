@@ -11,7 +11,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:5000/log/find?device=lathe&after=2021-08-24T07:54:00.957133Z&val=37&val=8&val=1&val=11&name=xl",
+					"raw": "localhost:5000/log/find?device=lathe&timestamp=2021-08-24T07:54:00.957133Z&val=37&val=8&val=1&val=11&name=xl&before_count=5&after_count=4",
 					"host": [
 						"localhost"
 					],
@@ -26,7 +26,7 @@
 							"value": "lathe"
 						},
 						{
-							"key": "after",
+							"key": "timestamp",
 							"value": "2021-08-24T07:54:00.957133Z",
 							"description": "timestamp"
 						},
@@ -43,11 +43,6 @@
 						{
 							"key": "extra",
 							"value": "11",
-							"disabled": true
-						},
-						{
-							"key": "before",
-							"value": "2021-08-24T07:56:00.957133Z",
 							"disabled": true
 						},
 						{
@@ -69,6 +64,49 @@
 						{
 							"key": "name",
 							"value": "xl"
+						},
+						{
+							"key": "before_count",
+							"value": "5"
+						},
+						{
+							"key": "after_count",
+							"value": "4"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "find - last instance",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/log/find?device=lathe&before_count=1",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"find"
+					],
+					"query": [
+						{
+							"key": "device",
+							"value": "lathe"
+						},
+						{
+							"key": "timestamp",
+							"value": "2021-11-24T07:54:00.957133Z",
+							"description": "timestamp",
+							"disabled": true
+						},
+						{
+							"key": "before_count",
+							"value": "1"
 						}
 					]
 				}
@@ -100,6 +138,25 @@
 							"key": "device",
 							"value": "mill"
 						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "meta",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/log/meta",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"meta"
 					]
 				}
 			},
