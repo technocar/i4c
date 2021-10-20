@@ -34,9 +34,6 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
     else:
         srel = rel + " <val>"
 
-    if categ is None and name is None:
-        raise HTTPException(status_code=400, detail=f"categ or name parameter must be sent")
-
     if before_count is None and after_count is None:
         before_count = 1
 

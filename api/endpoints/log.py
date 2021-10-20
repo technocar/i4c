@@ -27,7 +27,7 @@ async def find(
         before_count: Optional[int] = Query(None),
         after_count: Optional[int] = Query(None, description="when before_count and after_count both are None, then it defaults to after=1"),
         categ: Optional[str] = Query(None, description="“condition”, “event” or “sample”"),
-        name: Optional[str] = Query(None, description="exactly one of categ or name is required"),
+        name: Optional[str] = Query(None),
         val: Optional[List[str]] = Query(None),
         extra: Optional[str] = Query(None),
         rel: Optional[str] = Query(None)):
