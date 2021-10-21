@@ -1,5 +1,0 @@
-host: localhost
-dbname: teszt
-port: 5432
-user: aaa
-password: 1234

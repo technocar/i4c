@@ -114,6 +114,45 @@
 			"response": []
 		},
 		{
+			"name": "log find - connect state",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/log/find?device=lathe&before_count=1&name=connect",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"find"
+					],
+					"query": [
+						{
+							"key": "device",
+							"value": "lathe"
+						},
+						{
+							"key": "timestamp",
+							"value": "2021-11-24T07:54:00.957133Z",
+							"description": "timestamp",
+							"disabled": true
+						},
+						{
+							"key": "before_count",
+							"value": "1"
+						},
+						{
+							"key": "name",
+							"value": "connect"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "log snapshot",
 			"request": {
 				"method": "GET",
@@ -191,11 +230,11 @@
 		{
 			"name": "log write",
 			"request": {
-				"method": "PUT",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "[\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:37.891Z\",\r\n        \"sequence\": 37950,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:09.161Z\",\r\n        \"sequence\": 37645,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:43.920Z\",\r\n        \"sequence\": 37370,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:14.413Z\",\r\n        \"sequence\": 37069,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:00.447Z\",\r\n        \"sequence\": 36903,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:59.378Z\",\r\n        \"sequence\": 36890,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:58.618Z\",\r\n        \"sequence\": 36880,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:54.338Z\",\r\n        \"sequence\": 36786,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:49.598Z\",\r\n        \"sequence\": 36702,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    }\r\n]",
+					"raw": "[\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:37.891Z\",\r\n        \"sequence\": 37950,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:09.161Z\",\r\n        \"sequence\": 37645,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:43.920Z\",\r\n        \"sequence\": 37370,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:14.413Z\",\r\n        \"sequence\": 37069,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:00.447Z\",\r\n        \"sequence\": 36903,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:59.378Z\",\r\n        \"sequence\": 36890,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:58.618Z\",\r\n        \"sequence\": 36880,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:54.338Z\",\r\n        \"sequence\": 36786,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-11-24T10:54:49.598Z\",\r\n        \"sequence\": 36702,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 38.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": \"[1]\"\r\n    }\r\n]",
 					"options": {
 						"raw": {
 							"language": "json"
