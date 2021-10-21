@@ -6,7 +6,7 @@
 	},
 	"item": [
 		{
-			"name": "find",
+			"name": "log find",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -79,7 +79,7 @@
 			"response": []
 		},
 		{
-			"name": "find - last instance",
+			"name": "log find - last instance",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -114,7 +114,7 @@
 			"response": []
 		},
 		{
-			"name": "log",
+			"name": "log snapshot",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -144,7 +144,7 @@
 			"response": []
 		},
 		{
-			"name": "meta",
+			"name": "log meta",
 			"request": {
 				"method": "GET",
 				"header": [],
