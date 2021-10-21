@@ -90,7 +90,7 @@ def update_connect_state(old, new):
     if old == new:
         return old
 
-    response = requests.post(f"{apicfg['url']}/log",
+    response = requests.post(f"{apicfg['url']}/log/",
                             data=json.dumps([dict(device=dev,
                                                   timestamp=datetime.now(),
                                                   sequence=0,
