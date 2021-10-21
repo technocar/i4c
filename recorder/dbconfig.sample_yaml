@@ -1,0 +1,5 @@
+host: karatnetsrv
+database: postgres
+port: 5432
+user: aaa
+password: 1234
