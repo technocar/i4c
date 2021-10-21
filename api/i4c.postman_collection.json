@@ -144,6 +144,32 @@
 			"response": []
 		},
 		{
+			"name": "log last_instance",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/log/last_instance?device=mill",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"last_instance"
+					],
+					"query": [
+						{
+							"key": "device",
+							"value": "mill"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "log meta",
 			"request": {
 				"method": "GET",

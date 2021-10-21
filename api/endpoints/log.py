@@ -44,3 +44,10 @@ async def log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
         datapoints: List[models.DataPoint] = Body(...)):
     return await models.put_log_write(credentials, datapoints)
+
+
+@router.get("/last_instance", response_model=models.LastInstance)
+async def last_instance(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker),
+        device: str = Query(..., title="device")):
+    return await models.get_last_instance(credentials, device)
