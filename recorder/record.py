@@ -159,7 +159,6 @@ def main():
         inst = stats["inst"]
 
         dx = [d.AsDict() for d in data]
-        djs = json.dumps(dx, default=json_serial)
         response = requests.post(f"{apicfg['url']}/log/",
                                  data=json.dumps(dx, default=json_serial),
                                  headers={"Content-Type": "application/json"},
