@@ -1,0 +1,198 @@
+
+<div id="loading" *ngIf="!isDataLoaded">
+  <div class="loading-container d-flex justify-content-center">
+    <div class="loading-icon spinner-border text-primary" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+    <span class="loading-message">Loading...</span>
+  </div>
+</div>
+<div *ngIf="isDataLoaded" class="container">
+  <div id="header" class="row align-items-center">
+    <div id="navs" class="col">
+      <div class="row">
+        <a id="nav_snapshot" class="col" href="#" [routerLink]="" title="Pillanatkép" (click)="isListMode = false" *ngIf="isListMode">
+          <i class="bi bi-arrow-left-circle"></i>
+        </a>
+        <span id="nav_search" class="col" (click)="openSearch(searchModal)">
+          <i class="bi bi-funnel"></i>
+        </span>
+        <span id="nav_back" class="col" (click)="back()">
+          <i class="bi bi-chevron-left"></i>
+        </span>
+        <span id="nav_pause" class="col" (click)="pause($event)">
+          <i class="bi bi-pause"></i>
+        </span>
+        <span id="nav_play" class="col selected" (click)="play($event)">
+          <i class="bi bi-play"></i>
+        </span>
+        <span id="nav_fast_forward" class="col" (click)="fastForward($event)">
+          <i class="bi bi-chevron-double-right"></i>
+        </span>
+        <span id="nav_forward" class="col" (click)="forward()">
+          <i class="bi bi-chevron-right"></i>
+        </span>
+        <span id="nav_now" class="col" (click)="now()">
+          <i class="bi bi-chevron-down"></i>
+        </span>
+      </div>
+    </div>
+    <div id="timestamp" class="col-auto" #datetime="ngbPopover" [ngbPopover]="datetimeSettings" [autoClose]="'outside'" [popoverTitle]="" (shown)="dateTimeSettingsShown()">
+      <span >{{timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</span>
+      <ng-template #datetimeSettings>
+        <ngb-datepicker #dp="ngbDatepicker" [(ngModel)]="currentDate" [startDate]="currentDate"></ngb-datepicker>
+        <ngb-timepicker #tp [seconds]="true" [(ngModel)]="currentTime"></ngb-timepicker>
+      </ng-template>
+    </div>
+    <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="isListMode = true" *ngIf="!isListMode">
+      <i class="bi bi-arrow-right-circle"></i>
+    </a>
+  </div>
+  <div class="row mb-2 devices">
+    <div class="col-2">
+      <div class="custom-control custom-switch">
+        <input type="checkbox" class="custom-control-input" id="device_auto_mode" (checked)="isAutoMode" (change)="isAutoMode = !isAutoMode">
+        <label class="custom-control-label" for="device_auto_mode">Automatikus követés</label>
+      </div>
+    </div>
+    <div class="col">
+      <ul ngbNav #devices="ngbNav" [(activeId)]="device" class="nav nav-pills nav-fill">
+        <li ngbNavItem="mill">
+          <a ngbNavLink>Maró</a>
+        </li>
+        <li ngbNavItem="lathe">
+          <a ngbNavLink>Eszterga</a>
+        </li>
+        <li ngbNavItem="robot">
+          <a ngbNavLink>Robot</a>
+        </li>
+        <li ngbNavItem="gom">
+          <a ngbNavLink>GOM</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="row" *ngIf="!isListMode">
+    <div class="col">
+      <app-snapshot-mill *ngIf="device === 'mill'" [snapshot]="snapshot"></app-snapshot-mill>
+      <app-snapshot-lathe *ngIf="device === 'lathe'" [snapshot]="snapshot"></app-snapshot-lathe>
+      <app-snapshot-robot *ngIf="device === 'robot'" [snapshot]="snapshot"></app-snapshot-robot>
+      <app-snapshot-gom *ngIf="device === 'gom'" [snapshot]="snapshot"></app-snapshot-gom>
+    </div>
+  </div>
+  <div id="events" class="row" *ngIf="!isListMode">
+    <div class="col">
+      <div class="event row" *ngFor="let event of events$ | async">
+        <div class="col">{{event.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
+        <div class="col">{{event.data_id}}</div>
+        <div class="col">{{event.name}}</div>
+        <div class="col">{{event.value}}</div>
+      </div>
+    </div>
+  </div>
+  <div id="list" class="row" *ngIf="isListMode">
+    <div class="col">
+      <div [class]="'listitem row ' + (i == listWindow ? 'median' : '') + ' ' + getListItemInfo(item, getMeta(item))" *ngFor="let item of list$ | async; index as i;">
+        <div class="col-auto">{{item.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
+        <div class="col-auto type"></div>
+        <div class="col">{{item.data_id}}</div>
+        <div class="col">{{item.name}}</div>
+        <div class="col value">{{item.value}}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #searchModal let-modal ngNativeValidate>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Search</h4>
+    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form #searchForm="ngForm" id="search_form"(ngSubmit)="search(searchForm, modal)" novalidate (change)="searchDataChanged($event)">
+      <div class="form-group">
+        <label for="search_metrics" class="mr-2">Metric</label>
+        <div #tree ngbDropdown class="d-inline-block">
+          <button type="button" class="btn btn-outline-primary" id="search_metrics" ngbDropdownToggle>{{searchModel.metricName ? searchModel.metricName : 'Select metric...'}}</button>
+          <div ngbDropdownMenu aria-labelledby="search_metrics" (click)="toggleMetricNode($event)">
+            <ul>
+              <ng-container
+                *ngTemplateOutlet="metricListTmpl; context:{ list: metricTree }"
+              ></ng-container>
+            </ul>
+            <ng-template #metricListTmpl let-list="list">
+              <li *ngFor="let item of list" id="{{item.id}}" class="closed {{item.children.length === 0 ? 'leaf' : '' }}" data-type="{{item.type}}">
+                <i class="bi bi-plus-square"></i>
+                <i class="bi bi-dash-square"></i>
+                <span class="pl-2 pr-2">{{ item.name }}</span>
+                <button *ngIf="item.level === 'category' && item.name === 'CONDITION'" type="button" class="category btn btn-sm btn-outline-primary">select</button>
+                <ul *ngIf="item.children.length > 0">
+                  <ng-container
+                    *ngTemplateOutlet="metricListTmpl; context:{ list: item.children }"
+                  ></ng-container>
+                </ul>
+              </li>
+            </ng-template>
+         </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="search_value" class="mr-2">Value</label>
+        <div *ngIf="searchModel.metricType == 'SAMPLE'" class="row form-group pr-3 pl-3">
+          <select name="search_rel" [(ngModel)]="searchModel.relation" class="form-control mr-2 col">
+            <option value="=">=</option>
+            <option value=">">></option>
+            <option value="<"><</option>
+            <option value=">="><</option>
+            <option value="<="><</option>
+            <option value="!=">!=</option>
+          </select>
+          <input type="number" name="search_value" [(ngModel)]="searchModel.value" class="form-control col-8"/>
+        </div>
+        <div *ngIf="searchModel.metricType == 'EVENT'" class="row form-group pr-3 pl-3">
+          <select name="search_rel" [(ngModel)]="searchModel.relation" class="form-control mr-2 col" >
+            <option value="*=">contains</option>
+            <option value="*!=">doesn't contain</option>
+            <option value="=">=</option>
+          </select>
+          <input type="text" name="search_value" [(ngModel)]="searchModel.value" class="form-control col-8"
+            [ngbTypeahead]="searchForEventValues"
+            (focus)="focus$.next($any($event).target.value)"
+            (click)="click$.next($any($event).target.value)"
+            #eventValuesSelector="ngbTypeahead"
+         />
+        </div>
+        <div *ngIf="searchModel.metricType == 'CONDITION'" class="form-group row">
+          <div id="search_condition_types" class="btn-group btn-group-toggle mr-2 col" ngbRadioGroup name="search_value" [(ngModel)]="searchModel.value">
+            <label ngbButtonLabel  class="condition btn-outline-primary mr-2 fault" title="fault">
+              <input ngbButton type="radio" value="Fault"> &nbsp;
+            </label>
+            <label ngbButtonLabel class="condition btn-outline-primary mr-2 warning" title="warning" >
+              <input ngbButton type="radio" value="Warning"> &nbsp;
+            </label>
+            <label ngbButtonLabel  class="condition btn-outline-primary mr-2 fault-warning" title="fault + warning">
+              <input ngbButton type="radio" value="Fault|Warning"> &nbsp;
+            </label>
+            <label ngbButtonLabel  class="condition btn-outline-primary mr-2 normal" title="normal">
+              <input ngbButton type="radio" value="Normal|Unavailable"> &nbsp;
+            </label>
+          </div>
+          <div class="col-7">
+            <input #search_cond_extra type="text" name="search_extra" [(ngModel)]="searchModel.extra" class="form-control" [disabled]="searchModel.value === 'Normal|Unavailable'" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <ngb-alert class="mt-3" *ngIf="searchError.show" [type]="'danger'" [dismissible]="false">{{searchError.message}}</ngb-alert>
+      </div>
+      <input type="submit" #submit />
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-primary" (click)="searchModel.direction = '-1'; submit.click()">Backward</button>
+    <button type="button" class="btn btn-outline-primary" (click)="searchModel.direction = '1'; submit.click()">Forward</button>
+    <button type="button" class="btn btn-outline-primary" (click)="searchError.show = false; modal.dismiss()">Cancel</button>
+  </div>
+</ng-template>
