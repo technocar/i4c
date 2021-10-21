@@ -1,15 +1,12 @@
-import asyncpg
 from typing import List
 from fastapi import HTTPException
 from textwrap import dedent
-from common import dbcfg
+from common import DatabaseConnection
 from models import DataPoint
 
 
 async def put_log_write(credentials, datapoints: List[DataPoint], *, pconn=None):
     try:
-        conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
-
         sql = dedent("""\
                      insert into minimon_log
                      (
@@ -27,14 +24,13 @@ async def put_log_write(credentials, datapoints: List[DataPoint], *, pconn=None)
                        ON CONFLICT (device, "timestamp", sequence)
                        DO NOTHING""")
 
-        for d in datapoints:
-            await conn.execute(sql,
-                               d.device, d.instance, d.timestamp,
-                               d.sequence, d.data_id, d.value_num,
-                               d.value_text, d.value_extra, d.value_add)
-
-        if pconn is None:
-            await conn.close()
+        async with DatabaseConnection(pconn) as conn:
+            async with conn.transaction():
+                for d in datapoints:
+                    await conn.execute(sql,
+                                       d.device, d.instance, d.timestamp,
+                                       d.sequence, d.data_id, d.value_num,
+                                       d.value_text, d.value_extra, d.value_add)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")

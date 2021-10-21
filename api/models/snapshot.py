@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from common import MyBaseModel, dbcfg
-import asyncpg
+from common import MyBaseModel, DatabaseConnection
 from fastapi import HTTPException
 
 
@@ -88,11 +87,9 @@ def calc_secs(base, *data_times) -> float:
 
 async def get_mazak_snapshot(credentials, ts, device, *, pconn=None):
     try:
-        conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
-        rs = await conn.fetch(view_snapshot_sql, device, ts)
-        rse = await conn.fetch(view_snapshot_events_sql, device, ts)
-        if pconn is None:
-            await conn.close()
+        async with DatabaseConnection(pconn) as conn:
+            rs = await conn.fetch(view_snapshot_sql, device, ts)
+            rse = await conn.fetch(view_snapshot_events_sql, device, ts)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")
@@ -155,10 +152,8 @@ async def get_mazak_snapshot(credentials, ts, device, *, pconn=None):
 
 async def get_simple_snapshot(credentials, ts, device, *, pconn=None):
     try:
-        conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
-        rse = await conn.fetch(view_snapshot_events_sql, device, ts)
-        if pconn is None:
-            await conn.close()
+        async with DatabaseConnection(pconn) as conn:
+            rse = await conn.fetch(view_snapshot_events_sql, device, ts)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")

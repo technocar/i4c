@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import Optional
-
-import asyncpg
 from fastapi import HTTPException
-from common import MyBaseModel, dbcfg, write_debug_sql
+from common import MyBaseModel, write_debug_sql, DatabaseConnection
 
 view_find_sql = open("models\\find.sql").read()
 
@@ -110,10 +108,8 @@ async def get_find(credentials, device, timestamp, sequence, before_count, after
     write_debug_sql('debug\\debug_get_find.sql', sql, params)
 
     try:
-        conn = await asyncpg.connect(**dbcfg, user=credentials.username, password=credentials.password) if pconn is None else pconn
-        rs = await conn.fetch(sql,*params)
-        if pconn is None:
-            await conn.close()
+        async with DatabaseConnection(pconn) as conn:
+            rs = await conn.fetch(sql,*params)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")
