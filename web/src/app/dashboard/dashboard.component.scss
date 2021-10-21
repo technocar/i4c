@@ -1,0 +1,266 @@
+@import '../../styles.sass';
+
+#loading {
+  top: 0;
+  left: 0;
+  position: fixed;
+  z-index: 1000;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+
+  .loading-container {
+    width: 100%;
+    .loading-icon {
+      height: 2rem;
+      width: 2rem;
+    }
+
+    .loading-message {
+      line-height: 1;
+      font-size: 2rem;
+      margin-left: 1rem;
+    }
+  }
+}
+
+#header {
+  margin-bottom: 1rem;
+  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+  #navs {
+    > .row > span,
+    > .row > a {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    > .row > span:hover {
+      color: $color-event;
+      font-weight: bold;
+    }
+
+    .row > span.selected {
+      color: rgb(255, 79, 246);
+    }
+  }
+
+  #nav_list {
+    font-size: 1.5rem;
+      cursor: pointer;
+  }
+
+  #timestamp {
+    font-weight: bold;
+  }
+
+  #timestamp:hover {
+    color: $color-event;
+    cursor: pointer;
+  }
+}
+
+.devices {
+  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+}
+
+#list {
+  .median {
+    position: relative;
+    border-top: 1px solid;
+  }
+
+  .median::after {
+    content: "◂";
+    color: black;
+    font-size: 2rem;
+    position: absolute;
+    right: -18px;
+    top: -26px;
+  }
+
+  .event {
+    color: $color-event;
+    .type::after {
+      content: "E";
+    }
+  }
+
+  .c-normal {
+    color: $color-c_normal;
+    .type::after {
+      content: "C";
+    }
+  }
+
+  .c-warning {
+    color: $color-c_warning;
+    .type::after {
+      content: "C";
+    }
+  }
+
+  .c-fault {
+    color: $color-c_fault;
+    .type::after {
+      content: "C";
+    }
+  }
+
+  .c-unavailable {
+    color: $color-c_unavailable;
+    .type::after {
+      content: "C";
+    }
+  }
+
+  .sample {
+    color: $color-sample;
+    .type::after {
+      content: "S";
+    }
+    .value {
+      text-align: right;
+    }
+  }
+
+  .degree {
+    .value::after {
+      content: "°";
+    }
+  }
+  .second {
+    .value::after {
+      content: "s";
+    }
+  }
+  .degree-second {
+    .value::after {
+      content: "°/s";
+    }
+  }
+  .precent {
+    .value::after {
+      content: "%";
+    }
+  }
+  .celsius {
+    .value::after {
+      content: "℃";
+    }
+  }
+  .revolution-minute {
+    .value::after {
+      content: "rpm";
+    }
+  }
+  .millimeter-second {
+    .value::after {
+      content: "mm/s";
+    }
+  }
+  .millimeter {
+    .value::after {
+      content: "mm";
+    }
+  }
+}
+
+#search_form {
+  input[type="submit"] {
+    display: none;
+  }
+
+  #search_metrics + .dropdown-menu {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0 1rem;
+  }
+
+  li {
+    white-space: nowrap;
+  }
+
+  li, i {
+    cursor: pointer;
+  }
+
+  li {
+    button.category {
+      position: relative;
+      top: -2px;
+    }
+  }
+
+  .closed {
+    > ul {
+      display: none;
+    }
+    > .bi-plus-square {
+      display: inline-block;
+    }
+
+    > .bi-dash-square {
+      display: none;
+    }
+  }
+
+  .opened {
+    > ul {
+      display: block;
+    }
+
+    > .bi-plus-square {
+      display: none;
+    }
+
+    > .bi-dash-square {
+      display: inline-block;
+    }
+  }
+
+  .leaf {
+    padding: 0.25rem;
+    > .bi-plus-square {
+      display: none;
+    }
+
+    > .bi-dash-square {
+      display: none;
+    }
+  }
+
+  .leaf:hover {
+    background-color: rgb(190, 243, 250);
+  }
+
+  #search_condition_types {
+
+    .condition {
+      border-color: black;
+      border-radius: 50%;
+    }
+
+    .condition.active {
+      box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 50%);
+    }
+
+    .fault {
+      background-color: $color-c_fault;
+    }
+    .warning {
+      background-color: $color-c_warning;
+    }
+    .fault-warning {
+      background: linear-gradient(0.25turn, $color-c_fault 50%, $color-c_warning 50%);
+    }
+    .normal {
+      background-color: $color-c_normal;
+    }
+  }
+}

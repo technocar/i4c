@@ -1,0 +1,10 @@
+.col {
+  font-size: 6rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.col:hover {
+  color: rgb(105, 105, 245);
+  border: 2px solid rgb(105, 105, 245);
+}

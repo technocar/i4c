@@ -1,0 +1,65 @@
+@import '/src/styles.sass';
+
+.since {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  font-size: 0.65rem;
+  color: $color-since;
+}
+.since::after {
+  content: "s";
+}
+
+#snapshot {
+  .form-group {
+    > label {
+      position: relative;
+      height: 24px;
+    }
+    > label:nth-child(1) {
+      margin-right: 0.5rem;
+    }
+
+    > label:nth-child(2) {
+      font-weight: bold;
+    }
+  }
+}
+
+#conditions {
+  .condition {
+    .icon {
+      font-size: 2rem;
+    }
+    .name {
+      position: relative;
+    }
+  }
+
+  .condition.unavailable {
+    .icon {
+      color: $color-c_unavailable;
+    }
+  }
+  .condition.warning {
+    .icon {
+      color: $color-c_warning
+    }
+  }
+  .condition.fault {
+    .icon {
+      color: $color-c_fault;
+    }
+  }
+}
+
+.axes {
+  label {
+    margin-right: 0.5rem;
+  }
+
+  .warning {
+    color:$color-c_fault;
+  }
+}

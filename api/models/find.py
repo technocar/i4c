@@ -10,7 +10,7 @@ class DataPoint(MyBaseModel):
     timestamp: datetime
     sequence: int
     device: str
-    instance: str
+    instance: Optional[str]
     data_id: str
     value_num: Optional[float]
     value_text: Optional[str]
