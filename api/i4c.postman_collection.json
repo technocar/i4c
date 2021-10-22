@@ -158,7 +158,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:5000/log/snapshot?ts=2021-05-19T07:26:49.509Z&device=mill",
+					"raw": "http://localhost:5000/log/snapshot?ts=2021-08-24T09:56:00.957Z&device=lathe",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -171,11 +171,41 @@
 					"query": [
 						{
 							"key": "ts",
-							"value": "2021-05-19T07:26:49.509Z"
+							"value": "2021-08-24T09:56:00.957Z"
 						},
 						{
 							"key": "device",
-							"value": "mill"
+							"value": "lathe"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "log snapshot auto",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/log/snapshot?ts=2021-08-26T10:31:14.35415Z&device=auto",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"log",
+						"snapshot"
+					],
+					"query": [
+						{
+							"key": "ts",
+							"value": "2021-08-26T10:31:14.35415Z"
+						},
+						{
+							"key": "device",
+							"value": "auto"
 						}
 					]
 				}

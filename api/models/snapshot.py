@@ -80,7 +80,7 @@ class Snapshot(MyBaseModel):
 
 view_snapshot_sql = open("models\\snapshot.sql").read()
 view_snapshot_events_sql = open("models\\snapshot_events.sql").read()
-view_snapshot_auto_mazak_sql = open("models\\snapshot_auto_mazak.sql").read()
+view_snapshot_auto_sql = open("models\\snapshot_auto.sql").read()
 
 
 def calc_secs(base, *data_times) -> float:
@@ -172,13 +172,18 @@ async def get_snapshot(credentials, ts, device: DeviceAuto, *, pconn=None):
     s = Snapshot()
     async with DatabaseConnection(pconn) as conn:
         if device == 'auto':
-            rs = await conn.fetch(view_snapshot_auto_mazak_sql, ts)
-            if rs:
-                for r in rs:
-                    allowed_devices.add(r['device'])
-            else:
-                # todo 1: device == 'auto' / robot, gom
-                pass
+            active_device_order = []
+
+            rs = await conn.fetch(view_snapshot_auto_sql, ts)
+            for r in rs:
+                active_device_order.append((r['timestamp'], r['sequence'], r['device']))
+
+            rs = await conn.fetch(view_snapshot_auto_sql, ts)
+            for r in rs:
+                active_device_order.append((r['timestamp'], r['sequence'], r['device']))
+
+            if len(active_device_order) > 0:
+                allowed_devices.add(min(active_device_order, key=lambda x: x[:2])[2])
         else:
             allowed_devices.add(device)
         if DeviceAuto.mill in allowed_devices:
