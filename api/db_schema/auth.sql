@@ -4,8 +4,7 @@ create table "user" (
     status character varying (200) not null,
     login_name character varying (200) null constraint uq_user_login unique,
     password_verifier character varying (200) null,
-    public_key character varying (200) null,
-    login_name character varying (200) null constraint uq_user_login unique
+    public_key character varying (200) null
 );
 
 create table "role" (
