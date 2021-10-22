@@ -2,6 +2,7 @@ create table "user" (
     id character varying (200) not null primary key,
     name character varying (200) not null,
     status character varying (200) not null,
+    login_name character varying (200) null constraint uq_user_login unique,
     password_verifier character varying (200) null,
     public_key character varying (200) null,
     login_name character varying (200) null constraint uq_user_login unique
