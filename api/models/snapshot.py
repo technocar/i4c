@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from common import MyBaseModel, DatabaseConnection
 from fastapi import HTTPException
+from .enums import DeviceAuto
 
 
 class SnapshotStatusStatus(MyBaseModel):
@@ -165,6 +166,7 @@ async def get_simple_snapshot(credentials, ts, device, *, pconn=None):
         raise HTTPException(status_code=500, detail=f"Data process error: {e}")
 
 
+async def get_snapshot(credentials, ts, device: DeviceAuto, *, pconn=None):
 async def get_snapshot(credentials, ts, device, *, pconn=None):
     s = Snapshot()
     # todo 1: device == 'auto'
