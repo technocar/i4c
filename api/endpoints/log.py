@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Body
 from fastapi.security import HTTPBasicCredentials
 import models
 import common
+from models import Device, DeviceAuto
 
 router = APIRouter()
 
@@ -13,7 +14,7 @@ router = APIRouter()
 async def snapshot(
     credentials: HTTPBasicCredentials = Depends(common.security_checker),
     ts: datetime = Query(..., title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
-    device: str = Query(..., title="Name of the devide", description="mill|lathe|gom|robot|auto")
+    device: DeviceAuto = Query(..., title="Name of the devide", description="mill|lathe|gom|robot|auto")
 ):
     return await models.get_snapshot(credentials, ts, device)
 
@@ -21,7 +22,7 @@ async def snapshot(
 @router.get("/find", response_model=List[models.DataPoint])
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
-        device: str = Query(..., title="device"),
+        device: Device = Query(..., title="device"),
         timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
         sequence: Optional[int] = Query(None, description="sequence excluding this"),
         before_count: Optional[int] = Query(None),
@@ -49,5 +50,5 @@ async def log_write(
 @router.get("/last_instance", response_model=models.LastInstance)
 async def last_instance(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
-        device: str = Query(..., title="device")):
+        device: Device = Query(..., title="device")):
     return await models.get_last_instance(credentials, device)
