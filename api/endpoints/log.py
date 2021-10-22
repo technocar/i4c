@@ -3,23 +3,23 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query, Body
 from fastapi.security import HTTPBasicCredentials
-import models
+import models.log
 import common
 from models import Device, DeviceAuto
 
 router = APIRouter()
 
 
-@router.get("/snapshot", response_model=models.Snapshot)
+@router.get("/snapshot", response_model=models.log.Snapshot)
 async def snapshot(
     credentials: HTTPBasicCredentials = Depends(common.security_checker),
     ts: datetime = Query(..., title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
     device: DeviceAuto = Query(..., title="Name of the devide", description="mill|lathe|gom|robot|auto")
 ):
-    return await models.get_snapshot(credentials, ts, device)
+    return await models.log.get_snapshot(credentials, ts, device)
 
 
-@router.get("/find", response_model=List[models.DataPoint])
+@router.get("/find", response_model=List[models.log.DataPoint])
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
         device: Device = Query(..., title="device"),
@@ -32,23 +32,23 @@ async def find(
         val: Optional[List[str]] = Query(None),
         extra: Optional[str] = Query(None),
         rel: Optional[str] = Query(None)):
-    return await models.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+    return await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
 
 
-@router.get("/meta", response_model=List[models.Meta])
+@router.get("/meta", response_model=List[models.log.Meta])
 async def meta(credentials: HTTPBasicCredentials = Depends(common.security_checker)):
-    return await models.get_meta(credentials)
+    return await models.log.get_meta(credentials)
 
 
 @router.post("/", status_code=201)
 async def log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
-        datapoints: List[models.DataPoint] = Body(...)):
-    return await models.put_log_write(credentials, datapoints)
+        datapoints: List[models.log.DataPoint] = Body(...)):
+    return await models.log.put_log_write(credentials, datapoints)
 
 
-@router.get("/last_instance", response_model=models.LastInstance)
+@router.get("/last_instance", response_model=models.log.LastInstance)
 async def last_instance(
         credentials: HTTPBasicCredentials = Depends(common.security_checker),
         device: Device = Query(..., title="device")):
-    return await models.get_last_instance(credentials, device)
+    return await models.log.get_last_instance(credentials, device)

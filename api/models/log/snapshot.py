@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from common import MyBaseModel, DatabaseConnection
 from fastapi import HTTPException
-from .enums import DeviceAuto
+from ..enums import DeviceAuto
 
 
 class SnapshotStatusStatus(MyBaseModel):
@@ -78,9 +78,9 @@ class Snapshot(MyBaseModel):
     robot: Optional[SimpleSnapshot]
 
 
-view_snapshot_sql = open("models\\snapshot.sql").read()
-view_snapshot_events_sql = open("models\\snapshot_events.sql").read()
-view_snapshot_auto_sql = open("models\\snapshot_auto.sql").read()
+view_snapshot_sql = open("models\\log\\snapshot.sql").read()
+view_snapshot_events_sql = open("models\\log\\snapshot_events.sql").read()
+view_snapshot_auto_sql = open("models\\log\\snapshot_auto.sql").read()
 
 
 def calc_secs(base, *data_times) -> float:
