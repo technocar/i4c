@@ -6,9 +6,9 @@ with params as (
 
 select
   m.device, l.timestamp, l."sequence"
-from public.minimon_meta m
+from public.meta m
 left join lateral (select * 
-       from public.minimon_log lf
+       from public.log lf
        where 
          lf.timestamp <= (select ts from params)
          and lf.device = m.device
@@ -26,8 +26,8 @@ union all
 select * from (
   select
     l.device, l.timestamp, l."sequence"
-  from public.minimon_meta m
-  join public.minimon_log l 
+  from public.meta m
+  join public.log l 
       on l.device = m.device
          and l.data_id = m.data_id
   where 
@@ -42,9 +42,9 @@ union all
 
 select
   'gom' as device, l.timestamp, l."sequence"
-from public.minimon_meta m
+from public.meta m
 left join lateral (select * 
-       from public.minimon_log lf
+       from public.log lf
        where 
          lf.timestamp <= (select ts from params)
          and lf.device = m.device

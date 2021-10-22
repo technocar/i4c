@@ -8,7 +8,7 @@ from models import DataPoint
 async def put_log_write(credentials, datapoints: List[DataPoint], *, pconn=None):
     try:
         sql = dedent("""\
-                     insert into minimon_log
+                     insert into public.log
                      (
                         device,
                         instance,

@@ -13,7 +13,7 @@ handlers:
     stream: ext://sys.stdout
   file:
     class: logging.handlers.TimedRotatingFileHandler
-    filename: log/minimon.log
+    filename: log/i4c.log
     encoding: utf-8
     level: DEBUG
     formatter: long
@@ -22,7 +22,7 @@ handlers:
     backupCount: 3
   file_uvicorn_error:
     class: logging.handlers.TimedRotatingFileHandler
-    filename: log/minimon_uvicorn_error.log
+    filename: log/uvicorn_error.log
     encoding: utf-8
     level: ERROR
     formatter: long

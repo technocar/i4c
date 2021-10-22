@@ -1,8 +1,8 @@
--- Table: public.minimon_meta
+-- Table: public.meta
 
--- DROP TABLE public.minimon_meta;
+-- DROP TABLE public.meta;
 
-CREATE TABLE IF NOT EXISTS public.minimon_meta
+CREATE TABLE IF NOT EXISTS public.meta
 (
     device character varying(200) COLLATE pg_catalog."default" NOT NULL,
     data_id character varying(200) COLLATE pg_catalog."default" NOT NULL,
@@ -14,14 +14,14 @@ CREATE TABLE IF NOT EXISTS public.minimon_meta
     type character varying(200) COLLATE pg_catalog."default",
     subtype character varying(200) COLLATE pg_catalog."default",
     unit character varying(200) COLLATE pg_catalog."default",
-    CONSTRAINT minimon_meta_pkey PRIMARY KEY (device, data_id)
+    CONSTRAINT meta_pkey PRIMARY KEY (device, data_id)
 )
 
 TABLESPACE pg_default;
 
-ALTER TABLE public.minimon_meta
+ALTER TABLE public.meta
     OWNER to postgres;
 
-GRANT ALL ON TABLE public.minimon_meta TO aaa;
+GRANT ALL ON TABLE public.meta TO aaa;
 
-GRANT ALL ON TABLE public.minimon_meta TO postgres;
+GRANT ALL ON TABLE public.meta TO postgres;

@@ -13,9 +13,9 @@ select
   l.value_extra,
   l.value_aux,
   l.timestamp
-from public.minimon_meta m
+from public.meta m
 left join lateral (select * 
-       from public.minimon_log lf
+       from public.log lf
        where 
          lf.timestamp <= $2::timestamp with time zone -- */ '2021-08-24 07:56:00.957133+02'::timestamp with time zone
          and lf.device = m.device

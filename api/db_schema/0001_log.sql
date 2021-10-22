@@ -1,8 +1,8 @@
--- Table: public.minimon_log
+-- Table: public.log
 
--- DROP TABLE public.minimon_log;
+-- DROP TABLE public.log;
 
-CREATE TABLE IF NOT EXISTS public.minimon_log
+CREATE TABLE IF NOT EXISTS public.log
 (
     device character varying(200) COLLATE pg_catalog."default" NOT NULL,
     instance character varying(200) COLLATE pg_catalog."default",
@@ -17,25 +17,25 @@ CREATE TABLE IF NOT EXISTS public.minimon_log
 
 TABLESPACE pg_default;
 
-ALTER TABLE public.minimon_log
+ALTER TABLE public.log
     OWNER to postgres;
 
-GRANT ALL ON TABLE public.minimon_log TO aaa;
+GRANT ALL ON TABLE public.log TO aaa;
 
-GRANT ALL ON TABLE public.minimon_log TO postgres;
+GRANT ALL ON TABLE public.log TO postgres;
 
-COMMENT ON COLUMN public.minimon_log.device
+COMMENT ON COLUMN public.log.device
     IS 'Mill, Lathe';
 -- Index: idx_ts
 
 -- DROP INDEX public.idx_ts;
 
 CREATE UNIQUE INDEX idx_ts
-    ON public.minimon_log USING btree
+    ON public.log USING btree
     (device COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;
     
 CREATE INDEX idx_dts
-    ON public.minimon_log USING btree
+    ON public.log USING btree
     (device COLLATE pg_catalog."default" ASC NULLS LAST, data_id COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;

@@ -1,2 +1,2 @@
 select * 
-from minimon_meta
+from public.meta

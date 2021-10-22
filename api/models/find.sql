@@ -8,8 +8,8 @@ select
   l.value_text,
   l.value_extra,
   l.value_aux as value_add
-from public.minimon_meta m
-join public.minimon_log l on l.device = m.device and l.data_id = m.data_id
+from public.meta m
+join public.log l on l.device = m.device and l.data_id = m.data_id
 where m.device = $1 -- 'lathe'
 <wheres>
 order by l.timestamp <rank_direction>, l."sequence" <rank_direction>

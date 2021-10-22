@@ -3,7 +3,8 @@ create table "user" (
     name character varying (200) not null,
     status character varying (200) not null,
     password_verifier character varying (200) null,
-    public_key character varying (200) null
+    public_key character varying (200) null,
+    login_name character varying (200) null constraint uq_user_login unique
 );
 
 create table "role" (

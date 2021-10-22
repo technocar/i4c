@@ -1,5 +1,5 @@
 select l.instance, l.sequence 
-from minimon_log l 
+from public.log l 
 where 
   l.instance is not null
   and l.device = $1
