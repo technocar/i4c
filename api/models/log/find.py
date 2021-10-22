@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import HTTPException
 from common import MyBaseModel, write_debug_sql, DatabaseConnection
 
-view_find_sql = open("models\\find.sql").read()
+view_find_sql = open("models\\log\\find.sql").read()
 
 
 class DataPoint(MyBaseModel):

@@ -1,13 +1,14 @@
 from fastapi import APIRouter
 
-from endpoints import log, user
+from endpoints import log, users, root
 from fastapi import FastAPI
 import uvicorn
 import common
 
 api_router = APIRouter()
+api_router.include_router(root.router)
 api_router.include_router(log.router, prefix="/log", tags=["log"])
-api_router.include_router(user.router, prefix="/user", tags=["user"])
+api_router.include_router(users.router, prefix="/users", tags=["user"])
 
 app = FastAPI()
 app.include_router(api_router)

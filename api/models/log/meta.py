@@ -4,8 +4,8 @@ from typing import Optional, List
 from fastapi import HTTPException
 from common import MyBaseModel, DatabaseConnection
 
-view_meta_sql = open("models\\meta.sql").read()
-view_meta_event_values_sql = open("models\\meta_event_values.sql").read()
+view_meta_sql = open("models\\log\\meta.sql").read()
+view_meta_event_values_sql = open("models\\log\\meta_event_values.sql").read()
 
 
 class Meta(MyBaseModel):

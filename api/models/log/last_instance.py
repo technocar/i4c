@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from common import MyBaseModel, DatabaseConnection
 
-view_last_instance_sql = open("models\\last_instance.sql").read()
+view_last_instance_sql = open("models\\log\\last_instance.sql").read()
 
 
 class LastInstance(MyBaseModel):

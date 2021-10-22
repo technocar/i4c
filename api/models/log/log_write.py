@@ -2,7 +2,7 @@ from typing import List
 from fastapi import HTTPException
 from textwrap import dedent
 from common import DatabaseConnection
-from models import DataPoint
+from models.log import DataPoint
 
 
 async def put_log_write(credentials, datapoints: List[DataPoint], *, pconn=None):
