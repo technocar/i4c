@@ -31,6 +31,20 @@ create table "role_grant" (
     primary key ("role", "endpoint")
 );
 
+GRANT ALL ON TABLE public."user" TO aaa;
+GRANT ALL ON TABLE public."user" TO postgres;
+
+GRANT ALL ON TABLE public."role" TO aaa;
+GRANT ALL ON TABLE public."role" TO postgres;
+
+GRANT ALL ON TABLE public."user_role" TO aaa;
+GRANT ALL ON TABLE public."user_role" TO postgres;
+
+GRANT ALL ON TABLE public."role_subrole" TO aaa;
+GRANT ALL ON TABLE public."role_subrole" TO postgres;
+
+GRANT ALL ON TABLE public."role_grant" TO aaa;
+GRANT ALL ON TABLE public."role_grant" TO postgres;
 
 create or replace view test_user_grant as
 with

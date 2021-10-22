@@ -11,7 +11,7 @@ import nacl
 import nacl.encoding
 import nacl.signing
 from .db_pool import DatabaseConnection
-from common import log
+from .common_obj import log
 
 
 def check_password(password, verifier):
@@ -39,7 +39,7 @@ async def authenticate(login, password, *, pconn=None):
             select 
               u."password_verifier" as verifier, 
               u.public_key
-            from public."user"
+            from public."user" u
             where 
               u."login_name" = $1
               and u."status" = 'active'
