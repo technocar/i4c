@@ -258,6 +258,31 @@
 			"response": []
 		},
 		{
+			"name": "user create_password",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/user/create_password?password=1234",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"create_password"
+					],
+					"query": [
+						{
+							"key": "password",
+							"value": "1234"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "log write",
 			"request": {
 				"method": "POST",

@@ -5,3 +5,4 @@ starlette~=0.16.0
 PyYAML~=6.0
 pytz~=2021.3
 asyncpg~=0.24.0
+PyNaCl~=1.4.0

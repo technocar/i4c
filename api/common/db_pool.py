@@ -1,12 +1,12 @@
 import asyncpg
-from common import dbcfg
+from .common_obj import dbcfg
 
 
 class DatabaseConnection:
     db_pool = None
     __slots__ = ['pconn', 'conn']
 
-    def __init__(self, pconn):
+    def __init__(self, pconn=None):
         self.pconn = pconn
         self.conn = None
 

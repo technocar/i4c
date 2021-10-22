@@ -1,14 +1,13 @@
-import asyncpg
 from fastapi import APIRouter
 
-from common import dbcfg
-from endpoints import log
+from endpoints import log, user
 from fastapi import FastAPI
 import uvicorn
 import common
 
 api_router = APIRouter()
 api_router.include_router(log.router, prefix="/log", tags=["log"])
+api_router.include_router(user.router, prefix="/user", tags=["user"])
 
 app = FastAPI()
 app.include_router(api_router)
