@@ -6,308 +6,321 @@
 	},
 	"item": [
 		{
-			"name": "log find",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:5000/log/find?device=lathe&timestamp=2021-08-24T07:54:00.957133Z&val=37&val=8&val=1&val=11&name=xl&before_count=5&after_count=4",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"find"
-					],
-					"query": [
-						{
-							"key": "device",
-							"value": "lathe"
-						},
-						{
-							"key": "timestamp",
-							"value": "2021-08-24T07:54:00.957133Z",
-							"description": "timestamp"
-						},
-						{
-							"key": "categ",
-							"value": "111",
-							"disabled": true
-						},
-						{
-							"key": "rel",
-							"value": "*!=",
-							"disabled": true
-						},
-						{
-							"key": "extra",
-							"value": "11",
-							"disabled": true
-						},
-						{
-							"key": "val",
-							"value": "37"
-						},
-						{
-							"key": "val",
-							"value": "8"
-						},
-						{
-							"key": "val",
-							"value": "1"
-						},
-						{
-							"key": "val",
-							"value": "11"
-						},
-						{
-							"key": "name",
-							"value": "xl"
-						},
-						{
-							"key": "before_count",
-							"value": "5"
-						},
-						{
-							"key": "after_count",
-							"value": "4"
+			"name": "log",
+			"item": [
+				{
+					"name": "log find",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/log/find?device=lathe&timestamp=2021-08-24T07:54:00.957133Z&val=37&val=8&val=1&val=11&name=xl&before_count=5&after_count=4",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"find"
+							],
+							"query": [
+								{
+									"key": "device",
+									"value": "lathe"
+								},
+								{
+									"key": "timestamp",
+									"value": "2021-08-24T07:54:00.957133Z",
+									"description": "timestamp"
+								},
+								{
+									"key": "categ",
+									"value": "111",
+									"disabled": true
+								},
+								{
+									"key": "rel",
+									"value": "*!=",
+									"disabled": true
+								},
+								{
+									"key": "extra",
+									"value": "11",
+									"disabled": true
+								},
+								{
+									"key": "val",
+									"value": "37"
+								},
+								{
+									"key": "val",
+									"value": "8"
+								},
+								{
+									"key": "val",
+									"value": "1"
+								},
+								{
+									"key": "val",
+									"value": "11"
+								},
+								{
+									"key": "name",
+									"value": "xl"
+								},
+								{
+									"key": "before_count",
+									"value": "5"
+								},
+								{
+									"key": "after_count",
+									"value": "4"
+								}
+							]
 						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log find - last instance",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:5000/log/find?device=lathe&before_count=1",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"find"
-					],
-					"query": [
-						{
-							"key": "device",
-							"value": "lathe"
-						},
-						{
-							"key": "timestamp",
-							"value": "2021-11-24T07:54:00.957133Z",
-							"description": "timestamp",
-							"disabled": true
-						},
-						{
-							"key": "before_count",
-							"value": "1"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log find - connect state",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:5000/log/find?device=lathe&before_count=1&name=connect",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"find"
-					],
-					"query": [
-						{
-							"key": "device",
-							"value": "lathe"
-						},
-						{
-							"key": "timestamp",
-							"value": "2021-11-24T07:54:00.957133Z",
-							"description": "timestamp",
-							"disabled": true
-						},
-						{
-							"key": "before_count",
-							"value": "1"
-						},
-						{
-							"key": "name",
-							"value": "connect"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log snapshot",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:5000/log/snapshot?ts=2021-08-24T09:56:00.957Z&device=lathe",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"snapshot"
-					],
-					"query": [
-						{
-							"key": "ts",
-							"value": "2021-08-24T09:56:00.957Z"
-						},
-						{
-							"key": "device",
-							"value": "lathe"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log snapshot auto",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:5000/log/snapshot?ts=2021-08-26T10:31:14.35415Z&device=auto",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"snapshot"
-					],
-					"query": [
-						{
-							"key": "ts",
-							"value": "2021-08-26T10:31:14.35415Z"
-						},
-						{
-							"key": "device",
-							"value": "auto"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log last_instance",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:5000/log/last_instance?device=mill",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"last_instance"
-					],
-					"query": [
-						{
-							"key": "device",
-							"value": "mill"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log meta",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:5000/log/meta",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log",
-						"meta"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "user create_password",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:5000/user/create_password?password=1234",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"user",
-						"create_password"
-					],
-					"query": [
-						{
-							"key": "password",
-							"value": "1234"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "log write",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "[\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:37.891Z\",\r\n        \"sequence\": 37950,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:09.161Z\",\r\n        \"sequence\": 37645,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:43.920Z\",\r\n        \"sequence\": 37370,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:14.413Z\",\r\n        \"sequence\": 37069,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:00.447Z\",\r\n        \"sequence\": 36903,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:59.378Z\",\r\n        \"sequence\": 36890,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:58.618Z\",\r\n        \"sequence\": 36880,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:54.338Z\",\r\n        \"sequence\": 36786,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-11-24T10:54:49.598Z\",\r\n        \"sequence\": 36702,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 38.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": \"[1]\"\r\n    }\r\n]",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					},
+					"response": []
 				},
-				"url": {
-					"raw": "localhost:5000/log",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"log"
-					]
+				{
+					"name": "log find - last instance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/log/find?device=lathe&before_count=1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"find"
+							],
+							"query": [
+								{
+									"key": "device",
+									"value": "lathe"
+								},
+								{
+									"key": "timestamp",
+									"value": "2021-11-24T07:54:00.957133Z",
+									"description": "timestamp",
+									"disabled": true
+								},
+								{
+									"key": "before_count",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "log find - connect state",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/log/find?device=lathe&before_count=1&name=connect",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"find"
+							],
+							"query": [
+								{
+									"key": "device",
+									"value": "lathe"
+								},
+								{
+									"key": "timestamp",
+									"value": "2021-11-24T07:54:00.957133Z",
+									"description": "timestamp",
+									"disabled": true
+								},
+								{
+									"key": "before_count",
+									"value": "1"
+								},
+								{
+									"key": "name",
+									"value": "connect"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "log snapshot",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/log/snapshot?ts=2021-08-24T09:56:00.957Z&device=lathe",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"snapshot"
+							],
+							"query": [
+								{
+									"key": "ts",
+									"value": "2021-08-24T09:56:00.957Z"
+								},
+								{
+									"key": "device",
+									"value": "lathe"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "log snapshot auto",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/log/snapshot?ts=2021-08-26T10:31:14.35415Z&device=auto",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"snapshot"
+							],
+							"query": [
+								{
+									"key": "ts",
+									"value": "2021-08-26T10:31:14.35415Z"
+								},
+								{
+									"key": "device",
+									"value": "auto"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "log last_instance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/log/last_instance?device=mill",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"last_instance"
+							],
+							"query": [
+								{
+									"key": "device",
+									"value": "mill"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "log meta",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/log/meta",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"meta"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "log write",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:37.891Z\",\r\n        \"sequence\": 37950,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:55:09.161Z\",\r\n        \"sequence\": 37645,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:43.920Z\",\r\n        \"sequence\": 37370,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:14.413Z\",\r\n        \"sequence\": 37069,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:54:00.447Z\",\r\n        \"sequence\": 36903,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:59.378Z\",\r\n        \"sequence\": 36890,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:58.618Z\",\r\n        \"sequence\": 36880,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-08-24T07:53:54.338Z\",\r\n        \"sequence\": 36786,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 37.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": null\r\n    },\r\n    {\r\n        \"timestamp\": \"2021-11-24T10:54:49.598Z\",\r\n        \"sequence\": 36702,\r\n        \"device\": \"lathe\",\r\n        \"instance\": \"7\",\r\n        \"data_id\": \"xl\",\r\n        \"value_num\": 38.0,\r\n        \"value_text\": null,\r\n        \"value_extra\": null,\r\n        \"value_add\": \"[1]\"\r\n    }\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/log",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log"
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "users",
+			"item": [
+				{
+					"name": "users create_password",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/users/create_password?password=1234",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"create_password"
+							],
+							"query": [
+								{
+									"key": "password",
+									"value": "1234"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

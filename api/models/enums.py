@@ -14,3 +14,9 @@ class DeviceAuto(str, Enum):
     lathe = "lathe"
     gom = "gom"
     robot = "robot"
+
+
+class UserStatusEnum(str, Enum):
+    active = "active"
+    inactive = "inactive"
+    archive = "archive"
