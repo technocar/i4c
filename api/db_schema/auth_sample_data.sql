@@ -34,11 +34,12 @@ insert into role_subrole values ('all_write', 'auth_write');
 insert into role_subrole values ('all_write', 'log_write');
 insert into role_subrole values ('all_write', 'all_read');
 
-insert into "user" values ('joe', 'joe', 'active');
-insert into "user" values ('jake', 'jake', 'active');
-insert into "user" values ('jason', 'jason', 'active');
-insert into "user" values ('james', 'james', 'active');
-insert into "user" values ('jack', 'jack', 'active');
+-- '/uOlIfQ4rm9yY/8CzZWaFWtxd+xuDTa/2wd0GEzic5VTxLF9' is for password 'titok'
+insert into "user" values ('joe', 'joe', 'active', 'joe', '/uOlIfQ4rm9yY/8CzZWaFWtxd+xuDTa/2wd0GEzic5VTxLF9');
+insert into "user" values ('jake', 'jake', 'active', 'jake', '/uOlIfQ4rm9yY/8CzZWaFWtxd+xuDTa/2wd0GEzic5VTxLF9');
+insert into "user" values ('jason', 'jason', 'active', 'jason', '/uOlIfQ4rm9yY/8CzZWaFWtxd+xuDTa/2wd0GEzic5VTxLF9');
+insert into "user" values ('james', 'james', 'active', 'james', '/uOlIfQ4rm9yY/8CzZWaFWtxd+xuDTa/2wd0GEzic5VTxLF9');
+insert into "user" values ('jack', 'jack', 'active', 'jack', '/uOlIfQ4rm9yY/8CzZWaFWtxd+xuDTa/2wd0GEzic5VTxLF9');
 
 insert into "user_role" values ('joe', 'auth_read');
 insert into "user_role" values ('jason', 'all_write');
