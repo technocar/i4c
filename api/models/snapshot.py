@@ -80,6 +80,7 @@ class Snapshot(MyBaseModel):
 
 view_snapshot_sql = open("models\\snapshot.sql").read()
 view_snapshot_events_sql = open("models\\snapshot_events.sql").read()
+view_snapshot_auto_mazak_sql = open("models\\snapshot_auto_mazak.sql").read()
 
 
 def calc_secs(base, *data_times) -> float:
@@ -167,15 +168,25 @@ async def get_simple_snapshot(credentials, ts, device, *, pconn=None):
 
 
 async def get_snapshot(credentials, ts, device: DeviceAuto, *, pconn=None):
-async def get_snapshot(credentials, ts, device, *, pconn=None):
+    allowed_devices = set()
     s = Snapshot()
-    # todo 1: device == 'auto'
-    if device == 'mill':
-        s.mill = await get_mazak_snapshot(credentials, ts, device, pconn=pconn)
-    if device == 'lathe':
-        s.lathe = await get_mazak_snapshot(credentials, ts, device, pconn=pconn)
-    if device == 'gom':
-        s.gom = await get_simple_snapshot(credentials, ts, device, pconn=pconn)
-    if device == 'robot':
-        s.robot = await get_simple_snapshot(credentials, ts, device, pconn=pconn)
+    async with DatabaseConnection(pconn) as conn:
+        if device == 'auto':
+            rs = await conn.fetch(view_snapshot_auto_mazak_sql, ts)
+            if rs:
+                for r in rs:
+                    allowed_devices.add(r['device'])
+            else:
+                # todo 1: device == 'auto' / robot, gom
+                pass
+        else:
+            allowed_devices.add(device)
+        if DeviceAuto.mill in allowed_devices:
+            s.mill = await get_mazak_snapshot(credentials, ts, DeviceAuto.mill, pconn=conn)
+        if DeviceAuto.lathe in allowed_devices:
+            s.lathe = await get_mazak_snapshot(credentials, ts, DeviceAuto.lathe, pconn=conn)
+        if DeviceAuto.gom in allowed_devices:
+            s.gom = await get_simple_snapshot(credentials, ts, DeviceAuto.gom, pconn=conn)
+        if DeviceAuto.robot in allowed_devices:
+            s.robot = await get_simple_snapshot(credentials, ts, DeviceAuto.robot, pconn=conn)
     return s
