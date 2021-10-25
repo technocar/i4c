@@ -3,12 +3,14 @@ import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse
 import { Observable, Subject, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, switchMap, filter, take, tap } from 'rxjs/operators';
 import { AuthenticationService } from './auth.service';
+import { Router } from '@angular/router';
 
 @Injectable()
 export class AuthenticationInterceptor implements HttpInterceptor {
 
   constructor(
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    private router: Router
   ) {
   }
 
@@ -23,9 +25,13 @@ export class AuthenticationInterceptor implements HttpInterceptor {
   private addAuth(request: HttpRequest<any>): HttpRequest<any> {
     const isApiUrl = true;//this.isSameOriginUrl(request);
     if (isApiUrl) {
+      if (this.authService.isAuthenticated())
+        this.authService.extendExpiration();
+      else
+        this.router.navigate(['/login']);
       return request = request.clone({
         setHeaders: {
-          Authorization: `Basic ${this.authService.currentUserValue.token}`
+          "Authorization": `Basic ${this.authService.currentUserValue.token}`
         }
       });
     } else {

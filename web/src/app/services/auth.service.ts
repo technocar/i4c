@@ -6,6 +6,7 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
 import { DeviceType } from './models/constants';
+import { User } from './models/api';
 
 export class AuthenticatedUser {
   id: string;
@@ -32,7 +33,7 @@ export class AuthenticationService {
     return !!this.currentUserValue && !!this.currentUserValue.expires && this.currentUserValue.expires > Date.now();
   }
 
-  login(username: string, password: string) {
+  login(username: string, password: string): Observable<User> {
     this.storeUser({
       id: username,
       username: username,
@@ -40,7 +41,7 @@ export class AuthenticationService {
       token: `${window.btoa(username + ':' + password)}`
     });
 
-    return this.api.getMeta(DeviceType.Lathe);
+    return this.api.login();
   }
 
   removeUser() {
@@ -56,5 +57,12 @@ export class AuthenticationService {
   storeUser(user: AuthenticatedUser) {
     localStorage.setItem('current_user', JSON.stringify(user));
     this.currentUserSubject.next(user);
+  }
+
+  extendExpiration() {
+    if (this.isAuthenticated()) {
+      this.currentUserValue.expires = Date.now() + (1000 * 60 * 45);
+      this.storeUser(this.currentUserValue);
+    }
   }
 }
