@@ -1,18 +1,18 @@
 # coding=utf-8
-
 from functools import reduce
 from datetime import datetime, timezone
 import hashlib
 import secrets
 import base64
+import logging
 from textwrap import dedent
-
 import nacl
 import nacl.encoding
 import nacl.exceptions
 import nacl.signing
-from .common_obj import log
 from .db_pool import DatabaseConnection
+
+log = None
 
 
 def pbkdf(password, salt):
@@ -54,6 +54,10 @@ async def authenticate(login, password=None, endpoint=None, need_features=None, 
     :param ask_features: check if these features are granted
     :return: tuple (user_id, features) user_id is None if the authentication fails
     """
+
+    global log
+    if not log:
+        log = logging.getLogger("api")
 
     log.debug(f"auth user {login}")
 
