@@ -105,7 +105,7 @@ async def get_find(credentials, device, timestamp, sequence, before_count, after
 
     sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
 
-    write_debug_sql('debug\\debug_get_find.sql', sql, params)
+    write_debug_sql('debug_get_find.sql', sql, params)
 
     try:
         async with DatabaseConnection(pconn) as conn:
