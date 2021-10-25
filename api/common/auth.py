@@ -5,6 +5,7 @@ import hashlib
 import secrets
 import base64
 import logging
+from textwrap import dedent
 import nacl
 import nacl.encoding
 import nacl.exceptions
@@ -41,8 +42,7 @@ async def authenticate(login, password=None, endpoint=None, need_features=None, 
     """ Authenticate and/or authorize user/endpoint
 
     If password is given, it will be checked against the verifier or public key, whichever is configured for the user.
-    If the user is inactive, the authentication will fail. If the user does not have access to any endpoints, the
-    authentication will fail even if the endpoint parameter is None.
+    If the user is inactive, the authentication will fail.
 
     If endpoint is given, authorization will be checked for that endpoint. If need_features are given, all the features
     are required, or else the authentication fails.
@@ -63,20 +63,23 @@ async def authenticate(login, password=None, endpoint=None, need_features=None, 
 
     # getting data for user/endpoint
 
-    sql = """with
+    sql = dedent("""\
+            with
               recursive deep_role_r as
-                (select distinct role as toprole, role as midrole, role as subrole from role_subrole
+                (select distinct "name" as toprole, "name" as midrole, "name" as subrole from "role"
                  union
                  select deep_role_r.toprole, role_subrole.role as midrole, role_subrole.subrole
-                 from deep_role_r join role_subrole on deep_role_r.subrole = role_subrole.role),
+                 from deep_role_r 
+                 join role_subrole on deep_role_r."subrole" = role_subrole."role"),
               deep_role as (select distinct toprole as role, subrole from deep_role_r)
             select role_grant.features, "user".id, "user".status, "user".password_verifier, "user".public_key
             from "user"
-            join user_role on "user".id = user_role."user"
-            join deep_role on deep_role.role = user_role."role"
-            join role_grant on deep_role.subrole = role_grant."role"
+            left join ( user_role 
+                        join deep_role on deep_role.role = user_role."role"
+                        join role_grant on deep_role.subrole = role_grant."role"
+                      ) on "user".id = user_role."user"
             where "user".login_name = $1
-            """
+            """)
     params = (login,)
 
     if endpoint is not None:
