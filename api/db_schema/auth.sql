@@ -49,7 +49,7 @@ GRANT ALL ON TABLE public."role_grant" TO postgres;
 create or replace view test_user_grant as
 with
   recursive deep_role_r as
-    (select distinct role as toprole, role as midrole, role as subrole from role_subrole
+    (select distinct "name" as toprole, "name" as midrole, "name" as subrole from "role"
      union
      select deep_role_r.toprole, role_subrole.role as midrole, role_subrole.subrole
      from deep_role_r join role_subrole on deep_role_r.subrole = role_subrole.role),
@@ -65,17 +65,19 @@ join role_grant on deep_role.subrole = role_grant."role"
 
 with
   recursive deep_role_r as
-    (select distinct role as toprole, role as midrole, role as subrole from role_subrole
+    (select distinct "name" as toprole, "name" as midrole, "name" as subrole from "role"
      union
      select deep_role_r.toprole, role_subrole.role as midrole, role_subrole.subrole
-     from deep_role_r join role_subrole on deep_role_r.subrole = role_subrole.role),
+     from deep_role_r 
+     join role_subrole on deep_role_r."subrole" = role_subrole."role"),
   deep_role as (select distinct toprole as role, subrole from deep_role_r)
-select role_grant.features, "user".status, "user".password_verifier, "user".public_key
+select role_grant.features, "user".id, "user".status, "user".password_verifier, "user".public_key
 from "user"
-join user_role on "user".id = user_role."user"
-join deep_role on deep_role.role = user_role."role"
-join role_grant on deep_role.subrole = role_grant."role"
-where "user".id = $1
+left join ( user_role 
+            join deep_role on deep_role.role = user_role."role"
+            join role_grant on deep_role.subrole = role_grant."role"
+          ) on "user".id = user_role."user"
+where "user".login_name = $1
 and role_grant.endpoint = $2
 
 */
