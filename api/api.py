@@ -1,16 +1,14 @@
-from fastapi import APIRouter
-
+from I4cAPI import I4cApi, I4cApiRouter
 from endpoints import log, users, root
-from fastapi import FastAPI
 import uvicorn
 import common
 
-api_router = APIRouter()
+api_router = I4cApiRouter()
 api_router.include_router(root.router)
 api_router.include_router(log.router, prefix="/log", tags=["log"])
 api_router.include_router(users.router, prefix="/users", tags=["user"])
 
-app = FastAPI()
+app = I4cApi()
 app.include_router(api_router)
 
 
@@ -20,4 +18,6 @@ async def startup_event():
 
 if __name__ == "__main__":
     common.set_debug_mode()
+    # http://localhost:5000
+    # http://localhost:5000/docs
     uvicorn.run("api:app", host="127.0.0.1", port=5000, log_level="info")

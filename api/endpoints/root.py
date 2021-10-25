@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends
+from fastapi import Depends
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.users
+from I4cAPI import I4cApiRouter
 
-router = APIRouter()
+router = I4cApiRouter()
 
 
-@router.get("/login", response_model=models.users.UserResponse)
+@router.get("/login", response_model=models.users.UserResponse, x_properties=dict(object="user", action="get"))
 async def login(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker())):
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/login"))):
     "Get user info based on login name"
     return await models.users.login(credentials)
