@@ -46,9 +46,15 @@
     }
   }
 
-  #nav_list {
+  #nav_list,
+  #nav_snapshot,
+  #nav_exit {
     font-size: 1.5rem;
-      cursor: pointer;
+    cursor: pointer;
+  }
+
+  #nav_exit {
+    color: $color-c_fault;
   }
 
   #timestamp {
@@ -76,7 +82,7 @@
     color: black;
     font-size: 2rem;
     position: absolute;
-    right: -18px;
+    right: -10px;
     top: -26px;
   }
 
@@ -85,6 +91,12 @@
     .type::after {
       content: "E";
     }
+  }
+
+  .step {
+    position: absolute;
+    right: -6px;
+    cursor: pointer;
   }
 
   .c-normal {

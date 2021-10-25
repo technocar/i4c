@@ -1,8 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { EventValues, FindRequest, FindResponse, ListItem, Meta, SnapshotResponse } from './models/api';
+import { EventValues, FindRequest, FindResponse, ListItem, Meta, SnapshotResponse, User } from './models/api';
 import { DeviceType } from './models/constants';
 
 @Injectable({
@@ -18,21 +18,32 @@ export class ApiService {
     this._apiUrl = environment.apiPath;
   }
 
+  login(): Observable<User> {
+    return this.http.get<User>(`${this._apiUrl}/login`);
+  }
+
   getSnapShot(device: string, timestamp: Date): Observable<SnapshotResponse> {
     return this.http.get<SnapshotResponse>(`${this._apiUrl}/log/snapshot`, { params: { ts: timestamp.toISOString(), device: device } });
   }
 
-  getList(device: DeviceType, timestamp: Date, window: number): Observable<ListItem[]> {
-    return this.http.get<ListItem[]>(`${this._apiUrl}/${device}/list`, { params: { ts: timestamp.toISOString(), window: window.toString() } });
+  getList(device: DeviceType, timestamp: Date, window: number, sequence?: number): Observable<ListItem[]> {
+    let request: FindRequest = {
+      device: device,
+      timestamp: timestamp,
+      afterCount: window,
+      beforeCount: window,
+      sequence: sequence
+    };
+    return this.find(request);
   }
 
-  find(request: FindRequest): Observable<FindResponse> {
+  find(request: FindRequest): Observable<ListItem[]> {
     var params = new HttpParams();
     params = params.append("device", request.device);
-    if (request.before)
-      params = params.append("before", request.before.toISOString());
-    if (request.after)
-      params = params.append("after", request.after.toISOString());
+    if (request.beforeCount)
+      params = params.append("before_count", request.beforeCount.toString());
+    if (request.afterCount)
+      params = params.append("after_count", request.afterCount.toString());
     if (request.category)
       params = params.append("categ", request.category);
     if (request.name)
@@ -45,8 +56,12 @@ export class ApiService {
       params = params.append("rel", request.relation);
     if (request.extra)
       params = params.append("extra", request.extra);
+    if (request.sequence)
+      params = params.append("sequence", request.sequence.toString());
+    if (request.timestamp)
+      params = params.append("timestamp", request.timestamp.toISOString());
 
-    return this.http.get<FindResponse>(`${this._apiUrl}/log/find`, { params });
+    return this.http.get<ListItem[]>(`${this._apiUrl}/log/find`, { params });
   }
 
   getMeta(device: DeviceType): Observable<Meta[]> {
