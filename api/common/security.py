@@ -42,7 +42,8 @@ class security_checker:
                                                 self.endpoint, self.need_features, self.ask_features)
         if not uid:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                # when we return HTTP_401_UNAUTHORIZED then blowser pops up login dialog
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Authentication failed",
                 headers={"WWW-Authenticate": "Basic"})
 
