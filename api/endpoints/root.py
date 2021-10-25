@@ -8,6 +8,6 @@ router = APIRouter()
 
 @router.get("/login", response_model=models.users.UserResponse)
 async def login(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker)):
+        credentials: HTTPBasicCredentials = Depends(common.security_checker())):
     "Get user info based on login name"
     return await models.users.login(credentials)
