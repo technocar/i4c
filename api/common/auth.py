@@ -7,6 +7,7 @@ import secrets
 import base64
 import nacl
 import nacl.encoding
+import nacl.exceptions
 import nacl.signing
 from .common_obj import log
 from .db_pool import DatabaseConnection
@@ -120,7 +121,7 @@ async def authenticate(login, password=None, endpoint=None, need_features=None, 
                 timestr = timestr.encode()
                 verify.verify(timestr, signature)
                 log.debug(f"auth signature ok")
-            except nacl.exceptions.BadSignatureError as e:
+            except nacl.exceptions.BadSignatureError:
                 log.debug(f"auth fail, signature bad")
                 return None
             except Exception as e:
@@ -140,6 +141,7 @@ async def authenticate(login, password=None, endpoint=None, need_features=None, 
     # check authorization
 
     info_features = set()
+    granted_features = None
     if endpoint:
         if need_features or ask_features:
             granted_features = reduce(lambda a1, a2: a1 + a2, (r["features"] for r in rs))
