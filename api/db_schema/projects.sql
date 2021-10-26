@@ -6,8 +6,8 @@ create table "projects" (
     created_by character varying (200) not null constraint fk_user references "user"
 );
 
-GRANT ALL ON TABLE public."user" TO aaa;
-GRANT ALL ON TABLE public."user" TO postgres;
+GRANT ALL ON TABLE public."projects" TO aaa;
+GRANT ALL ON TABLE public."projects" TO postgres;
 
 create table "project_version" (
     id SERIAL PRIMARY KEY,
