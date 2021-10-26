@@ -18,7 +18,8 @@ class DataPoint(MyBaseModel):
     value_add: Optional[str]
 
 
-def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel):
+def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,
+                 allow_exact_ts_match: bool = True):
     wheres = []
     rank_direction = 'desc'
     count = None
@@ -37,8 +38,8 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
         before_count = 1
 
     if before_count is not None and after_count is not None:
-        sql_before = get_find_sql(params, timestamp, sequence, before_count, None, categ, name, val, extra, rel)
-        sql_after = get_find_sql(params, timestamp, sequence, None, after_count, categ, name, val, extra, rel)
+        sql_before = get_find_sql(params, timestamp, sequence, before_count, None, categ, name, val, extra, rel, allow_exact_ts_match=allow_exact_ts_match)
+        sql_after = get_find_sql(params, timestamp, sequence, None, after_count, categ, name, val, extra, rel, allow_exact_ts_match=False)
         return f'with before as ({sql_before}), '\
                f'after as ({sql_after}) ' \
                f'select * from before ' \
@@ -50,23 +51,27 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
         count = before_count
         if timestamp is not None:
             params.append(timestamp)
-            wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp < ${len(params)}::timestamp with time zone)')
+            wheres.append(f'and {"( " if sequence is not None else ""}'
+                          f'(l.timestamp <{"=" if allow_exact_ts_match and sequence is None else ""} '
+                          f'${len(params)}::timestamp with time zone)')
             if sequence is not None:
                 params.append(timestamp)
                 params.append(sequence)
                 wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                              f'           and (l.sequence < ${len(params)}::timestamp)))')
+                              f'           and (l.sequence <{"=" if allow_exact_ts_match else ""} ${len(params)}::timestamp)))')
     if after_count is not None:
         rank_direction = 'asc'
         count = after_count
         if timestamp is not None:
             params.append(timestamp)
-            wheres.append(f'and {"( " if sequence is not None else ""}(l.timestamp > ${len(params)}::timestamp with time zone)')
+            wheres.append(f'and {"( " if sequence is not None else ""}'
+                          f'(l.timestamp >{"=" if allow_exact_ts_match and sequence is None else ""} '
+                          f'${len(params)}::timestamp with time zone)')
             if sequence is not None:
                 params.append(timestamp)
                 params.append(sequence)
                 wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                              f'           and (l.sequence > ${len(params)}::timestamp)))')
+                              f'           and (l.sequence >{"=" if allow_exact_ts_match else ""} ${len(params)}::timestamp)))')
     if categ is not None:
         params.append(categ)
         wheres.append(f'and (m.category = ${len(params)})')
