@@ -73,7 +73,7 @@ export interface Condition {
 export interface ListItem {
   device: string,
   timestamp: string,
-  sequnce: number,
+  sequence: number,
   instance: string,
   data_id: string,
   name: string,

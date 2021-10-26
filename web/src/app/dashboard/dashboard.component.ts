@@ -482,9 +482,11 @@ export class DashboardComponent implements OnInit {
       this.getData();
   }
 
-  tabChange(event: NgbNavChangeEvent) {
-    if (event.nextId === "list" && this._stopped && this._lastListTimestamp != this.timestamp)
+  changeLayout(layout: string) {
+    this.isListMode = layout === "list";
+    if (layout === "list" && this._stopped && this._lastListTimestamp != this.timestamp) {
       this.getList();
+    }
   }
 
   getEventValues(id: string) {
@@ -507,7 +509,7 @@ export class DashboardComponent implements OnInit {
   }
 
   stepList(item: ListItem, direction: number) {
-    this.getList(new Date(item.timestamp), item.sequnce);
+    this.getList(new Date(item.timestamp), item.sequence);
   }
 
   ngOnDestroy() {

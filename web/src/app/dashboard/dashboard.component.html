@@ -44,10 +44,10 @@
         <ngb-timepicker #tp [seconds]="true" [(ngModel)]="currentTime"></ngb-timepicker>
       </ng-template>
     </div>
-    <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="isListMode = true" *ngIf="!isListMode">
+    <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="changeLayout('list')" *ngIf="!isListMode">
       <i class="bi bi-arrow-right-circle"></i>
     </a>
-    <a id="nav_snapshot" class="col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="isListMode = false" *ngIf="isListMode">
+    <a id="nav_snapshot" class="col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="changeLayout('snapshot')" *ngIf="isListMode">
       <i class="bi bi-arrow-left-circle"></i>
     </a>
   </div>
@@ -95,9 +95,9 @@
   </div>
   <div id="list" class="row" *ngIf="isListMode">
     <div class="col">
-      <div [class]="'listitem row ' + (i == listWindow ? 'median' : '') + ' ' + getListItemInfo(item)" *ngFor="let item of list$ | async; index as i; count as c;">
-        <i class="step before bi bi-caret-up-fill" *ngIf="i === 0" (click)="stepList(item, -1)"></i>
-        <i class="step after bi bi-caret-down-fill" *ngIf="i === c - 1" (click)="stepList(item, 1)"></i>
+      <div [class]="'listitem row mr-2 ' + (i == listWindow ? 'median' : '') + ' ' + getListItemInfo(item)" *ngFor="let item of list$ | async; index as i; count as c;">
+        <i class="step before bi bi-arrow-up" *ngIf="i === 0" (click)="stepList(item, -1)" title="Időben előre"></i>
+        <i class="step after bi bi-arrow-down" *ngIf="i === c - 1" (click)="stepList(item, 1)" title="Időben vissza"></i>
         <div class="col-auto">{{item.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
         <div class="col-auto type"></div>
         <div class="col">{{item.category[0]}}</div>
