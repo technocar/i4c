@@ -101,6 +101,8 @@ export class DashboardComponent implements OnInit {
   snapshot: Snapshot;
   device: DeviceType;
   timestamp: number;
+  backwardTime: number = 30; //in seconds
+  forwardTime: number = 30; //in seconds
 
   events$: BehaviorSubject<EventLog[]> = new BehaviorSubject([]);
   list$: BehaviorSubject<ListItem[]> = new BehaviorSubject([]);
@@ -237,7 +239,7 @@ export class DashboardComponent implements OnInit {
   }
 
   back() {
-    this.setTimestamp(this.timestamp - 30000);
+    this.setTimestamp(this.timestamp - this.backwardTime * 1000);
   }
 
   selectNavButton(node: HTMLElement) {
@@ -264,7 +266,7 @@ export class DashboardComponent implements OnInit {
   }
 
   forward() {
-    this.setTimestamp(this.timestamp + 30000);
+    this.setTimestamp(this.timestamp + this.forwardTime * 1000);
   }
 
   now() {
