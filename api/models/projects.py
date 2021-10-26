@@ -53,7 +53,7 @@ class ProjectVersion(BaseModel):
     files: List[ProjFile]
 
 
-async def get_projects(credentials, name=None, status=None, cre_after=None, cre_before=None, file=None):
+async def get_projects(credentials, name=None, status=None, file=None):
     sql = dedent("""\
             with pv as (
                 select project, ARRAY_AGG(ver::"varchar"(200)) versions
@@ -90,13 +90,7 @@ async def get_projects(credentials, name=None, status=None, cre_after=None, cre_
             sql += f"and res.name = ${len(params)}\n"
         if status is not None:
             params.append(status)
-            sql += f"and res.name = ${len(params)}\n"
-        if cre_after is not None:
-            params.append(cre_after)
-            sql += f"and res.created_at >= ${len(params)}\n"
-        if cre_before is not None:
-            params.append(cre_before)
-            sql += f"and res.created_at <= ${len(params)}\n"
+            sql += f"and res.status = ${len(params)}\n"
         if file is not None:
             params.append(file)
             sql += f" and exists(select * from rf where rf.project = res.name and rf.savepath = ${len(params)})"
