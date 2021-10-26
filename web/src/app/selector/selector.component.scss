@@ -11,15 +11,15 @@ h5 {
 }
 
 .card:hover {
-  border: 1px solid rgb(105, 105, 245);
+  border: 1px solid $color-hover;
   h5 {
-    color: rgb(105, 105, 245) !important;
+    color: $color-hover !important;
   }
 }
 
 .card.dashboard {
   h5 {
-    color: $color-event;
+    color: rgb(95, 8, 122);
   }
 }
 

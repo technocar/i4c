@@ -114,6 +114,10 @@
     top: -12px;
   }
 
+  .step:hover {
+    color: $color-hover;
+  }
+
   .c-normal {
     color: $color-c_normal;
     .type::after {
