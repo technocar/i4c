@@ -5,7 +5,7 @@ import { NgForm } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { NgbActiveModal, NgbDatepicker, NgbDateStruct, NgbDropdown, NgbModal, NgbNavChangeEvent, NgbTimepicker, NgbTimeStruct, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, forkJoin, merge, Observable, OperatorFunction, Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, tap, timestamp } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { Axis, Category, Condition, EventLog, EventValues, FindRequest, ListItem, Meta, DeviceStatus, SnapshotResponse, Snapshot } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
@@ -188,7 +188,7 @@ export class DashboardComponent implements OnInit {
           this.snapshot = r[this.device];
         else {
           for (let d in r)
-            if (d) {
+            if (r[d]) {
               this.device = d as DeviceType;
               this.snapshot = r[d];
               break;
@@ -199,15 +199,25 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  getList() {
+  getList(timestamp?: Date, sequence?: number) {
     if (this._activeListRequest)
       this._activeListRequest.unsubscribe();
 
-    this._activeListRequest = this.apiService.getList(this.device, new Date(this.timestamp), this.listWindow)
+    this._activeListRequest = this.apiService.getList(this.device, timestamp ?? new Date(this.timestamp), this.listWindow, sequence)
       .subscribe(r => {
-        this.list$.next(r ?? []);
+        this.processList(r ?? []);
+        this.list$.next(r);
         this._lastListTimestamp = this.timestamp;
       });
+  }
+
+  processList(list: ListItem[]) {
+    for (let item of list) {
+      let meta = this.getMeta(item);
+      item.category = (meta.category ?? "?");
+      item.unit = meta.unit;
+      item.name = meta.nice_name ?? meta.name ?? meta.data_id;
+    }
   }
 
   getMetaList(): Observable<Meta[]> {
@@ -267,27 +277,26 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  getListItemInfo(item: ListItem, meta: Meta): string {
-    if (!meta)
+  getListItemInfo(item: ListItem): string {
+    if (!item)
       return "";
 
-    meta.category = (meta.category ?? "").toUpperCase() as Category;
-    let category = this.getListItemCategory(item, meta);
-    let unit = (meta.unit ?? "").toLowerCase().replace("/", "-");
+    let category = this.getListItemCategory(item);
+    let unit = (item.unit ?? "").toLowerCase().replace("/", "-");
     return category + " " + unit;
   }
 
-  getListItemCategory(item: ListItem, meta: Meta): string {
-    if (!meta || !item)
+  getListItemCategory(item: ListItem): string {
+    if (!item)
       return "";
 
-    if (meta.category === Category.Event)
+    if (item.category === Category.Event)
       return "event";
 
-    if (meta.category === Category.Sample)
+    if (item.category === Category.Sample)
       return "sample";
 
-    if (meta.category === Category.Condition) {
+    if (item.category === Category.Condition) {
       if ((item.value ?? "").toLowerCase().indexOf("normal") > -1)
         return "c-normal";
       if ((item.value ?? "").toLowerCase().indexOf("warning") > -1)
@@ -420,8 +429,8 @@ export class DashboardComponent implements OnInit {
 
     let req: FindRequest = {
       device: this.device,
-      after: this.searchModel.direction === "1" ? new Date(this.timestamp) : undefined,
-      before: this.searchModel.direction === "-1" ? new Date(this.timestamp) : undefined,
+      afterCount: this.searchModel.direction === "1" ? 1 : undefined,
+      beforeCount: this.searchModel.direction === "-1" ? 1 : undefined,
       category: this.searchModel.metricType,
       relation: this.searchModel.relation,
       value: (this.searchModel.value ?? "").toString().split('|'),
@@ -429,13 +438,16 @@ export class DashboardComponent implements OnInit {
       extra: this.searchModel.extra
     };
 
-    if (!req.after && !req.before) {
-      req.before = new Date(this.timestamp);
+    if (!req.afterCount && !req.beforeCount) {
+      req.beforeCount = 1;
     }
 
     this.apiService.find(req).subscribe(r => {
       console.log(r);
-      this.setTimestamp(new Date(r.timestamp).getTime());
+      let t = this.timestamp;
+      if ((r ?? []).length > 0)
+        t = new Date(r[0].timestamp).getTime();
+      this.setTimestamp(t);
       modal.close();
     }, (err: HttpErrorResponse) => {
       this.searchError.show = true;
@@ -492,6 +504,10 @@ export class DashboardComponent implements OnInit {
       map(term => (term === '' ? this.selectedEventValues
         : this.selectedEventValues.filter(v => v.toLowerCase().indexOf(term.toLowerCase()) > -1)).slice(0, 10))
     );
+  }
+
+  stepList(item: ListItem, direction: number) {
+    this.getList(new Date(item.timestamp), item.sequnce);
   }
 
   ngOnDestroy() {

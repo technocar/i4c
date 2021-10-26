@@ -1,6 +1,28 @@
 <div class="container">
   <div class="row mt-4">
-    <div class="col" (click)="load('lathe')">Lathe</div>
-    <div class="col" (click)="load('mill')">Mill</div>
+    <div class="card col bg-light mr-3 dashboard">
+      <a class="card-body" href="#" [routerLink]="'/dashboard'">
+        <h5 class="card-title">
+          <i class="bi bi-speedometer"></i>
+          Monitor
+        </h5>
+      </a>
+    </div>
+    <div class="card col bg-light mr-3 install">
+      <a class="card-body" href="#" [routerLink]="'/install'">
+        <h5 class="card-title">
+          <i class="bi bi-cpu-fill"></i>
+          Telepítés
+        </h5>
+      </a>
+    </div>
+    <div class="card col bg-light mr-3 analyses">
+      <a class="card-body" href="#" [routerLink]="'/analyses'">
+        <h5 class="card-title">
+          <i class="bi bi-graph-up"></i>
+          Elemzés
+        </h5>
+      </a>
+    </div>
   </div>
 </div>

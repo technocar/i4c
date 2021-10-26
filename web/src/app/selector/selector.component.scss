@@ -1,10 +1,34 @@
-.col {
-  font-size: 6rem;
+@import '../../styles.sass';
+
+a:hover {
+  text-decoration: none;
+}
+
+h5 {
+  font-size: 4.5rem;
   text-align: center;
   cursor: pointer;
 }
 
-.col:hover {
+.card:hover {
   color: rgb(105, 105, 245);
-  border: 2px solid rgb(105, 105, 245);
+  border: 1px solid rgb(105, 105, 245);
+}
+
+.card.dashboard {
+  h5 {
+    color: $color-event;
+  }
+}
+
+.card.analyses {
+  h5 {
+    color: $color-c_normal;
+  }
+}
+
+.card.install {
+  h5 {
+    color: $color-c_warning;
+  }
 }

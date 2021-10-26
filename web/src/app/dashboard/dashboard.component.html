@@ -11,8 +11,8 @@
   <div id="header" class="row align-items-center">
     <div id="navs" class="col">
       <div class="row">
-        <a id="nav_snapshot" class="col" href="#" [routerLink]="" title="Pillanatkép" (click)="isListMode = false" *ngIf="isListMode">
-          <i class="bi bi-arrow-left-circle"></i>
+        <a id="nav_exit" class="col" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
+          <i class="bi bi-box-arrow-left"></i>
         </a>
         <span id="nav_search" class="col" (click)="openSearch(searchModal)">
           <i class="bi bi-funnel"></i>
@@ -46,6 +46,9 @@
     </div>
     <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="isListMode = true" *ngIf="!isListMode">
       <i class="bi bi-arrow-right-circle"></i>
+    </a>
+    <a id="nav_snapshot" class="col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="isListMode = false" *ngIf="isListMode">
+      <i class="bi bi-arrow-left-circle"></i>
     </a>
   </div>
   <div class="row mb-2 devices">
@@ -92,9 +95,12 @@
   </div>
   <div id="list" class="row" *ngIf="isListMode">
     <div class="col">
-      <div [class]="'listitem row ' + (i == listWindow ? 'median' : '') + ' ' + getListItemInfo(item, getMeta(item))" *ngFor="let item of list$ | async; index as i;">
+      <div [class]="'listitem row ' + (i == listWindow ? 'median' : '') + ' ' + getListItemInfo(item)" *ngFor="let item of list$ | async; index as i; count as c;">
+        <i class="step before bi bi-caret-up-fill" *ngIf="i === 0" (click)="stepList(item, -1)"></i>
+        <i class="step after bi bi-caret-down-fill" *ngIf="i === c - 1" (click)="stepList(item, 1)"></i>
         <div class="col-auto">{{item.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
         <div class="col-auto type"></div>
+        <div class="col">{{item.category[0]}}</div>
         <div class="col">{{item.data_id}}</div>
         <div class="col">{{item.name}}</div>
         <div class="col value">{{item.value}}</div>

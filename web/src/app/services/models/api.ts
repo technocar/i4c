@@ -71,24 +71,30 @@ export interface Condition {
 }
 
 export interface ListItem {
-  timestamp: number,
+  device: string,
+  timestamp: string,
+  sequnce: number,
+  instance: string,
   data_id: string,
   name: string,
   value: string,
-  unit: string
+  unit: string,
+  category: string
 }
 
 export enum Category { Condition = "CONDITION", Event = "EVENT", Sample = "SAMPLE" }
 
 export interface FindRequest {
   device: DeviceType,
-  before?: Date,
-  after?: Date,
+  beforeCount?: number,
+  afterCount?: number,
   category?: string,
   name?: string,
   value?: string | string[],
   extra?: string,
-  relation?: string
+  relation?: string,
+  sequence?: number,
+  timestamp?: Date
 }
 
 export interface Meta {
@@ -111,4 +117,14 @@ export interface FindResponse {
 export interface EventValues {
   data_id: string,
   values: string[]
+}
+
+export interface User {
+  id: string,
+  name: string,
+  login_name: string,
+  pub_key: string,
+  roles: string[],
+  status: string,
+  roles_eff: string[]
 }
