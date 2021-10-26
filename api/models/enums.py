@@ -20,3 +20,15 @@ class UserStatusEnum(str, Enum):
     active = "active"
     inactive = "inactive"
     archive = "archive"
+
+
+class ProjectStatusEnum(str, Enum):
+    active = "active"
+    archive = "archive"
+
+
+class ProjectVersionStatusEnum(str, Enum):
+    edit = "edit"
+    final = "final"
+    deleted = "deleted"
+    archive = "archive"
