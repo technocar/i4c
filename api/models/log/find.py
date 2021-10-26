@@ -58,7 +58,7 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
                 params.append(timestamp)
                 params.append(sequence)
                 wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                              f'           and (l.sequence <{"=" if allow_exact_ts_match else ""} ${len(params)}::timestamp)))')
+                              f'           and (l.sequence <{"=" if allow_exact_ts_match else ""} ${len(params)}::integer)))')
     if after_count is not None:
         rank_direction = 'asc'
         count = after_count
@@ -71,7 +71,7 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
                 params.append(timestamp)
                 params.append(sequence)
                 wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                              f'           and (l.sequence >{"=" if allow_exact_ts_match else ""} ${len(params)}::timestamp)))')
+                              f'           and (l.sequence >{"=" if allow_exact_ts_match else ""} ${len(params)}::integer)))')
     if categ is not None:
         params.append(categ)
         wheres.append(f'and (m.category = ${len(params)})')
