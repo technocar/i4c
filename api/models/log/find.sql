@@ -4,6 +4,7 @@ select
   m.device,
   l.instance,
   m.data_id,
+  case when m.category='SAMPLE' THEN l.value_num::character varying(200) else l.value_text end as "value",
   l.value_num,
   l.value_text,
   l.value_extra,

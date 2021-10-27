@@ -12,6 +12,7 @@ class DataPoint(MyBaseModel):
     device: str
     instance: Optional[str]
     data_id: str
+    value: Optional[str]
     value_num: Optional[float]
     value_text: Optional[str]
     value_extra: Optional[str]
