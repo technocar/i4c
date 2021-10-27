@@ -1,28 +1,48 @@
 <div class="container">
-  <div class="row mt-4">
-    <div class="card col bg-light mr-3 dashboard">
-      <a class="card-body" href="#" [routerLink]="'/dashboard'">
-        <h5 class="card-title">
-          <i class="bi bi-speedometer"></i>
-          Monitor
-        </h5>
-      </a>
+  <div class="row row-cols-2 mt-4">
+    <div class="col p-2">
+      <div class="card bg-light dashboard">
+        <a class="card-body" href="#" [routerLink]="'/dashboard'">
+          <h5 class="card-title">
+            <i class="bi bi-speedometer"></i>
+            <br />
+            Monitor
+          </h5>
+        </a>
+      </div>
     </div>
-    <div class="card col bg-light mr-3 install">
-      <a class="card-body" href="#" [routerLink]="'/install'">
-        <h5 class="card-title">
-          <i class="bi bi-cpu-fill"></i>
-          Telepítés
-        </h5>
-      </a>
+    <div class="col p-2">
+      <div class="card bg-light batch">
+        <a class="card-body" href="#" [routerLink]="'/batch'">
+          <h5 class="card-title">
+            <i class="bi bi-list-ol"></i>
+            <br />
+            Munkaszámok
+          </h5>
+        </a>
+      </div>
     </div>
-    <div class="card col bg-light mr-3 analyses">
-      <a class="card-body" href="#" [routerLink]="'/analyses'">
-        <h5 class="card-title">
-          <i class="bi bi-graph-up"></i>
-          Elemzés
-        </h5>
-      </a>
+    <div class="col p-2">
+      <div class="card bg-light install">
+        <a class="card-body" href="#" [routerLink]="'/install'">
+          <h5 class="card-title">
+            <i class="bi bi-cpu-fill"></i>
+            <br />
+            Telepítés
+          </h5>
+        </a>
+      </div>
+    </div>
+    <div class="col p-2">
+      <div class="card bg-light analyses">
+        <a class="card-body" href="#" [routerLink]="'/analyses'">
+          <h5 class="card-title">
+            <i class="bi bi-graph-up"></i>
+            <br />
+            Elemzés
+          </h5>
+        </a>
+      </div>
     </div>
   </div>
 </div>
