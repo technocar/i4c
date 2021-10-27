@@ -32,3 +32,10 @@ class ProjectVersionStatusEnum(str, Enum):
     final = "final"
     deleted = "deleted"
     archive = "archive"
+
+
+class InstallationStatusEnum(str, Enum):
+    todo = "todo"
+    working = "working"
+    done = "done"
+    fail = "fail"

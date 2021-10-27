@@ -15,7 +15,7 @@ def set_debug_mode(value=True):
     debug_mode = value
 
 
-def write_debug_sql(file_name, sql, params):
+def write_debug_sql(file_name, sql, *params):
     def p(match):
         idx = int(match.group("num")) - 1
         p = params[idx]

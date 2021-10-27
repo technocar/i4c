@@ -321,6 +321,73 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "projects",
+			"item": [
+				{
+					"name": "project get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/projects/hello",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"hello"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "installations",
+			"item": [
+				{
+					"name": "installations - new",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/installations/proj1/label1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"installations",
+								"proj1",
+								"label1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "login",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/login",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"auth": {
