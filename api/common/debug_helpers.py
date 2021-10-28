@@ -42,9 +42,6 @@ def debug_sql_replace(sql, *params):
         p = params[idx]
         return param2sql_str(p) + match.group("rem")
 
-    if not debug_mode:
-        return
-
     regex = r"([$](?P<num>\d+))(?P<rem>\D|$)"
     return re.sub(regex, p, sql, 0, re.MULTILINE)
 
@@ -58,6 +55,9 @@ def debug_sql_prepared(sql, *params):
 
 
 def write_debug_sql(file_name, sql, *params):
+    if not debug_mode:
+        return
+
     file_name = debug_dir + '\\' + file_name
     with open(file_name, "w") as f:
         f.write(
