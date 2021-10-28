@@ -2,3 +2,4 @@
 __pycache__
 /api/log
 /api/debug
+/api/*.yaml
