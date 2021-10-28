@@ -1,5 +1,11 @@
 import { DeviceType } from "./constants";
 
+export interface ErrorDetail {
+  loc: string[],
+  msg: string,
+  type: string
+}
+
 export interface SnapshotResponse {
   mill: Snapshot,
   lathe: Snapshot,
@@ -127,4 +133,29 @@ export interface User {
   roles: string[],
   status: string,
   roles_eff: string[]
+}
+
+export interface Extra {
+  key: string,
+  value: string
+}
+
+export enum ProjectStatus { Edit = "edit", Final = "final", Deleted = "deleted", Archive = "archive" }
+export interface Project {
+  name: string,
+  status: string,
+  versions: string[],
+  extra: Extra[],
+  created_at: string
+}
+
+export interface ProjectInstallResponse {
+  id: number,
+  ts: string,
+  project: string,
+  invoked_version: string,
+  real_version: number,
+  status: string,
+  status_msg: string,
+  files: string[]
 }

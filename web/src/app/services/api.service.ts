@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { EventValues, FindRequest, FindResponse, ListItem, Meta, SnapshotResponse, User } from './models/api';
+import { ErrorDetail, EventValues, FindRequest, FindResponse, ListItem, Meta, Project, ProjectInstallResponse, ProjectStatus, SnapshotResponse, User } from './models/api';
 import { DeviceType } from './models/constants';
 
 @Injectable({
@@ -17,6 +17,21 @@ export class ApiService {
   ) {
     this._apiUrl = environment.apiPath;
   }
+
+  getErrorMsg(error: any): string | string[] {
+    if (!error || !error.detail)
+      return "Ismeretlen hiba!";
+
+    if (Array.isArray(error.detail)) {
+      let details: ErrorDetail[] = error.detail;
+      if (details.length === 0)
+        return "Ismeretlen hiba!";
+
+      return details.map((d) => d.msg);
+    }
+
+    return (error.detail as ErrorDetail).msg;
+  };
 
   login(): Observable<User> {
     return this.http.get<User>(`${this._apiUrl}/login`);
@@ -70,5 +85,25 @@ export class ApiService {
 
   getEventValues(device: DeviceType): Observable<EventValues[]> {
     return this.http.get<EventValues[]>(`${this._apiUrl}/${device}/event_values`);
+  }
+
+  getProjects(name?: string, status?: string, file?: string): Observable<Project[]> {
+    var params = new HttpParams()
+      .append("name", name)
+      .append("status", status)
+      .append("file", file);
+
+    params.keys().forEach((p) => {
+      if (params.get(p) === undefined)
+        params = params.delete(p);
+    });
+
+    return this.http.get<Project[]>(`${this._apiUrl}/projects`, { params });
+  }
+
+  installProject(name: string, version: string, statuses?: ProjectStatus[]): Observable<ProjectInstallResponse> {
+    var params = new HttpParams()
+      .append("statuses", JSON.stringify(statuses));
+    return this.http.post<ProjectInstallResponse>(`${this._apiUrl}/installations/${name}/${version}`, undefined, { params });
   }
 }
