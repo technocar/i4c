@@ -99,7 +99,7 @@ async def new_installation(credentials, project, version,
                 i["files"] = []
                 for db_project_file in db_project_files:
                     i["files"].append(db_project_file[0])
-                    write_debug_sql('sql_insert_installation_file.sql', sql_insert_installation_file, i["id"], db_project_file[0])
+                    write_debug_sql('insert_installation_file.sql', sql_insert_installation_file, i["id"], db_project_file[0])
                     await conn.execute(sql_insert_installation_file, i["id"], db_project_file[0])
 
                 return i
