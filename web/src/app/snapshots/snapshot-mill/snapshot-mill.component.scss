@@ -1,1 +1,72 @@
-@import '../snapshot-base/snapshot-base.component.scss';
+@import '/src/styles.sass';
+
+.since {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  font-size: 0.65rem;
+  color: $color-since;
+}
+.since::after {
+  content: "s";
+}
+
+#snapshot {
+  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+  margin-bottom: 0.5rem;
+  .form-group {
+    > label {
+      position: relative;
+      height: 24px;
+    }
+    > label:nth-child(1) {
+      margin-right: 0.5rem;
+    }
+
+    > label:nth-child(2) {
+      font-weight: bold;
+    }
+  }
+}
+
+#snapshot_axes {
+  box-shadow: rgba(17, 17, 26, 0.1) 0px -1px 0px;
+  padding-top: 0.5rem;
+}
+
+#conditions {
+  .condition {
+    .icon {
+      font-size: 2rem;
+    }
+    .name {
+      position: relative;
+    }
+  }
+
+  .condition.unavailable {
+    .icon {
+      color: $color-c_unavailable;
+    }
+  }
+  .condition.warning {
+    .icon {
+      color: $color-c_warning
+    }
+  }
+  .condition.fault {
+    .icon {
+      color: $color-c_fault;
+    }
+  }
+}
+
+.axes {
+  label {
+    margin-right: 0.5rem;
+  }
+
+  .warning {
+    color:$color-c_fault;
+  }
+}

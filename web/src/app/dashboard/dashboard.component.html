@@ -8,71 +8,75 @@
   </div>
 </div>
 <div *ngIf="isDataLoaded" class="container">
-  <div id="header" class="row align-items-center">
-    <div id="navs" class="col">
-      <div class="row">
-        <a id="nav_exit" class="col" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
-          <i class="bi bi-box-arrow-left"></i>
-        </a>
-        <span id="nav_search" class="col" (click)="openSearch(searchModal)" title="Keresés">
-          <i class="bi bi-funnel"></i>
-        </span>
-        <span id="nav_back" class="col" (click)="back()" title="Vissza {{backwardTime}} másodpercet">
-          <i class="bi bi-chevron-left"></i>
-        </span>
-        <span id="nav_pause" class="col" (click)="pause($event)" title="Megállít">
-          <i class="bi bi-pause"></i>
-        </span>
-        <span id="nav_play" class="col selected" (click)="play($event)" title="Indít">
-          <i class="bi bi-play"></i>
-        </span>
-        <span id="nav_fast_forward" class="col" (click)="fastForward($event)" title="2x sebesség">
-          <i class="bi bi-chevron-double-right"></i>
-        </span>
-        <span id="nav_forward" class="col" (click)="forward()" title="Előre {{forwardTime}} másodpercet">
-          <i class="bi bi-chevron-right"></i>
-        </span>
-        <span id="nav_now" class="col" (click)="now()" title="Ugrás az aktuális állapotra">
-          <i class="bi bi-chevron-bar-right"></i>
-        </span>
-      </div>
-    </div>
-    <div id="timestamp" class="col-auto" #datetime="ngbPopover" [ngbPopover]="datetimeSettings" [autoClose]="'outside'" [popoverTitle]="" (shown)="dateTimeSettingsShown()">
-      <span >{{timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</span>
-      <ng-template #datetimeSettings>
-        <ngb-datepicker #dp="ngbDatepicker" [(ngModel)]="currentDate" [startDate]="currentDate"></ngb-datepicker>
-        <ngb-timepicker #tp [seconds]="true" [(ngModel)]="currentTime"></ngb-timepicker>
-      </ng-template>
-    </div>
-    <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="changeLayout('list')" *ngIf="!isListMode">
-      <i class="bi bi-arrow-right-circle"></i>
-    </a>
-    <a id="nav_snapshot" class="col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="changeLayout('snapshot')" *ngIf="isListMode">
-      <i class="bi bi-arrow-left-circle"></i>
-    </a>
-  </div>
-  <div class="row mb-2 devices">
-    <div class="col-2">
-      <div class="custom-control custom-switch">
-        <input type="checkbox" class="custom-control-input" id="device_auto_mode" (checked)="isAutoMode" (change)="isAutoMode = !isAutoMode">
-        <label class="custom-control-label" for="device_auto_mode">Automatikus követés</label>
-      </div>
-    </div>
+  <div id="header" class="row sticky-top">
     <div class="col">
-      <ul ngbNav #devices="ngbNav" [(activeId)]="device" class="nav nav-pills nav-fill">
-        <li ngbNavItem="mill">
-          <a ngbNavLink>Maró</a>
-        </li>
-        <li ngbNavItem="lathe">
-          <a ngbNavLink>Eszterga</a>
-        </li>
-        <li ngbNavItem="robot">
-          <a ngbNavLink>Robot</a>
-        </li>
-        <li ngbNavItem="gom">
-          <a ngbNavLink>GOM</a>
-        </li>
-      </ul>
+      <div class="row align-items-center toolbar">
+        <div id="navs" class="col">
+          <div class="row">
+            <a id="nav_exit" class="col" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
+              <i class="bi bi-box-arrow-left"></i>
+            </a>
+            <span id="nav_search" class="col" (click)="openSearch(searchModal)" title="Keresés">
+              <i class="bi bi-funnel"></i>
+            </span>
+            <span id="nav_back" class="col" (click)="back()" title="Vissza {{backwardTime}} másodpercet">
+              <i class="bi bi-chevron-left"></i>
+            </span>
+            <span id="nav_pause" class="col" (click)="pause($event)" title="Megállít">
+              <i class="bi bi-pause"></i>
+            </span>
+            <span id="nav_play" class="col selected" (click)="play($event)" title="Indít">
+              <i class="bi bi-play"></i>
+            </span>
+            <span id="nav_fast_forward" class="col" (click)="fastForward($event)" title="2x sebesség">
+              <i class="bi bi-chevron-double-right"></i>
+            </span>
+            <span id="nav_forward" class="col" (click)="forward()" title="Előre {{forwardTime}} másodpercet">
+              <i class="bi bi-chevron-right"></i>
+            </span>
+            <span id="nav_now" class="col" (click)="now()" title="Ugrás az aktuális állapotra">
+              <i class="bi bi-chevron-bar-right"></i>
+            </span>
+          </div>
+        </div>
+        <div id="timestamp" class="col-auto" #datetime="ngbPopover" [ngbPopover]="datetimeSettings" [autoClose]="'outside'" [popoverTitle]="" (shown)="dateTimeSettingsShown()">
+          <span >{{timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</span>
+          <ng-template #datetimeSettings>
+            <ngb-datepicker #dp="ngbDatepicker" [(ngModel)]="currentDate" [startDate]="currentDate"></ngb-datepicker>
+            <ngb-timepicker #tp [seconds]="true" [(ngModel)]="currentTime"></ngb-timepicker>
+          </ng-template>
+        </div>
+        <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="changeLayout('list')" *ngIf="!isListMode">
+          <i class="bi bi-arrow-right-circle"></i>
+        </a>
+        <a id="nav_snapshot" class="col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="changeLayout('snapshot')" *ngIf="isListMode">
+          <i class="bi bi-arrow-left-circle"></i>
+        </a>
+      </div>
+      <div class="row mb-2 devices">
+        <div class="col-2">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="device_auto_mode" (checked)="isAutoMode" (change)="isAutoMode = !isAutoMode">
+            <label class="custom-control-label" for="device_auto_mode">Automatikus követés</label>
+          </div>
+        </div>
+        <div class="col">
+          <ul ngbNav #devices="ngbNav" [(activeId)]="device" class="nav nav-pills nav-fill">
+            <li ngbNavItem="mill">
+              <a ngbNavLink>Maró</a>
+            </li>
+            <li ngbNavItem="lathe">
+              <a ngbNavLink>Eszterga</a>
+            </li>
+            <li ngbNavItem="robot">
+              <a ngbNavLink>Robot</a>
+            </li>
+            <li ngbNavItem="gom">
+              <a ngbNavLink>GOM</a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
   <div class="row" *ngIf="!isListMode">
@@ -83,10 +87,10 @@
       <app-snapshot-gom *ngIf="device === 'gom'" [snapshot]="snapshot"></app-snapshot-gom>
     </div>
   </div>
-  <div id="events" class="row" *ngIf="!isListMode">
+  <div id="events" class="row text-monospace small" *ngIf="!isListMode">
     <div class="col">
       <div class="event row" *ngFor="let event of events$ | async">
-        <div class="col">{{event.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
+        <div class="col-auto text-monospace">{{event.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
         <div class="col">{{event.data_id}}</div>
         <div class="col">{{event.name}}</div>
         <div class="col">{{event.value}}</div>
@@ -94,13 +98,12 @@
     </div>
   </div>
   <div id="list" class="row" *ngIf="isListMode">
-    <div class="col">
+    <div class="col text-monospace small">
       <div [class]="'listitem row mr-2 ' + (i == listWindow ? 'median' : '') + ' ' + getListItemInfo(item)" *ngFor="let item of list$ | async; index as i; count as c;">
-        <i class="step before bi bi-arrow-up" *ngIf="i === 0" (click)="stepList(item, -1)" title="Időben előre"></i>
-        <i class="step after bi bi-arrow-down" *ngIf="i === c - 1" (click)="stepList(item, 1)" title="Időben vissza"></i>
+        <i class="step before bi bi-arrow-up-square-fill" *ngIf="i === 0" (click)="stepList(item, -1)" title="Időben előre"></i>
+        <i class="step after bi bi-arrow-down-square-fill" *ngIf="i === c - 1" (click)="stepList(item, 1)" title="Időben vissza"></i>
         <div class="col-auto">{{item.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
-        <div class="col-auto type"></div>
-        <div class="col">{{item.category[0]}}</div>
+        <div class="col-auto">{{item.category[0]}}</div>
         <div class="col">{{item.data_id}}</div>
         <div class="col">{{item.name}}</div>
         <div class="col value">{{item.value}}</div>

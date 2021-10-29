@@ -1,13 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { stringify } from '@angular/compiler/src/util';
-import { Component, ContentChild, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { NgbActiveModal, NgbDatepicker, NgbDateStruct, NgbDropdown, NgbModal, NgbNavChangeEvent, NgbTimepicker, NgbTimeStruct, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
+import { NgbActiveModal, NgbDateStruct, NgbModal, NgbTimeStruct, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, forkJoin, merge, Observable, OperatorFunction, Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, map, tap, timestamp } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
-import { Axis, Category, Condition, EventLog, EventValues, FindRequest, ListItem, Meta, DeviceStatus, SnapshotResponse, Snapshot } from '../services/models/api';
+import { Category, EventLog, EventValues, FindRequest, ListItem, Meta, Snapshot } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
 
 interface Metric {
@@ -511,6 +510,7 @@ export class DashboardComponent implements OnInit {
   }
 
   stepList(item: ListItem, direction: number) {
+    this.timestamp =  new Date(item.timestamp).getTime();
     this.getList(new Date(item.timestamp), item.sequence);
   }
 
