@@ -82,6 +82,47 @@
 					"response": []
 				},
 				{
+					"name": "log find - debug",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/log/find?device=lathe&before_count=20&after_count=20&sequence=618902&timestamp=2021-10-21T10:18:28.980Z",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"find"
+							],
+							"query": [
+								{
+									"key": "device",
+									"value": "lathe"
+								},
+								{
+									"key": "before_count",
+									"value": "20"
+								},
+								{
+									"key": "after_count",
+									"value": "20"
+								},
+								{
+									"key": "sequence",
+									"value": "618902"
+								},
+								{
+									"key": "timestamp",
+									"value": "2021-10-21T10:18:28.980Z"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "log find - last instance",
 					"request": {
 						"method": "GET",
@@ -331,6 +372,25 @@
 						"method": "GET",
 						"header": [],
 						"url": {
+							"raw": "localhost:5000/projects/proj1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "project list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
 							"raw": "localhost:5000/projects/hello",
 							"host": [
 								"localhost"
@@ -339,6 +399,61 @@
 							"path": [
 								"projects",
 								"hello"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "project patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"active\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"archive\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/projects/proj1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "project new",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"proj1\",\r\n    \"status\": \"active\",\r\n    \"versions\": [\r\n        \"1\",\r\n        \"label1\"\r\n    ],\r\n    \"extra\": \"[{\\\"key\\\": \\\"k1\\\", \\\"value\\\":\\\"v1\\\"}, {\\\"key\\\":\\\"k2\\\", \\\"value\\\":\\\"v2\\\"}]\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/projects",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects"
 							]
 						}
 					},

@@ -1,23 +1,7 @@
 @import '../../styles.sass';
 
 #loading {
-  top: 0;
-  left: 0;
-  position: fixed;
-  z-index: 1000;
-  height: 100%;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2rem;
-
   .loading-container {
-    width: 100%;
-    .loading-icon {
-      height: 2rem;
-      width: 2rem;
-    }
-
     .loading-message {
       line-height: 1;
       font-size: 2rem;
@@ -71,7 +55,7 @@
 }
 
 .devices {
-  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 1px;
 }
 
 #list {
@@ -83,15 +67,6 @@
     position: relative;
     border-top: 1px solid;
   }
-
-  /*.median::after {
-    content: "◂";
-    color: black;
-    font-size: 2.6rem;
-    position: absolute;
-    right: -16px;
-    top: -34px;
-  }*/
 
   .event {
     color: $color-event;
@@ -121,83 +96,65 @@
     color: $color-hover;
   }
 
-  .c-normal {
-    color: $color-c_normal;
+  @mixin type($color, $type) {
+    color: $color;
     .type::after {
-      content: "C";
+      content: $type;
     }
+  }
+
+  .c-normal {
+    @include type($color-c_normal, "C");
   }
 
   .c-warning {
-    color: $color-c_warning;
-    .type::after {
-      content: "C";
-    }
+    @include type($color-c_warning, "C");
   }
 
   .c-fault {
-    color: $color-c_fault;
-    .type::after {
-      content: "C";
-    }
+    @include type($color-c_fault, "C");
   }
 
   .c-unavailable {
-    color: $color-c_unavailable;
-    .type::after {
-      content: "C";
-    }
+    @include type($color-c_unavailable, "C");
   }
 
   .sample {
-    color: $color-sample;
-    .type::after {
-      content: "S";
-    }
+    @include type($color-sample, "S");
     .value {
       text-align: right;
     }
   }
 
-  .degree {
+  @mixin value($value) {
     .value::after {
-      content: "°";
+      content: $value;
     }
+  }
+
+  .degree {
+    @include value("°");
   }
   .second {
-    .value::after {
-      content: "s";
-    }
+    @include value("s");
   }
   .degree-second {
-    .value::after {
-      content: "°/s";
-    }
+    @include value("°/s");
   }
   .precent {
-    .value::after {
-      content: "%";
-    }
+    @include value("%");
   }
   .celsius {
-    .value::after {
-      content: "℃";
-    }
+    @include value("℃");
   }
   .revolution-minute {
-    .value::after {
-      content: "rpm";
-    }
+    @include value("rpm");
   }
   .millimeter-second {
-    .value::after {
-      content: "mm/s";
-    }
+    @include value("mm/s");
   }
   .millimeter {
-    .value::after {
-      content: "mm";
-    }
+    @include value("mm");
   }
 }
 
@@ -260,10 +217,7 @@
 
   .leaf {
     padding: 0.25rem;
-    > .bi-plus-square {
-      display: none;
-    }
-
+    > .bi-plus-square,
     > .bi-dash-square {
       display: none;
     }

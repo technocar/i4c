@@ -1,8 +1,8 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindRequest, FindResponse, ListItem, Meta, Project, ProjectInstallResponse, ProjectStatus, SnapshotResponse, User } from './models/api';
+import { ErrorDetail, EventValues, FindRequest, ListItem, Meta, Project, ProjectInstallResponse, ProjectStatus, SnapshotResponse, User } from './models/api';
 import { DeviceType } from './models/constants';
 
 @Injectable({

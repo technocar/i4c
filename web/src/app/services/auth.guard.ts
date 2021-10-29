@@ -28,7 +28,7 @@ export class AuthGuard implements CanActivate, HttpInterceptor  {
       if (err.status === 401) {
         // auto logout if 401 response returned from api
         this.authenticationService.logout();
-        location.reload(true);
+        location.reload();
       }
 
       const error = err.error.message || err.statusText;

@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Query, Path, HTTPException
+from fastapi import Depends, Query, Path, HTTPException, Body
 from fastapi.security import HTTPBasicCredentials
 import models.projects
+import models.common
 import common
 from I4cAPI import I4cApiRouter
 from models import ProjectStatusEnum
@@ -29,3 +30,20 @@ async def get_project(
     if len(res) > 0:
         return res[0]
     raise HTTPException(status_code=404, detail="No record found")
+
+
+@router.post("/", response_model=models.projects.Project, x_properties=dict(object="projects", action="post"))
+async def get_project(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects")),
+    project: models.projects.ProjectIn = Body(...),
+):
+    return await models.projects.new_project(credentials, project)
+
+
+@router.patch("/{name}", response_model=models.common.PatchResponse, x_properties=dict(object="projects", action="patch"))
+async def get_project(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}")),
+    name: str = Path(...),
+    patch: models.projects.ProjectPatchBody = Body(...),
+):
+    return await models.projects.patch_project(credentials, name, patch)
