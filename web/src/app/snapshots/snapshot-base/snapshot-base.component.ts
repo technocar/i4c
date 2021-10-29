@@ -1,5 +1,4 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { stringify } from '@angular/compiler/src/util';
 import { BehaviorSubject } from 'rxjs';
 import { Axis, Condition, Snapshot } from 'src/app/services/models/api';
 

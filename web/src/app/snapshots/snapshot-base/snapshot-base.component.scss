@@ -34,6 +34,12 @@
   padding-top: 0.5rem;
 }
 
+@media (max-width: 991.98px) {
+  .axes {
+    font-size: 0.75rem;
+  }
+}
+
 #conditions {
   .condition {
     .icon {
