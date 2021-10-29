@@ -3,7 +3,7 @@ formatters:
   brief:
     format: '%(message)s'
   long:
-    format: '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+    format: '%(asctime)s.%(msecs)03d %(levelname)-8s %(name)-15s %(message)s'
     datefmt: '%Y-%m-%d %H:%M:%S'
 handlers:
   console:
