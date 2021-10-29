@@ -70,20 +70,20 @@
     <div id="snapshot_axes_lin" class="axes row">
       <div class="col-4" *ngFor="let axis of axesLin$ | async">
         <div class="row">
-          <label class="col pr-0">{{axis.name}} {{getAxisMode(axis)}}</label>
-          <label class="col-3 p-0 text-right">{{axis.pos | number:'1.3-3'}}mm</label>
-          <label class="col-3 p-0 text-right">{{axis.rate | number:'1.3-3'}}mm/s</label>
-          <label class="col-3 p-0 text-right" [class]="axis.load > 100 ? 'warning' : ''">{{axis.load | number:'1.0-0'}}%</label>
+          <label class="col-auto pr-0">{{axis.name}} {{getAxisMode(axis)}}</label>
+          <label class="col p-0 text-right">{{axis.pos | number:'1.3-3'}}mm</label>
+          <label class="col p-0 text-right">{{axis.rate | number:'1.3-3'}}mm/s</label>
+          <label class="col p-0 text-right" [class]="axis.load > 100 ? 'warning' : ''">{{axis.load | number:'1.0-0'}}%</label>
         </div>
       </div>
     </div>
     <div id="snapshot_axes_rot" class="axes row">
       <div class="col-4" *ngFor="let axis of axesRot$ | async">
         <div class="row">
-          <label class="col pr-0">{{axis.name}} {{getAxisMode(axis)}}</label>
-          <label class="col-3 p-0 text-right">{{axis.pos | number:'1.3-3'}}º</label>
-          <label class="col-3 p-0 text-right">{{axis.rate | number:'1.3-3'}}rpm</label>
-          <label class="col-3 p-0 text-right" [class]="axis.load > 100 ? 'warning' : ''">{{axis.load | number:'1.0-0'}}%</label>
+          <label class="col-auto pr-0">{{axis.name}} {{getAxisMode(axis)}}</label>
+          <label class="col p-0 text-right">{{axis.pos | number:'1.3-3'}}º</label>
+          <label class="col p-0 text-right">{{axis.rate | number:'1.3-3'}}rpm</label>
+          <label class="col p-0 text-right" [class]="axis.load > 100 ? 'warning' : ''">{{axis.load | number:'1.0-0'}}%</label>
         </div>
       </div>
     </div>

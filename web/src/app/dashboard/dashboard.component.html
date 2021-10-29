@@ -1,13 +1,13 @@
 
 <div id="loading" *ngIf="!isDataLoaded">
-  <div class="loading-container d-flex justify-content-center">
+  <div class="loading-container d-flex justify-content-center mt-4">
     <div class="loading-icon spinner-border text-primary" role="status">
       <span class="sr-only">Loading...</span>
     </div>
     <span class="loading-message">Loading...</span>
   </div>
 </div>
-<div *ngIf="isDataLoaded" class="container">
+<div *ngIf="isDataLoaded" class="container-lg">
   <div id="header" class="row sticky-top">
     <div class="col">
       <div class="row align-items-center toolbar">
