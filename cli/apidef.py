@@ -2,11 +2,37 @@ import json
 import urllib.request
 import urllib.error
 import urllib.parse
+from typing import List, Dict
+
+
+class Param:
+    name: str
+    title: str
+    description: str
+    location: str # path | query
+    is_array: bool
+    required: bool
+
+
+class Action:
+    title: str
+    description: str
+    authentication: str  # none, basic, unknown
+    response_type: str
+    response_class: str
+    params: Dict[str, Param]
+    body_required: bool
+    body_class: str
+    raw: dict
+
+
+class Obj:
+    actions: Dict[str, Action]
 
 
 class I4CDef:
     content = None
-    command_mapping = {}
+    objects: Dict[str, Obj]
 
     def __init__(self, *, base_url=None, def_file=None):
         if def_file:
@@ -24,20 +50,38 @@ class I4CDef:
 
         for (path, methods) in self.content["paths"].items():
             for (method, info) in methods.items():
-                action = info.get("x-mincl-action", None) or info.get("x-action", None) or method
-                obj = info.get("x-mincl-object", None) or info.get("x-object", None) or \
+                action_name = info.get("x-mincl-action", None) or info.get("x-action", None) or method
+                obj_name = info.get("x-mincl-object", None) or info.get("x-object", None) or \
                     path[1:].replace("/", "_").replace("{", "by").replace("}", "")
-                self.command_mapping.setdefault(obj, {})[action] = (path, method, info)
+
+                if obj_name in self.objects:
+                    obj = self.objects[obj_name]
+                else:
+                    obj = Obj()
+                    obj.actions = {}
+                    self.objects[obj_name] = obj
+
+                action = Action()
+                action.path = path
+                action.method = method
+                action.raw = info
+                # TODO fill in params, body, response, etc
+                obj.actions[action_name] = action
+
+        # TODO collect schema objects
 
     def assemble_url(self, obj, action=None, **params):
-        obj = self.command_mapping[obj]
-        if action is None and len(obj) == 1:
-            url, method, ep = list(obj.values())[0]
-        else:
-            url, method, ep = obj[action]
-        method = method.upper()
+        obj = self.objects[obj]
 
-        for p in ep.get("parameters", []):
+        if action is None and len(obj) == 1:
+            action = list(obj.values())[0]
+        else:
+            action = obj.actions[action]
+
+        method = action.method.upper()
+        url = action.path
+
+        for p in action.params:
             if p["in"] == "path":
                 pn = p["name"]
                 if pn not in params:
