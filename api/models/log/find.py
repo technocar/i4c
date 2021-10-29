@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from fastapi import HTTPException
-from common import MyBaseModel, write_debug_sql, DatabaseConnection
+from common import MyBaseModel, write_debug_sql, DatabaseConnection, log
 
 view_find_sql = open("models\\log\\find.sql").read()
 
@@ -20,10 +20,11 @@ class DataPoint(MyBaseModel):
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,
-                 allow_exact_ts_match: bool = True):
+                 allow_exact_ts_match: bool = True, seq_part: Optional[str] = None):
     wheres = []
     rank_direction = 'desc'
     count = None
+    comp_rel = None
     if rel is None:
         rel = '='
     if rel not in ('=','<','>','<=','>=','!=','*=','*!='):
@@ -50,29 +51,35 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
     if before_count is not None:
         count = before_count
-        if timestamp is not None:
-            params.append(timestamp)
-            wheres.append(f'and {"( " if sequence is not None else ""}'
-                          f'(l.timestamp <{"=" if allow_exact_ts_match and sequence is None else ""} '
-                          f'${len(params)}::timestamp with time zone)')
-            if sequence is not None:
-                params.append(timestamp)
-                params.append(sequence)
-                wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                              f'           and (l.sequence <{"=" if allow_exact_ts_match else ""} ${len(params)}::integer)))')
+        comp_rel = '<'
+
     if after_count is not None:
         rank_direction = 'asc'
         count = after_count
-        if timestamp is not None:
+        comp_rel = '>'
+
+    if sequence is not None and seq_part is None:
+        sql_ts = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, allow_exact_ts_match=allow_exact_ts_match, seq_part="ts")
+        sql_seq = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, allow_exact_ts_match=False, seq_part="seq")
+        return f'with ts as ({sql_ts}), '\
+               f'seq as ({sql_seq}) ' \
+               f'select * from ts ' \
+               f'union all ' \
+               f'select * from seq ' \
+               f'order by timestamp {rank_direction}, "sequence" {rank_direction} ' \
+               f'limit {count}'
+
+    if comp_rel is not None:
+        if timestamp is not None and (seq_part is None or seq_part == 'ts'):
             params.append(timestamp)
-            wheres.append(f'and {"( " if sequence is not None else ""}'
-                          f'(l.timestamp >{"=" if allow_exact_ts_match and sequence is None else ""} '
+            wheres.append(f'and (l.timestamp {comp_rel}{"=" if allow_exact_ts_match and sequence is None else ""} '
                           f'${len(params)}::timestamp with time zone)')
-            if sequence is not None:
-                params.append(timestamp)
-                params.append(sequence)
-                wheres.append(f'      or ((l.timestamp = ${len(params)-1}::timestamp with time zone)'
-                              f'           and (l.sequence >{"=" if allow_exact_ts_match else ""} ${len(params)}::integer)))')
+        if sequence is not None and seq_part == 'seq':
+            params.append(timestamp)
+            params.append(sequence)
+            wheres.append(f'and (l.timestamp = ${len(params)-1}::timestamp with time zone)\n'
+                          f'and (l.sequence {comp_rel}{"=" if allow_exact_ts_match else ""} ${len(params)}::integer)')
+
     if categ is not None:
         params.append(categ)
         wheres.append(f'and (m.category = ${len(params)})')
@@ -107,17 +114,22 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
 
 async def get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *, pconn=None):
+    if sequence is not None and timestamp is None:
+        raise HTTPException(status_code=400, detail="sequence allowed only when timestamp is not empty")
+
     params = [device]
 
     sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
 
-    write_debug_sql('debug_get_find.sql', sql, *params)
+    write_debug_sql('get_find.sql', sql, *params)
 
     try:
         async with DatabaseConnection(pconn) as conn:
+            log.debug('before sql run')
             rs = await conn.fetch(sql,*params)
+            log.debug('after sql run')
     except Exception as e:
-        print(e)
+        log.error(f'error while sql run: {e}')
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")
 
     if rs is None:

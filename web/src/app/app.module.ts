@@ -19,6 +19,7 @@ import { SnapshotMillComponent } from './snapshots/snapshot-mill/snapshot-mill.c
 import { SnapshotLatheComponent } from './snapshots/snapshot-lathe/snapshot-lathe.component';
 import { SnapshotRobotComponent } from './snapshots/snapshot-robot/snapshot-robot.component';
 import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.component';
+import { ProjectComponent } from './project/project.component';
 
 @NgModule({
   declarations: [
@@ -30,7 +31,8 @@ import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.comp
     SnapshotGomComponent,
     DashboardComponent,
     SelectorComponent,
-    LoginComponent
+    LoginComponent,
+    ProjectComponent
   ],
   imports: [
     BrowserModule,
@@ -41,6 +43,7 @@ import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.comp
     FormsModule,
     NgbModule,
     RouterModule.forRoot([
+      { path: 'project', component: ProjectComponent, canActivate: [AuthGuard] },
       { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard] },
       { path: 'login', component: LoginComponent },

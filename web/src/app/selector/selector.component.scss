@@ -1,11 +1,11 @@
-@import '../../styles.sass';
+@import '/src/styles.sass';
 
 a:hover {
   text-decoration: none;
 }
 
 h5 {
-  font-size: 4.5rem;
+  font-size: 4rem;
   text-align: center;
   cursor: pointer;
 }

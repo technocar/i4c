@@ -1,0 +1,28 @@
+<div class="container">
+  <div id="header" class="row mb-4">
+    <div id="nav" class="col">
+      <div class="row">
+        <a id="nav_exit" class="col" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
+          <i class="bi bi-box-arrow-left"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div id="toolbar" class="row">
+    <select #selectableProjects id="selectable_projects" class="col-3 mr-2" (change)="getVersions(selectableProjects.value)">
+      <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
+    </select>
+    <select #selectableProjectVersions id="selectable_project_versions" class="col-3 mr-2">
+      <option *ngFor="let version of versions$ | async" [value]="version">{{version}}</option>
+    </select>
+    <button class="btn btn-primary col-auto ml-2"
+      (click)="install(selectableProjects.value, selectableProjectVersions.value)"
+      [disabled]="!selectableProjects.value || !selectableProjectVersions.value"
+    >
+      <i class="bi bi-play-fill"></i>
+    </button>
+  </div>
+  <div id="list" class="row">
+
+  </div>
+</div>

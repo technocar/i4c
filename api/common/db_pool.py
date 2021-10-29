@@ -20,7 +20,7 @@ class DatabaseConnection:
             self.conn_id = DatabaseConnection.conn_id_generator
             log.debug(f"acquiring db connection {self.conn_id}")
             self.conn = await DatabaseConnection.db_pool.acquire()
-            log.debug(f"acquired db connection {self.conn_id}")
+            log.debug(f"acquired db connection {self.conn_id} PID = {self.conn.get_server_pid()}")
         return self.conn
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

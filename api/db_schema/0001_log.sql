@@ -39,3 +39,13 @@ CREATE INDEX idx_dts
     ON public.log USING btree
     (device COLLATE pg_catalog."default" ASC NULLS LAST, data_id COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;
+
+CREATE UNIQUE INDEX idx_ts_wo_device
+    ON public.log USING btree
+    ("timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
+    TABLESPACE pg_default;
+    
+CREATE INDEX idx_dts_wo_device
+    ON public.log USING btree
+    (data_id COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
+    TABLESPACE pg_default;
