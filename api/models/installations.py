@@ -1,7 +1,9 @@
+import io
 from textwrap import dedent
 from typing import List, Optional
 
 from fastapi import HTTPException
+from starlette.responses import StreamingResponse, FileResponse
 
 from common import DatabaseConnection, write_debug_sql
 from pydantic import BaseModel, Field
@@ -212,3 +214,31 @@ async def patch_installation(credentials, id, patch: InstallationPatchBody):
 
             await conn.execute(sql, *params)
             return PatchResponse(changed=True)
+
+
+async def installation_get_file(credentials, id, savepath, *, pconn=None):
+    sql = dedent("""\
+            select pf.* 
+            from installation i
+            join installation_file f on f.installation = i.id
+            join project_version pv on pv.project = i.project and pv.ver = i.real_version
+            join project_file pf on pf.project_ver = pv.id and pf.savepath = f.savepath
+            where 
+              i.id = $1 -- */ 8
+              and f.savepath = $2 -- */ 'file1'
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        pf = await conn.fetch(sql, id, savepath)
+        if len(pf) == 0:
+            raise HTTPException(status_code=400, detail="Installation file not found")
+        pf = pf[0]
+
+        # todo: get real file data
+        #        FileResponse
+        #        StreamingResponse
+
+        x = 'sfjkgsdkf'
+        return StreamingResponse(io.BytesIO(str.encode(x)), media_type="application/octet-stream",
+                                 headers={"content-disposition": 'attachment; filename="aaa.txt"'})
+
+        # return FileResponse("api.py", media_type="application/octet-stream", filename='aaa.txt')

@@ -40,3 +40,12 @@ async def get_project(
     patch: models.installations.InstallationPatchBody = Body(...),
 ):
     return await models.installations.patch_installation(credentials, id, patch)
+
+
+@router.get("/{id}/{savepath}", x_properties=dict(object="installations", action="get_file"))
+async def get_project(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations/{id}/{savepath}")),
+    id: int = Path(...),
+    savepath: str = Path(...),
+):
+    return await models.installations.installation_get_file(credentials, id, savepath)
