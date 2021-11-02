@@ -32,9 +32,10 @@ class InstallationPatchCondition(BaseModel):
 
 class InstallationPatchChange(BaseModel):
     status: Optional[InstallationStatusEnum]
+    status_msg: Optional[str]
 
     def is_empty(self):
-        return self.status is None
+        return self.status is None and self.status_msg is None
 
 
 class InstallationPatchBody(BaseModel):
@@ -202,6 +203,10 @@ async def patch_installation(credentials, id, patch: InstallationPatchBody):
             if patch.change.status:
                 params.append(patch.change.status)
                 sql += f"{sep}\"status\"=${len(params)}"
+                sep = ",\n"
+            if patch.change.status_msg:
+                params.append(patch.change.status_msg)
+                sql += f"{sep}\"status_msg\"=${len(params)}"
                 sep = ",\n"
             sql += "\nwhere id = $1"
 
