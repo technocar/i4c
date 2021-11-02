@@ -63,7 +63,9 @@ class IntFile(BaseModel):
 
 class ProjFile(BaseModel):
     savepath: str
-    file: Union[GitFile, UncFile, IntFile]
+    file_git: Optional[GitFile]
+    file_unc: Optional[UncFile]
+    file_int: Optional[IntFile]
 
 
 class ProjectVersion(BaseModel):
@@ -168,3 +170,72 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
             return PatchResponse(changed=True)
 
 # todo 1: file search and intfiles api
+
+
+async def get_proj_file(project_ver, savepath, *, pconn=None):
+    sql = dedent("""\
+            select 
+              file_git.id as git_id,
+              file_git.repo as git_repo,
+              file_git.name as git_name,
+              file_git.commit as git_commit,
+              
+              file_unc.id as unc_id,
+              file_unc.name as unc_name,
+              
+              file_int.id as int_id,
+              file_int.name as int_name,
+              file_int.ver as int_ver
+            from project_file pf
+            left join file_git on file_git.id = pf.file_git
+            left join file_unc on file_git.id = pf.file_unc
+            left join file_int on file_git.id = pf.file_int
+            where pf.project_ver = $1 and pf.savepath = $2
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        res = await conn.fetchrow(sql, project_ver, savepath)
+        if res:
+            d = dict(savepath=savepath)
+            if res["git_id"]:
+                d["git_file"] = GitFile(repo=res["git_repo"], name=res["git_name"], commit=res["git_commit"])
+            if res["unc_id"]:
+                d["unc_file"] = UncFile(name=res["unc_name"])
+            if res["int_id"]:
+                d["int_id"] = IntFile(name=res["int_name"], ver=res["int_ver"])
+            return ProjFile(**d)
+        return None
+
+
+async def get_projects_version(credentials, project, ver, *, pconn=None):
+    sql = dedent("""\
+            with
+            pl as (
+                select v.project, v.ver, ARRAY_AGG(l.label) labels
+                from project_version v
+                join project_label l on l.project_ver = v.id
+                group by v.project, v.ver),
+            rf as (
+                select pf.project_ver, ARRAY_AGG(pf.savepath) files
+                from project_file pf
+                group by pf.project_ver
+                )
+            select pv.id as project_ver, pv.ver, pl.labels, pv.status, rf.files
+            from project_version pv
+            left join pl on pl.project = pv.project and pl.ver = pv.ver
+            left join rf on rf.project_ver = pv.id
+            where pv.project = $1 and pv.ver = $2
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        res = await conn.fetch(sql, project, ver)
+        if len(res) == 0:
+            raise HTTPException(status_code=400, detail="Project version not found")
+        res = res[0]
+        p = ProjectVersion(ver=res["ver"], labels=res["labels"], status=res["status"], files=[])
+        for savepath in res["files"]:
+            p.files.append(await get_proj_file(res["project_ver"], savepath, pconn=conn))
+        return p
+
+
+async def post_projects_version(credentials, name, ver, files):
+    # todo 1: **********
+    pass

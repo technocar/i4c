@@ -404,6 +404,62 @@
 					"response": []
 				},
 				{
+					"name": "project version get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/projects/proj1/v/1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1",
+								"v",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "project version post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n    {\r\n            \"savepath\": \"12344\"\r\n    }\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/projects/proj1/v?ver=11",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1",
+								"v"
+							],
+							"query": [
+								{
+									"key": "ver",
+									"value": "11"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "project patch",
 					"request": {
 						"method": "PATCH",
@@ -489,7 +545,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/installations?id=15&status=todo",
+							"raw": "localhost:5000/installations?id=15",
 							"host": [
 								"localhost"
 							],
@@ -504,8 +560,61 @@
 								},
 								{
 									"key": "status",
-									"value": "todo"
+									"value": "todo",
+									"disabled": true
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "installations - patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"working\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"todo\",\r\n        \"status_msg\": \"hello\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/installations/15",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"installations",
+								"15"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "installation - get file",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5000/installations/15/file1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5000",
+							"path": [
+								"installations",
+								"15",
+								"file1"
 							]
 						}
 					},
