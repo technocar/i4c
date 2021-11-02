@@ -163,8 +163,7 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
                 sql += f"{sep}\"extra\"=${len(params)}"
                 sep = ",\n"
             sql += "\nwhere name = $1"
-            if project.status is None:
-                project.status = ProjectStatusEnum.active
+
             await conn.execute(sql, *params)
             return PatchResponse(changed=True)
 

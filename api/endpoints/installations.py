@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Query, Path
+from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import models.installations
 import common
@@ -10,7 +10,7 @@ from models import ProjectVersionStatusEnum, InstallationStatusEnum
 router = I4cApiRouter()
 
 
-@router.post("/{project}/{version}", response_model=models.installations.Installations, x_properties=dict(object="installations", action="new"))
+@router.post("/{project}/{version}", response_model=models.installations.Installation, x_properties=dict(object="installations", action="new"))
 async def new_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/installations/{project}/{version}")),
     project: str = Path(...),
@@ -20,7 +20,7 @@ async def new_installation(
     return await models.installations.new_installation(credentials, project, version, statuses)
 
 
-@router.get("", response_model=List[models.installations.Installations], x_properties=dict(object="installations", action="list"))
+@router.get("", response_model=List[models.installations.Installation], x_properties=dict(object="installations", action="list"))
 async def list_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations")),
     id: Optional[int] = Query(None),
@@ -31,3 +31,12 @@ async def list_installation(
     ver: Optional[int] = Query(None),
 ):
     return await models.installations.get_installations(credentials, id, status, after, before, project_name, ver)
+
+
+@router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="installations", action="patch"))
+async def get_project(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/installations/{name}")),
+    id: int = Path(...),
+    patch: models.installations.InstallationPatchBody = Body(...),
+):
+    return await models.installations.patch_installation(credentials, id, patch)

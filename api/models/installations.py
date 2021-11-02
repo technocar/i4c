@@ -7,9 +7,10 @@ from common import DatabaseConnection, write_debug_sql
 from pydantic import BaseModel, Field
 from datetime import datetime
 from models import ProjectVersionStatusEnum, InstallationStatusEnum, ProjectStatusEnum
+from models.common import PatchResponse
 
 
-class Installations(BaseModel):
+class Installation(BaseModel):
     id: int
     ts: datetime
     project: str
@@ -18,6 +19,28 @@ class Installations(BaseModel):
     status: InstallationStatusEnum
     status_msg: Optional[str]
     files: List[str] = Field([])
+
+
+class InstallationPatchCondition(BaseModel):
+    status: Optional[InstallationStatusEnum]
+
+    def match(self, project:Installation):
+        return (
+            ((self.status or project.status) == project.status)
+        )
+
+
+class InstallationPatchChange(BaseModel):
+    status: Optional[InstallationStatusEnum]
+
+    def is_empty(self):
+        return self.status is None
+
+
+class InstallationPatchBody(BaseModel):
+    conditions: List[InstallationPatchCondition]
+    change: InstallationPatchChange
+
 
 
 async def new_installation(credentials, project, version,
@@ -153,3 +176,34 @@ async def get_installations(credentials, id=None, status=None, after=None, befor
             sql += f"and res.real_version = ${len(params)}\n"
         res = await conn.fetch(sql, *params)
         return res
+
+
+async def patch_installation(credentials, id, patch: InstallationPatchBody):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            installation = await get_installations(credentials, id, pconn=conn)
+            if len(installation) == 0:
+                raise HTTPException(status_code=400, detail="Installation not found")
+            installation = Installation(**installation[0])
+
+            match = False
+            for cond in patch.conditions:
+                match = cond.match(installation)
+                if match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+            params = [installation.id]
+            sql = "update installation\nset\n"
+            sep = ""
+            if patch.change.status:
+                params.append(patch.change.status)
+                sql += f"{sep}\"status\"=${len(params)}"
+                sep = ",\n"
+            sql += "\nwhere id = $1"
+
+            await conn.execute(sql, *params)
+            return PatchResponse(changed=True)
