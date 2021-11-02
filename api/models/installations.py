@@ -15,7 +15,7 @@ class Installations(BaseModel):
     project: str
     invoked_version: str
     real_version: int
-    status: str
+    status: InstallationStatusEnum
     status_msg: Optional[str]
     files: List[str] = Field([])
 
@@ -51,18 +51,6 @@ async def new_installation(credentials, project, version,
           pv.project = $1
           and pv.ver = $2
         """)
-    sql_insert_installation = dedent("""\
-         insert into installation 
-           ("timestamp", project, invoked_version, real_version, status) 
-         values 
-           (current_timestamp, $1, $2, $3, $4)
-         returning id, "timestamp", status, status_msg
-         """)
-    sql_insert_installation_file = dedent("""\
-         insert into installation_file 
-           (installation, savepath) 
-         values 
-           ($1, $2)""")
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             db_proj = await conn.fetchrow(sql_project, project)
@@ -88,6 +76,14 @@ async def new_installation(credentials, project, version,
 
                 db_project_files = await conn.fetch(sql_project_files, project, i["real_version"])
 
+                sql_insert_installation = dedent("""\
+                     insert into installation 
+                       ("timestamp", project, invoked_version, real_version, status) 
+                     values 
+                       (current_timestamp, $1, $2, $3, $4)
+                     returning id, "timestamp", status, status_msg
+                     """)
+
                 write_debug_sql('insert_installation.sql', sql_insert_installation, project, version, i["real_version"], InstallationStatusEnum.todo)
 
                 db_insert_installation = await conn.fetchrow(sql_insert_installation, project, version, i["real_version"], InstallationStatusEnum.todo)
@@ -96,6 +92,11 @@ async def new_installation(credentials, project, version,
                 i["status"] = db_insert_installation[2]
                 i["status_msg"] = db_insert_installation[3]
 
+                sql_insert_installation_file = dedent("""\
+                     insert into installation_file 
+                       (installation, savepath) 
+                     values 
+                       ($1, $2)""")
                 i["files"] = []
                 for db_project_file in db_project_files:
                     i["files"].append(db_project_file[0])
@@ -105,3 +106,50 @@ async def new_installation(credentials, project, version,
                 return i
             else:
                 raise HTTPException(status_code=400, detail="No project found")
+
+
+async def get_installations(credentials, id=None, status=None, after=None, before=None, project_name=None, ver=None, *, pconn=None):
+    sql = dedent("""\
+                with
+                ifiles as (
+                    select a.installation, ARRAY_AGG(a.savepath) files
+                    from installation_file a
+                    group by a.installation),
+                res as (
+                    select 
+                      i.id,
+                      i.timestamp as ts,
+                      i.project,
+                      i.invoked_version,
+                      i.real_version,
+                      i.status,
+                      i.status_msg,
+                      coalesce(ifiles.files, ARRAY[]::character varying (200)[]) as files
+                    from installation i
+                    left join ifiles on ifiles.installation = i.id
+                    )
+                select * from res
+                where True
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        params = []
+        if id is not None:
+            params.append(id)
+            sql += f"and res.id = ${len(params)}\n"
+        if status is not None:
+            params.append(status)
+            sql += f"and res.status = ${len(params)}\n"
+        if after is not None:
+            params.append(after)
+            sql += f"and res.ts >= ${len(params)}\n"
+        if before is not None:
+            params.append(before)
+            sql += f"and res.ts <= ${len(params)}\n"
+        if project_name is not None:
+            params.append(project_name)
+            sql += f"and res.project = ${len(params)}\n"
+        if ver is not None:
+            params.append(ver)
+            sql += f"and res.real_version = ${len(params)}\n"
+        res = await conn.fetch(sql, *params)
+        return res

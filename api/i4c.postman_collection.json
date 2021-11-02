@@ -391,14 +391,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/projects/hello",
+							"raw": "localhost:5000/projects",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
-								"projects",
-								"hello"
+								"projects"
 							]
 						}
 					},
@@ -479,6 +478,34 @@
 								"installations",
 								"proj1",
 								"label1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "installations - list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/installations?id=15&status=todo",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"installations"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "15"
+								},
+								{
+									"key": "status",
+									"value": "todo"
+								}
 							]
 						}
 					},
