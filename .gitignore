@@ -1,7 +1,0 @@
-.gitignore
-/*/.idea
-__pycache__
-/api/log
-/api/debug
-/api/*.yaml
-/*/venv
