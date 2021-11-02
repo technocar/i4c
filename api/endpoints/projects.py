@@ -10,7 +10,6 @@ from models import ProjectStatusEnum
 router = I4cApiRouter()
 
 
-@router.get("", response_model=List[models.projects.Project], x_properties=dict(object="projects", action="list"), include_in_schema=False)
 @router.get("/", response_model=List[models.projects.Project], x_properties=dict(object="projects", action="list"))
 async def list_projects(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects")),
@@ -32,7 +31,6 @@ async def get_project(
     raise HTTPException(status_code=404, detail="No record found")
 
 
-@router.post("", response_model=models.projects.Project, x_properties=dict(object="projects", action="post"), include_in_schema=False)
 @router.post("/", response_model=models.projects.Project, x_properties=dict(object="projects", action="post"))
 async def get_project(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects")),

@@ -41,7 +41,6 @@ async def meta(credentials: HTTPBasicCredentials = Depends(common.security_check
     return await models.log.get_meta(credentials)
 
 
-@router.post("", status_code=201, x_properties=dict(object="datapoint", action="post"), include_in_schema=False)
 @router.post("/", status_code=201, x_properties=dict(object="datapoint", action="post"))
 async def log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/log")),
