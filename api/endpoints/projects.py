@@ -54,7 +54,8 @@ async def list_projects_version(
     name: str = Path(...),
     ver: int = Path(...)
 ):
-    return await models.projects.get_projects_version(credentials, name, ver)
+    res, _ = await models.projects.get_projects_version(credentials, name, ver)
+    return res
 
 
 @router.post("/{name}/v", response_model=models.projects.ProjectVersion, x_properties=dict(object="projects ver", action="post"))
@@ -65,3 +66,13 @@ async def post_projects_version(
     files: List[models.projects.ProjFile] = Body(...),
 ):
     return await models.projects.post_projects_version(credentials, name, ver, files)
+
+
+@router.patch("/{name}/v/{ver}", response_model=models.common.PatchResponse, x_properties=dict(object="projects ver", action="patch"))
+async def get_project_version(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/{name}/v/{ver}")),
+    name: str = Path(...),
+    ver: int = Path(...),
+    patch: models.projects.ProjectVersionPatchBody = Body(...),
+):
+    return await models.projects.patch_project_version(credentials, name, ver, patch)

@@ -177,6 +177,7 @@ async def get_installations(credentials, id=None, status=None, after=None, befor
         if ver is not None:
             params.append(ver)
             sql += f"and res.real_version = ${len(params)}\n"
+        sql += f"order by res.ts desc"
         res = await conn.fetch(sql, *params)
         return res
 

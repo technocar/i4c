@@ -1,5 +1,5 @@
 from textwrap import dedent
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
@@ -47,6 +47,7 @@ class ProjectIn(BaseModel):
 
 
 class GitFile(BaseModel):
+    # todo: see c:\Users\gygyor\PycharmProjects\_TutorialFun\git_test\main.py
     repo: str
     name: str
     commit: str
@@ -73,6 +74,42 @@ class ProjectVersion(BaseModel):
     labels: List[str] = Field(..., title="List of labels.")
     status: ProjectVersionStatusEnum
     files: List[ProjFile]
+
+
+class ProjectVersionPatchCondition(BaseModel):
+    flipped: Optional[bool]
+    status: Optional[ProjectVersionStatusEnum]
+    has_label: Optional[bool]
+    exist_label: Optional[str]
+
+    def match(self, pv:ProjectVersion):
+        r = ((self.status or pv.status) == pv.status) \
+            and ((self.has_label is None) or (len(pv.labels) > 0)) \
+            and ((self.exist_label is None) or (self.exist_label in pv.labels))
+        if self.flipped:
+            return r
+        else:
+            return not r
+
+
+class ProjectVersionPatchChange(BaseModel):
+    status: Optional[ProjectVersionStatusEnum]
+    clear_label: Optional[List[str]]
+    set_label: Optional[List[str]]
+    add_file: Optional[List[ProjFile]]
+    del_file: Optional[List[str]]
+
+    def is_empty(self):
+        return ( self.status is None
+               and self.clear_label is None
+               and self.set_label is None
+               and self.add_file is None
+               and self.del_file is None)
+
+
+class ProjectVersionPatchBody(BaseModel):
+    conditions: List[ProjectVersionPatchCondition]
+    change: ProjectVersionPatchChange
 
 
 async def get_projects(credentials, name=None, status=None, file=None, *, pconn=None):
@@ -223,7 +260,7 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
             from project_version pv
             left join pl on pl.project = pv.project and pl.ver = pv.ver
             left join rf on rf.project_ver = pv.id
-            where pv.project = $1 and pv.ver = $2
+            where pv.project = $1 and pv.ver = $2::int
           """)
     async with DatabaseConnection(pconn) as conn:
         res = await conn.fetch(sql, project, ver)
@@ -233,9 +270,45 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
         p = ProjectVersion(ver=res["ver"], labels=res["labels"], status=res["status"], files=[])
         for savepath in res["files"]:
             p.files.append(await get_proj_file(res["project_ver"], savepath, pconn=conn))
-        return p
+        return p, res["project_ver"]
 
 
 async def post_projects_version(credentials, name, ver, files):
     # todo 1: **********
     pass
+
+
+async def patch_project_version(credentials, name, ver, patch: ProjectVersionPatchBody):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            pv, pv_id = await get_projects_version(credentials, name, ver, pconn=conn)
+
+            match = False
+            for cond in patch.conditions:
+                match = cond.match(pv)
+                if match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+            params = [pv_id]
+            sql = "update project_version\nset\n"
+            sep = ""
+            if patch.change.status:
+                params.append(patch.change.status)
+                sql += f"{sep}\"status\"=${len(params)}"
+                sep = ",\n"
+            sql += "\nwhere id = $1::int"
+            if len(params) > 1:
+                await conn.execute(sql, **params)
+
+            # todo 1: **********
+            # apply patch changes
+            #     clear_label: Optional[List[str]]
+            #     set_label: Optional[List[str]]
+            #     add_file: Optional[List[ProjFile]]
+            #     del_file: Optional[List[str]]
+
+            return PatchResponse(changed=True)
