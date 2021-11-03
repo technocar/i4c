@@ -658,6 +658,44 @@
 			]
 		},
 		{
+			"name": "intfiles",
+			"item": [
+				{
+					"name": "intfiles put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Develop_git/Github-karatnet/i4c/api/api.py"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:5000/intfiles/v/1/c:\\temp\\0001.py",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"intfiles",
+								"v",
+								"1",
+								"c:",
+								"temp",
+								"0001.py"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "login",
 			"request": {
 				"method": "GET",
