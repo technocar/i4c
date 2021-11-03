@@ -90,7 +90,7 @@ export interface ListItem {
 
 export enum Category { Condition = "CONDITION", Event = "EVENT", Sample = "SAMPLE" }
 
-export interface FindRequest {
+export interface FindParams {
   device: DeviceType,
   beforeCount?: number,
   afterCount?: number,
@@ -145,17 +145,26 @@ export interface Project {
   name: string,
   status: string,
   versions: string[],
-  extra: Extra[],
-  created_at: string
+  extra: Extra[]
 }
 
-export interface ProjectInstallResponse {
+export enum ProjectInstallStatus { Todo = "todo", Working = "working", Done = "done", Fail = "fail" }
+export interface ProjectInstall {
   id: number,
   ts: string,
   project: string,
   invoked_version: string,
   real_version: number,
-  status: string,
+  status: ProjectInstallStatus,
   status_msg: string,
   files: string[]
+}
+
+export interface ProjectInstallParams {
+  id?: number,
+  status?: ProjectInstallStatus,
+  after?: Date,
+  before?: Date,
+  project_name?: string,
+  ver?: number
 }

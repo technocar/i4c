@@ -6,7 +6,7 @@ import { NgbActiveModal, NgbDateStruct, NgbModal, NgbTimeStruct, NgbTypeahead } 
 import { BehaviorSubject, forkJoin, merge, Observable, OperatorFunction, Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
-import { Category, EventLog, EventValues, FindRequest, ListItem, Meta, Snapshot } from '../services/models/api';
+import { Category, EventLog, EventValues, FindParams, ListItem, Meta, Snapshot } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
 
 interface Metric {
@@ -428,7 +428,7 @@ export class DashboardComponent implements OnInit {
   search(form: NgForm, modal: NgbActiveModal) {
     console.log(this.searchModel);
 
-    let req: FindRequest = {
+    let req: FindParams = {
       device: this.device,
       afterCount: this.searchModel.direction === "1" ? 1 : undefined,
       beforeCount: this.searchModel.direction === "-1" ? 1 : undefined,

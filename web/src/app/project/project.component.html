@@ -2,27 +2,64 @@
   <div id="header" class="row mb-4">
     <div id="nav" class="col">
       <div class="row">
-        <a id="nav_exit" class="col" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
+        <a id="nav_exit" class="col-auto pl-0" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
           <i class="bi bi-box-arrow-left"></i>
         </a>
       </div>
     </div>
   </div>
-  <div id="toolbar" class="row">
-    <select #selectableProjects id="selectable_projects" class="col-3 mr-2" (change)="getVersions(selectableProjects.value)">
-      <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
-    </select>
-    <select #selectableProjectVersions id="selectable_project_versions" class="col-3 mr-2">
-      <option *ngFor="let version of versions$ | async" [value]="version">{{version}}</option>
-    </select>
-    <button class="btn btn-primary col-auto ml-2"
-      (click)="install(selectableProjects.value, selectableProjectVersions.value)"
-      [disabled]="!selectableProjects.value || !selectableProjectVersions.value"
-    >
-      <i class="bi bi-play-fill"></i>
-    </button>
+  <div id="toolbar" class="row align-items-end pb-2">
+    <div class="col-4 mr-2 form-group mb-0">
+      <label for="selectable_projects">Projektek</label>
+      <select id="selectable_projects" class="form-control" (change)="projectSelectionChanged()" [(ngModel)]="selectedProject">
+        <option [value]="''"> - </option>
+        <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
+      </select>
+    </div>
+    <div class="col-4 mr-2 form-group mb-0">
+      <label for="selectable_project_versions">Verziók</label>
+      <select id="selectable_project_versions" class="form-control" [(ngModel)]="selectedVersion">
+        <option *ngFor="let version of versions$ | async" [value]="version">{{version}}</option>
+      </select>
+    </div>
+    <div class="col-auto ml-2">
+      <button class="btn btn-primary"
+        (click)="install(selectedProject, selectedVersion)"
+        [disabled]="selectedProject == '' || selectedVersion == ''"
+      >
+        <i class="bi bi-cpu"></i>
+        Telepítés
+      </button>
+    </div>
+  </div>
+  <div id="filters" class="row pb-2  pt-2">
+    <div class="col-4 mr-2 form-group mb-0">
+      <label for="from_date">Kezdete</label>
+      <input id="from_date" type="date" class="form-control" [ngModel]="fromDate | date:'yyyy-MM-dd'" (ngModelChange)="fromDate = convertToDate($event)" (change)="filterChanged()" />
+    </div>
+    <div class="col-4 mr-2 form-group mb-0">
+      <label for="to_date">Vége</label>
+      <input id="to_date" type="date" class="form-control" [ngModel]="toDate | date:'yyyy-MM-dd'" (ngModelChange)="toDate = convertToDate($event)" (change)="filterChanged()" />
+    </div>
   </div>
   <div id="list" class="row">
-
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th scope="col" class="ts">Időpont</th>
+          <th scope="col" class="project">Projekt</th>
+          <th scope="col" class="real_version">Verzió</th>
+          <th scope="col" class="status">Státusz</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of installed$ | async">
+          <td>{{item.ts | date:"yyyy.MM.dd HH:mm"}}</td>
+          <td>{{item.project}}</td>
+          <td>{{item.real_version}} ({{item.invoked_version}})</td>
+          <td>{{item.status}}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
