@@ -70,7 +70,7 @@ async def post_projects_version(
 
 @router.patch("/{name}/v/{ver}", response_model=models.common.PatchResponse, x_properties=dict(object="projects ver", action="patch"))
 async def get_project_version(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/{name}/v/{ver}")),
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}/v/{ver}")),
     name: str = Path(...),
     ver: int = Path(...),
     patch: models.projects.ProjectVersionPatchBody = Body(...),

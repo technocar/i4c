@@ -52,14 +52,46 @@ class GitFile(BaseModel):
     name: str
     commit: str
 
+    def __eq__(self, other):
+        if not isinstance(other, GitFile):
+            return False
+        return (self.repo == other.repo
+                and self.name == other.name
+                and self.commit == other.commit)
+
+    async def insert_to_db(self, conn):
+        sql_insert = dedent("""\
+            insert into file_git (repo, name, commit) values ($1, $2, $3)
+            returning id
+            """)
+        return (await conn.fetchrow(sql_insert, self.repo, self.name, self.commit))[0]
+
 
 class UncFile(BaseModel):
     name: str
+
+    def __eq__(self, other):
+        if not isinstance(other, UncFile):
+            return False
+        return self.name == other.name
+
+    async def insert_to_db(self, conn):
+        sql_insert = dedent("""\
+            insert into file_unc (name) values ($1)
+            returning id
+            """)
+        return (await conn.fetchrow(sql_insert, self.name))[0]
 
 
 class IntFile(BaseModel):
     name: str
     ver: str
+
+    def __eq__(self, other):
+        if not isinstance(other, IntFile):
+            return False
+        return (self.name == other.name
+                and self.ver == other.ver)
 
 
 class ProjFile(BaseModel):
@@ -67,6 +99,28 @@ class ProjFile(BaseModel):
     file_git: Optional[GitFile]
     file_unc: Optional[UncFile]
     file_int: Optional[IntFile]
+
+    def __eq__(self, other):
+        if not isinstance(other, ProjFile):
+            return False
+
+        def check_with_null(a,b):
+            return (a is None and b is None) or (a==b)
+
+        return (self.savepath == other.savepath
+                and check_with_null(self.file_git, other.file_git)
+                and check_with_null(self.file_unc, other.file_unc)
+                and check_with_null(self.file_int, other.file_int)
+                )
+
+    async def insert_to_db(self, conn, pv_id):
+        git_id = (await self.file_git.insert_to_db(conn)) if self.file_git is not None else None
+        unc_id = (await self.file_unc.insert_to_db(conn)) if self.file_unc is not None else None
+        if self.file_int is not None:
+            raise HTTPException(status_code=400, detail="Unable to insert internal project file. Use dedicated calls")
+
+        sql_insert = "insert into project_file (project_ver, savepath, file_git, file_unc) values ($1, $2, $3, $4)"
+        await conn.execute(sql_insert, pv_id, self.savepath, git_id, unc_id)
 
 
 class ProjectVersion(BaseModel):
@@ -81,12 +135,14 @@ class ProjectVersionPatchCondition(BaseModel):
     status: Optional[ProjectVersionStatusEnum]
     has_label: Optional[bool]
     exist_label: Optional[str]
+    exist_label_in_proj: Optional[str]
 
-    def match(self, pv:ProjectVersion):
+    def match(self, pv:ProjectVersion, pi: Project):
         r = ((self.status or pv.status) == pv.status) \
             and ((self.has_label is None) or (len(pv.labels) > 0)) \
-            and ((self.exist_label is None) or (self.exist_label in pv.labels))
-        if self.flipped:
+            and ((self.exist_label is None) or (self.exist_label in pv.labels)) \
+            and ((self.exist_label_in_proj is None) or (self.exist_label_in_proj in pi.versions))
+        if self.flipped is None or self.flipped:
             return r
         else:
             return not r
@@ -112,11 +168,12 @@ class ProjectVersionPatchBody(BaseModel):
     change: ProjectVersionPatchChange
 
 
-async def get_projects(credentials, name=None, status=None, file=None, *, pconn=None):
+async def get_projects(credentials, name=None, status=None, file=None, *, pconn=None, labels_only=False):
     sql = dedent("""\
             with pv as (
                 select project, ARRAY_AGG(ver::"varchar"(200)) versions
                 from project_version
+                <labels_only>
                 group by project),
             pl as (
                 select v.project, ARRAY_AGG(l.label) versions
@@ -152,7 +209,8 @@ async def get_projects(credentials, name=None, status=None, file=None, *, pconn=
         if file is not None:
             params.append(file)
             sql += f" and exists(select * from rf where rf.project = res.name and rf.savepath = ${len(params)})"
-        res = await conn.fetch(sql, *params)
+        res = await conn.fetch(sql.replace("<labels_only>", "where False" if labels_only else ""),
+                               *params)
         return res
 
 
@@ -234,12 +292,13 @@ async def get_proj_file(project_ver, savepath, *, pconn=None):
         if res:
             d = dict(savepath=savepath)
             if res["git_id"]:
-                d["git_file"] = GitFile(repo=res["git_repo"], name=res["git_name"], commit=res["git_commit"])
+                d["file_git"] = GitFile(repo=res["git_repo"], name=res["git_name"], commit=res["git_commit"])
             if res["unc_id"]:
-                d["unc_file"] = UncFile(name=res["unc_name"])
+                d["file_unc"] = UncFile(name=res["unc_name"])
             if res["int_id"]:
-                d["int_id"] = IntFile(name=res["int_name"], ver=res["int_ver"])
-            return ProjFile(**d)
+                d["file_int"] = IntFile(name=res["int_name"], ver=res["int_ver"])
+            r = ProjFile(**d)
+            return r
         return None
 
 
@@ -278,14 +337,15 @@ async def post_projects_version(credentials, name, ver, files):
     pass
 
 
-async def patch_project_version(credentials, name, ver, patch: ProjectVersionPatchBody):
+async def patch_project_version(credentials, project_name, ver, patch: ProjectVersionPatchBody):
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            pv, pv_id = await get_projects_version(credentials, name, ver, pconn=conn)
+            pv, pv_id = await get_projects_version(credentials, project_name, ver, pconn=conn)
+            pi = await get_projects(credentials, project_name, pconn=conn, labels_only=True)
 
             match = False
             for cond in patch.conditions:
-                match = cond.match(pv)
+                match = cond.match(pv, pi)
                 if match:
                     break
             if not match:
@@ -302,13 +362,68 @@ async def patch_project_version(credentials, name, ver, patch: ProjectVersionPat
                 sep = ",\n"
             sql += "\nwhere id = $1::int"
             if len(params) > 1:
-                await conn.execute(sql, **params)
+                await conn.execute(sql, *params)
 
-            # todo 1: **********
-            # apply patch changes
-            #     clear_label: Optional[List[str]]
-            #     set_label: Optional[List[str]]
-            #     add_file: Optional[List[ProjFile]]
-            #     del_file: Optional[List[str]]
+            if patch.change.clear_label:
+                sql = dedent("""\
+                    delete from project_label
+                    where 
+                      project_ver = $1
+                      and label = $2
+                """)
+                for l in patch.change.clear_label:
+                    await conn.execute(sql, pv_id, l)
+
+            if patch.change.set_label:
+                sql_check = dedent("""\
+                    select pv.id as project_ver 
+                    from project_label pl
+                    join project_version pv on pv.id = pl.project_ver
+                    where 
+                      pv.project = $1
+                      and label = $2
+                """)
+                sql_insert = dedent("""\
+                    insert into project_label 
+                       (project_ver, label) 
+                    values 
+                       ($1, $2)
+                """)
+                sql_update = dedent("""\
+                    update project_label
+                    set project_ver = $1
+                    where 
+                      project_ver = $2
+                      and label = $3 
+                """)
+                for l in patch.change.set_label:
+                    res_chec = await conn.fetch(sql_check, project_name, l)
+                    if res_chec:
+                        for r in res_chec:
+                            if r["project_ver"] != pv_id:
+                                await conn.execute(sql_update, r["project_ver"], pv_id, l)
+                    else:
+                        await conn.execute(sql_insert, pv_id, l)
+
+            if patch.change.del_file:
+                # todo: delete details (file_git, file_unc, file_int)?
+                sql = dedent("""\
+                    delete from project_file
+                    where 
+                      project_ver = $1
+                      and savepath = $2
+                """)
+                for l in patch.change.del_file:
+                    await conn.execute(sql, pv_id, l)
+
+            if patch.change.add_file:
+                for l in patch.change.add_file:
+                    del_files = patch.change.del_file if patch.change.del_file is not None else []
+                    old_proj_file = (await get_proj_file(pv_id, l.savepath, pconn=conn)) if l.savepath not in del_files else None
+                    if old_proj_file is None:
+                        await l.insert_to_db(conn, pv_id)
+                    else:
+                        if old_proj_file != l:
+                            raise HTTPException(status_code=400, detail="Project file with same savepath and different properties exists")
 
             return PatchResponse(changed=True)
