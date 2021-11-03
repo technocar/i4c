@@ -1,3 +1,4 @@
+from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
 
@@ -141,7 +142,8 @@ class ProjectVersionPatchCondition(BaseModel):
         r = ((self.status or pv.status) == pv.status) \
             and ((self.has_label is None) or (len(pv.labels) > 0)) \
             and ((self.exist_label is None) or (self.exist_label in pv.labels)) \
-            and ((self.exist_label_in_proj is None) or (self.exist_label_in_proj in pi.versions))
+            and ((self.exist_label_in_proj is None)
+                 or ((self.exist_label_in_proj in pi.versions) if pi is not None else False))
         if self.flipped is None or self.flipped:
             return r
         else:
@@ -168,7 +170,14 @@ class ProjectVersionPatchBody(BaseModel):
     change: ProjectVersionPatchChange
 
 
-async def get_projects(credentials, name=None, status=None, file=None, *, pconn=None, labels_only=False):
+class GetProjectsVersions(Enum):
+    all = 0
+    labels_only = 1
+    versions_only = 2
+
+
+async def get_projects(credentials, name=None, status=None, file=None, *, pconn=None,
+                       versions:GetProjectsVersions = GetProjectsVersions.all):
     sql = dedent("""\
             with pv as (
                 select project, ARRAY_AGG(ver::"varchar"(200)) versions
@@ -179,6 +188,7 @@ async def get_projects(credentials, name=None, status=None, file=None, *, pconn=
                 select v.project, ARRAY_AGG(l.label) versions
                 from project_version v
                 join project_label l on l.project_ver = v.id
+                <versions_only>
                 group by v.project),
             res as (
                 select 
@@ -209,7 +219,8 @@ async def get_projects(credentials, name=None, status=None, file=None, *, pconn=
         if file is not None:
             params.append(file)
             sql += f" and exists(select * from rf where rf.project = res.name and rf.savepath = ${len(params)})"
-        res = await conn.fetch(sql.replace("<labels_only>", "where False" if labels_only else ""),
+        res = await conn.fetch(sql.replace("<labels_only>", "where False" if versions == GetProjectsVersions.labels_only else "") \
+                                  .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else ""),
                                *params)
         return res
 
@@ -332,9 +343,27 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
         return p, res["project_ver"]
 
 
-async def post_projects_version(credentials, name, ver, files):
-    # todo 1: **********
-    pass
+async def post_projects_version(credentials, project_name, ver, files):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            pi = await get_projects(credentials, project_name, pconn=conn, versions=GetProjectsVersions.versions_only)
+            pv = Project(**pi[0]).versions if len(pi) > 0 else []
+            if ver is None:
+                ver = 1
+                for v in pv:
+                    ver = max((ver, int(v)+1))
+            else:
+                if str(ver) in pv:
+                    raise HTTPException(status_code=400, detail="Project version conflicts")
+            sql_insert = dedent("""\
+                insert into project_version (project, ver, status) values ($1, $2, $3)
+                returning id
+            """)
+            pv_id = (await conn.fetchrow(sql_insert, project_name, ver, ProjectVersionStatusEnum.edit))[0]
+            for l in files:
+                await l.insert_to_db(conn, pv_id)
+
+            return ProjectVersion(ver=ver, labels=[], status=ProjectVersionStatusEnum.edit, files=files)
 
 
 async def patch_project_version(credentials, project_name, ver, patch: ProjectVersionPatchBody):
@@ -342,6 +371,7 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
         async with conn.transaction(isolation='repeatable_read'):
             pv, pv_id = await get_projects_version(credentials, project_name, ver, pconn=conn)
             pi = await get_projects(credentials, project_name, pconn=conn, labels_only=True)
+            pi = pi[0] if len(pi) > 0 else None
 
             match = False
             for cond in patch.conditions:
