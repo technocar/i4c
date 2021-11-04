@@ -1,9 +1,12 @@
+import io
 from base64 import b64encode
 from hashlib import sha384
 from textwrap import dedent
 from typing import Union, List
 from fastapi import UploadFile, HTTPException
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import StreamingResponse
+
 from common import I4cBaseModel, DatabaseConnection
 
 
@@ -43,9 +46,16 @@ async def intfiles_list(credentials, name, min_ver, max_ver, hash, *, pconn=None
         return await conn.fetch(sql, *params)
 
 
-async def intfiles_get(credentials, ver, path):
-    # todo 1: **********
-    return r'c:\Gy\SQL\truncate_log.ssr'
+async def intfiles_get(credentials, ver, name, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        sql = dedent("""\
+            select content
+            from file_int
+            where name = $1 and ver = $2
+        """)
+        res = await conn.fetchrow(sql, name, ver)
+        if res:
+            return StreamingResponse(io.BytesIO(res[0]), media_type="application/octet-stream")
 
 
 async def intfiles_check_usage(ver: int, name: str, *, pconn=None):
@@ -94,6 +104,10 @@ async def intfiles_put(
                 await conn.execute(sql_insert, name, ver, hash, file)
 
 
-async def intfiles_delete(credentials, ver, path):
-    # todo 1: **********
-    pass
+async def intfiles_delete(credentials, ver, name):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            id = await intfiles_check_usage(ver, name, pconn=conn)
+            if id:
+                sql_update = "delete from file_int where id = $1"
+                await conn.execute(sql_update, id)
