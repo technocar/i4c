@@ -1,4 +1,4 @@
-from fastapi import Depends, Path, File, UploadFile
+from fastapi import Depends, Path, File, UploadFile, Body
 from fastapi.security import HTTPBasicCredentials
 
 import common
@@ -13,6 +13,7 @@ async def intfiles_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
     path: str = Path(...),
-    file: UploadFile = File(...)
+    data=Body(..., media_type="application/octet-stream")
 ):
-    await models.intfiles.intfiles_put(credentials, ver, path, file)
+    return await models.intfiles.intfiles_put(credentials, ver, path, data)
+
