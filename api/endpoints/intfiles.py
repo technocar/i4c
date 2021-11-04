@@ -29,17 +29,17 @@ async def intfiles_get(
     return await models.intfiles.intfiles_get(credentials, ver, path)
 
 
-@router.put("/v/{ver}/{path:path}", x_properties=dict(object="intfiles", action="put"))
+@router.put("/v/{ver}/{path:path}", status_code=201, x_properties=dict(object="intfiles", action="put"))
 async def intfiles_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
     path: str = Path(...),
-    data=Body(..., media_type="application/octet-stream")
+    data: bytes = Body(..., media_type="application/octet-stream")
 ):
     return await models.intfiles.intfiles_put(credentials, ver, path, data)
 
 
-@router.delete("/v/{ver}/{path:path}", x_properties=dict(object="intfiles", action="delete"))
+@router.delete("/v/{ver}/{path:path}", status_code=201, x_properties=dict(object="intfiles", action="delete"))
 async def intfiles_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
