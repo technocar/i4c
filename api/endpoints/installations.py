@@ -34,7 +34,7 @@ async def list_installation(
 
 
 @router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="installations", action="patch"))
-async def get_project(
+async def patch_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/installations/{name}")),
     id: int = Path(...),
     patch: models.installations.InstallationPatchBody = Body(...),
@@ -42,9 +42,9 @@ async def get_project(
     return await models.installations.patch_installation(credentials, id, patch)
 
 
-@router.get("/{id}/{savepath}", x_properties=dict(object="installations", action="get_file"))
-async def get_project(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations/{id}/{savepath}")),
+@router.get("/{id}/{savepath:path}", x_properties=dict(object="installations", action="get_file"))
+async def installation_get_file(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations/{id}/{savepath:path}")),
     id: int = Path(...),
     savepath: str = Path(...),
 ):
