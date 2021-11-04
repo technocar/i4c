@@ -473,9 +473,8 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
             return PatchResponse(changed=True)
 
 
-async def files_list(credentials, proj_name, projver, save_path, protocol, name, repo, commit, filever, *, pconn=None):
-    # result: List[dict] representing List[FileWithProjInfo]
-    # todo 1: **********
+async def files_list(credentials, proj_name, projver, save_path, protocol, name, repo, commit, filever, *, pconn=None) \
+        -> List[FileWithProjInfo]:
     sql = dedent("""\
             with
                 res as (
