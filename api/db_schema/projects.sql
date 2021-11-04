@@ -66,8 +66,10 @@ create table "file_int" (
     id SERIAL PRIMARY KEY,
     name character varying (200) not null,
     ver integer,
-    content_hash character varying (200) not null
+    content_hash character varying (200) not null,
+    content bytea not null
 );
+CREATE UNIQUE INDEX idx_file_int_name_ver ON "file_int" (name, ver);
 GRANT ALL ON TABLE public."file_int" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE file_int_id_seq TO aaa;
 GRANT ALL ON TABLE public."file_int" TO postgres;

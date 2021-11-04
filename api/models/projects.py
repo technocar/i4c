@@ -94,6 +94,12 @@ class IntFile(I4cBaseModel):
         return (self.name == other.name
                 and self.ver == other.ver)
 
+    async def get_intfile_id(self, conn):
+        sql = "select id from file_int where name = $1 and ver = $2"
+        res = await conn.fetchrow(sql, self.name, self.ver)
+        if res:
+            return res[0]
+        return None
 
 
 class ProjFile(I4cBaseModel):
@@ -107,7 +113,7 @@ class ProjFile(I4cBaseModel):
             return False
 
         def check_with_null(a,b):
-            return (a is None and b is None) or (a==b)
+            return (a is None and b is None) or (a == b)
 
         return (self.savepath == other.savepath
                 and check_with_null(self.file_git, other.file_git)
@@ -119,10 +125,14 @@ class ProjFile(I4cBaseModel):
         git_id = (await self.file_git.insert_to_db(conn)) if self.file_git is not None else None
         unc_id = (await self.file_unc.insert_to_db(conn)) if self.file_unc is not None else None
         if self.file_int is not None:
-            raise HTTPException(status_code=400, detail="Unable to insert internal project file. Use dedicated calls")
+            int_id = await self.file_int.get_intfile_id(conn)
+            if int_id is None:
+                raise HTTPException(status_code=400, detail="Internal file is not loaded to db. Load first.")
+        else:
+            int_id = None
 
-        sql_insert = "insert into project_file (project_ver, savepath, file_git, file_unc) values ($1, $2, $3, $4)"
-        await conn.execute(sql_insert, pv_id, self.savepath, git_id, unc_id)
+        sql_insert = "insert into project_file (project_ver, savepath, file_git, file_unc, file_int) values ($1, $2, $3, $4, $5)"
+        await conn.execute(sql_insert, pv_id, self.savepath, git_id, unc_id, int_id)
 
 
 class ProjectVersion(I4cBaseModel):
@@ -371,7 +381,7 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             pv, pv_id = await get_projects_version(credentials, project_name, ver, pconn=conn)
-            pi = await get_projects(credentials, project_name, pconn=conn, labels_only=True)
+            pi = await get_projects(credentials, project_name, pconn=conn, versions=GetProjectsVersions.labels_only)
             pi = pi[0] if len(pi) > 0 else None
 
             match = False
