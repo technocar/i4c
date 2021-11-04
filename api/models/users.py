@@ -2,14 +2,14 @@ from textwrap import dedent
 
 from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import Optional, List
 
-from common import DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection
 from models import UserStatusEnum
 
 
-class UserData(BaseModel):
+class UserData(I4cBaseModel):
     """Represents data fields of a real person or automated account. Setting the password is not possible here, please use PATCH"""
     name: str = Field(..., title="User's name")
     roles: List[str] = Field(..., title="Assigned roles")
@@ -24,12 +24,12 @@ class User(UserData):
     roles_eff: List[str] = Field(..., title="All roles assigned directly or indirectly")
 
 
-class UserResponse(BaseModel):
+class UserResponse(I4cBaseModel):
     """Single user response"""
     user: User
 
 
-class UserListResponse(BaseModel):
+class UserListResponse(I4cBaseModel):
     """Multi user response"""
     users: List[User]
 

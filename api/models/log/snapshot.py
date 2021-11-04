@@ -1,32 +1,32 @@
 from datetime import datetime
 from typing import Optional, List
-from common import MyBaseModel, DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection
 from fastapi import HTTPException
 from ..enums import DeviceAuto
 
 
-class SnapshotStatusStatus(MyBaseModel):
+class SnapshotStatusStatus(I4cBaseModel):
     value: Optional[str]
     since: Optional[float]
 
 
-class SnapshotStatusNCS(MyBaseModel):
+class SnapshotStatusNCS(I4cBaseModel):
     name: Optional[str]
     comment: Optional[str]
     since: Optional[float]
 
 
-class SnapshotStatusInt(MyBaseModel):
+class SnapshotStatusInt(I4cBaseModel):
     num: Optional[int]
     since: Optional[float]
 
 
-class SnapshotStatusStr(MyBaseModel):
+class SnapshotStatusStr(I4cBaseModel):
     status: Optional[str]
     since: Optional[float]
 
 
-class SnapshotAxis(MyBaseModel):
+class SnapshotAxis(I4cBaseModel):
     name: Optional[str]
     mode: Optional[str]
     pos: Optional[float]
@@ -34,7 +34,7 @@ class SnapshotAxis(MyBaseModel):
     rate: Optional[float]
 
 
-class SnapshotStatus(MyBaseModel):
+class SnapshotStatus(I4cBaseModel):
     status: SnapshotStatusStatus
     program: SnapshotStatusNCS
     subprogram: SnapshotStatusNCS
@@ -46,14 +46,14 @@ class SnapshotStatus(MyBaseModel):
     rot_axes: List[SnapshotAxis]
 
 
-class SnapshotEvent(MyBaseModel):
+class SnapshotEvent(I4cBaseModel):
     data_id: str
     name: Optional[str]
     timestamp: Optional[datetime]
     value: Optional[str]
 
 
-class SnapshotCondition(MyBaseModel):
+class SnapshotCondition(I4cBaseModel):
     severity: str
     data_id: str
     name: Optional[str]
@@ -61,17 +61,17 @@ class SnapshotCondition(MyBaseModel):
     since: Optional[float]
 
 
-class MazakSnapshot(MyBaseModel):
+class MazakSnapshot(I4cBaseModel):
     status: SnapshotStatus
     event_log: List[SnapshotEvent]
     conditions: List[SnapshotCondition]
 
 
-class SimpleSnapshot(MyBaseModel):
+class SimpleSnapshot(I4cBaseModel):
     event_log: List[SnapshotEvent]
 
 
-class Snapshot(MyBaseModel):
+class Snapshot(I4cBaseModel):
     mill: Optional[MazakSnapshot]
     lathe: Optional[MazakSnapshot]
     gom: Optional[SimpleSnapshot]

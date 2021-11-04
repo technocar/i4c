@@ -3,21 +3,21 @@ from textwrap import dedent
 from typing import List, Optional
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from common import DatabaseConnection
+from common import DatabaseConnection, I4cBaseModel
 from models import ProjectStatusEnum, ProjectVersionStatusEnum
 from models.common import PatchResponse
 
 
-class Project(BaseModel):
+class Project(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
     versions: List[str] = Field(..., title="List of versions. Numbers are version numbers others are labels.")
     extra: str
 
 
-class ProjectPatchCondition(BaseModel):
+class ProjectPatchCondition(I4cBaseModel):
     status: Optional[ProjectStatusEnum]
     extra: Optional[str]
 
@@ -28,7 +28,7 @@ class ProjectPatchCondition(BaseModel):
         )
 
 
-class ProjectPatchChange(BaseModel):
+class ProjectPatchChange(I4cBaseModel):
     status: Optional[ProjectStatusEnum]
     extra: Optional[str]
 
@@ -36,18 +36,18 @@ class ProjectPatchChange(BaseModel):
         return self.status is None and self.extra is None
 
 
-class ProjectPatchBody(BaseModel):
+class ProjectPatchBody(I4cBaseModel):
     conditions: List[ProjectPatchCondition]
     change: ProjectPatchChange
 
 
-class ProjectIn(BaseModel):
+class ProjectIn(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
     extra: Optional[str]
 
 
-class GitFile(BaseModel):
+class GitFile(I4cBaseModel):
     # todo: see c:\Users\gygyor\PycharmProjects\_TutorialFun\git_test\main.py
     repo: str
     name: str
@@ -68,7 +68,7 @@ class GitFile(BaseModel):
         return (await conn.fetchrow(sql_insert, self.repo, self.name, self.commit))[0]
 
 
-class UncFile(BaseModel):
+class UncFile(I4cBaseModel):
     name: str
 
     def __eq__(self, other):
@@ -84,7 +84,7 @@ class UncFile(BaseModel):
         return (await conn.fetchrow(sql_insert, self.name))[0]
 
 
-class IntFile(BaseModel):
+class IntFile(I4cBaseModel):
     name: str
     ver: str
 
@@ -95,7 +95,8 @@ class IntFile(BaseModel):
                 and self.ver == other.ver)
 
 
-class ProjFile(BaseModel):
+
+class ProjFile(I4cBaseModel):
     savepath: str
     file_git: Optional[GitFile]
     file_unc: Optional[UncFile]
@@ -124,14 +125,14 @@ class ProjFile(BaseModel):
         await conn.execute(sql_insert, pv_id, self.savepath, git_id, unc_id)
 
 
-class ProjectVersion(BaseModel):
+class ProjectVersion(I4cBaseModel):
     ver: int = Field(..., title="Version number.")
     labels: List[str] = Field(..., title="List of labels.")
     status: ProjectVersionStatusEnum
     files: List[ProjFile]
 
 
-class ProjectVersionPatchCondition(BaseModel):
+class ProjectVersionPatchCondition(I4cBaseModel):
     flipped: Optional[bool]
     status: Optional[ProjectVersionStatusEnum]
     has_label: Optional[bool]
@@ -150,7 +151,7 @@ class ProjectVersionPatchCondition(BaseModel):
             return not r
 
 
-class ProjectVersionPatchChange(BaseModel):
+class ProjectVersionPatchChange(I4cBaseModel):
     status: Optional[ProjectVersionStatusEnum]
     clear_label: Optional[List[str]]
     set_label: Optional[List[str]]
@@ -165,7 +166,7 @@ class ProjectVersionPatchChange(BaseModel):
                and self.del_file is None)
 
 
-class ProjectVersionPatchBody(BaseModel):
+class ProjectVersionPatchBody(I4cBaseModel):
     conditions: List[ProjectVersionPatchCondition]
     change: ProjectVersionPatchChange
 
