@@ -450,7 +450,7 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
                         await conn.execute(sql_insert, pv_id, l)
 
             if patch.change.del_file:
-                # todo: delete details (file_git, file_unc, file_int)?
+                # todo: delete data from extension tables (file_git, file_unc)?
                 sql = dedent("""\
                     delete from project_file
                     where 

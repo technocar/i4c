@@ -14,6 +14,9 @@ api_router.include_router(intfiles.router, prefix="/intfiles", tags=["intfiles"]
 app = I4cApi()
 app.include_router(api_router)
 
+# todo: log all api calls to log table for audit
+# todo: smarter string match when listing object. eg: name="||a |b cd"
+
 
 @app.on_event("startup")
 async def startup_event():
