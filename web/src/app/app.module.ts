@@ -20,6 +20,7 @@ import { SnapshotLatheComponent } from './snapshots/snapshot-lathe/snapshot-lath
 import { SnapshotRobotComponent } from './snapshots/snapshot-robot/snapshot-robot.component';
 import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.component';
 import { ProjectComponent } from './project/project.component';
+import { AppHeaderComponent } from './app-header/app-header.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +33,8 @@ import { ProjectComponent } from './project/project.component';
     DashboardComponent,
     SelectorComponent,
     LoginComponent,
-    ProjectComponent
+    ProjectComponent,
+    AppHeaderComponent
   ],
   imports: [
     BrowserModule,

@@ -10,12 +10,9 @@
 <div *ngIf="isDataLoaded" class="container-lg">
   <div id="header" class="row sticky-top">
     <div class="col">
-      <div class="row align-items-center toolbar">
-        <div id="navs" class="col">
-          <div class="row">
-            <a id="nav_exit" class="col" href="#" [routerLink]="'/selector'" title="Vissza a kezdőlaphoz">
-              <i class="bi bi-box-arrow-left"></i>
-            </a>
+      <app-header>
+        <div id="navs" class="app-header-menu col">
+          <div class="row align-items-center">
             <span id="nav_search" class="col" (click)="openSearch(searchModal)" title="Keresés">
               <i class="bi bi-funnel"></i>
             </span>
@@ -39,20 +36,20 @@
             </span>
           </div>
         </div>
-        <div id="timestamp" class="col-auto" #datetime="ngbPopover" [ngbPopover]="datetimeSettings" [autoClose]="'outside'" [popoverTitle]="" (shown)="dateTimeSettingsShown()">
+        <div id="timestamp" class="app-header-extra col-auto" #datetime="ngbPopover" [ngbPopover]="datetimeSettings" [autoClose]="'outside'" [popoverTitle]="" (shown)="dateTimeSettingsShown()">
           <span >{{timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</span>
           <ng-template #datetimeSettings>
             <ngb-datepicker #dp="ngbDatepicker" [(ngModel)]="currentDate" [startDate]="currentDate"></ngb-datepicker>
             <ngb-timepicker #tp [seconds]="true" [(ngModel)]="currentTime"></ngb-timepicker>
           </ng-template>
         </div>
-        <a id="nav_list" class="col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="changeLayout('list')" *ngIf="!isListMode">
+        <a id="nav_list" class="app-header-extra col-auto" href="#" [routerLink]="" title="Lista nézet" (click)="changeLayout('list')" *ngIf="!isListMode">
           <i class="bi bi-arrow-right-circle"></i>
         </a>
-        <a id="nav_snapshot" class="col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="changeLayout('snapshot')" *ngIf="isListMode">
+        <a id="nav_snapshot" class="app-header-extra col-auto" href="#" [routerLink]="" title="Pillanatkép" (click)="changeLayout('snapshot')" *ngIf="isListMode">
           <i class="bi bi-arrow-left-circle"></i>
         </a>
-      </div>
+      </app-header>
       <div class="row mb-2 devices">
         <div class="col-2">
           <div class="custom-control custom-switch">
