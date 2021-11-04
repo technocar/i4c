@@ -489,7 +489,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/installations?id=15&status=todo",
+							"raw": "localhost:5000/installations?id=15",
 							"host": [
 								"localhost"
 							],
@@ -504,8 +504,190 @@
 								},
 								{
 									"key": "status",
-									"value": "todo"
+									"value": "todo",
+									"disabled": true
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "installations - patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"working\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"todo\",\r\n        \"status_msg\": \"hello\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/installations/15",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"installations",
+								"15"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "installation - get file",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:5000/installations/15/file1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "5000",
+							"path": [
+								"installations",
+								"15",
+								"file1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "project version",
+			"item": [
+				{
+					"name": "project version patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"edit\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"edit\",\r\n        \"clear_label\": [\"abc\", \"bcd\"],\r\n        \"set_label\": [\"ddd\"],\r\n        \"del_file\": [\"file1\"],\r\n        \"add_file\": [\r\n            {\r\n                \"savepath\": \"file1\",\r\n                \"file_git\": {\r\n                    \"repo\": \"r1\",\r\n                    \"name\": \"name1\",\r\n                    \"commit\": \"tsdf65ajgf23j4tr23u4\"\r\n                },\r\n                \"file_unc\": null,\r\n                \"file_int\": null\r\n            }\r\n        ]\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/projects/proj1/v/1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1",
+								"v",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "project version post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n    {\r\n            \"savepath\": \"12344\"\r\n    }\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/projects/proj1/v?ver=11",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1",
+								"v"
+							],
+							"query": [
+								{
+									"key": "ver",
+									"value": "11"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "project version get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/projects/proj1/v/1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"projects",
+								"proj1",
+								"v",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "intfiles",
+			"item": [
+				{
+					"name": "intfiles put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Develop_git/Github-karatnet/i4c/api/api.py"
+								}
+							]
+						},
+						"url": {
+							"raw": "localhost:5000/intfiles/v/1/c:\\temp\\0001.py",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"intfiles",
+								"v",
+								"1",
+								"c:",
+								"temp",
+								"0001.py"
 							]
 						}
 					},

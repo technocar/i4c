@@ -5,14 +5,14 @@ from typing import List, Optional
 from fastapi import HTTPException
 from starlette.responses import StreamingResponse, FileResponse
 
-from common import DatabaseConnection, write_debug_sql
-from pydantic import BaseModel, Field
+from common import I4cBaseModel, DatabaseConnection, write_debug_sql
+from pydantic import Field
 from datetime import datetime
 from models import ProjectVersionStatusEnum, InstallationStatusEnum, ProjectStatusEnum
 from models.common import PatchResponse
 
 
-class Installation(BaseModel):
+class Installation(I4cBaseModel):
     id: int
     ts: datetime
     project: str
@@ -23,7 +23,7 @@ class Installation(BaseModel):
     files: List[str] = Field([])
 
 
-class InstallationPatchCondition(BaseModel):
+class InstallationPatchCondition(I4cBaseModel):
     status: Optional[InstallationStatusEnum]
 
     def match(self, project:Installation):
@@ -32,7 +32,7 @@ class InstallationPatchCondition(BaseModel):
         )
 
 
-class InstallationPatchChange(BaseModel):
+class InstallationPatchChange(I4cBaseModel):
     status: Optional[InstallationStatusEnum]
     status_msg: Optional[str]
 
@@ -40,7 +40,7 @@ class InstallationPatchChange(BaseModel):
         return self.status is None and self.status_msg is None
 
 
-class InstallationPatchBody(BaseModel):
+class InstallationPatchBody(I4cBaseModel):
     conditions: List[InstallationPatchCondition]
     change: InstallationPatchChange
 
@@ -177,6 +177,7 @@ async def get_installations(credentials, id=None, status=None, after=None, befor
         if ver is not None:
             params.append(ver)
             sql += f"and res.real_version = ${len(params)}\n"
+        sql += f"order by res.ts desc"
         res = await conn.fetch(sql, *params)
         return res
 

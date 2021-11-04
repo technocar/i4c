@@ -1,3 +1,5 @@
+import re
+
 from fastapi import FastAPI
 
 from .I4cApiRouter import I4cApiRouter
@@ -13,6 +15,9 @@ class I4cApi(FastAPI):
         paths = res["paths"]
         for (m, p, xtra) in self.openapi_extra:
             for (k, v) in xtra.items():
+                # eg.: /intfiles/v/{ver}/{path:path} => /intfiles/v/{ver}/{path}
+                p = re.sub(r"(?P<b>{[^:}]*):[^}]*}", r"\g<b>}", p)
+                
                 paths[p][m][f"x-{k}"] = v
         return res
 

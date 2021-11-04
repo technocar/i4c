@@ -1,5 +1,5 @@
-from pydantic import BaseModel
+from common import I4cBaseModel
 
 
-class PatchResponse(BaseModel):
+class PatchResponse(I4cBaseModel):
     changed: bool

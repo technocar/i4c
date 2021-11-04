@@ -46,3 +46,33 @@ async def get_project(
     patch: models.projects.ProjectPatchBody = Body(...),
 ):
     return await models.projects.patch_project(credentials, name, patch)
+
+
+@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, x_properties=dict(object="projects ver", action="get"))
+async def list_projects_version(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
+    name: str = Path(...),
+    ver: int = Path(...)
+):
+    res, _ = await models.projects.get_projects_version(credentials, name, ver)
+    return res
+
+
+@router.post("/{name}/v", response_model=models.projects.ProjectVersion, x_properties=dict(object="projects ver", action="post"))
+async def post_projects_version(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects/{name}/v")),
+    name: str = Path(...),
+    ver: Optional[int] = Query(None),
+    files: List[models.projects.ProjFile] = Body(...),
+):
+    return await models.projects.post_projects_version(credentials, name, ver, files)
+
+
+@router.patch("/{name}/v/{ver}", response_model=models.common.PatchResponse, x_properties=dict(object="projects ver", action="patch"))
+async def get_project_version(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}/v/{ver}")),
+    name: str = Path(...),
+    ver: int = Path(...),
+    patch: models.projects.ProjectVersionPatchBody = Body(...),
+):
+    return await models.projects.patch_project_version(credentials, name, ver, patch)

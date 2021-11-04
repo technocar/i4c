@@ -1,10 +1,10 @@
 from fastapi import HTTPException
-from common import MyBaseModel, DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection
 
 view_last_instance_sql = open("models\\log\\last_instance.sql").read()
 
 
-class LastInstance(MyBaseModel):
+class LastInstance(I4cBaseModel):
     instance: str
     sequence: str
 

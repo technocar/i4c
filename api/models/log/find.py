@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import Optional
 from fastapi import HTTPException
-from common import MyBaseModel, write_debug_sql, DatabaseConnection, log
+from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 
 view_find_sql = open("models\\log\\find.sql").read()
 
 
-class DataPoint(MyBaseModel):
+class DataPoint(I4cBaseModel):
     timestamp: datetime
     sequence: int
     device: str
