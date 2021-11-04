@@ -8,3 +8,6 @@ log = logging.getLogger("api")
 
 with open("dbconfig.yaml") as f:
     dbcfg = yaml.load(f, Loader=yaml.FullLoader)
+
+with open("apiconfig.yaml") as f:
+    apicfg = yaml.load(f, Loader=yaml.FullLoader)
