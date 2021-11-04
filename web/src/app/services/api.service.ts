@@ -2,8 +2,55 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindRequest, ListItem, Meta, Project, ProjectInstallResponse, ProjectStatus, SnapshotResponse, User } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User } from './models/api';
 import { DeviceType } from './models/constants';
+
+class RequestParams {
+  _params: HttpParams;
+
+  constructor() {
+    this._params = new HttpParams();
+  }
+
+  public add(name: string, value: any) {
+    console.log(value);
+    if (value === undefined)
+      return;
+
+    let v: string = "";
+    switch (typeof value) {
+      case "object":
+        if (value instanceof Date)
+          v = (value as Date).toISOString();
+        else if (Array.isArray(value))
+        {
+          for (let item of v)
+            this.add(name, item);
+          return;
+        }
+        else
+          v = JSON.stringify(value);
+        break;
+      default:
+        v = value.toString();
+        break;
+    }
+    console.log(v);
+    this._params = this._params.append(name, v);
+  }
+
+  public addFromObject(object: Object) {
+    if (!object)
+      return;
+
+    for (let name in object)
+      this.add(name, object[name]);
+  }
+
+  public getAll(): HttpParams {
+    return this._params;
+  }
+}
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +66,10 @@ export class ApiService {
   }
 
   getErrorMsg(error: any): string | string[] {
+    console.log(console.error);
+
+    error = error.error ?? error;
+
     if (!error || !error.detail)
       return "Ismeretlen hiba!";
 
@@ -29,6 +80,9 @@ export class ApiService {
 
       return details.map((d) => d.msg);
     }
+
+    if (typeof error.detail !== "object")
+      return error.detail.toString();
 
     return (error.detail as ErrorDetail).msg;
   };
@@ -42,7 +96,7 @@ export class ApiService {
   }
 
   getList(device: DeviceType, timestamp: Date, window: number, sequence?: number): Observable<ListItem[]> {
-    let request: FindRequest = {
+    let request: FindParams = {
       device: device,
       timestamp: timestamp,
       afterCount: window,
@@ -52,7 +106,7 @@ export class ApiService {
     return this.find(request);
   }
 
-  find(request: FindRequest): Observable<ListItem[]> {
+  find(request: FindParams): Observable<ListItem[]> {
     var params = new HttpParams();
     params = params.append("device", request.device);
     if (request.beforeCount)
@@ -88,22 +142,24 @@ export class ApiService {
   }
 
   getProjects(name?: string, status?: string, file?: string): Observable<Project[]> {
-    var params = new HttpParams()
-      .append("name", name)
-      .append("status", status)
-      .append("file", file);
+    var params = new RequestParams();
+    params.add("name", name);
+    params.add("status", status);
+    params.add("file", file);
 
-    params.keys().forEach((p) => {
-      if (params.get(p) === undefined)
-        params = params.delete(p);
-    });
-
-    return this.http.get<Project[]>(`${this._apiUrl}/projects`, { params });
+    return this.http.get<Project[]>(`${this._apiUrl}/projects`, { params: params.getAll() });
   }
 
-  installProject(name: string, version: string, statuses?: ProjectStatus[]): Observable<ProjectInstallResponse> {
-    var params = new HttpParams()
-      .append("statuses", JSON.stringify(statuses));
-    return this.http.post<ProjectInstallResponse>(`${this._apiUrl}/installations/${name}/${version}`, undefined, { params });
+  getInstalledProjects(parameters?: ProjectInstallParams): Observable<ProjectInstall[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+
+    return this.http.get<ProjectInstall[]>(`${this._apiUrl}/installations`, { params: params.getAll() });
+  }
+
+  installProject(name: string, version: string, statuses?: ProjectStatus[]): Observable<ProjectInstall> {
+    var params = new RequestParams();
+    params.add("statuses", statuses);
+    return this.http.post<ProjectInstall>(`${this._apiUrl}/installations/${name}/${version}`, undefined, { params: params.getAll() });
   }
 }
