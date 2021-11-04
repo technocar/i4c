@@ -80,7 +80,8 @@ create table "project_file" (
     savepath character varying (2000) not null,
     file_git integer null constraint fk_git references "file_git", 
     file_unc integer null constraint fk_unc references "file_unc",  
-    file_int integer null constraint fk_int references "file_int"
+    file_int integer null constraint fk_int references "file_int",
+    primary key (project_ver, savepath)
 );
 
 GRANT ALL ON TABLE public."project_file" TO aaa;

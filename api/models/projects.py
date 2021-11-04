@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 from pydantic import Field
 
-from common import DatabaseConnection, I4cBaseModel
+from common import DatabaseConnection, I4cBaseModel, write_debug_sql
 from models import ProjectStatusEnum, ProjectVersionStatusEnum
 from models.common import PatchResponse
 
@@ -135,13 +135,9 @@ class ProjFile(I4cBaseModel):
         await conn.execute(sql_insert, pv_id, self.savepath, git_id, unc_id, int_id)
 
 
-class ProjInfo(I4cBaseModel):
-    project_name: str
-    ver: int
-
-
 class FileWithProjInfo(ProjFile):
-    projects_versions: List[ProjInfo]
+    project_name: str
+    project_ver: int
 
 
 class ProjectVersion(I4cBaseModel):
@@ -475,3 +471,81 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
                             raise HTTPException(status_code=400, detail="Project file with same savepath and different properties exists")
 
             return PatchResponse(changed=True)
+
+
+async def files_list(credentials, proj_name, projver, save_path, protocol, name, repo, commit, filever, *, pconn=None):
+    # result: List[dict] representing List[FileWithProjInfo]
+    # todo 1: **********
+    sql = dedent("""\
+            with
+                res as (
+                    SELECT 
+                      pv.project as proj_name,
+                      pv.ver as proj_ver,
+                      pf.savepath as save_path,
+                      coalesce(CASE WHEN pf.file_git is not null then 'git' end,
+                               CASE WHEN pf.file_int is not null then 'int' end,
+                               CASE WHEN pf.file_unc is not null then 'unc' end) as "protocol",
+                      coalesce(fg.name, fi.name, fu.name) as name,
+                      fg.repo,
+                      fg.commit,
+                      fi.ver as filever,
+                      
+                      fg.id as git_id,
+                      fg.repo as git_repo,
+                      fg.name as git_name,
+                      fg.commit as git_commit,
+                    
+                      fu.id as unc_id,
+                      fu.name as unc_name,
+                    
+                      fi.id as int_id,
+                      fi.name as int_name,
+                      fi.ver as int_ver  
+                    from project_file pf
+                    join project_version pv on pv.id = pf.project_ver
+                    left join file_git fg on fg.id = pf.file_git
+                    left join file_int fi on fi.id = pf.file_int
+                    left join file_unc fu on fu.id = pf.file_unc
+                )
+            select * 
+            from res
+            where True
+          """)
+    params = []
+
+    def add_param(value, col_name, param_type=None):
+        nonlocal sql
+        nonlocal params
+        if value is not None:
+            params.append(value)
+            sp = f"::{param_type}" if param_type else ""
+            sql += f"and res.{col_name} = ${len(params)}{sp}\n"
+
+    add_param(proj_name, "proj_name")
+    add_param(projver, "proj_ver", "int")
+    add_param(save_path, "save_path")
+    if protocol is not None:
+        sql += 'and (False\n'
+        for p in protocol:
+            params.append(p)
+            sql += f"or res.protocol=${len(params)}\n"
+        sql += ')\n'
+    add_param(name, "name")
+    add_param(repo, "repo")
+    add_param(commit, "commit")
+    add_param(filever, "filever", "int")
+    async with DatabaseConnection(pconn) as conn:
+        write_debug_sql('files_list.sql', sql, *params)
+        dr = await conn.fetch(sql, *params)
+        res = []
+        for r in dr:
+            d = dict(savepath=r["save_path"], project_name=r["proj_name"], project_ver=r["proj_ver"])
+            if r["git_id"]:
+                d["file_git"] = GitFile(repo=r["git_repo"], name=r["git_name"], commit=r["git_commit"])
+            if r["unc_id"]:
+                d["file_unc"] = UncFile(name=r["unc_name"])
+            if r["int_id"]:
+                d["file_int"] = IntFile(name=r["int_name"], ver=r["int_ver"])
+            res.append(FileWithProjInfo(**d))
+        return res

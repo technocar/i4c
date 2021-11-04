@@ -666,14 +666,107 @@
 						"method": "PUT",
 						"header": [],
 						"body": {
-							"mode": "formdata",
-							"formdata": [
+							"mode": "file",
+							"file": {
+								"src": "/C:/Develop_git/Github-karatnet/i4c/api/dbconfig.sample_yaml"
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/intfiles/v/1/c:\\temp\\0001.py",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"intfiles",
+								"v",
+								"1",
+								"c:",
+								"temp",
+								"0001.py"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "intfiles get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/intfiles/v/1/c:\\temp\\0001.py",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"intfiles",
+								"v",
+								"1",
+								"c:",
+								"temp",
+								"0001.py"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "intfiles list",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": ""
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/intfiles?name=c:\\temp\\0001.py&min_ver=1&max_ver=11&hash=asasas",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"intfiles"
+							],
+							"query": [
 								{
-									"key": "file",
-									"type": "file",
-									"src": "/C:/Develop_git/Github-karatnet/i4c/api/api.py"
+									"key": "name",
+									"value": "c:\\temp\\0001.py"
+								},
+								{
+									"key": "min_ver",
+									"value": "1"
+								},
+								{
+									"key": "max_ver",
+									"value": "11"
+								},
+								{
+									"key": "hash",
+									"value": "asasas"
 								}
 							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "intfiles delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": ""
+							}
 						},
 						"url": {
 							"raw": "localhost:5000/intfiles/v/1/c:\\temp\\0001.py",
@@ -708,6 +801,70 @@
 					"port": "5000",
 					"path": [
 						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/files?save_path=file1",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"files"
+					],
+					"query": [
+						{
+							"key": "proj_name",
+							"value": "proj1",
+							"disabled": true
+						},
+						{
+							"key": "projver",
+							"value": "1",
+							"disabled": true
+						},
+						{
+							"key": "save_path",
+							"value": "file1"
+						},
+						{
+							"key": "protocol",
+							"value": "git",
+							"disabled": true
+						},
+						{
+							"key": "protocol",
+							"value": "int",
+							"disabled": true
+						},
+						{
+							"key": "name",
+							"value": "aaa",
+							"disabled": true
+						},
+						{
+							"key": "repo",
+							"value": "aaa",
+							"disabled": true
+						},
+						{
+							"key": "commit",
+							"value": "aaa",
+							"disabled": true
+						},
+						{
+							"key": "filever",
+							"value": "1",
+							"disabled": true
+						}
 					]
 				}
 			},

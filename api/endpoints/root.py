@@ -3,7 +3,6 @@ from typing import Optional, List
 from fastapi import Depends, Query
 from fastapi.security import HTTPBasicCredentials
 import common
-import models.intfiles
 import models.projects
 import models.users
 from I4cAPI import I4cApiRouter
@@ -24,7 +23,7 @@ async def login(
 async def files(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/files")),
         proj_name: Optional[str] = Query(None),
-        projver: Optional[str] = Query(None),
+        projver: Optional[int] = Query(None),
         save_path: Optional[str] = Query(None),
         protocol: Optional[List[FileProtocolEnum]] = Query(None),
         name: Optional[str] = Query(None),
@@ -32,6 +31,6 @@ async def files(
         commit: Optional[str] = Query(None),
         filever: Optional[int] = Query(None),
 ):
-    return await models.intfiles.files_list(credentials, proj_name, projver, save_path, protocol,
+    return await models.projects.files_list(credentials, proj_name, projver, save_path, protocol,
                                             name, repo, commit, filever)
 
