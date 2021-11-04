@@ -1,8 +1,7 @@
 from typing import List, Optional
 from fastapi import Depends, Path, Body, Query
 from fastapi.security import HTTPBasicCredentials
-from fastapi.responses import FileResponse, Response
-
+from fastapi.responses import FileResponse
 import common
 import models.intfiles
 from I4cAPI import I4cApiRouter
@@ -21,14 +20,14 @@ async def intfiles_list(
     return await models.intfiles.intfiles_list(credentials, name, min_ver, max_ver, hash)
 
 
-@router.get("/v/{ver}/{path:path}", response_class=FileResponse,
+@router.get("/v/{ver}/{path:path}", response_class=FileResponse(..., media_type="application/octet-stream"),
             x_properties=dict(object="intfiles", action="get"))
 async def intfiles_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
     path: str = Path(...)
 ):
-    return await models.intfiles.intfiles_get(credentials, ver, path)
+    return FileResponse(await models.intfiles.intfiles_get(credentials, ver, path), media_type="application/octet-stream")
 
 
 @router.put("/v/{ver}/{path:path}", status_code=201, x_properties=dict(object="intfiles", action="put"))
