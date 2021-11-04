@@ -11,6 +11,11 @@ class FileDetail(I4cBaseModel):
     hash: str
 
 
+async def files_list(credentials, proj_name, projver, save_path, protocol, name, repo, commit, filever):
+    # todo 1: **********
+    pass
+
+
 async def intfiles_list(credentials, name, min_ver, max_ver, hash):
     # todo 1: **********
     pass

@@ -135,6 +135,15 @@ class ProjFile(I4cBaseModel):
         await conn.execute(sql_insert, pv_id, self.savepath, git_id, unc_id, int_id)
 
 
+class ProjInfo(I4cBaseModel):
+    project_name: str
+    ver: int
+
+
+class FileWithProjInfo(ProjFile):
+    projects_versions: List[ProjInfo]
+
+
 class ProjectVersion(I4cBaseModel):
     ver: int = Field(..., title="Version number.")
     labels: List[str] = Field(..., title="List of labels.")
@@ -285,8 +294,6 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
 
             await conn.execute(sql, *params)
             return PatchResponse(changed=True)
-
-# todo 1: file search and intfiles api
 
 
 async def get_proj_file(project_ver, savepath, *, pconn=None):

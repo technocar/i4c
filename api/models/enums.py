@@ -39,3 +39,9 @@ class InstallationStatusEnum(str, Enum):
     working = "working"
     done = "done"
     fail = "fail"
+
+
+class FileProtocolEnum(str, Enum):
+    git = "git"
+    unc = "unc"
+    int = "int"
