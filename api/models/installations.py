@@ -26,9 +26,9 @@ class Installation(I4cBaseModel):
 class InstallationPatchCondition(I4cBaseModel):
     status: Optional[InstallationStatusEnum]
 
-    def match(self, project:Installation):
+    def match(self, ins:Installation):
         return (
-            ((self.status or project.status) == project.status)
+            ((self.status is None) or (self.status == ins.status))
         )
 
 

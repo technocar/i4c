@@ -113,8 +113,10 @@ async def intfiles_put(
                 sql_insert = "insert into file_int (name, ver, content_hash) values ($1, $2, $3)"
                 await conn.execute(sql_insert, name, ver, hash)
 
-            with open(get_internal_file_name(hash), "wb") as f:
-                f.write(file)
+            fn = get_internal_file_name(hash)
+            if not os.path.isfile(fn):
+                with open(fn, "wb") as f:
+                    f.write(file)
 
 
 async def intfiles_delete(credentials, ver, name):
@@ -122,6 +124,6 @@ async def intfiles_delete(credentials, ver, name):
         async with conn.transaction(isolation='repeatable_read'):
             id = await intfiles_check_usage(ver, name, pconn=conn)
             if id:
-                # todo maybe delete file from disk
+                # todo maybe delete file from disk. Delete only when no file with this hash are in use.
                 sql_update = "delete from file_int where id = $1"
                 await conn.execute(sql_update, id)

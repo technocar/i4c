@@ -1,5 +1,5 @@
 from I4cAPI import I4cApi, I4cApiRouter
-from endpoints import log, users, root, projects, installations, intfiles
+from endpoints import log, users, root, projects, installations, intfiles, workpiece
 import uvicorn
 import common
 
@@ -10,9 +10,16 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 api_router.include_router(installations.router, prefix="/installations", tags=["installations"])
 api_router.include_router(intfiles.router, prefix="/intfiles", tags=["intfiles"])
+api_router.include_router(workpiece.router, prefix="/workpiece", tags=["workpiece"])
 
 app = I4cApi()
 app.include_router(api_router)
+
+# todo: log all api calls to log table for audit
+# todo: smarter string match when listing object.
+#       két mód:
+#       (1) teljes egyezés
+#       (2) multi param, item-enként pipe-os match? elül-hátul 0-1 pipe lehet. Középen meg pipe-ot jelent. Pipe escape nincs.
 
 
 @app.on_event("startup")

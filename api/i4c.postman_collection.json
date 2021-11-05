@@ -789,6 +789,76 @@
 			]
 		},
 		{
+			"name": "workpiece",
+			"item": [
+				{
+					"name": "workpiece get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/workpiece/12",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"workpiece",
+								"12"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "workpiece list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/workpiece",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"workpiece"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "workpiece get Copy",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"good\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/workpiece/12",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"workpiece",
+								"12"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "login",
 			"request": {
 				"method": "GET",
