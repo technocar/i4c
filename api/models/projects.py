@@ -513,7 +513,7 @@ async def files_list(credentials, proj_name, projver, save_path, protocol, name,
           """)
     params = []
 
-    def add_param(value, col_name, param_type=None):
+    def add_param(value, col_name, *, param_type=None):
         nonlocal sql
         nonlocal params
         if value is not None:
@@ -522,7 +522,7 @@ async def files_list(credentials, proj_name, projver, save_path, protocol, name,
             sql += f"and res.{col_name} = ${len(params)}{sp}\n"
 
     add_param(proj_name, "proj_name")
-    add_param(projver, "proj_ver", "int")
+    add_param(projver, "proj_ver", param_type="int")
     add_param(save_path, "save_path")
     if protocol is not None:
         sql += 'and (False\n'
@@ -533,7 +533,7 @@ async def files_list(credentials, proj_name, projver, save_path, protocol, name,
     add_param(name, "name")
     add_param(repo, "repo")
     add_param(commit, "commit")
-    add_param(filever, "filever", "int")
+    add_param(filever, "filever", param_type="int")
     async with DatabaseConnection(pconn) as conn:
         write_debug_sql('files_list.sql', sql, *params)
         dr = await conn.fetch(sql, *params)
