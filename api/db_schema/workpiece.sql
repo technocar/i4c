@@ -17,6 +17,7 @@ GRANT USAGE, SELECT ON SEQUENCE workpiece_id_seq TO postgres;
 
 create table "workpiece_note" (
     id SERIAL PRIMARY KEY,
+    workpiece int not null constraint fk_project references "workpiece",
     "user" character varying (200) not null constraint fk_userrole_user references "user", 
     "timestamp" timestamp with time zone NOT NULL,
     "text" text NOT NULL,
