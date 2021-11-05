@@ -26,14 +26,14 @@ with
       and l.data_id='ct'           /* workpiece_end, todo: use proper data */  
   ),
   workpiece_id as (
-    select 'sdfsdf' /* l.value_text */ as "id", l.timestamp, l.sequence
+    select substr(md5(l.timestamp::varchar(200)||l.sequence::varchar(200)),1,8) /* l.value_text */ as "id", l.timestamp, l.sequence
     from log l
     cross join p
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='ccond'           /* workpiece_id, todo: use proper data */  
+      and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
   ),
   workpiece_status as (
     select 'bad' /* l.value_text */ as "auto_status", l.timestamp, l.sequence
@@ -72,8 +72,8 @@ with
           rank() over (order by w.timestamp asc, w.sequence asc) r
         from workpiece_id as w
         where 
-          w.timestamp < wb.timestamp
-          or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
+          w.timestamp > wb.timestamp
+          or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)
       ) a
       where a.r = 1) wid on True
     left join lateral (

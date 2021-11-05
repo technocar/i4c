@@ -797,14 +797,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece/1",
+							"raw": "localhost:5000/workpiece/92a024b9",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"1"
+								"92a024b9"
 							]
 						}
 					},
@@ -849,7 +849,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"good\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"bad\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"inprogress\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -857,14 +857,14 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/workpiece/12",
+							"raw": "localhost:5000/workpiece/92a024b9",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"12"
+								"92a024b9"
 							]
 						}
 					},

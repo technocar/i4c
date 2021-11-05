@@ -1,8 +1,12 @@
 from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional
+
+from fastapi import HTTPException
+
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql
 from models import WorkpieceStatusEnum
+from models.common import PatchResponse
 
 
 class NoteAdd(I4cBaseModel):
@@ -152,6 +156,52 @@ async def list_workpiece(credentials, before=None, after=None, id=None, project=
 
 
 
-async def patch_workpiece(credentials, id, patch):
-    # todo 1: **********
-    pass
+async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            workpiece = await list_workpiece(credentials, id=id, pconn=conn, with_details=False)
+            if len(workpiece) == 0:
+                raise HTTPException(status_code=400, detail="Workpiece not found")
+            workpiece = workpiece[0]
+
+            match = False
+            for cond in patch.conditions:
+                match = cond.match(workpiece)
+                if match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+
+            if patch.change.status or patch.change.batch:
+                sql_check_db = "select * from workpiece where id = $1"
+                dbr = await conn.fetchrow(sql_check_db, id)
+                params = [id]
+                sql_update = "update workpiece\nset\n"
+                sql_insert_fields = "id"
+                sql_insert_params = "$1"
+                sep = ""
+                if patch.change.status:
+                    params.append(patch.change.status)
+                    sql_update += f"{sep}\"manual_status\"=${len(params)}"
+                    sql_insert_fields += ", manual_status"
+                    sql_insert_params += f", ${len(params)}"
+                    sep = ",\n"
+                if patch.change.batch:
+                    params.append(patch.change.batch)
+                    sql_update += f"{sep}\"batch\"=${len(params)}"
+                    sql_insert_fields += ", batch"
+                    sql_insert_params += f", ${len(params)}"
+                    sep = ",\n"
+                sql_update += "\nwhere id = $1"
+                sql_insert = f"insert into workpiece ({sql_insert_fields}) values ({sql_insert_params})\n"
+                if dbr:
+                    await conn.execute(sql_update, *params)
+                else:
+                    await conn.execute(sql_insert, *params)
+
+            # todo: note
+
+            return PatchResponse(changed=True)
