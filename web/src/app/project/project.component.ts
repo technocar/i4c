@@ -68,12 +68,22 @@ export class ProjectComponent implements OnInit {
       return;
     }
 
-    this.apiService.installProject(name, version)
-      .subscribe((r) => {
-        this.getInstalledProjects();
-      }, (err) => {
-        alert(this.apiService.getErrorMsg(err));
-      });
+    this.apiService.getInstalledProjects({
+      status: ProjectInstallStatus.Working
+    }).subscribe(r => {
+      if (r.length === 0) {
+        this.apiService.installProject(name, version)
+          .subscribe((r) => {
+            this.getInstalledProjects();
+          }, (err) => {
+            alert(this.apiService.getErrorMsg(err));
+          });
+      } else {
+        alert("Van futó telepítés!");
+      }
+    }, err => {
+      alert(this.apiService.getErrorMsg(err));
+    })
   }
 
   filterChanged() {
