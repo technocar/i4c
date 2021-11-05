@@ -45,3 +45,10 @@ class FileProtocolEnum(str, Enum):
     git = "git"
     unc = "unc"
     int = "int"
+
+
+class WorkpieceStatusEnum(str, Enum):
+    good = "good"
+    bad = "bad"
+    inprogress = "inprogress"
+    unknown = "unknown"
