@@ -1,4 +1,5 @@
 from I4cAPI import I4cApi, I4cApiRouter
+from common import apicfg
 from endpoints import log, users, root, projects, installations, intfiles, workpiece
 import uvicorn
 import common
@@ -27,7 +28,8 @@ async def startup_event():
     await common.DatabaseConnection.init_db_pool()
 
 if __name__ == "__main__":
-    common.set_debug_mode()
+    if ("debug" in apicfg) and apicfg["debug"]:
+        common.set_debug_mode()
     # http://localhost:5000
     # http://localhost:5000/docs
     uvicorn.run("api:app", host="127.0.0.1", port=5000, log_level="info")
