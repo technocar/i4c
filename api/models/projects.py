@@ -23,8 +23,8 @@ class ProjectPatchCondition(I4cBaseModel):
 
     def match(self, project:Project):
         return (
-                ((self.status or project.status) == project.status)
-                and ((self.extra or project.extra) == project.extra)
+                ((self.status is None) or (self.status == project.status))
+                and ((self.extra is None) or (self.extra == project.extra))
         )
 
 
@@ -155,7 +155,7 @@ class ProjectVersionPatchCondition(I4cBaseModel):
     exist_label_in_proj: Optional[str]
 
     def match(self, pv:ProjectVersion, pi: Project):
-        r = ((self.status or pv.status) == pv.status) \
+        r = ((self.status is None) or (self.status == pv.status)) \
             and ((self.has_label is None) or (len(pv.labels) > 0)) \
             and ((self.exist_label is None) or (self.exist_label in pv.labels)) \
             and ((self.exist_label_in_proj is None)
