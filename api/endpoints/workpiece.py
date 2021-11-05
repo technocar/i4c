@@ -35,10 +35,11 @@ async def list_workpiece(
     note_text: Optional[str] = Query(None),
     note_before: Optional[datetime] = Query(None),
     note_after: Optional[datetime] = Query(None),
+    with_details: Optional[bool] = Query(True, description="With or without note, log, and files")
     # todo log???
 ):
     return await models.workpiece.list_workpiece(credentials, before, after, id, project, batch, status, note_user,
-                                                 note_text, note_before, note_after)
+                                                 note_text, note_before, note_after, with_details)
 
 
 @router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="workpiece", action="patch"))

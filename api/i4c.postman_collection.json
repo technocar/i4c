@@ -797,14 +797,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece/12",
+							"raw": "localhost:5000/workpiece/1",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"12"
+								"1"
 							]
 						}
 					},
@@ -816,7 +816,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece?before=2021-10-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z",
+							"raw": "localhost:5000/workpiece?before=2021-10-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z&with_details=false",
 							"host": [
 								"localhost"
 							],
@@ -832,6 +832,10 @@
 								{
 									"key": "after",
 									"value": "2021-08-15T15:53:11.123456Z"
+								},
+								{
+									"key": "with_details",
+									"value": "false"
 								}
 							]
 						}

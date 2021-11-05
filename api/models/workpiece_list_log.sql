@@ -13,7 +13,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='ct'           /* workpiece_begin */  
+      and l.data_id='cf'           /* workpiece_begin, todo: use proper data */  
   ), 
   workpiece_end as (
     select l.timestamp, l.sequence
@@ -23,7 +23,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='cf'           /* workpiece_end */  
+      and l.data_id='ct'           /* workpiece_end, todo: use proper data */  
   ),
   workpiece_id as (
     select 'sdfsdf' /* l.value_text */ as "id", l.timestamp, l.sequence
@@ -33,7 +33,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='ccond'           /* workpiece_end */  
+      and l.data_id='ccond'           /* workpiece_id, todo: use proper data */  
   ),
   workpiece_status as (
     select 'bad' /* l.value_text */ as "auto_status", l.timestamp, l.sequence
@@ -43,7 +43,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='cs'           /* workpiece_status */  
+      and l.data_id='cs'           /* workpiece_status, todo: use proper data */  
   ),
   workpiece_project as (
     select l.value_text as "project", l.timestamp, l.sequence
@@ -53,7 +53,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='spgm'           /* workpiece_project */  
+      and l.data_id='spgm'           /* workpiece_project , todo: use proper data*/  
   ),
   discover_log as (
     select 
