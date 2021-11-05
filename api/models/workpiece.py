@@ -1,7 +1,7 @@
 from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional
-from common import I4cBaseModel, DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection, write_debug_sql
 from models import WorkpieceStatusEnum
 
 
@@ -28,10 +28,10 @@ class File(I4cBaseModel):
 
 
 class Workpiece(I4cBaseModel):
-    id: str
-    project: str
+    id: Optional[str]
+    project: Optional[str]
     batch: Optional[str]
-    status: WorkpieceStatusEnum
+    status: Optional[WorkpieceStatusEnum]
     notes: List[Note]
     log: List[Log]
     files: List[File]
@@ -75,32 +75,17 @@ async def get_workpiece_notes(id, *, pconn=None):
             res.append(Note(user=r["user"], timestamp=r["timestamp"], text=r["text"], note_id=r["id"], deleted=r["deleted"]))
         return res
 
+workpiece_list_log_sql = open("models\\workpiece_list_log.sql").read()
+
 
 async def list_workpiece(credentials, before=None, after=None, id=None, project=None, batch=None, status=None,
                          note_user=None, note_text=None, note_before=None, note_after=None, *, pconn=None):
-    sql = dedent("""\
-            with
-                res as (
-                    select 
-                        id, project, batch, status, log_window_begin, log_window_end
-                    from workpiece
-                )
-            select * 
-            from res
-            where True
-            """)
+    sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
-        params = []
-
-        if before is not None:
-            params.append(before)
-            sql += f"and coalesce(res.log_window_begin, res.log_window_end) <= ${len(params)}\n"
-        if after is not None:
-            params.append(after)
-            sql += f"and coalesce(res.log_window_end, res.log_window_begin) >= ${len(params)}\n"
+        params = [before, after]
         if id is not None:
             params.append(id)
-            sql += f"and res.id = ${len(params)}::integer\n"
+            sql += f"and res.id = ${len(params)}\n"
         if project is not None:
             params.append(project)
             sql += f"and res.project = ${len(params)}\n"
@@ -125,12 +110,14 @@ async def list_workpiece(credentials, before=None, after=None, id=None, project=
                 params.append(note_after)
                 sql += f"and wn.\"timestamp\" >= ${len(params)}\n"
             sql += f" and exists({sql_note})"
+        write_debug_sql("list_workpiece.sql", sql, *params)
         dr = await conn.fetch(sql, *params)
         res = []
         for r in dr:
             d = dict(**r)
             d["notes"] = await get_workpiece_notes(r["id"], pconn=conn)
-            # todo: get **log** and **files** data from table log using `log_window_begin -> log_window_end`
+            # todo: get **log** and **files** data from table log
+            #  using `begin_timestamp,begin_sequence => end_timestamp, end_sequence`
             d["log"] = []
             d["files"] = []
             res.append(Workpiece(**d))

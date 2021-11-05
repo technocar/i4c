@@ -816,20 +816,30 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece",
+							"raw": "localhost:5000/workpiece?before=2021-10-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece"
+							],
+							"query": [
+								{
+									"key": "before",
+									"value": "2021-10-15T15:53:11.123456Z"
+								},
+								{
+									"key": "after",
+									"value": "2021-08-15T15:53:11.123456Z"
+								}
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "workpiece get Copy",
+					"name": "workpiece patch",
 					"request": {
 						"method": "PATCH",
 						"header": [],

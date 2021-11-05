@@ -14,7 +14,7 @@ router = I4cApiRouter()
 @router.get("/{id}", response_model=models.workpiece.Workpiece, x_properties=dict(object="workpiece", action="get"))
 async def get_workpiece(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/workpiece/{id}")),
-    id: int = Path(...)
+    id: str = Path(...)
 ):
     res = await models.workpiece.list_workpiece(credentials, id=id)
     if len(res) > 0:
@@ -25,9 +25,9 @@ async def get_workpiece(
 @router.get("", response_model=List[models.workpiece.Workpiece], x_properties=dict(object="workpiece", action="list"))
 async def list_workpiece(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/workpiece")),
-    before: Optional[datetime] = Query(None),
-    after: Optional[datetime] = Query(None),
-    id: Optional[int] = Query(None),
+    before: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
+    after: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
+    id: Optional[str] = Query(None),
     project: Optional[str] = Query(None),
     batch: Optional[str] = Query(None),
     status: Optional[WorkpieceStatusEnum] = Query(None),
