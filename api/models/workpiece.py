@@ -56,7 +56,7 @@ class WorkpiecePatchChange(I4cBaseModel):
     batch: Optional[str]
     status: Optional[WorkpieceStatusEnum]
     add_note: Optional[List[NoteAdd]]
-    delete_note: Optional[List[str]]
+    delete_note: Optional[List[int]]
 
     def is_empty(self):
         return (self.status is None
@@ -70,9 +70,11 @@ class WorkpiecePatchBody(I4cBaseModel):
     change: WorkpiecePatchChange
 
 
-async def get_workpiece_notes(id, *, pconn=None):
+async def get_workpiece_notes(id, with_deleted=False, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = "select * from workpiece_note wn where wn.workpiece = $1"
+        if not with_deleted:
+            sql += "and wn.deleted = false"
         write_debug_sql("workpiece_notes.sql", sql, id)
         dr = await conn.fetch(sql, id)
         res = []
@@ -112,7 +114,8 @@ workpiece_list_log_sql_id = open("models\\workpiece_list_log_id.sql").read()
 
 
 async def list_workpiece(credentials, before=None, after=None, id=None, project=None, batch=None, status=None,
-                         note_user=None, note_text=None, note_before=None, note_after=None, with_details=True, *, pconn=None):
+                         note_user=None, note_text=None, note_before=None, note_after=None, with_details=True,
+                         with_deleted=False, *, pconn=None):
     sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
         params = [before, after]
@@ -148,7 +151,7 @@ async def list_workpiece(credentials, before=None, after=None, id=None, project=
         res = []
         for r in dr:
             d = dict(**r)
-            d["notes"] = (await get_workpiece_notes(r["id"], pconn=conn)) if with_details else []
+            d["notes"] = (await get_workpiece_notes(r["id"], with_deleted=with_deleted, pconn=conn)) if with_details else []
             dpar = (r["begin_timestamp"],r["begin_sequence"], r["end_timestamp"], r["end_sequence"])
             d["log"] = (await get_workpiece_log(*dpar, pconn=conn)) if with_details else []
             d["files"] = (await get_workpiece_files(*dpar, pconn=conn)) if with_details else []
@@ -203,6 +206,15 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
                 else:
                     await conn.execute(sql_insert, *params)
 
-            # todo: note
+            if patch.change.delete_note:
+                for d in patch.change.delete_note:
+                    sql = "update workpiece_note set deleted=true where id = $1"
+                    await conn.execute(sql, d)
+
+            if patch.change.add_note:
+                for a in patch.change.add_note:
+                    sql = "insert into workpiece_note (workpiece, \"user\", \"timestamp\", \"text\")" \
+                          "values ($1, $2, $3, $4)"
+                    await conn.execute(sql, id, a.user, a.timestamp, a.text)
 
             return PatchResponse(changed=True)

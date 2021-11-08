@@ -14,9 +14,10 @@ router = I4cApiRouter()
 @router.get("/{id}", response_model=models.workpiece.Workpiece, x_properties=dict(object="workpiece", action="get"))
 async def get_workpiece(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/workpiece/{id}")),
-    id: str = Path(...)
+    id: str = Path(...),
+    with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
 ):
-    res = await models.workpiece.list_workpiece(credentials, id=id)
+    res = await models.workpiece.list_workpiece(credentials, id=id, with_deleted=with_deleted)
     if len(res) > 0:
         return res[0]
     raise HTTPException(status_code=404, detail="No record found")
@@ -35,11 +36,12 @@ async def list_workpiece(
     note_text: Optional[str] = Query(None),
     note_before: Optional[datetime] = Query(None),
     note_after: Optional[datetime] = Query(None),
-    with_details: Optional[bool] = Query(True, description="With or without note, log, and files")
+    with_details: Optional[bool] = Query(True, description="With or without note, log, and files"),
+    with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
     # todo log???
 ):
     return await models.workpiece.list_workpiece(credentials, before, after, id, project, batch, status, note_user,
-                                                 note_text, note_before, note_after, with_details)
+                                                 note_text, note_before, note_after, with_details, with_deleted)
 
 
 @router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="workpiece", action="patch"))

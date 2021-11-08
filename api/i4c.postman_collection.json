@@ -797,14 +797,21 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece/92a024b9",
+							"raw": "localhost:5000/workpiece/Unavailable debug:92a024b9",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"92a024b9"
+								"Unavailable debug:92a024b9"
+							],
+							"query": [
+								{
+									"key": "with_deleted",
+									"value": "true",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -836,6 +843,11 @@
 								{
 									"key": "with_details",
 									"value": "false"
+								},
+								{
+									"key": "with_deleted",
+									"value": "true",
+									"disabled": true
 								}
 							]
 						}
@@ -849,7 +861,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"bad\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"inprogress\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -857,14 +869,14 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/workpiece/92a024b9",
+							"raw": "localhost:5000/workpiece/Unavailable debug:92a024b9",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"92a024b9"
+								"Unavailable debug:92a024b9"
 							]
 						}
 					},
