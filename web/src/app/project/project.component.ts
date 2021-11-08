@@ -3,6 +3,7 @@ import { versions } from 'process';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus } from '../services/models/api';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-project',
@@ -20,7 +21,7 @@ export class ProjectComponent implements OnInit {
   versions$: BehaviorSubject<string[]> = new BehaviorSubject([]);
   installed$: BehaviorSubject<ProjectInstall[]> = new BehaviorSubject([]);
 
-  constructor(private apiService: ApiService) {
+  constructor(private apiService: ApiService, private notifService: NotificationService) {
     let now = new Date();
     this.fromDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0));
     this.toDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 0, 0, 0, 0));
@@ -74,6 +75,7 @@ export class ProjectComponent implements OnInit {
       if (r.length === 0) {
         this.apiService.installProject(name, version)
           .subscribe((r) => {
+            alert(`A ${name} ${version} sikeresen telepítve`);
             this.getInstalledProjects();
           }, (err) => {
             alert(this.apiService.getErrorMsg(err));
@@ -92,5 +94,9 @@ export class ProjectComponent implements OnInit {
 
   convertToDate(value: string) {
     return new Date(value);
+  }
+
+  notifTest() {
+    this.notifService.sendDesktopNotif("I4C", "test message");
   }
 }
