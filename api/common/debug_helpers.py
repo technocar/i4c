@@ -17,6 +17,8 @@ def set_debug_mode(value=True):
 
 
 def param2sql_str(p):
+    if p is None:
+        return "(null)"
     if isinstance(p, str):
         return "'" + p.replace("'", "''") + "'"
     if isinstance(p, datetime):

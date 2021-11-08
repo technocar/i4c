@@ -108,6 +108,7 @@ async def get_workpiece_files(begin_timestamp, begin_sequence, end_timestamp, en
 
 
 workpiece_list_log_sql = open("models\\workpiece_list_log.sql").read()
+workpiece_list_log_sql_id = open("models\\workpiece_list_log_id.sql").read()
 
 
 async def list_workpiece(credentials, before=None, after=None, id=None, project=None, batch=None, status=None,
@@ -116,8 +117,8 @@ async def list_workpiece(credentials, before=None, after=None, id=None, project=
     async with DatabaseConnection(pconn) as conn:
         params = [before, after]
         if id is not None:
+            sql = workpiece_list_log_sql_id
             params.append(id)
-            sql += f"and res.id = ${len(params)}\n"
         if project is not None:
             params.append(project)
             sql += f"and res.project = ${len(params)}\n"

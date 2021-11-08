@@ -3,7 +3,9 @@ with
           coalesce($1::timestamp with time zone,'2199-01-01'::timestamp with time zone) -- */ '2021-10-24 07:56:00.957133+02'::timestamp with time zone
               as before,
           coalesce($2::timestamp with time zone,'1899-01-01'::timestamp with time zone) -- */ '2021-08-24 07:56:00.957133+02'::timestamp with time zone
-              as after
+              as after,
+          $3 -- */ '92a024b9'
+              as "wpid"          
   ),
   workpiece_begin as (
     select l.timestamp, l.sequence
@@ -34,6 +36,7 @@ with
       and l.timestamp <= p.before
       and l.device = 'lathe'
       and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
+      and l.value_text = p."wpid"
   ),
   workpiece_status as (
     select 'bad' /* todo: l.value_text */ as "auto_status", l.timestamp, l.sequence
@@ -64,18 +67,18 @@ with
       we.sequence  as end_sequence,
       ws."auto_status",
       wpr."project"      
-    from workpiece_begin wb
+    from workpiece_id wid
     left join lateral (
       select * from (
         select 
           w.*,
-          rank() over (order by w.timestamp asc, w.sequence asc) r
-        from workpiece_id as w
+          rank() over (order by w.timestamp desc, w.sequence desc) r
+        from workpiece_begin as w
         where 
-          w.timestamp > wb.timestamp
-          or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)
+          w.timestamp < wid.timestamp
+          or (w.timestamp = wid.timestamp and w.sequence <= wid.sequence)
       ) a
-      where a.r = 1) wid on True
+      where a.r = 1) wb on True
     left join lateral (
       select * from (
         select 
