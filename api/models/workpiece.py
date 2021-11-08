@@ -39,6 +39,8 @@ class Workpiece(I4cBaseModel):
     notes: List[Note]
     log: List[Log]
     files: List[File]
+    begin_timestamp: Optional[datetime]
+    end_timestamp: Optional[datetime]
 
 
 class WorkpiecePatchCondition(I4cBaseModel):
