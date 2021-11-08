@@ -885,6 +885,93 @@
 			]
 		},
 		{
+			"name": "tools",
+			"item": [
+				{
+					"name": "tools patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"change\": {\r\n        \"type\": \"fúrófej\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/tools/m5 fúrófej",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"tools",
+								"m5 fúrófej"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "tools write",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"timestamp\": \"2021-08-24T07:55:37.892Z\",\r\n    \"sequence\": 37950,\r\n    \"device\": \"lathe\",\r\n    \"instance\": \"7\",\r\n    \"data_id\": \"install_tool\",\r\n    \"value_num\": 37.0,\r\n    \"value_text\": null,\r\n    \"value_extra\": null,\r\n    \"value_add\": null\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/tools",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"tools"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "tools delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"timestamp\": \"2021-08-24T07:55:37.892Z\",\r\n    \"sequence\": 37950,\r\n    \"device\": \"lathe\",\r\n    \"data_id\": \"install_tool\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/tools",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"tools"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "login",
 			"request": {
 				"method": "GET",

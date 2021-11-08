@@ -1,4 +1,4 @@
-from fastapi import  Query
+from fastapi import Query
 from fastapi.responses import PlainTextResponse
 from I4cAPI import I4cApiRouter
 from common import create_password

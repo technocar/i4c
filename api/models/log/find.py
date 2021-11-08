@@ -6,6 +6,13 @@ from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 view_find_sql = open("models\\log\\find.sql").read()
 
 
+class DataPointKey(I4cBaseModel):
+    timestamp: datetime
+    sequence: int
+    device: str
+    data_id: str
+
+
 class DataPoint(I4cBaseModel):
     timestamp: datetime
     sequence: int
