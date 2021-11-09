@@ -3,6 +3,7 @@ from textwrap import dedent
 from typing import List, Optional
 
 from fastapi import HTTPException
+from pydantic import root_validator
 
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql
 from models import WorkpieceStatusEnum
@@ -45,26 +46,37 @@ class Workpiece(I4cBaseModel):
 
 class WorkpiecePatchCondition(I4cBaseModel):
     batch: Optional[str]
+    empty_batch: Optional[bool]
     status: Optional[WorkpieceStatusEnum]
 
     def match(self, workpiece:Workpiece):
         return (
                 ((self.batch is None) or (self.batch == workpiece.batch))
+                and ((self.empty_batch is None) or ((workpiece.batch is None) == self.empty_batch))
                 and ((self.status is None) or (self.status == workpiece.status))
         )
 
 
 class WorkpiecePatchChange(I4cBaseModel):
     batch: Optional[str]
+    delete_batch: Optional[bool]
     status: Optional[WorkpieceStatusEnum]
     add_note: Optional[List[NoteAdd]]
     delete_note: Optional[List[int]]
 
     def is_empty(self):
         return (self.status is None
-                and self.status is None
+                and self.batch is None
+                and self.delete_batch is None
                 and not self.add_note
                 and not self.delete_note)
+
+    @root_validator
+    def check_exclusive(cls, values):
+        batch, delete_batch = values.get('batch'), values.get('delete_batch')
+        if batch is not None and delete_batch is not None:
+            raise ValueError('batch and delete_batch are exclusive')
+        return values
 
 
 class WorkpiecePatchBody(I4cBaseModel):
@@ -200,6 +212,9 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
                     sql_update += f"{sep}\"batch\"=${len(params)}"
                     sql_insert_fields += ", batch"
                     sql_insert_params += f", ${len(params)}"
+                    sep = ",\n"
+                if patch.change.delete_batch:
+                    sql_update += f"{sep}\"batch\"=null"
                     sep = ",\n"
                 sql_update += "\nwhere id = $1"
                 sql_insert = f"insert into workpiece ({sql_insert_fields}) values ({sql_insert_params})\n"

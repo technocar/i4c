@@ -861,7 +861,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"batch\": \"b1\",\r\n        \"####___delete_batch\": true,\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -964,6 +964,45 @@
 							"port": "5000",
 							"path": [
 								"tools"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "batch",
+			"item": [
+				{
+					"name": "batch list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/batch?after=2021-10-15T15:53:11.123456Z",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"batch"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "2021-10-15T15:53:11.123456Z"
+								},
+								{
+									"key": "project",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "project_name",
+									"value": null,
+									"disabled": true
+								}
 							]
 						}
 					},
