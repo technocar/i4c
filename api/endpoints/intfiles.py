@@ -13,11 +13,12 @@ router = I4cApiRouter()
 async def intfiles_list(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/intfiles")),
     name: Optional[str] = Query(None),
+    name_mask: Optional[List[str]] = Query(None),
     min_ver: Optional[int] = Query(None),
     max_ver: Optional[int] = Query(None),
     hash: Optional[str] = Query(None),
 ):
-    return await models.intfiles.intfiles_list(credentials, name, min_ver, max_ver, hash)
+    return await models.intfiles.intfiles_list(credentials, name, name_mask, min_ver, max_ver, hash)
 
 
 @router.get("/v/{ver}/{path:path}", response_class=FileResponse(..., media_type="application/octet-stream"),

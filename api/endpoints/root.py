@@ -25,12 +25,16 @@ async def files(
         proj_name: Optional[str] = Query(None),
         projver: Optional[int] = Query(None),
         save_path: Optional[str] = Query(None),
+        save_path_mask: Optional[List[str]] = Query(None),
         protocol: Optional[List[FileProtocolEnum]] = Query(None),
         name: Optional[str] = Query(None),
+        name_mask: Optional[List[str]] = Query(None),
         repo: Optional[str] = Query(None),
+        repo_mask: Optional[List[str]] = Query(None),
         commit: Optional[str] = Query(None),
+        commit_mask: Optional[List[str]] = Query(None),
         filever: Optional[int] = Query(None),
 ):
-    return await models.projects.files_list(credentials, proj_name, projver, save_path, protocol,
-                                            name, repo, commit, filever)
+    return await models.projects.files_list(credentials, proj_name, projver, save_path, save_path_mask,
+                                            protocol, name, name_mask, repo, repo_mask, commit, commit_mask, filever)
 

@@ -8,6 +8,7 @@ from pydantic import Field
 from common import DatabaseConnection, I4cBaseModel, write_debug_sql
 from models import ProjectStatusEnum, ProjectVersionStatusEnum
 from models.common import PatchResponse
+import common.db_helpers
 
 
 class Project(I4cBaseModel):
@@ -192,7 +193,7 @@ class GetProjectsVersions(Enum):
     versions_only = 2
 
 
-async def get_projects(credentials, name=None, status=None, file=None, *, pconn=None,
+async def get_projects(credentials, name=None, name_mask=None, status=None, file=None, *, pconn=None,
                        versions:GetProjectsVersions = GetProjectsVersions.all):
     sql = dedent("""\
             with pv as (
@@ -229,15 +230,18 @@ async def get_projects(credentials, name=None, status=None, file=None, *, pconn=
         if name is not None:
             params.append(name)
             sql += f"and res.name = ${len(params)}\n"
+        if name_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(name_mask, "res.name", params)
         if status is not None:
             params.append(status)
             sql += f"and res.status = ${len(params)}\n"
         if file is not None:
             params.append(file)
             sql += f" and exists(select * from rf where rf.project = res.name and rf.savepath = ${len(params)})"
-        res = await conn.fetch(sql.replace("<labels_only>", "where False" if versions == GetProjectsVersions.labels_only else "") \
-                                  .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else ""),
-                               *params)
+        sql = sql.replace("<labels_only>", "where False" if versions == GetProjectsVersions.labels_only else "") \
+                 .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else "")
+        write_debug_sql("get_projects", sql, *params)
+        res = await conn.fetch(sql, *params)
         return res
 
 
@@ -473,7 +477,8 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
             return PatchResponse(changed=True)
 
 
-async def files_list(credentials, proj_name, projver, save_path, protocol, name, repo, commit, filever, *, pconn=None) \
+async def files_list(credentials, proj_name, projver, save_path, save_path_mask,
+                     protocol, name, name_mask, repo, repo_mask, commit, commit_mask, filever, *, pconn=None) \
         -> List[FileWithProjInfo]:
     sql = dedent("""\
             with
@@ -524,6 +529,10 @@ async def files_list(credentials, proj_name, projver, save_path, protocol, name,
     add_param(proj_name, "proj_name")
     add_param(projver, "proj_ver", param_type="int")
     add_param(save_path, "save_path")
+
+    if save_path_mask is not None:
+        sql += "and " + common.db_helpers.filter2sql(save_path_mask, "res.save_path", params)
+
     if protocol is not None:
         sql += 'and (False\n'
         for p in protocol:
@@ -531,8 +540,14 @@ async def files_list(credentials, proj_name, projver, save_path, protocol, name,
             sql += f"or res.protocol=${len(params)}\n"
         sql += ')\n'
     add_param(name, "name")
+    if name_mask is not None:
+        sql += "and " + common.db_helpers.filter2sql(name_mask, "res.name", params)
     add_param(repo, "repo")
+    if repo_mask is not None:
+        sql += "and " + common.db_helpers.filter2sql(repo_mask, "res.repo", params)
     add_param(commit, "commit")
+    if commit_mask is not None:
+        sql += "and " + common.db_helpers.filter2sql(commit_mask, "res.commit", params)
     add_param(filever, "filever", param_type="int")
     async with DatabaseConnection(pconn) as conn:
         write_debug_sql('files_list.sql', sql, *params)

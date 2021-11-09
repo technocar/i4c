@@ -26,8 +26,15 @@ def filter2regex(filters:List[str]) -> Optional[List[str]]:
     return [get_regex(w) for w in filters]
 
 
-def filter2sql(filters:List[str], compaire_expr: str, *, case_sensitive=False) -> str:
+def filter2sql(filters:List[str], compaire_expr: str, params: List[Any], *, case_sensitive=False) -> str:
+    fr = filter2regex(filters)
+    if not fr:
+        return ""
+
     def r(a,b):
         return f"{a} \nand {b}"
+
     rel = "~" if case_sensitive else "~*"
-    return reduce(r, [f"(({compaire_expr}) {rel} '{f}')" for f in filter2regex(filters)])
+    startindex = len(params) + 1
+    params.extend(fr)
+    return reduce(r, [f"(({compaire_expr}) {rel} ${i})" for i, _ in enumerate(fr, start=startindex)])
