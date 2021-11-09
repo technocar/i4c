@@ -74,7 +74,7 @@ class WorkpiecePatchChange(I4cBaseModel):
     @root_validator
     def check_exclusive(cls, values):
         batch, delete_batch = values.get('batch'), values.get('delete_batch')
-        if batch is not None and delete_batch is not None:
+        if batch is not None and delete_batch:
             raise ValueError('batch and delete_batch are exclusive')
         return values
 
