@@ -19,14 +19,17 @@ class Project(I4cBaseModel):
 
 
 class ProjectPatchCondition(I4cBaseModel):
-    status: Optional[ProjectStatusEnum]
+    flipped: Optional[bool]
+    status: Optional[List[ProjectStatusEnum]]
     extra: Optional[str]
 
     def match(self, project:Project):
-        return (
-                ((self.status is None) or (self.status == project.status))
-                and ((self.extra is None) or (self.extra == project.extra))
-        )
+        r = ( ((self.status is None) or (project.status in self.status))
+              and ((self.extra is None) or (self.extra == project.extra)))
+        if self.flipped is None or self.flipped:
+            return r
+        else:
+            return not r
 
 
 class ProjectPatchChange(I4cBaseModel):
@@ -150,13 +153,13 @@ class ProjectVersion(I4cBaseModel):
 
 class ProjectVersionPatchCondition(I4cBaseModel):
     flipped: Optional[bool]
-    status: Optional[ProjectVersionStatusEnum]
+    status: Optional[List[ProjectVersionStatusEnum]]
     has_label: Optional[bool]
     exist_label: Optional[str]
     exist_label_in_proj: Optional[str]
 
     def match(self, pv:ProjectVersion, pi: Project):
-        r = ((self.status is None) or (self.status == pv.status)) \
+        r = ((self.status is None) or (pv.status in self.status)) \
             and ((self.has_label is None) or (len(pv.labels) > 0)) \
             and ((self.exist_label is None) or (self.exist_label in pv.labels)) \
             and ((self.exist_label_in_proj is None)
@@ -269,10 +272,10 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
                 raise HTTPException(status_code=400, detail="Project not found")
             project = Project(**project[0])
 
-            match = False
+            match = True
             for cond in patch.conditions:
                 match = cond.match(project)
-                if match:
+                if not match:
                     break
             if not match:
                 return PatchResponse(changed=False)
@@ -391,10 +394,10 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
             pi = await get_projects(credentials, project_name, pconn=conn, versions=GetProjectsVersions.labels_only)
             pi = pi[0] if len(pi) > 0 else None
 
-            match = False
+            match = True
             for cond in patch.conditions:
                 match = cond.match(pv, pi)
-                if match:
+                if not match:
                     break
             if not match:
                 return PatchResponse(changed=False)

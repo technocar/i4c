@@ -46,16 +46,21 @@ class Workpiece(I4cBaseModel):
 
 
 class WorkpiecePatchCondition(I4cBaseModel):
+    flipped: Optional[bool]
     batch: Optional[str]
     empty_batch: Optional[bool]
-    status: Optional[WorkpieceStatusEnum]
+    status: Optional[List[WorkpieceStatusEnum]]
 
     def match(self, workpiece:Workpiece):
-        return (
+        r = (
                 ((self.batch is None) or (self.batch == workpiece.batch))
                 and ((self.empty_batch is None) or ((workpiece.batch is None) == self.empty_batch))
-                and ((self.status is None) or (self.status == workpiece.status))
+                and ((self.status is None) or (workpiece.status in self.status))
         )
+        if self.flipped is None or self.flipped:
+            return r
+        else:
+            return not r
 
 
 class WorkpiecePatchChange(I4cBaseModel):
@@ -189,10 +194,10 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
                 raise HTTPException(status_code=400, detail="Workpiece not found")
             workpiece = workpiece[0]
 
-            match = False
+            match = True
             for cond in patch.conditions:
                 match = cond.match(workpiece)
-                if match:
+                if not match:
                     break
             if not match:
                 return PatchResponse(changed=False)
