@@ -1,6 +1,6 @@
 from I4cAPI import I4cApi, I4cApiRouter
 from common import apicfg
-from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools
+from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools, batch
 import uvicorn
 import common
 
@@ -13,6 +13,7 @@ api_router.include_router(installations.router, prefix="/installations", tags=["
 api_router.include_router(intfiles.router, prefix="/intfiles", tags=["intfiles"])
 api_router.include_router(workpiece.router, prefix="/workpiece", tags=["workpiece"])
 api_router.include_router(tools.router, prefix="/tools", tags=["tools"])
+api_router.include_router(batch.router, prefix="/batch", tags=["batch"])
 
 app = I4cApi()
 app.include_router(api_router)

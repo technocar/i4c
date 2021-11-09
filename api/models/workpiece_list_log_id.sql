@@ -4,7 +4,7 @@ with
               as before,
           coalesce($2::timestamp with time zone,'1899-01-01'::timestamp with time zone) -- */ '2021-08-24 07:56:00.957133+02'::timestamp with time zone
               as after,
-          $3 -- */ '92a024b9'
+          $3::varchar(200) -- */ '92a024b9'
               as "wpid"          
   ),
   workpiece_begin as (
@@ -56,7 +56,8 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'lathe'
-      and l.data_id='spgm'           /* workpiece_project , todo: use proper data*/  
+      and l.data_id='spgm'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
+                                        itt a robot programjának a nevébõl kell majd kikeresni, hogy az melyik project-nek a része  */
   ),
   discover_log as (
     select 
