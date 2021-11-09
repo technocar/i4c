@@ -19,10 +19,6 @@ app = I4cApi()
 app.include_router(api_router)
 
 # todo: log all api calls to log table for audit
-# todo: smarter string match when listing object.
-#       két mód:
-#       (1) teljes egyezés
-#       (2) multi param, item-enként pipe-os match? elül-hátul 0-1 pipe lehet. Középen meg pipe-ot jelent. Pipe escape nincs.
 
 
 @app.on_event("startup")

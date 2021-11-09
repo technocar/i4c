@@ -14,10 +14,11 @@ router = I4cApiRouter()
 async def list_projects(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects")),
     name: Optional[str] = Query(None),
+    name_mask: Optional[List[str]] = Query(None),
     status: Optional[ProjectStatusEnum] = Query(None),
     file: Optional[str] = Query(None, description="Full savepath of the file.")
 ):
-    return await models.projects.get_projects(credentials, name, status, file)
+    return await models.projects.get_projects(credentials, name, name_mask, status, file)
 
 
 @router.get("/{name}", response_model=models.projects.Project, x_properties=dict(object="projects", action="get"))

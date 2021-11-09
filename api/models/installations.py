@@ -24,12 +24,15 @@ class Installation(I4cBaseModel):
 
 
 class InstallationPatchCondition(I4cBaseModel):
-    status: Optional[InstallationStatusEnum]
+    flipped: Optional[bool]
+    status: Optional[List[InstallationStatusEnum]]
 
     def match(self, ins:Installation):
-        return (
-            ((self.status is None) or (self.status == ins.status))
-        )
+        r = ((self.status is None) or (ins.status in self.status))
+        if self.flipped is None or self.flipped:
+            return r
+        else:
+            return not r
 
 
 class InstallationPatchChange(I4cBaseModel):
@@ -190,10 +193,10 @@ async def patch_installation(credentials, id, patch: InstallationPatchBody):
                 raise HTTPException(status_code=400, detail="Installation not found")
             installation = Installation(**installation[0])
 
-            match = False
+            match = True
             for cond in patch.conditions:
                 match = cond.match(installation)
-                if match:
+                if not match:
                     break
             if not match:
                 return PatchResponse(changed=False)

@@ -391,13 +391,23 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/projects",
+							"raw": "localhost:5000/projects?name_mask=|proj&name_mask=9|",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"projects"
+							],
+							"query": [
+								{
+									"key": "name_mask",
+									"value": "|proj"
+								},
+								{
+									"key": "name_mask",
+									"value": "9|"
+								}
 							]
 						}
 					},
@@ -410,7 +420,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"active\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"archive\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"active\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"archive\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -519,7 +529,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"working\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"todo\",\r\n        \"status_msg\": \"hello\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"working\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"todo\",\r\n        \"status_msg\": \"hello\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -576,7 +586,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"edit\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"edit\",\r\n        \"clear_label\": [\"abc\", \"bcd\"],\r\n        \"set_label\": [\"ddd\"],\r\n        \"del_file\": [\"file1\"],\r\n        \"add_file\": [\r\n            {\r\n                \"savepath\": \"file1\",\r\n                \"file_git\": {\r\n                    \"repo\": \"r1\",\r\n                    \"name\": \"name1\",\r\n                    \"commit\": \"tsdf65ajgf23j4tr23u4\"\r\n                },\r\n                \"file_unc\": null,\r\n                \"file_int\": null\r\n            }\r\n        ]\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"edit\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"edit\",\r\n        \"clear_label\": [\"abc\", \"bcd\"],\r\n        \"set_label\": [\"ddd\"],\r\n        \"del_file\": [\"file1\"],\r\n        \"add_file\": [\r\n            {\r\n                \"savepath\": \"file1\",\r\n                \"file_git\": {\r\n                    \"repo\": \"r1\",\r\n                    \"name\": \"name1\",\r\n                    \"commit\": \"tsdf65ajgf23j4tr23u4\"\r\n                },\r\n                \"file_unc\": null,\r\n                \"file_int\": null\r\n            }\r\n        ]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -727,7 +737,7 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/intfiles?name=c:\\temp\\0001.py&min_ver=1&max_ver=11&hash=asasas",
+							"raw": "localhost:5000/intfiles?name_mask=01&name_mask=py|",
 							"host": [
 								"localhost"
 							],
@@ -738,19 +748,31 @@
 							"query": [
 								{
 									"key": "name",
-									"value": "c:\\temp\\0001.py"
+									"value": "c:\\temp\\0001.py",
+									"disabled": true
 								},
 								{
 									"key": "min_ver",
-									"value": "1"
+									"value": "1",
+									"disabled": true
 								},
 								{
 									"key": "max_ver",
-									"value": "11"
+									"value": "11",
+									"disabled": true
 								},
 								{
 									"key": "hash",
-									"value": "asasas"
+									"value": "asasas",
+									"disabled": true
+								},
+								{
+									"key": "name_mask",
+									"value": "01"
+								},
+								{
+									"key": "name_mask",
+									"value": "py|"
 								}
 							]
 						}
@@ -861,7 +883,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"batch\": \"b1\",\r\n        \"####___delete_batch\": true,\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"inprogress\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"batch\": \"b1\",\r\n        \"####___delete_batch\": true,\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -980,7 +1002,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/batch?after=2021-10-15T15:53:11.123456Z",
+							"raw": "localhost:5000/batch",
 							"host": [
 								"localhost"
 							],
@@ -991,16 +1013,12 @@
 							"query": [
 								{
 									"key": "after",
-									"value": "2021-10-15T15:53:11.123456Z"
-								},
-								{
-									"key": "project",
-									"value": "",
+									"value": "2021-10-15T15:53:11.123456Z",
 									"disabled": true
 								},
 								{
-									"key": "project_name",
-									"value": null,
+									"key": "project",
+									"value": "proj1",
 									"disabled": true
 								}
 							]
@@ -1029,12 +1047,12 @@
 			"response": []
 		},
 		{
-			"name": "login Copy",
+			"name": "files",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:5000/files?save_path=file1",
+					"raw": "localhost:5000/files?save_path_mask=fi&save_path_mask=2|",
 					"host": [
 						"localhost"
 					],
@@ -1055,7 +1073,8 @@
 						},
 						{
 							"key": "save_path",
-							"value": "file1"
+							"value": "file1",
+							"disabled": true
 						},
 						{
 							"key": "protocol",
@@ -1086,6 +1105,14 @@
 							"key": "filever",
 							"value": "1",
 							"disabled": true
+						},
+						{
+							"key": "save_path_mask",
+							"value": "fi"
+						},
+						{
+							"key": "save_path_mask",
+							"value": "2|"
 						}
 					]
 				}

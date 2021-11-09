@@ -30,18 +30,22 @@ async def list_workpiece(
     after: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
     id: Optional[str] = Query(None),
     project: Optional[str] = Query(None),
+    project_mask: Optional[List[str]] = Query(None),
     batch: Optional[str] = Query(None),
+    batch_mask: Optional[List[str]] = Query(None),
     status: Optional[WorkpieceStatusEnum] = Query(None),
     note_user: Optional[str] = Query(None),
     note_text: Optional[str] = Query(None),
+    note_text_mask: Optional[List[str]] = Query(None),
     note_before: Optional[datetime] = Query(None),
     note_after: Optional[datetime] = Query(None),
     with_details: Optional[bool] = Query(True, description="With or without note, log, and files"),
     with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
     # todo log???
 ):
-    return await models.workpiece.list_workpiece(credentials, before, after, id, project, batch, status, note_user,
-                                                 note_text, note_before, note_after, with_details, with_deleted)
+    return await models.workpiece.list_workpiece(credentials, before, after, id, project, project_mask, batch,
+                                                 batch_mask, status, note_user, note_text, note_text_mask, note_before,
+                                                 note_after, with_details, with_deleted)
 
 
 @router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="workpiece", action="patch"))

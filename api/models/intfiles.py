@@ -5,6 +5,7 @@ from textwrap import dedent
 from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
 import common
+import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection
 
 
@@ -20,7 +21,7 @@ def get_internal_file_name(hash):
     return os.sep.join([fn, hash])
 
 
-async def intfiles_list(credentials, name, min_ver, max_ver, hash, *, pconn=None):
+async def intfiles_list(credentials, name, name_mask, min_ver, max_ver, hash, *, pconn=None):
     sql = dedent("""\
                 with
                     res as (
@@ -42,6 +43,10 @@ async def intfiles_list(credentials, name, min_ver, max_ver, hash, *, pconn=None
             sql += f"and res.{col_name} {operator} ${len(params)}{sp}\n"
 
     add_param(name, "name")
+
+    if name_mask is not None:
+        sql += "and " + common.db_helpers.filter2sql(name_mask, "res.name", params)
+
     add_param(min_ver, "ver", operator=">=")
     add_param(max_ver, "ver", operator="<=")
     add_param(hash, "hash")

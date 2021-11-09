@@ -8,6 +8,7 @@ from pydantic import root_validator
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql
 from models import WorkpieceStatusEnum
 from models.common import PatchResponse
+import common.db_helpers
 
 
 class NoteAdd(I4cBaseModel):
@@ -45,16 +46,21 @@ class Workpiece(I4cBaseModel):
 
 
 class WorkpiecePatchCondition(I4cBaseModel):
+    flipped: Optional[bool]
     batch: Optional[str]
     empty_batch: Optional[bool]
-    status: Optional[WorkpieceStatusEnum]
+    status: Optional[List[WorkpieceStatusEnum]]
 
     def match(self, workpiece:Workpiece):
-        return (
+        r = (
                 ((self.batch is None) or (self.batch == workpiece.batch))
                 and ((self.empty_batch is None) or ((workpiece.batch is None) == self.empty_batch))
-                and ((self.status is None) or (self.status == workpiece.status))
+                and ((self.status is None) or (workpiece.status in self.status))
         )
+        if self.flipped is None or self.flipped:
+            return r
+        else:
+            return not r
 
 
 class WorkpiecePatchChange(I4cBaseModel):
@@ -74,7 +80,7 @@ class WorkpiecePatchChange(I4cBaseModel):
     @root_validator
     def check_exclusive(cls, values):
         batch, delete_batch = values.get('batch'), values.get('delete_batch')
-        if batch is not None and delete_batch is not None:
+        if batch is not None and delete_batch:
             raise ValueError('batch and delete_batch are exclusive')
         return values
 
@@ -127,9 +133,9 @@ workpiece_list_log_sql = open("models\\workpiece_list_log.sql").read()
 workpiece_list_log_sql_id = open("models\\workpiece_list_log_id.sql").read()
 
 
-async def list_workpiece(credentials, before=None, after=None, id=None, project=None, batch=None, status=None,
-                         note_user=None, note_text=None, note_before=None, note_after=None, with_details=True,
-                         with_deleted=False, *, pconn=None):
+async def list_workpiece(credentials, before=None, after=None, id=None, project=None, project_mask=None,
+                         batch=None, batch_mask=None, status=None, note_user=None, note_text=None, note_text_mask=None,
+                         note_before=None, note_after=None, with_details=True, with_deleted=False, *, pconn=None):
     sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
         params = [before, after]
@@ -139,9 +145,13 @@ async def list_workpiece(credentials, before=None, after=None, id=None, project=
         if project is not None:
             params.append(project)
             sql += f"and res.project = ${len(params)}\n"
+        if project_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(project_mask, "res.project", params)
         if batch is not None:
             params.append(batch)
             sql += f"and res.batch = ${len(params)}\n"
+        if batch_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(batch_mask, "res.batch", params)
         if status is not None:
             params.append(status)
             sql += f"and res.status = ${len(params)}\n"
@@ -153,6 +163,8 @@ async def list_workpiece(credentials, before=None, after=None, id=None, project=
             if note_text is not None:
                 params.append(note_text)
                 sql += f"and wn.\"text\" = ${len(params)}\n"
+            if note_text_mask is not None:
+                sql += "and " + common.db_helpers.filter2sql(note_text_mask, "wn.\"text\"", params)
             if note_before is not None:
                 params.append(note_before)
                 sql += f"and wn.\"timestamp\" <= ${len(params)}\n"
@@ -182,10 +194,10 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
                 raise HTTPException(status_code=400, detail="Workpiece not found")
             workpiece = workpiece[0]
 
-            match = False
+            match = True
             for cond in patch.conditions:
                 match = cond.match(workpiece)
-                if match:
+                if not match:
                     break
             if not match:
                 return PatchResponse(changed=False)
