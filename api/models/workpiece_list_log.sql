@@ -63,8 +63,8 @@ with
       wb.sequence  as begin_sequence,
       we.timestamp as end_timestamp,
       we.sequence  as end_sequence,
-      ws."auto_status",
-      wpr."project"      
+      case when ws.timestamp>wb.timestamp or (ws.timestamp=wb.timestamp and ws.sequence>wb.sequence) then ws."auto_status" end as "auto_status",
+      case when wpr.timestamp>wb.timestamp or (wpr.timestamp=wb.timestamp and wpr.sequence>wb.sequence) then wpr."project" end as "project"
     from workpiece_begin wb
     left join lateral (
       select * from (

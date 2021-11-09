@@ -10,7 +10,8 @@ with
     from log l
     cross join p
     where
-      l.device = 'lathe'
+      l.timestamp >= p.after
+      and l.device = 'lathe'
       and l.data_id='cf'           /* workpiece_begin, todo: use proper data */  
   ), 
   workpiece_end as (
@@ -28,7 +29,8 @@ with
     cross join p
     join workpiece wp on wp.id = l.value_text
     where
-      l.device = 'lathe'
+      l.timestamp >= p.after
+      and l.device = 'lathe'
       and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
       and wp.batch is not null
   ),
@@ -37,9 +39,10 @@ with
     from log l
     cross join p
     where
-      l.device = 'lathe'
+      l.timestamp >= p.after
+      and l.device = 'lathe'
       and l.data_id='spgm'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
-                                        itt a robot programjának a nevébõl kell majd kikeresni, hogy az melyik project-nek a része  */
+                                        itt a robot programjának a nevébõl kell majd kikeresni, hogy az melyik project-nek a része */
   ),
   discover_log as (
     select
@@ -87,10 +90,9 @@ with
   res as (
     select 
       dl.batch,
-      min(dl.begin_timestamp) as first,
-      max(dl.end_timestamp) as last,
-      count(distinct dl.id) as "count"
+      max(coalesce(dl.begin_timestamp, dl.end_timestamp)) as last
     from discover_log dl
+    where dl.batch is not null
     group by dl.batch
     order by last desc
   )
