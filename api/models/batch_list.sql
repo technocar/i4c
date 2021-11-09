@@ -28,8 +28,7 @@ with
     cross join p
     join workpiece wp on wp.id = l.value_text
     where
-      l.timestamp >= p.after
-      and l.device = 'lathe'
+      l.device = 'lathe'
       and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
       and wp.batch is not null
   ),
@@ -38,8 +37,7 @@ with
     from log l
     cross join p
     where
-      l.timestamp >= p.after
-      and l.device = 'lathe'
+      l.device = 'lathe'
       and l.data_id='spgm'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
                                         itt a robot programjának a nevébõl kell majd kikeresni, hogy az melyik project-nek a része  */
   ),
@@ -94,6 +92,7 @@ with
       count(distinct dl.id) as "count"
     from discover_log dl
     group by dl.batch
+    order by last desc
   )
 select * 
 from res
