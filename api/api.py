@@ -20,6 +20,8 @@ app.include_router(api_router)
 
 # todo: log all api calls to log table for audit
 
+# todo: a patch condition mindenhol és-es legyen és belül a condition object propery-jei legyenek listásak.
+
 
 @app.on_event("startup")
 async def startup_event():
