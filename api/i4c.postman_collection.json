@@ -420,7 +420,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"active\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"archive\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"active\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"archive\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -529,7 +529,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"working\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"todo\",\r\n        \"status_msg\": \"hello\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"working\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"todo\",\r\n        \"status_msg\": \"hello\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -586,7 +586,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"edit\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"edit\",\r\n        \"clear_label\": [\"abc\", \"bcd\"],\r\n        \"set_label\": [\"ddd\"],\r\n        \"del_file\": [\"file1\"],\r\n        \"add_file\": [\r\n            {\r\n                \"savepath\": \"file1\",\r\n                \"file_git\": {\r\n                    \"repo\": \"r1\",\r\n                    \"name\": \"name1\",\r\n                    \"commit\": \"tsdf65ajgf23j4tr23u4\"\r\n                },\r\n                \"file_unc\": null,\r\n                \"file_int\": null\r\n            }\r\n        ]\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"edit\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"edit\",\r\n        \"clear_label\": [\"abc\", \"bcd\"],\r\n        \"set_label\": [\"ddd\"],\r\n        \"del_file\": [\"file1\"],\r\n        \"add_file\": [\r\n            {\r\n                \"savepath\": \"file1\",\r\n                \"file_git\": {\r\n                    \"repo\": \"r1\",\r\n                    \"name\": \"name1\",\r\n                    \"commit\": \"tsdf65ajgf23j4tr23u4\"\r\n                },\r\n                \"file_unc\": null,\r\n                \"file_int\": null\r\n            }\r\n        ]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -883,7 +883,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inprogress\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"batch\": \"b1\",\r\n        \"####___delete_batch\": true,\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"inprogress\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"batch\": \"b1\",\r\n        \"####___delete_batch\": true,\r\n        \"status\": \"inprogress\",\r\n        \"add_note\": [\r\n            {\r\n                \"user\": \"1\",\r\n                \"timestamp\": \"2021-08-15T15:53:11.123456Z\",\r\n                \"text\": \"shfgsjdfgjsd\\nsfffgfd\\nsgsfgrt\"\r\n            }\r\n        ],\r\n        \"delete_note\": [5, 6]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
