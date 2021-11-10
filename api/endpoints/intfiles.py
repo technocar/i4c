@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional
 from fastapi import Depends, Path, Body, Query
 from fastapi.security import HTTPBasicCredentials
@@ -28,7 +29,9 @@ async def intfiles_get(
     ver: int = Path(...),
     path: str = Path(...)
 ):
-    return FileResponse(await models.intfiles.intfiles_get(credentials, ver, path), media_type="application/octet-stream")
+    return FileResponse(await models.intfiles.intfiles_get(credentials, ver, path),
+                        filename=os.path.basename(path),
+                        media_type="application/octet-stream")
 
 
 @router.put("/v/{ver}/{path:path}", status_code=201, x_properties=dict(object="intfiles", action="put"))
