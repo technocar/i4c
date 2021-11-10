@@ -243,7 +243,7 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
             sql += f" and exists(select * from rf where rf.project = res.name and rf.savepath = ${len(params)})"
         sql = sql.replace("<labels_only>", "where False" if versions == GetProjectsVersions.labels_only else "") \
                  .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else "")
-        write_debug_sql("get_projects", sql, *params)
+        write_debug_sql("get_projects.sql", sql, *params)
         res = await conn.fetch(sql, *params)
         return res
 
