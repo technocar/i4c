@@ -11,7 +11,7 @@ from models import Device, DeviceAuto
 router = I4cApiRouter(include_path="/log")
 
 
-@router.get("/snapshot", response_model=models.log.Snapshot, x_properties=dict(object="snapshot", action="get"))
+@router.get("/snapshot", response_model=models.log.Snapshot, x_properties=dict(object="snapshot", action="get"), allow_log=False)
 async def snapshot(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/snapshot")),
     ts: datetime = Query(..., title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),

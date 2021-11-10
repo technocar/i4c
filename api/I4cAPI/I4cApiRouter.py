@@ -24,7 +24,7 @@ class I4cApiRouter(APIRouter):
                     bmasked = dict(b)
                     if "credentials" in bmasked:
                         bmasked["credentials"].password = "****"
-                    kwparams = ', '.join((f"{x}= \"{str(y)}\"" for x,y in bmasked.items()))
+                    kwparams = ', '.join((f"{x}= \"{str(y) if not isinstance(y, bytes) else '<bytes>'}\"" for x,y in bmasked.items()))
                     log_str = f"{rest_method} - {path}{' - '+params if params else ''} - {kwparams}"
                     log.debug(log_str)
                 return await f(*a, **b)
