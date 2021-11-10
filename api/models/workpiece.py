@@ -19,6 +19,7 @@ class NoteAdd(I4cBaseModel):
 
 class Note(NoteAdd):
     note_id: int
+    user_name: str
     deleted: bool
 
 
@@ -92,14 +93,21 @@ class WorkpiecePatchBody(I4cBaseModel):
 
 async def get_workpiece_notes(id, with_deleted=False, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
-        sql = "select * from workpiece_note wn where wn.workpiece = $1"
+        sql = dedent("""\
+                select 
+                  wn.*, 
+                  u.name as user_name
+                from workpiece_note wn
+                join "user" u on u.id = wn."user" 
+                where wn.workpiece = $1""")
         if not with_deleted:
             sql += "and wn.deleted = false"
         write_debug_sql("workpiece_notes.sql", sql, id)
         dr = await conn.fetch(sql, id)
         res = []
         for r in dr:
-            res.append(Note(user=r["user"], timestamp=r["timestamp"], text=r["text"], note_id=r["id"], deleted=r["deleted"]))
+            res.append(Note(user=r["user"], user_name=r["user_name"], timestamp=r["timestamp"],
+                            text=r["text"], note_id=r["id"], deleted=r["deleted"]))
         return res
 
 
