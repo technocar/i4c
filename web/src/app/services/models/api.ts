@@ -140,6 +140,18 @@ export interface Extra {
   value: string
 }
 
+export interface Note {
+  note_id?: number,
+  user: string,
+  timestamp: Date,
+  text: string,
+  deleted?: boolean
+}
+
+export interface UpdateResult {
+  changed: boolean
+}
+
 export enum ProjectStatus { Edit = "edit", Final = "final", Deleted = "deleted", Archive = "archive" }
 export interface Project {
   name: string,
@@ -167,4 +179,83 @@ export interface ProjectInstallParams {
   before?: Date,
   project_name?: string,
   ver?: number
+}
+
+export interface WorkPieceNote {
+  note_id: number,
+  user: string,
+  timestamp: string,
+  text: string,
+  deleted: boolean
+}
+
+export interface WorkPieceLog {
+  ts: string,
+  seq: number,
+  data: string,
+  text: string
+}
+
+export interface WorkPieceFile {
+  download_name: string
+}
+
+export enum WorkPieceStatus { Good = "good", Bad = "bad", Inprogress = "inprogress", Unknown = "unknown" }
+
+export interface WorkPiece {
+  id: string,
+  project: string,
+  batch: string,
+  status: WorkPieceStatus,
+  notes: WorkPieceNote[],
+  log: WorkPieceLog[],
+  files: WorkPieceFile[],
+  begin_timestamp: string,
+  end_timestamp: string
+}
+
+export interface WorkPieceParams {
+  before?: Date,
+  after?: Date,
+  id?: string,
+  project?: string,
+  batch?: string,
+  status?: WorkPieceStatus,
+  note_user?: string,
+  note_text?: string,
+  note_before?: string,
+  note_after?: string,
+  with_details?: boolean,
+  with_deleted?: boolean
+}
+
+export interface WorkPieceUpdateCondition {
+  batch?: string,
+  empty_batch?: boolean,
+  status?: WorkPieceStatus
+}
+
+export interface WorkPieceUpdateChange {
+  batch?: string,
+  delete_batch?: boolean,
+  status?: WorkPieceStatus,
+  add_note?: Note[],
+  delete_note?: number[]
+}
+
+export interface WorkPieceUpdate {
+  conditions: WorkPieceUpdateCondition[],
+  change: WorkPieceUpdateChange
+}
+
+export enum WorkPieceBatchItemType { Batch = 0, Delete = 1 }
+export interface WorkPieceBatch {
+  batch: string,
+  last: string,
+  itemType: number
+}
+
+export interface WorkPeiceBatchParams {
+  project?: string,
+  after?: Date
 }

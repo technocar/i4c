@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult } from './models/api';
 import { DeviceType } from './models/constants';
 
 class RequestParams {
@@ -161,5 +161,23 @@ export class ApiService {
     var params = new RequestParams();
     params.add("statuses", statuses);
     return this.http.post<ProjectInstall>(`${this._apiUrl}/installations/${name}/${version}`, undefined, { params: params.getAll() });
+  }
+
+  getWorkPieces(parameters?: WorkPieceParams): Observable<WorkPiece[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+
+    return this.http.get<WorkPiece[]>(`${this._apiUrl}/workpiece`, { params: params.getAll() });
+  }
+
+  updateWorkPiece(id: string, parameters: WorkPieceUpdate): Observable<UpdateResult> {
+    return this.http.patch<UpdateResult>(`${this._apiUrl}/workpiece/${id}`, parameters);
+  }
+
+  getWorkPieceBatches(parameters?: WorkPieceParams): Observable<WorkPieceBatch[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+
+    return this.http.get<WorkPieceBatch[]>(`${this._apiUrl}/batch`, { params: params.getAll() });
   }
 }

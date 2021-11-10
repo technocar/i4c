@@ -21,6 +21,7 @@ import { SnapshotRobotComponent } from './snapshots/snapshot-robot/snapshot-robo
 import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.component';
 import { ProjectComponent } from './project/project.component';
 import { AppHeaderComponent } from './app-header/app-header.component';
+import { WorkPieceComponent } from './workpiece/workpiece.component';
 
 @NgModule({
   declarations: [
@@ -34,6 +35,7 @@ import { AppHeaderComponent } from './app-header/app-header.component';
     SelectorComponent,
     LoginComponent,
     ProjectComponent,
+    WorkPieceComponent,
     AppHeaderComponent
   ],
   imports: [
@@ -45,6 +47,7 @@ import { AppHeaderComponent } from './app-header/app-header.component';
     FormsModule,
     NgbModule,
     RouterModule.forRoot([
+      { path: 'workpiece', component: WorkPieceComponent, canActivate: [AuthGuard] },
       { path: 'project', component: ProjectComponent, canActivate: [AuthGuard] },
       { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard] },
