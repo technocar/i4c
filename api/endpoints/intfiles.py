@@ -6,7 +6,7 @@ import common
 import models.intfiles
 from I4cAPI import I4cApiRouter
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/intfiles")
 
 
 @router.get("", response_model=List[models.intfiles.FileDetail], x_properties=dict(object="intfiles", action="list"))
@@ -41,7 +41,7 @@ async def intfiles_put(
     return await models.intfiles.intfiles_put(credentials, ver, path, data)
 
 
-@router.delete("/v/{ver}/{path:path}", status_code=201, x_properties=dict(object="intfiles", action="delete"))
+@router.delete("/v/{ver}/{path:path}", status_code=200, x_properties=dict(object="intfiles", action="delete"))
 async def intfiles_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),

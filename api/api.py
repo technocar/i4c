@@ -4,19 +4,16 @@ from endpoints import log, users, root, projects, installations, intfiles, workp
 import uvicorn
 import common
 
-api_router = I4cApiRouter()
-api_router.include_router(root.router)
-api_router.include_router(log.router, prefix="/log", tags=["log"])
-api_router.include_router(users.router, prefix="/users", tags=["users"])
-api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
-api_router.include_router(installations.router, prefix="/installations", tags=["installations"])
-api_router.include_router(intfiles.router, prefix="/intfiles", tags=["intfiles"])
-api_router.include_router(workpiece.router, prefix="/workpiece", tags=["workpiece"])
-api_router.include_router(tools.router, prefix="/tools", tags=["tools"])
-api_router.include_router(batch.router, prefix="/batch", tags=["batch"])
-
 app = I4cApi()
-app.include_router(api_router)
+app.include_router(root.router)
+app.include_router(log.router, prefix="/log", tags=["log"])
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(projects.router, prefix="/projects", tags=["projects"])
+app.include_router(installations.router, prefix="/installations", tags=["installations"])
+app.include_router(intfiles.router, prefix="/intfiles", tags=["intfiles"])
+app.include_router(workpiece.router, prefix="/workpiece", tags=["workpiece"])
+app.include_router(tools.router, prefix="/tools", tags=["tools"])
+app.include_router(batch.router, prefix="/batch", tags=["batch"])
 
 # todo: log all api calls to log table for audit
 

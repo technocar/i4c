@@ -8,7 +8,7 @@ import common
 from I4cAPI import I4cApiRouter
 from models import ProjectStatusEnum, WorkpieceStatusEnum
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/workpiece")
 
 
 @router.get("/{id}", response_model=models.workpiece.Workpiece, x_properties=dict(object="workpiece", action="get"))

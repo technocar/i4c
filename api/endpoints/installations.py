@@ -7,7 +7,7 @@ import common
 from I4cAPI import I4cApiRouter
 from models import ProjectVersionStatusEnum, InstallationStatusEnum
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/installations")
 
 
 @router.post("/{project}/{version}", response_model=models.installations.Installation, x_properties=dict(object="installations", action="new"))

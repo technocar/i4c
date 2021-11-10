@@ -7,7 +7,7 @@ import common
 from I4cAPI import I4cApiRouter
 from models import ProjectStatusEnum
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/projects")
 
 
 @router.get("", response_model=List[models.projects.Project], x_properties=dict(object="projects", action="list"))

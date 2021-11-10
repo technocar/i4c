@@ -3,7 +3,7 @@ from fastapi.responses import PlainTextResponse
 from I4cAPI import I4cApiRouter
 from common import create_password
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/users")
 
 
 @router.get("/create_password", response_class=PlainTextResponse, x_properties=dict(object="str", action="get"))

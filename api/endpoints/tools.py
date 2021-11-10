@@ -5,7 +5,7 @@ import models.log
 import models.tools
 from I4cAPI import I4cApiRouter
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/tools")
 
 
 def check_allow_tool_log_data_id(data_id):

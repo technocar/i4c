@@ -6,7 +6,7 @@ import common
 import models.batch
 from I4cAPI import I4cApiRouter
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/batch")
 
 
 @router.get("", response_model=List[models.batch.ListItem], x_properties=dict(object="batch", action="list"))

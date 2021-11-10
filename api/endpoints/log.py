@@ -8,7 +8,7 @@ import common
 from I4cAPI import I4cApiRouter
 from models import Device, DeviceAuto
 
-router = I4cApiRouter()
+router = I4cApiRouter(include_path="/log")
 
 
 @router.get("/snapshot", response_model=models.log.Snapshot, x_properties=dict(object="snapshot", action="get"))
@@ -41,7 +41,7 @@ async def meta(credentials: HTTPBasicCredentials = Depends(common.security_check
     return await models.log.get_meta(credentials)
 
 
-@router.post("", status_code=201, x_properties=dict(object="datapoint", action="post"))
+@router.post("", status_code=201, x_properties=dict(object="datapoint", action="post"), allow_log=False)
 async def log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/log")),
         datapoints: List[models.log.DataPoint] = Body(...)):
