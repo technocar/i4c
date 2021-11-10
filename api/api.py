@@ -15,8 +15,6 @@ app.include_router(workpiece.router, prefix="/workpiece", tags=["workpiece"])
 app.include_router(tools.router, prefix="/tools", tags=["tools"])
 app.include_router(batch.router, prefix="/batch", tags=["batch"])
 
-# todo: log all api calls to log table for audit
-
 
 @app.on_event("startup")
 async def startup_event():
