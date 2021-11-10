@@ -1,7 +1,12 @@
 import functools
+import jsons
+from datetime import datetime
+
 from fastapi import APIRouter
 from fastapi.types import DecoratedCallable
 from common import log
+from common.tools import deepdict
+from models.log import put_log_write, DataPoint
 
 
 class I4cApiRouter(APIRouter):
@@ -20,13 +25,23 @@ class I4cApiRouter(APIRouter):
             @functools.wraps(f)
             async def log_result(*a, **b):
                 if allow_log:
-                    params = ', '.join((str(x) for x in a))
-                    bmasked = dict(b)
-                    if "credentials" in bmasked:
-                        bmasked["credentials"].password = "****"
-                    kwparams = ', '.join((f"{x}= \"{str(y) if not isinstance(y, bytes) else '<bytes>'}\"" for x,y in bmasked.items()))
-                    log_str = f"{rest_method} - {path}{' - '+params if params else ''} - {kwparams}"
-                    log.debug(log_str)
+                    try:
+                        params = ', '.join((str(x) for x in a))
+                        bmasked = deepdict(b, json_compat=True, hide_bytes=True)
+                        user = ""
+                        if "credentials" in bmasked:
+                            bmasked["credentials"]["password"] = "****"
+                            user = bmasked["credentials"]["username"]
+                        kwparams = ', '.join((f"{x}= \"{y}\"" for x,y in bmasked.items()))
+                        log_str = f"{rest_method} - {path}{' - '+params if params else ''} - {kwparams}"
+                        log.info(log_str)
+
+                        d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit', data_id=f"{rest_method}{path}",
+                                      value_text=user,
+                                      value_add=jsons.dumps({k:v for (k, v) in bmasked.items() if k != "credentials"}))
+                        await put_log_write(None, [d])
+                    except Exception as e:
+                        raise Exception(f"Error while logging: {e}")
                 return await f(*a, **b)
             return func(log_result)
         return log_decorator
