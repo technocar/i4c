@@ -20,7 +20,7 @@ where
   and ( l.timestamp < p.before_ts
     or (l.timestamp = p.before_ts and (l.sequence < p.before_seq or p.before_seq is null))
   )
-  and l.device = 'lathe' and l.data_id = 'coolhealth' /* todo: use proper data */
+  and l.device = 'robot' and l.data_id = 'gomfile' /* todo: use proper data */
 order by 
   l.timestamp, 
   l.sequence
