@@ -48,4 +48,5 @@ async def installation_get_file(
     id: int = Path(...),
     savepath: str = Path(...),
 ):
+    savepath = models.projects.ProjFile.check_savepath(savepath)
     return await models.installations.installation_get_file(credentials, id, savepath)

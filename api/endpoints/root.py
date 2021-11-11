@@ -35,6 +35,8 @@ async def files(
         commit_mask: Optional[List[str]] = Query(None),
         filever: Optional[int] = Query(None),
 ):
+    save_path = models.projects.ProjFile.check_savepath(save_path)
+    save_path_mask = save_path_mask.replace('\\', '/')
     return await models.projects.files_list(credentials, proj_name, projver, save_path, save_path_mask,
                                             protocol, name, name_mask, repo, repo_mask, commit, commit_mask, filever)
 

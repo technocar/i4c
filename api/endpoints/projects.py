@@ -18,6 +18,7 @@ async def list_projects(
     status: Optional[ProjectStatusEnum] = Query(None),
     file: Optional[str] = Query(None, description="Full savepath of the file.")
 ):
+    file = models.projects.ProjFile.check_savepath(file)
     return await models.projects.get_projects(credentials, name, name_mask, status, file)
 
 
