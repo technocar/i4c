@@ -12,8 +12,8 @@ with
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'lathe'
-      and l.data_id='cf'           /* workpiece_begin, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id='program_start'           /* workpiece_begin, todo: use proper data */
   ), 
   workpiece_end as (
     select l.timestamp, l.sequence
@@ -22,8 +22,8 @@ with
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'lathe'
-      and l.data_id='ct'           /* workpiece_end, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id='program_end'           /* workpiece_end, todo: use proper data */
   ),
   workpiece_id as (
     select l.value_text as "id", l.timestamp, l.sequence
@@ -32,18 +32,18 @@ with
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'lathe'
-      and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id='wkpcid'           /* workpiece_id, todo: use proper data */
   ),
   workpiece_status as (
-    select 'bad' /* todo: l.value_text */ as "auto_status", l.timestamp, l.sequence
+    select lower(l.value_text) as "auto_status", l.timestamp, l.sequence
     from log l
     cross join p
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'lathe'
-      and l.data_id='lube'           /* workpiece_status, todo: use proper data */  
+      and l.device = 'gom'
+      and l.data_id='eval'           /* workpiece_status, todo: use proper data */
   ),
   workpiece_project as (
     select l.value_text as "project", l.timestamp, l.sequence
@@ -52,9 +52,9 @@ with
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'lathe'
-      and l.data_id='spgm'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
-                                        itt a robot programjának a nevébõl kell majd kikeresni, hogy az melyik project-nek a része  */
+      and l.device = 'robot'
+      and l.data_id='program_start'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
+                                        itt a robot programjï¿½nak a nevï¿½bï¿½l kell majd kikeresni, hogy az melyik project-nek a rï¿½sze  */
   ),
   discover_log as (
     select 
