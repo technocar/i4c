@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Router } from '@angular/router';
-import { ApiService } from './api.service';
+import { ApiService, LoginResponse } from './api.service';
 import { DeviceType } from './models/constants';
 import { User } from './models/api';
+import { map, tap } from 'rxjs/operators';
 
 export class AuthenticatedUser {
   id: string;
@@ -33,14 +34,19 @@ export class AuthenticationService {
   }
 
   login(username: string, password: string): Observable<User> {
-    this.storeUser({
-      id: username,
-      username: username,
-      expires: Date.now() + (1000 * 60 * 45),
-      token: `${window.btoa(username + ':' + password)}`
-    });
-
-    return this.api.login();
+    return this.api.login(username, password).pipe(
+      tap(r => {
+        this.storeUser({
+          id: r.user.id,
+          username: r.user.login_name,
+          expires: Date.now() + (1000 * 60 * 45),
+          token: `${window.btoa(username + ':' + password)}`
+        });
+      }),
+      map(r => {
+        return r.user;
+      })
+    );
   }
 
   removeUser() {

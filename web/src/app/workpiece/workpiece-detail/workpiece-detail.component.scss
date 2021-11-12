@@ -1,0 +1,17 @@
+@import '../../../styles.sass';
+
+.form-group {
+  label {
+    display: block;
+    font-weight: bold;
+  }
+
+  label:nth-child(1) {
+    color: $color-gray;
+  }
+}
+
+.delete-note {
+  float: right;
+  color: $color-c_fault;
+}

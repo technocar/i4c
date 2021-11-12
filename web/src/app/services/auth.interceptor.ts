@@ -24,7 +24,7 @@ export class AuthenticationInterceptor implements HttpInterceptor {
 
   private addAuth(request: HttpRequest<any>): HttpRequest<any> {
     const isApiUrl = true;//this.isSameOriginUrl(request);
-    if (isApiUrl) {
+    if (isApiUrl && request.url !== 'api/login') {
       if (this.authService.isAuthenticated())
         this.authService.extendExpiration();
       else

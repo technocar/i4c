@@ -8,6 +8,7 @@ $color-c_fault: rgb(196, 39, 39)
 $color-event: rgb(42, 132, 218)
 $color-sample: black
 $color-hover: $color-event
+$color-gray: #aaa
 
 
 .menu-context
@@ -24,3 +25,28 @@ $color-hover: $color-event
 
     > .dropdown-menu
         display: block
+
+
+.accordion
+  > .section
+    margin-bottom: 0.5rem
+    background-color: white
+    border: none
+    border-bottom: 1px solid $color-gray
+    border-radius: 0
+    > .card-header
+      background-color: white
+      padding: 0
+      border-bottom: none
+      > button
+        text-align: left
+        width: 100%
+        font-weight: bold
+        color: $color-gray
+        padding-left: 0
+      > button::after
+        position: absolute
+        content: "▲"
+        right: 0
+      > button.collapsed::after
+        content: "▼"
