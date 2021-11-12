@@ -1,10 +1,10 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-date-struct';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, forkJoin, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { ApiService } from '../../services/api.service';
-import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPieceStatus } from '../../services/models/api';
+import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType } from '../../services/models/api';
 import { ActivatedRoute, Router } from '@angular/router';
 
 interface WorkPieceItem extends WorkPiece {
