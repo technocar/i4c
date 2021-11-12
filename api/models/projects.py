@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from pydantic import Field, validator
 
 from common import DatabaseConnection, I4cBaseModel, write_debug_sql
-from common.exceptions import InputValidationError
+from common.exceptions import I4cInputValidationError
 from models import ProjectStatusEnum, ProjectVersionStatusEnum
 from models.common import PatchResponse
 import common.db_helpers
@@ -121,7 +121,7 @@ class ProjFile(I4cBaseModel):
         v = os.path.normpath(v).replace('\\', '/')
         parts = v.split('/')
         if '..' in parts:
-            raise InputValidationError('invalid path')
+            raise I4cInputValidationError('invalid path')
         return v
 
     def __eq__(self, other):
