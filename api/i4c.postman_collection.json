@@ -678,7 +678,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/C:/Develop_git/Github-karatnet/i4c/api/dbconfig.sample_yaml"
+								"src": "/C:/Develop_git/Github-karatnet/i4c/api/apiconfig.yaml"
 							}
 						},
 						"url": {
@@ -903,6 +903,15 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "debug",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": null
+					},
+					"response": []
 				}
 			]
 		},
@@ -1021,6 +1030,60 @@
 									"value": "proj1",
 									"disabled": true
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "alarm",
+			"item": [
+				{
+					"name": "alarmdef get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/defs/al1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"defs",
+								"al1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmdef put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"string\",\r\n        \"data_id\": \"string\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0,\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/alarm/defs/al1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"defs",
+								"al1"
 							]
 						}
 					},

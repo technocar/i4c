@@ -1,2 +1,2 @@
-class InputValidationError(ValueError):
+class I4cInputValidationError(ValueError):
     pass
