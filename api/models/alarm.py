@@ -3,6 +3,8 @@ from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
 from pydantic import Field, root_validator
+
+import common.db_helpers
 from common.exceptions import I4cInputValidationError
 from common import I4cBaseModel, DatabaseConnection
 
@@ -305,3 +307,21 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
 
             _, new_alarm = await alarmdef_get(credentials, name, pconn=conn)
             return new_alarm
+
+
+async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
+    sql = "select name from \"alarm\" where True\n"
+    async with DatabaseConnection(pconn) as conn:
+        params = []
+        if name_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(name_mask, "name", params)
+        if report_after is not None:
+            params.append(report_after)
+            sql += f"and last_report >= ${len(params)}\n"
+        alarms = await conn.fetch(sql, *params)
+
+        res = []
+        for r in alarms:
+            _, d = await alarmdef_get(credentials, r[0], pconn=conn)
+            res.append(d)
+        return res

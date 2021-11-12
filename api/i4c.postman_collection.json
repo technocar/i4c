@@ -1061,6 +1061,35 @@
 					"response": []
 				},
 				{
+					"name": "alarmdef list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/defs?name_mask=a&report_after=2021-11-15T15:53:11.123456Z",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"defs"
+							],
+							"query": [
+								{
+									"key": "name_mask",
+									"value": "a"
+								},
+								{
+									"key": "report_after",
+									"value": "2021-11-15T15:53:11.123456Z"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "alarmdef put",
 					"request": {
 						"method": "PUT",
