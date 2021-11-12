@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators  } from '@angular/forms';
 import { first } from 'rxjs/operators';
 import { AuthenticationService } from '../services/auth.service';
 import { environment } from 'src/environments/environment';
+import { ApiService } from '../services/api.service';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,8 @@ export class LoginComponent implements OnInit {
     private formBuilder: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private authenticationService: AuthenticationService
+    private authenticationService: AuthenticationService,
+    private apiService: ApiService
   ) {
     // redirect to home if already logged in
     if (this.authenticationService.isAuthenticated()) {
@@ -52,13 +54,12 @@ export class LoginComponent implements OnInit {
 
     this.loading = true;
     this.authenticationService.login(this.f.username.value, this.f.password.value)
-      .pipe(first())
       .subscribe(
-        data => {
+        user => {
           this.router.navigateByUrl(this.returnUrl);
         },
         error => {
-          this.error = error.error.detail;
+          this.error = this.apiService.getErrorMsg(error).toString();
           this.loading = false;
           this.authenticationService.removeUser();
         });

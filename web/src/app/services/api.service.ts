@@ -1,10 +1,14 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { distinctUntilChanged, map, scan, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult } from './models/api';
 import { DeviceType } from './models/constants';
 
+export interface LoginResponse {
+  user: User
+}
 class RequestParams {
   _params: HttpParams;
 
@@ -52,6 +56,16 @@ class RequestParams {
   }
 }
 
+export enum DownloadState { Pending = 0, InProgress = 1, Done = 2 }
+
+export interface Download {
+  content: Blob,
+  contentType?: string;
+  filename?: string;
+  progress: number,
+  state: DownloadState
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -87,8 +101,12 @@ export class ApiService {
     return (error.detail as ErrorDetail).msg;
   };
 
-  login(): Observable<User> {
-    return this.http.get<User>(`${this._apiUrl}/login`);
+  login(username: string, password: string): Observable<LoginResponse> {
+    return this.http.get<LoginResponse>(`${this._apiUrl}/login`, {
+      headers: {
+        "Authorization": `Basic ${window.btoa(username + ':' + password)}`
+      }
+    });
   }
 
   getSnapShot(device: string, timestamp: Date): Observable<SnapshotResponse> {
@@ -170,6 +188,12 @@ export class ApiService {
     return this.http.get<WorkPiece[]>(`${this._apiUrl}/workpiece`, { params: params.getAll() });
   }
 
+  getWorkPiece(id: string, deleted?: boolean): Observable<WorkPiece> {
+    var params = new RequestParams();
+    params.add("with_deleted", deleted);
+    return this.http.get<WorkPiece>(`${this._apiUrl}/workpiece/${id}`, { params: params.getAll() });
+  }
+
   updateWorkPiece(id: string, parameters: WorkPieceUpdate): Observable<UpdateResult> {
     return this.http.patch<UpdateResult>(`${this._apiUrl}/workpiece/${id}`, parameters);
   }
@@ -179,5 +203,54 @@ export class ApiService {
     params.addFromObject(parameters);
 
     return this.http.get<WorkPieceBatch[]>(`${this._apiUrl}/batch`, { params: params.getAll() });
+  }
+
+  getFile(filename: string, version: number): Observable<Download> {
+    return this.http.get(`${this._apiUrl}/intfiles/v/${version}/${filename}`, { observe: 'events', reportProgress: true, responseType: 'blob' as 'json' })
+      .pipe(
+        map((event: HttpEvent<Blob>) => {
+          var download: Download = { progress: 0, content: null, state: DownloadState.Pending };
+          if (event.type === HttpEventType.DownloadProgress) {
+            download.progress = event.loaded / event.total * 100.00;
+            download.state = DownloadState.InProgress;
+          } else if (event.type === HttpEventType.Response) {
+            let response = event as HttpResponse<Blob>;
+            download.content = response.body;
+            download.contentType = response.body.type;
+            download.filename = this.getFileName(response);
+            download.state = DownloadState.Done;
+            this.saveAs(download);
+          }
+          return download;
+        }),
+        distinctUntilChanged((a, b) => a.state === b.state
+          && a.progress === b.progress
+          && a.content === b.content
+        )
+      );
+  }
+
+  saveAs(download: Download) {
+    let binaryData = [];
+    binaryData.push(download.content);
+    let downloadLink = document.createElement('a');
+    downloadLink.href = window.URL.createObjectURL(new Blob(binaryData, {type: download.contentType}));
+    if (download.filename)
+        downloadLink.setAttribute('download', download.filename);
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+  }
+
+  getFileName(response: HttpResponse<Blob>) {
+    let filename: string;
+    try {
+      const contentDisposition: string = response.headers.get('content-disposition');
+      const r = /(?:filename=")(.+)(?:")/
+      filename = r.exec(contentDisposition)[1];
+    }
+    catch (e) {
+      filename = 'myfile.txt'
+    }
+    return filename
   }
 }

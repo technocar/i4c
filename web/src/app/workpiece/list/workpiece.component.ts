@@ -3,8 +3,9 @@ import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-date-st
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, forkJoin, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { ApiService } from '../services/api.service';
-import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPieceStatus } from '../services/models/api';
+import { ApiService } from '../../services/api.service';
+import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPieceStatus } from '../../services/models/api';
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface WorkPieceItem extends WorkPiece {
   selected: boolean
@@ -44,8 +45,23 @@ export class WorkPieceComponent implements OnInit {
 
   private selected: string[] = [];
 
-  constructor(private apiService: ApiService, private modalService: NgbModal) {
+  constructor(
+    private apiService: ApiService,
+    private modalService: NgbModal,
+    private route: ActivatedRoute,
+    private router: Router) {
     var date = new Date();
+    var pDate = route.snapshot.queryParamMap.get("fd");
+    if (pDate) {
+      try
+      {
+        date = new Date(pDate)
+      }
+      catch
+      {
+        console.error(`Invalid Date value of \"pd\" query param ${pDate}`);
+      }
+    }
     this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
   }
 
@@ -119,6 +135,14 @@ export class WorkPieceComponent implements OnInit {
   }
 
   filter() {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}` ,
+        fwob: this.filterWOBatch
+      },
+      queryParamsHandling: 'merge'
+    });
     this.getWorkPieces();
   }
 

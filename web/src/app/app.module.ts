@@ -8,7 +8,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { RouterModule } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbAccordion, NgbCollapse, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SelectorComponent } from './selector/selector.component';
 import { AuthGuard } from './services/auth.guard';
@@ -21,7 +21,10 @@ import { SnapshotRobotComponent } from './snapshots/snapshot-robot/snapshot-robo
 import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.component';
 import { ProjectComponent } from './project/project.component';
 import { AppHeaderComponent } from './app-header/app-header.component';
-import { WorkPieceComponent } from './workpiece/workpiece.component';
+import { WorkPieceComponent } from './workpiece/list/workpiece.component';
+import { WorkPieceStatus } from './services/models/api';
+import { WorkpieceDetailComponent } from './workpiece/workpiece-detail/workpiece-detail.component';
+import { WorkpieceDetailResolver } from './workpiece/workpiece-detail/workpiece-detail.resolver';
 
 @NgModule({
   declarations: [
@@ -36,6 +39,7 @@ import { WorkPieceComponent } from './workpiece/workpiece.component';
     LoginComponent,
     ProjectComponent,
     WorkPieceComponent,
+    WorkpieceDetailComponent,
     AppHeaderComponent
   ],
   imports: [
@@ -47,6 +51,11 @@ import { WorkPieceComponent } from './workpiece/workpiece.component';
     FormsModule,
     NgbModule,
     RouterModule.forRoot([
+      { path: 'workpiece',  children: [
+        { path: 'list', component: WorkPieceComponent, canActivate: [AuthGuard] },
+        { path: 'detail/:id', component: WorkpieceDetailComponent, canActivate: [AuthGuard], resolve: { data: WorkpieceDetailResolver } },
+        { path: '', redirectTo: 'list', pathMatch: "full"  }
+      ]},
       { path: 'workpiece', component: WorkPieceComponent, canActivate: [AuthGuard] },
       { path: 'project', component: ProjectComponent, canActivate: [AuthGuard] },
       { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
@@ -55,6 +64,7 @@ import { WorkPieceComponent } from './workpiece/workpiece.component';
       { path: '', redirectTo: 'selector', pathMatch: "full" }
     ])
   ],
+  exports: [RouterModule],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthenticationInterceptor, multi: true }
   ],

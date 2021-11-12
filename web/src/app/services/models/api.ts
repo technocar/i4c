@@ -230,9 +230,10 @@ export interface WorkPieceParams {
 }
 
 export interface WorkPieceUpdateCondition {
+  flipped: boolean,
   batch?: string,
   empty_batch?: boolean,
-  status?: WorkPieceStatus
+  status?: WorkPieceStatus[]
 }
 
 export interface WorkPieceUpdateChange {

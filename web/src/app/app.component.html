@@ -1,1 +1,38 @@
 <router-outlet></router-outlet>
+
+<div *ngIf="loading" class="modal d-block" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content shadow p-3 mb-5 bg-white rounded">
+      <div class="modal-body">
+        <div class="loading-container d-flex justify-content-center">
+          <div class="loading-icon spinner-border text-primary mr-2" role="status">
+            <span class="sr-only">Betöltés...</span>
+          </div>
+          <span class="loading-message mt-1">Betöltés...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="downloading" class="modal d-block" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content shadow p-3 mb-5 bg-white rounded">
+      <div class="modal-body">
+        <ng-template [ngIf]="!downloadError">
+          <p>Letöltés folyamatban...</p>
+          <p><ngb-progressbar type="primary" textType="white" [value]="downloadProgress" [showValue]="true"></ngb-progressbar></p>
+        </ng-template>
+        <ng-template [ngIf]="downloadError">
+          <div class="text-danger">
+            <p>Hiba:</p>
+            <p>downloadErrorMsg</p>
+          </div>
+        </ng-template>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-dark" (click)="cancelDownload()">Mégse</button>
+      </div>
+    </div>
+  </div>
+</div>
