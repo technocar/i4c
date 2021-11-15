@@ -69,6 +69,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
 
   statuses = [
+    ['', ' - '],
     ['good', $localize `:@@workpiece_status_good:Megfelel`],
     ['bad', $localize `:@@workpiece_status_bad:Selejt`],
     ['inprogress', $localize `:@@workpiece_status_inprogress:Folyamatban`],
@@ -129,7 +130,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
       project_mask: this.filterProjectCtrl.mask ? this.filterProject : undefined,
       batch: !this.filterBatchCtrl.mask ? this.filterBatch : undefined,
       batch_mask: this.filterBatchCtrl.mask ? this.filterBatch : undefined,
-      status: this.filterStatus as WorkPieceStatus
+      status: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus as WorkPieceStatus
     })
       .subscribe(r => {
         var items: WorkPieceItem[] = [];
@@ -195,10 +196,10 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
       relativeTo: this.route,
       queryParams: {
         fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}`,
-        fid: this.filterId,
+        fid: (this.filterId ?? "") === "" ? undefined : this.filterId,
         fp: this.filterProjectCtrl.queryParam,
         fb: this.filterBatchCtrl.queryParam,
-        fs: this.filterStatus,
+        fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus,
         fwob: this.filterWOBatch
       },
       queryParamsHandling: 'merge'
