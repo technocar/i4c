@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { versions } from 'process';
+import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus } from '../services/models/api';
@@ -21,18 +21,20 @@ export class ProjectComponent implements OnInit {
   versions$: BehaviorSubject<string[]> = new BehaviorSubject([]);
   installed$: BehaviorSubject<ProjectInstall[]> = new BehaviorSubject([]);
 
-  constructor(private apiService: ApiService, private notifService: NotificationService) {
+  constructor(
+    private apiService: ApiService,
+    private notifService: NotificationService,
+    private route: ActivatedRoute) {
     let now = new Date();
     this.fromDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0));
     this.toDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 0, 0, 0, 0));
-    apiService.getProjects()
-      .subscribe((r) => {
-        this._projects = r;
-        this.projects$.next(this._projects.map((p) => { return p.name }));
-      });
   }
 
   ngOnInit(): void {
+    this.route.data.subscribe((r: any) => {
+        this._projects = r.data;
+        this.projects$.next(this._projects.map((p) => { return p.name }));
+      });
     this.getInstalledProjects();
   }
 

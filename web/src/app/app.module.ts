@@ -31,8 +31,8 @@ import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
     CommonsModule,
     NgbProgressbarModule,
     RouterModule.forRoot([
-      { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule) },
-      { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule) },
+      { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard] },
+      { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard] },
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard] },
       { path: 'login', component: LoginComponent },
