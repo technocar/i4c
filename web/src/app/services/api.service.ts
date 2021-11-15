@@ -40,7 +40,11 @@ class RequestParams {
         break;
     }
     console.log(v);
-    this._params = this._params.append(name, v);
+    if (name.endsWith("_mask")) {
+      for (let filter of v.split(' '))
+        this._params = this._params.append(name, filter);
+    } else
+      this._params = this._params.append(name, v);
   }
 
   public addFromObject(object: Object) {

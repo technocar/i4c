@@ -1,15 +1,6 @@
 <div class="container-lg">
   <app-header></app-header>
   <div id="toolbar" class="row align-items-center mb-3">
-    <label class="col-auto m-0">elkészült</label>
-    <div class="input-group col-3">
-      <input class="form-control" placeholder="yyyy-mm-dd" name="dp" [(ngModel)]="filterDate" ngbDatepicker #d="ngbDatepicker">
-      <div class="input-group-append">
-        <button class="btn btn-outline-secondary" (click)="d.toggle()" type="button">
-          <i class="bi bi-calendar3"></i>
-        </button>
-      </div>
-    </div>
     <div class="custom-control custom-checkbox col-auto">
       <input type="checkbox" class="custom-control-input" id="filter_wo_batch" [(ngModel)]="filterWOBatch">
       <label class="custom-control-label" for="filter_wo_batch">munkaszám nélküliek</label>
@@ -28,6 +19,25 @@
     <table class="table table-striped table-hover">
       <thead>
         <tr>
+          <th>&nbsp;</th>
+          <th><input class="form-control" [(ngModel)]="filterId" (change)="filter()" (keyup.enter)="filter()" /></th>
+          <th>
+            <div class="input-group">
+              <input class="form-control" placeholder="yyyy-mm-dd" name="dp" [(ngModel)]="filterDate" ngbDatepicker #d="ngbDatepicker">
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary" (click)="d.toggle()" type="button">
+                  <i class="bi bi-calendar3"></i>
+                </button>
+              </div>
+            </div>
+          </th>
+          <th><ctrl-filter #filterProjectCtrl (valueChange)="filterProject = $event"></ctrl-filter></th>
+          <th><select class="form-control" [(ngModel)]="filterStatus" (change)="filter()">
+            <option *ngFor="let status of statuses" value="{{status[0]}}">{{status[1]}}</option>
+          </select></th>
+          <th><ctrl-filter #filterBatchCtrl (valueChange)="filterBatch = $event"></ctrl-filter></th>
+        </tr>
+        <tr>
           <th scope="col">
             <div class="custom-control custom-checkbox">
               <input type="checkbox" class="custom-control-input" id="select_all_workpieces" [ngModel]="isAllSelected" (change)="selectAll()">
@@ -37,13 +47,13 @@
           <th scope="col">szám</th>
           <th scope="col">elkészült</th>
           <th scope="col">folyamat</th>
-          <th scope="col">megfelel</th>
+          <th scope="col">állapot</th>
           <th scope="col">munkaszám</th>
           <th scope="col">&nbsp;</th>
         </tr>
       </thead>
       <tbody>
-        <ng-template [ngIf]="fetchingList">
+        <ng-template [ngIf]="fetchingList$ | async">
           <tr>
             <td colspan="7">
               <div class="d-flex justify-content-center">
@@ -54,7 +64,7 @@
             </td>
           </tr>
         </ng-template>
-        <ng-template [ngIf]="!fetchingList">
+        <ng-template [ngIf]="!(fetchingList$ | async)">
           <tr *ngFor="let item of workPieces$ | async; index as i">
             <td>
               <div class="custom-control custom-checkbox">
@@ -65,7 +75,7 @@
             <td>{{item.id}}</td>
             <td>{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
             <td>{{item.project}}</td>
-            <td>{{item.status}}</td>
+            <td>{{getStatusDesc(item.status)}}</td>
             <td><a href="#" class="batch" [routerLink]="" [ngbPopover]="batch_list" [placement]="'bottom'" [popoverClass]="'menu-context'">{{item.batch}}</a></td>
             <td><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
           </tr>
