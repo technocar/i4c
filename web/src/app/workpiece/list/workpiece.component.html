@@ -1,11 +1,11 @@
 <div class="container-lg">
   <app-header></app-header>
-  <div id="toolbar" class="row align-items-center mb-3">
-    <div class="custom-control custom-checkbox col-auto">
+  <div id="toolbar" class="row align-items-center mb-3 justify-content-between">
+    <div class="custom-control custom-checkbox col-auto ml-2">
       <input type="checkbox" class="custom-control-input" id="filter_wo_batch" [(ngModel)]="filterWOBatch">
       <label class="custom-control-label" for="filter_wo_batch">munkaszám nélküliek</label>
     </div>
-    <div class="btn-group mr-3 col-auto">
+    <div class="btn-group col-auto">
       <button #add_batch type="button" class="btn btn-outline-primary" (click)="showDialog(new_batch)" [disabled]="!canAddNewBatch()">beállít ({{getSelectedCount()}})</button>
       <div class="btn-group" ngbDropdown role="group" aria-label="Button group with nested dropdown">
         <button class="btn btn-outline-primary dropdown-toggle-split" ngbDropdownToggle [disabled]="!canAddNewBatch()"></button>
@@ -36,6 +36,7 @@
             <option *ngFor="let status of statuses" value="{{status[0]}}">{{status[1]}}</option>
           </select></th>
           <th><ctrl-filter #filterBatchCtrl (valueChange)="filterBatch = $event"></ctrl-filter></th>
+          <th>&nbsp;</th>
         </tr>
         <tr>
           <th scope="col">
@@ -44,12 +45,12 @@
               <label class="custom-control-label" for="select_all_workpieces">&nbsp;</label>
             </div>
           </th>
-          <th scope="col">szám</th>
-          <th scope="col">elkészült</th>
-          <th scope="col">folyamat</th>
-          <th scope="col">állapot</th>
-          <th scope="col">munkaszám</th>
-          <th scope="col">&nbsp;</th>
+          <th scope="col" class="text-center">szám</th>
+          <th scope="col" class="text-center">elkészült</th>
+          <th scope="col" class="text-center">folyamat</th>
+          <th scope="col" class="text-center">állapot</th>
+          <th scope="col" class="text-center">munkaszám</th>
+          <th scope="col" class="text-center">&nbsp;</th>
         </tr>
       </thead>
       <tbody>
@@ -72,12 +73,12 @@
                 <label class="custom-control-label" for="select_{{i}}">&nbsp;</label>
               </div>
             </td>
-            <td>{{item.id}}</td>
-            <td>{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
-            <td>{{item.project}}</td>
-            <td>{{getStatusDesc(item.status)}}</td>
-            <td><a href="#" class="batch" [routerLink]="" [ngbPopover]="batch_list" [placement]="'bottom'" [popoverClass]="'menu-context'">{{item.batch}}</a></td>
-            <td><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
+            <td class="text-center">{{item.id}}</td>
+            <td class="text-center">{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
+            <td class="text-center">{{item.project}}</td>
+            <td class="text-center">{{getStatusDesc(item.status)}}</td>
+            <td class="text-center"><a href="#" class="batch" [routerLink]="" [ngbPopover]="batch_list" [placement]="'bottom'" [popoverClass]="'menu-context'">{{item.batch}}</a></td>
+            <td class="text-center"><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
           </tr>
         </ng-template>
       </tbody>
