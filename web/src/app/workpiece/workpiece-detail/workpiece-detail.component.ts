@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
-import { ApiService, Download } from 'src/app/services/api.service';
+import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { DownloadService } from 'src/app/services/download.service';
 import { WorkPiece, WorkPieceNote } from 'src/app/services/models/api';
