@@ -108,7 +108,6 @@ class Series:
                     res._items.append(TimePeriod(intervall_start, p))
                     intervall_started = False
 
-            # todo: lépjünk p-vel a következő pontra
             if item1.end == p:
                 i1 += 1
             if item2.end == p:
