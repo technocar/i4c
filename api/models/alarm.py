@@ -7,6 +7,7 @@ from pydantic import Field, root_validator
 import common.db_helpers
 from common.exceptions import I4cInputValidationError
 from common import I4cBaseModel, DatabaseConnection
+from models import CommonStatusEnum
 
 
 class AlarmCondLogRowCategory(str, Enum):
@@ -200,6 +201,54 @@ class AlarmDef(AlarmDefIn):
     last_report: Optional[datetime]
 
 
+class AlarmMethod(str, Enum):
+    email = "email"
+    push = "push"
+    none = "none"
+
+
+class AlarmSub(I4cBaseModel):
+    alarm: int
+    seq: int
+    user: Optional[str]
+    method: AlarmMethod
+    address: Optional[str]
+    status: CommonStatusEnum
+
+
+class AlarmSubPatchCondition(I4cBaseModel):
+    flipped: Optional[bool]
+    status: Optional[CommonStatusEnum]
+    address: Optional[str]
+    empty_address: Optional[bool]
+
+    def match(self, alarmsub:AlarmSub):
+        r = (((self.status is None) or (alarmsub.status == self.status))
+             and ((self.address is None) or (self.address == alarmsub.address))
+             and ((self.empty_address is None) or (bool(alarmsub.address) != self.empty_address)))
+
+        if self.flipped is None or not self.flipped:
+            return r
+        else:
+            return not r
+
+
+class AlarmSubPatchChange(I4cBaseModel):
+    status: Optional[CommonStatusEnum]
+    address: Optional[str]
+    clear_address: Optional[bool]
+
+    def is_empty(self):
+        return self.status is None \
+               and self.address is None \
+               and (self.clear_address is None or not self.clear_address)
+
+
+class AlarmSubPatchBody(I4cBaseModel):
+    conditions: List[AlarmSubPatchCondition]
+    change: AlarmSubPatchChange
+
+
 async def alarmdef_get(credentials, name, *, pconn=None) -> (int, AlarmDef):
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
@@ -325,3 +374,19 @@ async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
             _, d = await alarmdef_get(credentials, r[0], pconn=conn)
             res.append(d)
         return res
+
+
+async def alarmsub_list(credentials, alarm, alarm_name, alarm_name_mask, seq, user,
+                        user_name, user_name_mask, method, status, *, pconn=None):
+    # todo 1: **********
+    pass
+
+
+async def new_alarmsub(credentials, alarmsub):
+    # todo 1: **********
+    pass
+
+
+async def patch_alarmsub(credentials, alarm, seq, patch):
+    # todo 1: **********
+    pass

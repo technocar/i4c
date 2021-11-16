@@ -1,4 +1,5 @@
 /* 
+drop table "alarm_sub";
 drop table "alarm_cond";
 drop table "alarm";
 */
@@ -37,3 +38,21 @@ GRANT ALL ON TABLE public."alarm_cond" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE alarm_cond_id_seq TO aaa;
 GRANT ALL ON TABLE public."alarm_cond" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE alarm_cond_id_seq TO postgres;
+
+
+create table "alarm_sub" (
+    id SERIAL PRIMARY KEY,
+    alarm integer not null constraint fk_project references "alarm",
+    seq integer not null,
+    "user" character varying (200) null constraint fk_alarm_sub_user references "user", 
+    method character varying (200) not null,
+    address character varying (200) null,
+    status character varying (200) not null
+);
+
+CREATE UNIQUE INDEX idx_alarm_seq ON "alarm_sub" (alarm, seq);
+
+GRANT ALL ON TABLE "alarm_sub" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO aaa;
+GRANT ALL ON TABLE "alarm_sub" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO postgres;
