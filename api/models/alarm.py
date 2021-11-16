@@ -511,4 +511,9 @@ async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
 
 async def check_alarmevent(credentials, alarm, max_count):
     # todo 1: **********
+    # a potenciális log szelet:
+    #   alarm.last_check-tõl minden
+    #   + alarm.last_check-el egy log.sample (mindenbõl az elõzõ érték)
+    #   + sample típusból legalább annyi visszahozni alarm.last_check elõtt, hogy meglegyen a aggregate_period/aggregate_count
+    # a sample ablakokat lehet, hogy külön érdemes lekérni az event/condition szûrések után megmaradt ablakokra
     return []
