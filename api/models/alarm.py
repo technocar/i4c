@@ -2,11 +2,15 @@ from datetime import datetime
 from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
+
+from fastapi import HTTPException
 from pydantic import Field, root_validator
 
 import common.db_helpers
 from common.exceptions import I4cInputValidationError
-from common import I4cBaseModel, DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection, write_debug_sql
+from models import CommonStatusEnum
+from models.common import PatchResponse
 
 
 class AlarmCondLogRowCategory(str, Enum):
@@ -200,6 +204,67 @@ class AlarmDef(AlarmDefIn):
     last_report: Optional[datetime]
 
 
+class AlarmMethod(str, Enum):
+    email = "email"
+    push = "push"
+    none = "none"
+
+
+class AlarmSubIn(I4cBaseModel):
+    alarm: int
+    seq: int
+    user: Optional[str]
+    method: AlarmMethod
+    address: Optional[str]
+    status: CommonStatusEnum
+
+
+class AlarmSub(AlarmSubIn):
+    id: int
+    alarm_name: str
+    user_name: Optional[str]
+
+
+class AlarmSubPatchCondition(I4cBaseModel):
+    flipped: Optional[bool]
+    status: Optional[CommonStatusEnum]
+    address: Optional[str]
+    empty_address: Optional[bool]
+
+    def match(self, alarmsub:AlarmSub):
+        r = (((self.status is None) or (alarmsub.status == self.status))
+             and ((self.address is None) or (self.address == alarmsub.address))
+             and ((self.empty_address is None) or (bool(alarmsub.address) != self.empty_address)))
+
+        if self.flipped is None or not self.flipped:
+            return r
+        else:
+            return not r
+
+
+class AlarmSubPatchChange(I4cBaseModel):
+    status: Optional[CommonStatusEnum]
+    address: Optional[str]
+    clear_address: Optional[bool]
+
+    def is_empty(self):
+        return self.status is None \
+               and self.address is None \
+               and (self.clear_address is None or not self.clear_address)
+
+    @root_validator
+    def check_exclusive(cls, values):
+        address, clear_address = values.get('address'), values.get('clear_address')
+        if address is not None and clear_address:
+            raise ValueError('address and clear_address are exclusive')
+        return values
+
+
+class AlarmSubPatchBody(I4cBaseModel):
+    conditions: List[AlarmSubPatchCondition]
+    change: AlarmSubPatchChange
+
+
 async def alarmdef_get(credentials, name, *, pconn=None) -> (int, AlarmDef):
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
@@ -325,3 +390,112 @@ async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
             _, d = await alarmdef_get(credentials, r[0], pconn=conn)
             res.append(d)
         return res
+
+
+async def alarmsub_list(credentials, alarm=None, alarm_name=None, alarm_name_mask=None, seq=None, user=None,
+                        user_name=None, user_name_mask=None, method=None, status=None, *, pconn=None) -> List[AlarmSub]:
+    sql = dedent("""\
+            with res as (
+                select
+                  als.*,
+                  al."name" as alarm_name,
+                  u."name" as user_name
+                from alarm_sub als
+                join alarm al on al.id = als.alarm
+                left join "user" u on u.id = als."user"
+                )
+            select * from res
+            where True
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        params = []
+        if alarm is not None:
+            params.append(alarm)
+            sql += f"and res.alarm = ${len(params)}\n"
+        if alarm_name is not None:
+            params.append(alarm_name)
+            sql += f"and res.alarm_name = ${len(alarm_name)}\n"
+        if alarm_name_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(alarm_name_mask, "res.alarm_name", params)
+        if seq is not None:
+            params.append(seq)
+            sql += f"and res.seq = ${len(params)}\n"
+        if user is not None:
+            params.append(user)
+            sql += f"and res.user = ${len(params)}\n"
+        if user_name is not None:
+            params.append(user_name)
+            sql += f"and res.user_name = ${len(alarm_name)}\n"
+        if user_name_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(user_name_mask, "res.user_name", params)
+        if method is not None:
+            params.append(method)
+            sql += f"and res.method = ${len(params)}\n"
+        if status is not None:
+            params.append(status)
+            sql += f"and res.status = ${len(params)}\n"
+        write_debug_sql("alarmsub_list.sql", sql, *params)
+        res = await conn.fetch(sql, *params)
+        return [AlarmSub(**dict(r)) for r in res]
+
+
+async def post_alarmsub(credentials, alarmsub:AlarmSub) -> AlarmSub:
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            sql_check = "select * from alarm_sub where alarm = $1 and seq = $2"
+            pre_db = conn.execute(sql_check, alarmsub.alarm, alarmsub.seq)
+            if pre_db:
+                sql_mod = dedent("""\
+                    update alarm_sub
+                    set "user" = $3,
+                        method = $4,
+                        address = $5,
+                        status = $6 
+                    where alarm = $1 and seq = $2
+                    """)
+            else:
+                sql_mod = "insert into alarm_sub (alarm, seq, \"user\", method, address, status)\n" \
+                          "values ($1, $2, $3, $4, $5, $6)"
+            conn.execute(sql_mod, alarmsub.alarm, alarmsub.seq, alarmsub.user, alarmsub.method, alarmsub.address, alarmsub.status)
+            res = await alarmsub_list(credentials, alarm=alarmsub.alarm, seq=alarmsub.seq)
+            return res[0]
+
+
+async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            al = await alarmsub_list(credentials, alarm=alarm, seq=seq, pconn=conn)
+            if len(al) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            al = al[0]
+
+            match = True
+            for cond in patch.conditions:
+                match = cond.match(al)
+                if not match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+
+            params = [alarm, seq]
+            sql = "update alarm_sub\nset\n"
+            sep = ""
+            if patch.change.status:
+                params.append(patch.change.status)
+                sql += f"{sep}\"status\"=${len(params)}"
+                sep = ",\n"
+            if patch.change.address is not None:
+                params.append(patch.change.address)
+                sql += f"{sep}\"address\"=${len(params)}"
+                sep = ",\n"
+            if patch.change.clear_address:
+                sql += f"{sep}\"address\"= null"
+                sep = ",\n"
+            sql += "\nwhere alarm = $1::int and seq = $2"
+            if len(params) > 2:
+                await conn.execute(sql, *params)
+
+            return PatchResponse(changed=True)

@@ -1117,6 +1117,110 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "alarmsub put",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"alarm\": 5,\r\n    \"seq\": 17,\r\n    \"user\": \"1\",\r\n    \"method\": \"none\",\r\n    \"address\": null,\r\n    \"status\": \"active\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/alarm/subs",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"subs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmsub list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/subs?user_name_mask=teszt",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"subs"
+							],
+							"query": [
+								{
+									"key": "user_name_mask",
+									"value": "teszt"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmsub get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/subs/5/17",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"subs",
+								"5",
+								"17"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmsub patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inactive\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"inactive\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/alarm/subs/5/17",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"subs",
+								"5",
+								"17"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},

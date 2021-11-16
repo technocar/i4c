@@ -16,6 +16,11 @@ class DeviceAuto(str, Enum):
     robot = "robot"
 
 
+class CommonStatusEnum(str, Enum):
+    active = "active"
+    inactive = "inactive"
+
+
 class UserStatusEnum(str, Enum):
     active = "active"
     inactive = "inactive"
