@@ -65,7 +65,7 @@ async def alarmsub_get(
     raise HTTPException(status_code=404, detail="No record found")
 
 
-@router.post("/subs", response_model=models.alarm.AlarmSub, x_properties=dict(object="projects", action="post"))
+@router.post("/subs", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarmsub", action="post"))
 async def post_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/subs")),
     alarmsub: models.alarm.AlarmSubIn = Body(...),
@@ -73,7 +73,7 @@ async def post_alarmsub(
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
-@router.patch("/subs/{alarm}/{seq}", response_model=models.common.PatchResponse, x_properties=dict(object="projects", action="post"))
+@router.patch("/subs/{alarm}/{seq}", response_model=models.common.PatchResponse, x_properties=dict(object="alarmsub", action="patch"))
 async def patch_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{alarm}/{seq}")),
     alarm: int = Path(...),
