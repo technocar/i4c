@@ -111,9 +111,9 @@ async def tool_list(credentials, device, timestamp, max_count):
                         eof2, item2 = next_eof(i2)
 
         def f(a,b):
-            if a["timestamp"] < b["timestamp"]:
+            if a.timestamp < b.timestamp:
                 return -1
-            if (a["timestamp"] == b["timestamp"]) and (a["sequence"] < b["sequence"]):
+            if (a.timestamp == b.timestamp) and (a.sequence < b.sequence):
                 return -1
             return 1
 
