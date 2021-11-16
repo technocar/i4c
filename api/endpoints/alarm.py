@@ -24,8 +24,8 @@ async def alarmdef_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs/{name}")),
     name: str = Path(...),
 ):
-    alarm_id, res = await models.alarm.alarmdef_get(credentials, name)
-    if alarm_id is None:
+    res = await models.alarm.alarmdef_get(credentials, name)
+    if res is None:
         raise HTTPException(status_code=404, detail="No record found")
     return res
 
@@ -65,7 +65,7 @@ async def alarmsub_get(
     raise HTTPException(status_code=404, detail="No record found")
 
 
-@router.post("/subs", response_model=models.alarm.AlarmSub, x_properties=dict(object="projects", action="post"))
+@router.post("/subs", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarmsub", action="post"))
 async def post_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/subs")),
     alarmsub: models.alarm.AlarmSubIn = Body(...),
@@ -73,7 +73,7 @@ async def post_alarmsub(
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
-@router.patch("/subs/{alarm}/{seq}", response_model=models.common.PatchResponse, x_properties=dict(object="projects", action="post"))
+@router.patch("/subs/{alarm}/{seq}", response_model=models.common.PatchResponse, x_properties=dict(object="alarmsub", action="patch"))
 async def patch_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{alarm}/{seq}")),
     alarm: int = Path(...),
@@ -81,3 +81,12 @@ async def patch_alarmsub(
     patch: models.alarm.AlarmSubPatchBody = Body(...),
 ):
     return await models.alarm.patch_alarmsub(credentials, alarm, seq, patch)
+
+
+@router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarmevent", action="check"))
+async def check_alarmevent(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check")),
+    alarm: Optional[int] = Query(None),
+    max_count: Optional[int] = Query(None)
+):
+    return await models.alarm.check_alarmevent(credentials, alarm, max_count)

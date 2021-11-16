@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from fastapi import Depends, Query, Body
+from fastapi import Depends, Query, Body, HTTPException
 from fastapi.security import HTTPBasicCredentials
 import models.log
 import common
@@ -32,8 +32,12 @@ async def find(
         name: Optional[str] = Query(None),
         val: Optional[List[str]] = Query(None),
         extra: Optional[str] = Query(None),
-        rel: Optional[str] = Query(None)):
-    return await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+        rel: Optional[str] = Query(None)
+):
+    rs = await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+    if rs is None:
+        raise HTTPException(status_code=404, detail="No log record found")
+    return rs
 
 
 @router.get("/meta", response_model=List[models.log.Meta], x_properties=dict(object="meta", action="list"))

@@ -974,27 +974,44 @@
 					"response": []
 				},
 				{
-					"name": "tools list",
+					"name": "tools list usage",
 					"request": {
-						"method": "PUT",
+						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"timestamp\": \"2021-08-24T07:55:37.892Z\",\r\n    \"sequence\": 37950,\r\n    \"device\": \"lathe\",\r\n    \"instance\": \"7\",\r\n    \"data_id\": \"install_tool\",\r\n    \"tool_id\": \"m5 fúrófej\",\r\n    \"slot_number\": \"11\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "localhost:5000/tools",
+							"raw": "localhost:5000/tools/list_usage",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
-								"tools"
+								"tools",
+								"list_usage"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "tools list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/tools/list?device=lathe",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"tools",
+								"list"
+							],
+							"query": [
+								{
+									"key": "device",
+									"value": "lathe"
+								}
 							]
 						}
 					},
@@ -1244,6 +1261,38 @@
 								"subs",
 								"5",
 								"17"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarm check",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/events/check",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"events",
+								"check"
+							],
+							"query": [
+								{
+									"key": "alarm",
+									"value": "al1",
+									"disabled": true
+								},
+								{
+									"key": "max_count",
+									"value": "12",
+									"disabled": true
+								}
 							]
 						}
 					},

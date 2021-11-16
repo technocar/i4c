@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from fastapi import HTTPException
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 
@@ -120,7 +120,8 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
 
 
-async def get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *, pconn=None):
+async def get_find(credentials, device, timestamp=None, sequence=None, before_count=None, after_count=None, categ=None,
+                   name=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
     if sequence is not None and timestamp is None:
         raise HTTPException(status_code=400, detail="sequence allowed only when timestamp is not empty")
 
@@ -138,7 +139,4 @@ async def get_find(credentials, device, timestamp, sequence, before_count, after
     except Exception as e:
         log.error(f'error while sql run: {e}')
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")
-
-    if rs is None:
-        raise HTTPException(status_code=404, detail="No log record found")
-    return rs
+    return [DataPoint(**dict(r)) for r in rs]

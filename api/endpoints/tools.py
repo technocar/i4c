@@ -1,11 +1,13 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
-from fastapi import Depends, Body, Path
+from fastapi import Depends, Body, Path, Query
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.log
 import models.tools
 from I4cAPI import I4cApiRouter
+from models import Device
 
 router = I4cApiRouter(include_path="/tools")
 
@@ -43,7 +45,16 @@ async def patch_tools(
     return await models.tools.patch_project_version(credentials, tool_id, patch)
 
 
-@router.get("/list", response_model=List[models.tools.ToolItem], x_properties=dict(object="tools", action="list"))
+@router.get("/list", response_model=List[models.tools.ToolDataPointType], x_properties=dict(object="tools", action="list"))
 async def tool_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list"))):
-    return await models.tools.tool_list(credentials)
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/find")),
+        device: Device = Query(None, title="device"),
+        timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
+        max_count: Optional[int] = Query(None)):
+    return await models.tools.tool_list(credentials, device, timestamp, max_count)
+
+
+@router.get("/list_usage", response_model=List[models.tools.ToolItem], x_properties=dict(object="tools", action="list_usage"))
+async def tool_list_usage(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list_usage"))):
+    return await models.tools.tool_list_usage(credentials)
