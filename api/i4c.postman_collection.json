@@ -1248,6 +1248,38 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "alarm check",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/events/check",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"events",
+								"check"
+							],
+							"query": [
+								{
+									"key": "alarm",
+									"value": "al1",
+									"disabled": true
+								},
+								{
+									"key": "max_count",
+									"value": "12",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},

@@ -507,3 +507,8 @@ async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
                 await conn.execute(sql, *params)
 
             return PatchResponse(changed=True)
+
+
+async def check_alarmevent(credentials, alarm, max_count):
+    # todo 1: **********
+    return []

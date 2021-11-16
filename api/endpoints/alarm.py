@@ -81,3 +81,12 @@ async def patch_alarmsub(
     patch: models.alarm.AlarmSubPatchBody = Body(...),
 ):
     return await models.alarm.patch_alarmsub(credentials, alarm, seq, patch)
+
+
+@router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarmevent", action="check"))
+async def check_alarmevent(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check")),
+    alarm: Optional[int] = Query(None),
+    max_count: Optional[int] = Query(None)
+):
+    return await models.alarm.check_alarmevent(credentials, alarm, max_count)
