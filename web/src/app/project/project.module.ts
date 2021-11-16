@@ -5,6 +5,7 @@ import { CommonsModule } from '../commons/commons.module';
 import { FormsModule } from '@angular/forms';
 import { ProjectRoutingModule } from './project-routing.module';
 import { ProjectComponent } from './project.component';
+import { NgbDatepickerModule } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({
@@ -15,7 +16,8 @@ import { ProjectComponent } from './project.component';
     CommonsModule,
     CommonModule,
     ProjectRoutingModule,
-    FormsModule
+    FormsModule,
+    NgbDatepickerModule
   ]
 })
 export class ProjectModule { }

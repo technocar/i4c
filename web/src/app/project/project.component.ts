@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NgbDate, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from '../services/api.service';
-import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus } from '../services/models/api';
+import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus } from '../services/models/api';
 import { NotificationService } from '../services/notification.service';
 
 @Component({
@@ -13,21 +14,51 @@ import { NotificationService } from '../services/notification.service';
 export class ProjectComponent implements OnInit {
 
   private _projects: Project[] = [];
+  private _filterFromDate: NgbDateStruct;
+  private _filterToDate: NgbDateStruct;
+
   selectedProject: string = '';
   selectedVersion: string = '';
-  fromDate: Date;
-  toDate: Date;
+
+  get filterFromDate(): NgbDateStruct { return this._filterFromDate; }
+  set filterFromDate(value: NgbDateStruct) { this._filterFromDate = value; this.filter(); }
+  get filterToDate(): NgbDateStruct { return this._filterToDate; }
+  set filterToDate(value: NgbDateStruct) { this._filterToDate = value; this.filter(); }
+  filterProject: string;
+  filterVersion: number;
+  filterStatus: string;
+
   projects$: BehaviorSubject<string[]> = new BehaviorSubject([]);
   versions$: BehaviorSubject<string[]> = new BehaviorSubject([]);
   installed$: BehaviorSubject<ProjectInstall[]> = new BehaviorSubject([]);
+  statuses: string[][] = [
+    ["", " - "],
+    ["todo", $localize `:@@install_status_todo:Várakozik`],
+    ["working", $localize `:@@install_status_working:Folyamatban`],
+    ["done", $localize `:@@install_status_done:Kész`],
+    ["fail", $localize `:@@install_status_fail:Sikeretelen`]
+  ];
 
   constructor(
     private apiService: ApiService,
     private notifService: NotificationService,
-    private route: ActivatedRoute) {
+    private route: ActivatedRoute,
+    private router: Router) {
     let now = new Date();
-    this.fromDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0));
-    this.toDate = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 0, 0, 0, 0));
+    this._filterFromDate = { year: now.getFullYear(), month: now.getMonth() + 1, day: 1 };
+    now = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    this._filterToDate = { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+
+    let qpds = route.snapshot.queryParamMap.get("fds");
+    let qpde = route.snapshot.queryParamMap.get("fde");
+    if (qpds || qpde) {
+      this._filterFromDate = this.convertFromDate(qpds);
+      this._filterToDate = this.convertFromDate(qpde);
+    }
+    this.filterProject = route.snapshot.queryParamMap.get("fp");
+    this.filterVersion = parseInt(route.snapshot.queryParamMap.get("fv"));
+    this.filterVersion = isNaN(this.filterVersion) ? undefined : this.filterVersion;
+    this.filterStatus = route.snapshot.queryParamMap.get("fs");
   }
 
   ngOnInit(): void {
@@ -40,7 +71,6 @@ export class ProjectComponent implements OnInit {
 
   projectSelectionChanged() {
     this.getVersions(this.selectedProject);
-    this.getInstalledProjects();
   }
 
   getVersions(projectName: string) {
@@ -52,8 +82,10 @@ export class ProjectComponent implements OnInit {
   getInstalledProjects() {
     let params: ProjectInstallParams = {
       project_name: this.selectedProject === '' ? undefined : this.selectedProject,
-      before: this.toDate,
-      after: this.fromDate
+      after: this.convertToDate(this.filterFromDate),
+      before: this.convertToDate(this.filterToDate),
+      ver: (this.filterVersion ?? "") === "" ? undefined : this.filterVersion,
+      status: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus as ProjectInstallStatus
     }
     this.apiService.getInstalledProjects(params)
       .subscribe(r => {
@@ -90,15 +122,53 @@ export class ProjectComponent implements OnInit {
     })
   }
 
-  filterChanged() {
+  filter() {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        fds: this.filterFromDate ? `${this.filterFromDate.year}-${this.filterFromDate.month}-${this.filterFromDate.day}` : undefined,
+        fde: this.filterToDate ? `${this.filterToDate.year}-${this.filterToDate.month}-${this.filterToDate.day}` : undefined,
+        fp: (this.filterProject ?? "") === "" ? undefined : this.filterProject,
+        fv: (this.filterVersion ?? "") === "" ? undefined : this.filterVersion,
+        fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus
+      },
+      queryParamsHandling: 'merge'
+    });
     this.getInstalledProjects();
   }
 
-  convertToDate(value: string) {
-    return new Date(value);
+  convertToDate(value: NgbDateStruct): Date {
+    if (value)
+      return new Date(Date.UTC(value.year, value.month - 1, value.day));
+    else
+      return undefined;
+  }
+
+  convertFromDate(value: string): NgbDateStruct {
+    if (!value)
+      return undefined;
+
+    try
+    {
+      let date = new Date(value);
+      return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+    }
+    catch
+    {
+      console.error(`Invalid Date "${value}" is invalid`);
+      return undefined;
+    }
   }
 
   notifTest() {
     this.notifService.sendDesktopNotif("I4C", "test message");
+  }
+
+  getStatusDesc(code: string): string {
+    var status = this.statuses.find((s) => { return s[0] === code });
+    if (status)
+      return status[1];
+    else
+      return code;
   }
 }
