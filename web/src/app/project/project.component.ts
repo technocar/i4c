@@ -31,6 +31,7 @@ export class ProjectComponent implements OnInit {
   projects$: BehaviorSubject<string[]> = new BehaviorSubject([]);
   versions$: BehaviorSubject<string[]> = new BehaviorSubject([]);
   installed$: BehaviorSubject<ProjectInstall[]> = new BehaviorSubject([]);
+  fetchingList$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   statuses: string[][] = [
     ["", " - "],
     ["todo", $localize `:@@install_status_todo:Várakozik`],
@@ -87,9 +88,14 @@ export class ProjectComponent implements OnInit {
       ver: (this.filterVersion ?? "") === "" ? undefined : this.filterVersion,
       status: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus as ProjectInstallStatus
     }
+    this.fetchingList$.next(true);
     this.apiService.getInstalledProjects(params)
       .subscribe(r => {
         this.installed$.next(r);
+      },
+      (err) => {},
+      () => {
+        this.fetchingList$.next(false);
       })
   }
 
