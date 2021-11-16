@@ -58,7 +58,7 @@ class WorkpiecePatchCondition(I4cBaseModel):
                 and ((self.empty_batch is None) or ((workpiece.batch is None) == self.empty_batch))
                 and ((self.status is None) or (workpiece.status in self.status))
         )
-        if self.flipped is None or self.flipped:
+        if self.flipped is None or not self.flipped:
             return r
         else:
             return not r

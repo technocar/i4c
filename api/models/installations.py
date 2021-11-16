@@ -29,7 +29,7 @@ class InstallationPatchCondition(I4cBaseModel):
 
     def match(self, ins:Installation):
         r = ((self.status is None) or (ins.status in self.status))
-        if self.flipped is None or self.flipped:
+        if self.flipped is None or not self.flipped:
             return r
         else:
             return not r

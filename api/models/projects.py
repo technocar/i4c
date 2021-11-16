@@ -28,7 +28,7 @@ class ProjectPatchCondition(I4cBaseModel):
     def match(self, project:Project):
         r = ( ((self.status is None) or (project.status in self.status))
               and ((self.extra is None) or (self.extra == project.extra)))
-        if self.flipped is None or self.flipped:
+        if self.flipped is None or not self.flipped:
             return r
         else:
             return not r
@@ -176,7 +176,7 @@ class ProjectVersionPatchCondition(I4cBaseModel):
             and ((self.exist_label is None) or (self.exist_label in pv.labels)) \
             and ((self.exist_label_in_proj is None)
                  or ((self.exist_label_in_proj in pi.versions) if pi is not None else False))
-        if self.flipped is None or self.flipped:
+        if self.flipped is None or not self.flipped:
             return r
         else:
             return not r
