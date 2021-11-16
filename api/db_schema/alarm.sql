@@ -56,3 +56,13 @@ GRANT ALL ON TABLE "alarm_sub" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO aaa;
 GRANT ALL ON TABLE "alarm_sub" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO postgres;
+
+/*
+delete from "alarm_sub";
+delete from "alarm_cond";
+delete from "alarm";
+
+insert into "alarm" values (5,'al1',0,'2021-11-16'::timestamp,null);
+insert into "alarm_cond" values (1,5,'sample','lathe','cf',10,null,'avg','>',12,null,null,null);
+insert into "alarm_sub" values (1,5,17,'1','none',null,'active');
+*/
