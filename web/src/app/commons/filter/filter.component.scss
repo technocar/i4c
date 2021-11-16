@@ -1,0 +1,9 @@
+$color-background: rgb(255, 230, 177);
+
+.hint {
+  background: $color-background;
+
+  .arrow::after {
+    border-top-color: $color-background;
+  }
+}

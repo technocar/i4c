@@ -5,7 +5,7 @@ import { WorkPieceRoutingModule } from './workpiece-routing.module';
 import { WorkPieceComponent } from './list/workpiece.component';
 import { CommonsModule } from '../commons/commons.module';
 import { FormsModule } from '@angular/forms';
-import { NgbAccordionModule, NgbDatepickerModule, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbAccordionModule, NgbDatepickerModule, NgbDropdownModule, NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
 import { WorkpieceDetailComponent } from './workpiece-detail/workpiece-detail.component';
 
 
@@ -21,7 +21,8 @@ import { WorkpieceDetailComponent } from './workpiece-detail/workpiece-detail.co
     FormsModule,
     NgbDatepickerModule,
     NgbPopoverModule,
-    NgbAccordionModule
+    NgbAccordionModule,
+    NgbDropdownModule
   ]
 })
 export class WorkpieceModule { }

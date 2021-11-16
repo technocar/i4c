@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-date-struct';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, forkJoin, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { ApiService } from '../../services/api.service';
-import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType } from '../../services/models/api';
+import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPieceStatus } from '../../services/models/api';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FilterControlComponent } from 'src/app/commons/filter/filter.component';
 
 interface WorkPieceItem extends WorkPiece {
   selected: boolean
@@ -16,16 +17,24 @@ interface WorkPieceItem extends WorkPiece {
   templateUrl: './workpiece.component.html',
   styleUrls: ['./workpiece.component.scss']
 })
-export class WorkPieceComponent implements OnInit {
+export class WorkPieceComponent implements OnInit, AfterViewInit {
+
+  @ViewChild("filterProjectCtrl") filterProjectCtrl: FilterControlComponent;
+  @ViewChild("filterBatchCtrl") filterBatchCtrl: FilterControlComponent;
 
   private _filterDate: NgbDateStruct;
   private _filterWOBatch: boolean;
+  private _filterProject: string;
+  private _filterBatch: string;
 
   isAllSelected: boolean = false;
   workPieces$: BehaviorSubject<WorkPieceItem[]> = new BehaviorSubject([]);
   batches$: BehaviorSubject<WorkPieceBatch[]> = new BehaviorSubject([]);
-  fetchingList: boolean = false;
+  fetchingList$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   confirmBatchDelete: boolean = false;
+
+  queryParamProject: string;
+  queryParamBatch: string;
 
   get filterDate(): NgbDateStruct {
     return this._filterDate;
@@ -34,6 +43,22 @@ export class WorkPieceComponent implements OnInit {
     this._filterDate = value;
     this.filter();
   }
+  filterId: string;
+  get filterProject(): string {
+    return this._filterProject;
+  }
+  set filterProject(value: string) {
+    this._filterProject = value;
+    this.filter();
+  }
+  get filterBatch(): string {
+    return this._filterBatch;
+  }
+  set filterBatch(value: string) {
+    this._filterBatch = value;
+    this.filter();
+  }
+  filterStatus: string;
 
   get filterWOBatch(): boolean {
     return this._filterWOBatch;
@@ -43,13 +68,22 @@ export class WorkPieceComponent implements OnInit {
     this.filter();
   }
 
+  statuses = [
+    ['', ' - '],
+    ['good', $localize `:@@workpiece_status_good:Megfelel`],
+    ['bad', $localize `:@@workpiece_status_bad:Selejt`],
+    ['inprogress', $localize `:@@workpiece_status_inprogress:Folyamatban`],
+    ['unknown', $localize `:@@workpiece_status_unknown:Ismeretlen`]
+  ];
+
   private selected: string[] = [];
 
   constructor(
     private apiService: ApiService,
     private modalService: NgbModal,
     private route: ActivatedRoute,
-    private router: Router) {
+    private router: Router,
+    private cd: ChangeDetectorRef) {
     var date = new Date();
     var pDate = route.snapshot.queryParamMap.get("fd");
     if (pDate) {
@@ -63,18 +97,41 @@ export class WorkPieceComponent implements OnInit {
       }
     }
     this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+    this.filterId = route.snapshot.queryParamMap.get("fid") ?? undefined;
+    /*this.queryParamProject = route.snapshot.queryParamMap.get("fp") ?? undefined;
+    this.queryParamBatch = route.snapshot.queryParamMap.get("fb") ?? undefined;*/
+    this.filterStatus = route.snapshot.queryParamMap.get("fs") ?? undefined;
   }
 
   ngOnInit(): void {
-    this.getWorkPieces();
     this.getBacthes();
+
+  }
+
+  ngAfterViewInit(): void {
+    this.filterProjectCtrl.queryParam = this.route.snapshot.queryParamMap.get("fp") ?? undefined;
+    this._filterProject = this.filterProjectCtrl.value;
+    this.filterBatchCtrl.queryParam = this.route.snapshot.queryParamMap.get("fb") ?? undefined;
+    this._filterBatch = this.filterBatchCtrl.value;
+    this.getWorkPieces();
+    this.cd.detectChanges();
   }
 
   getWorkPieces() {
     var date = Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day, 0, 0, 0, 0);
-    this.fetchingList = true;
+    this.fetchingList$.next(true);
     this.selected = [];
-    this.apiService.getWorkPieces({ with_deleted: false, with_details: false, after: new Date(date) })
+    this.apiService.getWorkPieces({
+      with_deleted: false,
+      with_details: false,
+      after: new Date(date),
+      id: (this.filterId ?? "") === "" ? undefined : this.filterId,
+      project: !this.filterProjectCtrl.mask ? this.filterProject : undefined,
+      project_mask: this.filterProjectCtrl.mask ? this.filterProject : undefined,
+      batch: !this.filterBatchCtrl.mask ? this.filterBatch : undefined,
+      batch_mask: this.filterBatchCtrl.mask ? this.filterBatch : undefined,
+      status: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus as WorkPieceStatus
+    })
       .subscribe(r => {
         var items: WorkPieceItem[] = [];
         for (let i of r)
@@ -83,7 +140,7 @@ export class WorkPieceComponent implements OnInit {
       },
       err => {},
       () => {
-        this.fetchingList = false;
+        this.fetchingList$.next(false);
       });
   }
 
@@ -138,7 +195,11 @@ export class WorkPieceComponent implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}` ,
+        fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}`,
+        fid: (this.filterId ?? "") === "" ? undefined : this.filterId,
+        fp: this.filterProjectCtrl.queryParam,
+        fb: this.filterBatchCtrl.queryParam,
+        fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus,
         fwob: this.filterWOBatch
       },
       queryParamsHandling: 'merge'
@@ -181,5 +242,10 @@ export class WorkPieceComponent implements OnInit {
         this.selectBatch(batch);
       }
     });
+  }
+
+  getStatusDesc(code: string): string {
+    var status = this.statuses.find((s) => { return s[0] === code; });
+    return status ? status[1] : code;
   }
 }

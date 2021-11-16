@@ -12,7 +12,6 @@ import { SelectorComponent } from './selector/selector.component';
 import { AuthGuard } from './services/auth.guard';
 import { LoginComponent } from './login/login.component';
 import { CommonModule } from '@angular/common';
-import { ProjectComponent } from './project/project.component';
 import { CommonsModule } from './commons/commons.module';
 import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -20,8 +19,7 @@ import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
   declarations: [
     AppComponent,
     SelectorComponent,
-    LoginComponent,
-    ProjectComponent
+    LoginComponent
   ],
   imports: [
     BrowserModule,
@@ -33,8 +31,8 @@ import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
     CommonsModule,
     NgbProgressbarModule,
     RouterModule.forRoot([
-      { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule) },
-      { path: 'project', component: ProjectComponent, canActivate: [AuthGuard] },
+      { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard] },
+      { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard] },
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard] },
       { path: 'login', component: LoginComponent },

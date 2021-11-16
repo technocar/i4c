@@ -1,0 +1,18 @@
+<div class="input-group">
+  <div class="input-group-prepend">
+    <div class="input-group-text">
+      <input type="checkbox" aria-label="Teljes egyezés" [(ngModel)]="mask" (change)="filter()" />
+    </div>
+  </div>
+  <input [id]="id" [(ngModel)]="value" class="form-control" [class]="css" placement="bottom" [ngbPopover]="hint" (keyup.enter)="filter()" triggers="focus" popoverClass="hint" [autoClose]="false" />
+</div>
+<ng-template #hint>
+  <p>
+    Alapesetben teljes egyezőségre lehet keresni.
+  </p>
+  <p>
+    A jelölőnégyzet bekapcsolásával lehetőség van egyszerre több feltétel/szavanként szerint keresni.<br/>
+    A szököz segítségével lehet határolni az egyes szavakat. <br/>
+    A "|" karakter segítségével lehetőség van az adott szóval kezdődjön vagy végződjön, illetve ha a szó elején és végén is van, akkor a teljes szóra keres.<br/>
+  </p>
+</ng-template>
