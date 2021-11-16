@@ -24,8 +24,8 @@ async def alarmdef_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs/{name}")),
     name: str = Path(...),
 ):
-    alarm_id, res = await models.alarm.alarmdef_get(credentials, name)
-    if alarm_id is None:
+    res = await models.alarm.alarmdef_get(credentials, name)
+    if res is None:
         raise HTTPException(status_code=404, detail="No record found")
     return res
 

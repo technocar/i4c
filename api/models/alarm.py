@@ -199,6 +199,7 @@ class AlarmDefIn(I4cBaseModel):
 
 
 class AlarmDef(AlarmDefIn):
+    id: int
     name: str
     last_check: datetime
     last_report: Optional[datetime]
@@ -265,7 +266,12 @@ class AlarmSubPatchBody(I4cBaseModel):
     change: AlarmSubPatchChange
 
 
-async def alarmdef_get(credentials, name, *, pconn=None) -> (int, AlarmDef):
+class AlarmEventCheckResult(I4cBaseModel):
+    alarm: str
+    alarmevent_count: Optional[int]
+
+
+async def alarmdef_get(credentials, name, *, pconn=None) -> AlarmDef:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
                            select 
@@ -275,7 +281,7 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> (int, AlarmDef):
                            """)
         idr = await conn.fetchrow(sql_alarm, name)
         if not idr:
-            return None, None
+            return None
 
         sql_alarm_cond = dedent("""\
                                     select 
@@ -324,27 +330,29 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> (int, AlarmDef):
                                                                       value=r["value_text"],
                                                                       age_min=r["age_min"])))
 
-        return (idr["id"],
-               AlarmDef(name=idr["name"],
+        return AlarmDef(id=idr["id"],
+                        name=idr["name"],
                         conditions=conds,
                         max_freq=idr["max_freq"],
                         last_check=idr["last_check"],
                         last_report=idr["last_report"]
-                        ))
+                        )
 
 
 async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            alarm_id, old_alarm = await alarmdef_get(credentials, name, pconn=conn)
+            old_alarm = await alarmdef_get(credentials, name, pconn=conn)
             new_last_check = datetime.now()
-            if alarm_id is None:
+            if old_alarm is None:
                 sql_insert = dedent("""\
                     insert into alarm (name, max_freq, last_check) values ($1, $2, $3)
                     returning id
                     """)
                 alarm_id = (await conn.fetchrow(sql_insert, name, alarm.max_freq, new_last_check))[0]
-                old_alarm = AlarmDef(name=alarm_id,
+                old_alarm = AlarmDef(
+                        id=alarm_id,
+                        name=name,
                         conditions=[],
                         max_freq=alarm.max_freq,
                         last_check=new_last_check,
@@ -368,9 +376,9 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
                 await conn.execute(sql_del, c.id)
 
             for c in ins_c:
-                await c.insert_to_db(alarm_id, conn)
+                await c.insert_to_db(old_alarm.id, conn)
 
-            _, new_alarm = await alarmdef_get(credentials, name, pconn=conn)
+            new_alarm = await alarmdef_get(credentials, name, pconn=conn)
             return new_alarm
 
 
@@ -387,7 +395,7 @@ async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
 
         res = []
         for r in alarms:
-            _, d = await alarmdef_get(credentials, r[0], pconn=conn)
+            d = await alarmdef_get(credentials, r[0], pconn=conn)
             res.append(d)
         return res
 
