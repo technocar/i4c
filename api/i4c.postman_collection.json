@@ -953,7 +953,34 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"timestamp\": \"2021-08-24T07:55:37.892Z\",\r\n    \"sequence\": 37950,\r\n    \"device\": \"lathe\",\r\n    \"instance\": \"7\",\r\n    \"data_id\": \"install_tool\",\r\n    \"value_num\": 37.0,\r\n    \"value_text\": null,\r\n    \"value_extra\": null,\r\n    \"value_add\": null\r\n}",
+							"raw": "{\r\n    \"timestamp\": \"2021-08-24T07:55:37.892Z\",\r\n    \"sequence\": 37950,\r\n    \"device\": \"lathe\",\r\n    \"instance\": \"7\",\r\n    \"data_id\": \"install_tool\",\r\n    \"tool_id\": \"m5 fúrófej\",\r\n    \"slot_number\": \"11\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/tools",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"tools"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "tools list",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"timestamp\": \"2021-08-24T07:55:37.892Z\",\r\n    \"sequence\": 37950,\r\n    \"device\": \"lathe\",\r\n    \"instance\": \"7\",\r\n    \"data_id\": \"install_tool\",\r\n    \"tool_id\": \"m5 fúrófej\",\r\n    \"slot_number\": \"11\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
