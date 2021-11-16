@@ -98,8 +98,6 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     }
     this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
     this.filterId = route.snapshot.queryParamMap.get("fid") ?? undefined;
-    /*this.queryParamProject = route.snapshot.queryParamMap.get("fp") ?? undefined;
-    this.queryParamBatch = route.snapshot.queryParamMap.get("fb") ?? undefined;*/
     this.filterStatus = route.snapshot.queryParamMap.get("fs") ?? undefined;
   }
 
