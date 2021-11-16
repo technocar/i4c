@@ -45,7 +45,7 @@
               <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
             </select>
           </th>
-          <th><input type="number" class="form-control" (change)="filter()" (keyup.enter)="filter()" /></th>
+          <th><input type="number" class="form-control" (change)="filter()" (keyup.enter)="filter()" [(ngModel)]="filterVersion" /></th>
           <th>
             <select class="form-control" (change)="filter()">
               <option *ngFor="let status of statuses" [value]="status[0]">{{status[1]}}</option>
