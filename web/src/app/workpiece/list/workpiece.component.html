@@ -77,7 +77,7 @@
             <td class="text-center">{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
             <td class="text-center">{{item.project}}</td>
             <td class="text-center">{{getStatusDesc(item.status)}}</td>
-            <td class="text-center"><a href="#" class="batch" [routerLink]="" [ngbPopover]="batch_list" [placement]="'bottom'" [popoverClass]="'menu-context'">{{item.batch}}</a></td>
+            <td class="text-center batch" [ngbPopover]="batch_list" [placement]="'bottom-left'" [container]="'body'" [popoverClass]="'menu-context'">{{item.batch}}</td>
             <td class="text-center"><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
           </tr>
         </ng-template>
