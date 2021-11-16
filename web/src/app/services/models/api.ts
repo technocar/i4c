@@ -31,6 +31,11 @@ export interface DeviceStatus {
   rot_axes: Axis[]
 }
 
+export interface Device {
+  id: DeviceType,
+  name: string
+}
+
 export interface Status {
   value: string,
   since: number
@@ -261,4 +266,28 @@ export interface WorkPieceBatch {
 export interface WorkPeiceBatchParams {
   project?: string,
   after?: Date
+}
+
+export enum ToolDataId { Install = "install_tool", Remove = "remove_tool" }
+
+export interface Tool {
+  timestamp: string,
+  sequence: number,
+  device: DeviceType,
+  data_id: ToolDataId,
+  tool_id: string,
+  slot_number: string,
+  type: string
+}
+
+export interface ToolUsage {
+  tool_id: string,
+  type: string,
+  count: number
+}
+
+export interface ToolListParams {
+  device: DeviceType,
+  timestamp?: Date,
+  max_count?: number
 }

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map, scan, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -111,6 +111,15 @@ export class ApiService {
         "Authorization": `Basic ${window.btoa(username + ':' + password)}`
       }
     });
+  }
+
+  getDevices(): Observable<Device[]> {
+    return of([
+      { id: DeviceType.Lathe, name: $localize `:@@device_lathe_name:Eszterga` },
+      { id: DeviceType.Mill, name: $localize `:@@device_mill_name:Maró` },
+      { id: DeviceType.Robot, name: $localize `:@@device_robot_name:Robot` },
+      { id: DeviceType.GOM, name: $localize `:@@device_gom_name:GOM` }
+    ]);
   }
 
   getSnapShot(device: string, timestamp: Date): Observable<SnapshotResponse> {
@@ -256,5 +265,15 @@ export class ApiService {
       filename = 'myfile.txt'
     }
     return filename
+  }
+
+  getTools(parameters: ToolListParams): Observable<Tool[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+    return this.http.get<Tool[]>(`${this._apiUrl}/tools/list`, { params: params.getAll() });
+  }
+
+  getToolUsageList(): Observable<ToolUsage[]> {
+    return this.http.get<ToolUsage[]>(`${this._apiUrl}/tools/list_usage`);
   }
 }
