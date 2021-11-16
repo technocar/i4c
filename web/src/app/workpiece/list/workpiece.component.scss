@@ -11,6 +11,7 @@
 .batch {
   color: black;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .batch:hover {
@@ -20,4 +21,5 @@
 .batch:hover::after {
   content: "▼";
   margin: 0.25rem 0 0 0.25rem;
+  float: right;
 }

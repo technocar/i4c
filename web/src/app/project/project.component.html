@@ -24,20 +24,35 @@
       </button>
     </div>
   </div>
-  <div id="filters" class="row pb-2  pt-2">
-    <div class="col-4 mr-2 form-group mb-0">
-      <label for="from_date">Kezdete</label>
-      <input id="from_date" type="date" class="form-control" [ngModel]="fromDate | date:'yyyy-MM-dd'" (ngModelChange)="fromDate = convertToDate($event)" (change)="filterChanged()" />
-    </div>
-    <div class="col-4 mr-2 form-group mb-0">
-      <label for="to_date">Vége</label>
-      <input id="to_date" type="date" class="form-control" [ngModel]="toDate | date:'yyyy-MM-dd'" (ngModelChange)="toDate = convertToDate($event)" (change)="filterChanged()" />
-    </div>
-  </div>
   <div id="list" class="row">
     <table class="table table-striped">
       <thead>
         <tr>
+          <th>
+            <div class="row align-items-center">
+              <div class="col form-group mb-0">
+                <input id="from_date" type="date" class="form-control" [(ngModel)]="filterFromDate" (change)="filter()" ngbDatepicker #ds="ngbDatepicker" />
+              </div>
+              <div class="col-auto m-0 p-0"> - </div>
+              <div class="col form-group mb-0">
+                <input id="to_date" type="date" class="form-control" [(ngModel)]="filterToDate" (change)="filter()" ngbDatepicker #de="ngbDatepicker" />
+              </div>
+            </div>
+          </th>
+          <th>
+            <select class="form-control" (change)="filter()">
+              <option [value]="''"> - </option>
+              <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
+            </select>
+          </th>
+          <th><input type="number" class="form-control" (change)="filter()" (keyup.enter)="filter()" [(ngModel)]="filterVersion" /></th>
+          <th>
+            <select class="form-control" (change)="filter()">
+              <option *ngFor="let status of statuses" [value]="status[0]">{{status[1]}}</option>
+            </select>
+          </th>
+        </tr>
+        <tr class="text-center">
           <th scope="col" class="ts">Időpont</th>
           <th scope="col" class="project">Projekt</th>
           <th scope="col" class="real_version">Verzió</th>
@@ -45,11 +60,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of installed$ | async">
+        <tr *ngFor="let item of installed$ | async" class="text-center">
           <td>{{item.ts | date:"yyyy.MM.dd HH:mm"}}</td>
           <td>{{item.project}}</td>
           <td>{{item.real_version}} ({{item.invoked_version}})</td>
-          <td>{{item.status}}</td>
+          <td class="item.status">{{getStatusDesc(item.status)}}</td>
         </tr>
       </tbody>
     </table>

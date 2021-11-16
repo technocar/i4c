@@ -10,12 +10,14 @@ $color-sample: black
 $color-hover: $color-event
 $color-gray: #aaa
 
+$color-background: #C1CFDA
+$color-primary: #941C2F
+$color-secondary: #03191E
 
 .menu-context
   background-color: transparent
   border: none
   margin: 0
-  margin-left: -0.75rem
 
   > .arrow
     display: none
@@ -50,3 +52,26 @@ $color-gray: #aaa
         right: 0
       > button.collapsed::after
         content: "▼"
+
+body
+  background: $color-background
+
+.primary
+  color: $color-primary
+
+.secondary
+  color: $color-secondary
+
+.btn-primary,
+.btn-primary.disabled
+.btn-primary:disabled
+  background-color: $color-primary
+  border-color: $color-primary
+
+.btn-primary:hover
+  background-color: $color-secondary
+  border-color: $color-secondary
+
+.container,
+.container-lg
+  background-color: #fff
