@@ -65,7 +65,7 @@ async def patch_project_version(credentials, tool_id, patch:ToolsPatchBody, *, p
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")
 
 
-async def tool_list(credentials, device, timestamp, max_count):
+async def tool_list(credentials, device, timestamp, sequence, max_count):
     if timestamp is None:
         timestamp = date.today() + timedelta(days=-365)
     if max_count is None:
@@ -77,8 +77,8 @@ async def tool_list(credentials, device, timestamp, max_count):
         for t in types_db:
             types[t["id"]] = t["type"]
 
-        logs_inst = await models.log.get_find(credentials, device, timestamp, name=ToolDataId.install_tool, after_count=max_count, pconn=conn)
-        logs_del = await models.log.get_find(credentials, device, timestamp, name=ToolDataId.remove_tool, after_count=max_count, pconn=conn)
+        logs_inst = await models.log.get_find(credentials, device, timestamp, sequence, name=ToolDataId.install_tool, after_count=max_count, pconn=conn)
+        logs_del = await models.log.get_find(credentials, device, timestamp, sequence, name=ToolDataId.remove_tool, after_count=max_count, pconn=conn)
         res = []
 
         def merge(iterable1, iterable2, f):
