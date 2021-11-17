@@ -15,6 +15,10 @@ class TimePeriod:
     def __str__(self):
         return f"{self.start} - {self.end}"
 
+    def __repr__(self):
+        return f"TimePeriod({self.start!r}, {self.end!r})"
+
+
     def is_timestamp_in(self, p: Optional[datetime]):
         """ p = None => p = -inf """
         if self.start is not None:
@@ -35,6 +39,12 @@ class Series:
 
     def __str__(self):
         return ",\n".join(f"{idx}.   {i}" for idx, i in enumerate(self._items, start=1))
+
+    def __repr__(self):
+        return "s = Series()\n"+"\n".join(f"s.add({i!r})" for i in self._items)
+
+    def __len__(self):
+        return len(self._items)
 
     def add(self, tnew:TimePeriod):
 
@@ -91,7 +101,7 @@ class Series:
         p = None if item1.start is None and item2.start is None else \
             item1.start if item2.start is None else \
             item2.start if item1.start is None else \
-            max(item1.start, item2.start)
+            min(item1.start, item2.start)
 
         intervall_start = None
         intervall_started = False
