@@ -76,5 +76,5 @@ def debug_print(s, r=False):
     if not debug_mode:
         return
     if r:
-      s = repr(s)
+        s = repr(s)
     print(s)
