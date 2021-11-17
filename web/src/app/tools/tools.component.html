@@ -1,0 +1,54 @@
+<div class="container-lg">
+  <app-header></app-header>
+  <div id="list" class="row">
+    <table class="table table-striped text-center">
+      <thead>
+        <tr>
+          <th>
+            <input id="from_date" type="datetime-local" class="form-control" [(ngModel)]="filterDate" (change)="filter()" />
+          </th>
+          <th></th>
+          <th>
+            <select class="form-control" [(ngModel)]="filterDevice" (change)="filter()">
+              <option *ngFor="let device of devices$ | async" [value]="device.id">{{device.name}}</option>
+            </select>
+          </th>
+          <th colspan="4"></th>
+        </tr>
+        <tr>
+          <th scope="col">időpont</th>
+          <th scope="col">sor</th>
+          <th scope="col">gép</th>
+          <th scope="col">esemény</th>
+          <th scope="col">eszköz</th>
+          <th scope="col">zseb</th>
+          <th scope="col">típus</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-template [ngIf]="fetchingList$ | async">
+          <tr>
+            <td colspan="7">
+              <div class="d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                  <span class="sr-only">Loading...</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template [ngIf]="!(fetchingList$ | async)">
+          <tr *ngFor="let tool of tools$ | async">
+            <td>{{tool.timestamp | date:"yyyy.MM.dd HH:mm:ss"}}</td>
+            <td>{{tool.sequence}}</td>
+            <td>{{getDeviceName(tool.device)}}</td>
+            <td>{{getEventName(tool.data_id)}}</td>
+            <td>{{tool.tool_id}}</td>
+            <td>{{tool.slot_number}}</td>
+            <td>{{tool.type}}</td>
+          </tr>
+        </ng-template>
+      </tbody>
+    </table>
+  </div>
+</div>

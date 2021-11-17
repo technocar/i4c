@@ -34,6 +34,7 @@ import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
       { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard] },
       { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard] },
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard] },
+      { path: 'tools', loadChildren: () => import('./tools/tools.module').then(m => m.ToolsModule), canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard] },
       { path: 'login', component: LoginComponent },
       { path: '', redirectTo: 'selector', pathMatch: "full" }
