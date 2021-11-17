@@ -36,6 +36,9 @@ class Series:
     def __str__(self):
         return ",\n".join(f"{idx}.   {i}" for idx, i in enumerate(self._items, start=1))
 
+    def __len__(self):
+        return len(self._items)
+
     def add(self, tnew:TimePeriod):
 
         def logsearch_first(a, f):
