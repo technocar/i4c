@@ -50,8 +50,9 @@ async def tool_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/find")),
         device: Device = Query(..., title="device"),
         timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
+        sequence: Optional[int] = Query(None, description="sequence excluding this"),
         max_count: Optional[int] = Query(None)):
-    return await models.tools.tool_list(credentials, device, timestamp, max_count)
+    return await models.tools.tool_list(credentials, device, timestamp, sequence, max_count)
 
 
 @router.get("/list_usage", response_model=List[models.tools.ToolItem], x_properties=dict(object="tools", action="list_usage"))
