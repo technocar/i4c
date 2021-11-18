@@ -271,13 +271,13 @@ export interface WorkPeiceBatchParams {
 export enum ToolDataId { Install = "install_tool", Remove = "remove_tool" }
 
 export interface Tool {
-  timestamp: string,
-  sequence: number,
-  device: DeviceType,
-  data_id: ToolDataId,
-  tool_id: string,
-  slot_number: string,
-  type: string
+  timestamp?: string,
+  sequence?: number,
+  device?: DeviceType,
+  data_id?: ToolDataId,
+  tool_id?: string,
+  slot_number?: string,
+  type?: string
 }
 
 export interface ToolUsage {
@@ -289,5 +289,6 @@ export interface ToolUsage {
 export interface ToolListParams {
   device: DeviceType,
   timestamp?: Date,
+  sequence?: number,
   max_count?: number
 }
