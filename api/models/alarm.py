@@ -572,11 +572,13 @@ def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
         n = len(agg_values)
         if n == 1:
             return 0
+        xl = []
         if slope_kind == AlarmCondSampleAggSlopeKind.time:
             xl = [(v["timestamp"] - agg_values[0]["timestamp"]).total_seconds() for v in agg_values]
         elif slope_kind == AlarmCondSampleAggSlopeKind.position:
             xl = range(len(agg_values))
         yl = [v["value_num"] for v in agg_values]
+        # https://www.statisticshowto.com/probability-and-statistics/regression-analysis/find-a-linear-regression-equation/
         return ( (n * sum(x * y for x, y in zip(xl, yl)) - sum(xl) * sum(yl))
                  / (n * sum(x ** 2 for x in xl) - sum(xl)**2))
 
