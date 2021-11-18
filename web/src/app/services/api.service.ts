@@ -1,4 +1,4 @@
-import { HttpClient, HttpEvent, HttpEventType, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map, scan, tap } from 'rxjs/operators';
@@ -76,6 +76,11 @@ export interface Download {
 export class ApiService {
 
   private _apiUrl: string;
+
+  private _toolEventTypes: string[][] = [
+    ["install_tool", $localize `:@@tools_event_install_tool:Beszerelés`],
+    ["remove_tool", $localize `:@@tools_event_remove_tool:Kiszerelés`]
+  ]
 
   constructor(
     private http: HttpClient
@@ -275,5 +280,23 @@ export class ApiService {
 
   getToolUsageList(): Observable<ToolUsage[]> {
     return this.http.get<ToolUsage[]>(`${this._apiUrl}/tools/list_usage`);
+  }
+
+  getToolEventTypes(): string[][] {
+    return this._toolEventTypes;
+  }
+
+  updateTool(tool: Tool): Observable<string> {
+    return this.http.put<string>(`${this._apiUrl}/tools`, tool);
+  }
+
+  deleteTool(tool: Tool): Observable<ArrayBuffer> {
+    var options = {
+      headers: new HttpHeaders({
+        'Content-type': 'application/json'
+      }),
+      body: tool
+    };
+    return this.http.delete<ArrayBuffer>(`${this._apiUrl}/tools`, options);
   }
 }

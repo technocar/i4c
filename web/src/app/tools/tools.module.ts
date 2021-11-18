@@ -5,12 +5,14 @@ import { ToolsRoutingModule } from './tools-routing.module';
 import { ToolsComponent } from './tools.component';
 import { CommonsModule } from '../commons/commons.module';
 import { FormsModule } from '@angular/forms';
-import { NgbDatepickerModule, NgbTimepickerModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDatepickerModule, NgbModalModule, NgbTimepickerModule } from '@ng-bootstrap/ng-bootstrap';
+import { ToolDetailsComponent } from './tool-details/tool-details.component';
 
 
 @NgModule({
   declarations: [
-    ToolsComponent
+    ToolsComponent,
+    ToolDetailsComponent
   ],
   imports: [
     CommonModule,
@@ -18,7 +20,8 @@ import { NgbDatepickerModule, NgbTimepickerModule } from '@ng-bootstrap/ng-boots
     CommonsModule,
     FormsModule,
     NgbDatepickerModule,
-    NgbTimepickerModule
+    NgbTimepickerModule,
+    NgbModalModule
   ]
 })
 export class ToolsModule { }

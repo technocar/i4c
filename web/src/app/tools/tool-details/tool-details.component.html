@@ -1,0 +1,58 @@
+<h4 class="mb-4">Eszköz</h4>
+<form class="row" *ngIf="loaded" #form="ngForm">
+  <div class="col-6 form-group">
+    <label for="tool_timestamp">időpont</label>
+    <input #timestamp="ngModel" id="tool_timestamp" name="timestamp" type="datetime-local" [ngModel]="tool.timestamp | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="onChange('timestamp', $event)" required class="form-control" [ngClass]="{ 'is-invalid': submitted && timestamp.errors }" />
+    <div *ngIf="timestamp.invalid && submitted" class="invalid-feedback">
+      <div *ngIf="timestamp.errors?.required">időpont megadása kötelező</div>
+    </div>
+  </div>
+  <div class="col-6 form-group">
+    <label for="tool_sequence">sorszám</label>
+    <input #sequence="ngModel" id="tool_sequence" name="sequence" type="number" min="0" [ngModel]="tool.sequence" (ngModelChange)="onChange('sequence', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && sequence.errors }" />
+    <div *ngIf="sequence.invalid && submitted" class="invalid-feedback">
+      <div *ngIf="sequence.errors?.required">sorszám megadása kötelező</div>
+    </div>
+  </div>
+  <div class="col-6 form-group">
+    <label for="tool_device">gép</label>
+    <select #device="ngModel" id="tool_device" name="device" [ngModel]="tool.device" (ngModelChange)="onChange('device', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && device.errors }">
+      <option *ngFor="let device of devices$ | async" [value]="device.id">{{device.name}}</option>
+    </select>
+    <div *ngIf="device.invalid && submitted" class="invalid-feedback">
+      <div *ngIf="device.errors?.required">gép megadása kötelező</div>
+    </div>
+  </div>
+  <div class="col-6 form-group">
+    <label for="tool_data_id">esemény</label>
+    <select #data_id="ngModel" id="tool_data_id" name="data_id" [ngModel]="tool.data_id" (ngModelChange)="onChange('data_id', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && data_id.errors }">
+      <option *ngFor="let event of events" [value]="event[0]">{{event[1]}}</option>
+    </select>
+    <div *ngIf="data_id.invalid && submitted" class="invalid-feedback">
+      <div *ngIf="data_id.errors?.required">esemény megadása kötelező</div>
+    </div>
+  </div>
+  <div class="col-6 form-group">
+    <label for="tool_tool_id">eszköz</label>
+    <select #tool_id="ngModel" id="tool_tool_id" name="tool_io" [ngModel]="tool.tool_id" (ngModelChange)="onChange('tool_id', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && tool_id.errors }">
+      <option *ngFor="let toolUsage of toolUsages$ | async" [value]="toolUsage.tool_id">{{toolUsage.tool_id}}</option>
+    </select>
+    <div *ngIf="tool_id.invalid && submitted" class="invalid-feedback">
+      <div *ngIf="tool_id.errors?.required">eszköz megadása kötelező</div>
+    </div>
+  </div>
+  <div class="col-6 form-group">
+    <label for="tool_slot_number">zseb</label>
+    <input #slot_number="ngModel" id="tool_slot_number" name="slot_number" [ngModel]="tool.slot_number" (ngModelChange)="onChange('slot_number', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && slot_number.errors }" />
+    <div *ngIf="slot_number.invalid && submitted" class="invalid-feedback">
+      <div *ngIf="slot_number.errors?.required">zseb megadása kötelező</div>
+    </div>
+  </div>
+</form>
+<div *ngIf="!loaded">
+  <div class="d-flex justify-content-center">
+    <div class="spinner-border" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+</div>

@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NgbDateStruct, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDateStruct, NgbModal, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { Device, Tool, ToolUsage } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
+import { ToolDetailsComponent } from './tool-details/tool-details.component';
 
 @Component({
   selector: 'app-tools',
@@ -12,6 +13,9 @@ import { DeviceType } from '../services/models/constants';
   styleUrls: ['./tools.component.scss']
 })
 export class ToolsComponent implements OnInit {
+
+  @ViewChild("detail_dialog") detailDialog;
+  @ViewChild("confirm_delete_dialog") confirmDeleteDialog;
 
   devices$: BehaviorSubject<Device[]> = new BehaviorSubject([]);
   tools$: BehaviorSubject<Tool[]> = new BehaviorSubject([]);
@@ -21,21 +25,21 @@ export class ToolsComponent implements OnInit {
   filterDevice: string;
   filterDate: string;
 
-  events: string[][] = [
-    ["install_tool", $localize `:@@tools_event_install_tool:Beszerelés`],
-    ["remove_tool", $localize `:@@tools_event_remove_tool:Kiszerelés`]
-  ]
+  events: string[][] = [];
+  selectedTool: Tool;
 
   constructor(
     private apiService: ApiService,
     private router: Router,
-    private route: ActivatedRoute)
+    private route: ActivatedRoute,
+    private modalService: NgbModal)
   {
     this.filterDate = route.snapshot.queryParamMap.get("fdt");
     this.filterDevice = route.snapshot.queryParamMap.get("fd");
   }
 
   ngOnInit(): void {
+    this.events = this.apiService.getToolEventTypes();
     this.apiService.getDevices()
       .subscribe(r => {
         this.devices$.next(r);
@@ -94,5 +98,41 @@ export class ToolsComponent implements OnInit {
       return event[1];
     else
       return code;
+  }
+
+  select(tool: Tool) {
+    this.selectedTool = tool;
+    this.modalService.open(this.detailDialog, { size: 'lg' });
+  }
+
+  new() {
+    this.selectedTool = undefined;
+    this.modalService.open(this.detailDialog, { size: 'lg' });
+  }
+
+  saveDetail(detail: ToolDetailsComponent) {
+    detail.save().subscribe(r => {
+      if (r) {
+        this.modalService.dismissAll();
+        this.getTools();
+      }
+    });
+  }
+
+  askForDelete(tool: Tool) {
+    this.modalService.open(this.confirmDeleteDialog).result.then(r => {
+      if (r === "delete")
+        this.deleteTool(tool);
+    });
+  }
+
+  deleteTool(tool: Tool) {
+    this.apiService.deleteTool(tool)
+      .subscribe(r => {
+        this.getTools();
+      },
+      (err) => {
+        alert(this.apiService.getErrorMsg(err));
+      });
   }
 }

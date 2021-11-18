@@ -1,7 +1,12 @@
 <div class="container-lg">
   <app-header></app-header>
+  <div id="tools" class="row mb-2">
+    <div class="col">
+      <button class="btn btn-primary" (click)="new()">Hozzáadás</button>
+    </div>
+  </div>
   <div id="list" class="row">
-    <table class="table table-striped text-center">
+    <table class="table table-striped table-hover text-center">
       <thead>
         <tr>
           <th>
@@ -13,7 +18,7 @@
               <option *ngFor="let device of devices$ | async" [value]="device.id">{{device.name}}</option>
             </select>
           </th>
-          <th colspan="4"></th>
+          <th colspan="6"></th>
         </tr>
         <tr>
           <th scope="col">időpont</th>
@@ -23,6 +28,8 @@
           <th scope="col">eszköz</th>
           <th scope="col">zseb</th>
           <th scope="col">típus</th>
+          <th scope="col">&nbsp;</th>
+          <th scope="col">&nbsp;</th>
         </tr>
       </thead>
       <tbody>
@@ -46,9 +53,39 @@
             <td>{{tool.tool_id}}</td>
             <td>{{tool.slot_number}}</td>
             <td>{{tool.type}}</td>
+            <td><a href="#" [routerLink]="" (click)="select(tool)">Módosítás</a></td>
+            <td><a href="#" [routerLink]="" class="text-danger" (click)="askForDelete(tool)">Törlés</a></td>
           </tr>
         </ng-template>
       </tbody>
     </table>
   </div>
 </div>
+
+<ng-template #detail_dialog let-modal>
+  <div class="modal-body">
+    <app-tool-details #detail [tool]="selectedTool" ></app-tool-details>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-success" [disabled]="!detail.hasChanges" (click)="saveDetail(detail)">Mentés</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.close('cancel')">Mégse</button>
+  </div>
+</ng-template>
+
+<ng-template #confirm_delete_dialog let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Törlés</h4>
+    <button type="button" class="close" aria-label="Close" (click)="modal.close('cancel')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <label>
+      Biztosan törli a kiválasztott rekordot?
+    </label>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-danger" (click)="modal.close('delete')">Igen</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="modal.close('cancel')">Nem</button>
+  </div>
+</ng-template>
