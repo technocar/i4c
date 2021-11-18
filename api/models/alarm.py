@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timedelta
 from enum import Enum
 from textwrap import dedent
@@ -12,6 +13,7 @@ from common.exceptions import I4cInputValidationError
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
 from models import CommonStatusEnum
 from models.common import PatchResponse
+from fractions import Fraction
 
 
 class AlarmCondLogRowCategory(str, Enum):
@@ -26,6 +28,11 @@ class AlarmCondSampleAggMethod(str, Enum):
     q1st = "q1th"
     q4th = "q4th"
     slope = "slope"
+
+
+class AlarmCondSampleAggSlopeKind(str, Enum):
+    time = "time"
+    position = "position"
 
 
 class AlarmCondSampleRel(str, Enum):
@@ -539,14 +546,51 @@ def check_rel(rel, left, right):
     return False
 
 
+def frac_index(list, index):
+    i = math.floor(index)
+    x = Fraction(index - i).limit_denominator()
+    if x == 0:
+        return list[i]
+    return float(list[i]*(1-x) + list[i+1]*x)
+
+
+def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
+    agg_values = [v for v in agg_values if v["value_num"] is not None]
+    if not agg_values:
+        return None
+    if method == AlarmCondSampleAggMethod.avg:
+        return sum(v["value_num"] for v in agg_values) / len(agg_values)
+    elif method in (AlarmCondSampleAggMethod.median, AlarmCondSampleAggMethod.q1st, AlarmCondSampleAggMethod.q4st):
+        o = sorted(v["value_num"] for v in agg_values)
+        if method == AlarmCondSampleAggMethod.median:
+            return frac_index(o, (len(o) - 1) / 2)
+        elif method == AlarmCondSampleAggMethod.q1st:
+            return frac_index(o, (len(o) - 1) / 4)
+        elif method == AlarmCondSampleAggMethod.q4th:
+            return frac_index(o, (len(o) - 1) * 3 / 4)
+    elif method == AlarmCondSampleAggMethod.slope:
+        n = len(agg_values)
+        if n == 1:
+            return 0
+        if slope_kind == AlarmCondSampleAggSlopeKind.time:
+            xl = [(v["timestamp"] - agg_values[0]["timestamp"]).total_seconds() for v in agg_values]
+        elif slope_kind == AlarmCondSampleAggSlopeKind.position:
+            xl = range(len(agg_values))
+        yl = [v["value_num"] for v in agg_values]
+        return ( (n * sum(x * y for x, y in zip(xl, yl)) - sum(xl) * sum(yl))
+                 / (n * sum(x ** 2 for x in xl) - sum(xl)**2))
+
+
 async def check_alarmevent(credentials, alarm, max_count):
+    res = []
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            sql_alarm = "select * from alarm\n"
+            sql_alarm = "select * from alarm\n"\
+                        "where (max_freq is null or last_report is null or (now() > last_report + max_freq * interval '1 second'))"
             params = []
             if alarm is not None:
                 params.append(alarm)
-                sql_alarm += "where id = $1\n"
+                sql_alarm += "and id = $1\n"
             if max_count is not None:
                 sql_alarm += "order by (now() - last_check) / nullif(max_freq,0) desc, last_check asc\n"
             db_alarm = await conn.fetch(sql_alarm, *params)
@@ -561,6 +605,7 @@ async def check_alarmevent(credentials, alarm, max_count):
                     write_debug_sql("alarm_check_load_series.sql", alarm_check_load_sql, row_cond["device"], row_cond["data_id"], row_alarm["last_check"])
                     db_series = await conn.fetch(alarm_check_load_sql, row_cond["device"], row_cond["data_id"], row_alarm["last_check"])
                     current_series = series_intersect.Series()
+                    agg_values = []
                     for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
                         if row_cond["log_row_category"] == AlarmCondLogRowCategory.condition:
                             if check_rel("=", row_cond["value_text"], r_series_prev["value_text"]):
@@ -575,30 +620,33 @@ async def check_alarmevent(credentials, alarm, max_count):
                                 if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
                                     t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"] - age_max)
                                 current_series.add(t)
-                        else:
-                            # todo 1: **********
-                            if r_series_prev["value_num"] if r_series_prev["value_num"] is not None else 999999 == 999999:
+                        elif row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
+                            aggregated_value = None
+                            if row_cond["aggregate_period"]:
+                                agg_time_len = (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() if len(agg_values) > 0 else 0
+                                if agg_time_len >= row_cond["aggregate_period"]:
+                                    aggregated_value = calc_aggregate(row_cond["aggregate_method"], agg_values, AlarmCondSampleAggSlopeKind.time)
+                                agg_values.append(r_series)
+                                while (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() > row_cond["aggregate_period"]:
+                                    del agg_values[0]
+                            if row_cond["aggregate_count"]:
+                                if len(agg_values) == row_cond["aggregate_count"]:
+                                    aggregated_value = calc_aggregate(row_cond["aggregate_method"], agg_values, AlarmCondSampleAggSlopeKind.position)
+                                    del agg_values[0]
+                                agg_values.append(r_series)
+
+                            if check_rel(row_cond["rel"], aggregated_value, row_cond["value_num"]):
                                 t = series_intersect.TimePeriod(r_series_prev["timestamp"], r_series["timestamp"])
                                 current_series.add(t)
 
-                    debug_print(f"current_series ({row_cond_recno}):")
-                    debug_print(current_series)
                     if total_series is None:
                         total_series = current_series
                     else:
                         total_series = series_intersect.Series.intersect(total_series, current_series)
                     if len(total_series) == 0:
                         break
-                    debug_print(f"total_series ({row_cond_recno}):")
-                    debug_print(total_series)
 
-
-
-
-    # todo 1: **********
-    # a potenciális log szelet:
-    #   alarm.last_check-tõl minden
-    #   + alarm.last_check-el egy log.sample (mindenbõl az elõzõ érték)
-    #   + sample típusból legalább annyi visszahozni alarm.last_check elõtt, hogy meglegyen a aggregate_period/aggregate_count
-    # a sample ablakokat lehet, hogy külön érdemes lekérni az event/condition szûrések után megmaradt ablakokra
-    return []
+                if total_series is not None and len(total_series) > 0:
+                    res.append(AlarmEventCheckResult(alarm=row_alarm["name"], alarmevent_count=len(total_series)))
+                    # todo 1: ********** create alarm events
+    return res

@@ -9,7 +9,6 @@ with
    ),
   before as (
     select
-      l.data_id,
       l.timestamp,
       l.sequence,
       l.value_num,
@@ -25,7 +24,6 @@ with
   ),
   after as (
     select
-      l.data_id,
       l.timestamp,
       l.sequence,
       l.value_num,
@@ -36,9 +34,18 @@ with
       l.timestamp > p.last_check
       and l.device = p.device
       and l.data_id = p.data_id
+  ),
+  closing as (
+    select
+      now() as timestamp,
+      0 as sequence,
+      null::double precision as value_num,
+      null::varchar(200) as value_text
   )
 select * from before
 union all
 select * from after
+union all
+select * from closing
 
 order by timestamp asc, "sequence" asc
