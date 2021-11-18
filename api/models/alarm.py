@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
@@ -7,16 +7,17 @@ from fastapi import HTTPException
 from pydantic import Field, root_validator
 
 import common.db_helpers
+from common.debug_helpers import debug_print
 from common.exceptions import I4cInputValidationError
-from common import I4cBaseModel, DatabaseConnection, write_debug_sql
+from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
 from models import CommonStatusEnum
 from models.common import PatchResponse
 
 
 class AlarmCondLogRowCategory(str, Enum):
-    sample = "sample"
-    event = "event"
-    condition = "condition"
+    sample = "SAMPLE"
+    event = "EVENT"
+    condition = "CONDITION"
 
 
 class AlarmCondSampleAggMethod(str, Enum):
@@ -44,8 +45,6 @@ class AlarmCondSample(I4cBaseModel):
     aggregate_method: AlarmCondSampleAggMethod
     rel: AlarmCondSampleRel
     value: float
-    age_min: Optional[float] = Field(None, description="sec")
-    age_max: Optional[float] = Field(None, description="sec")
 
     def __eq__(self, other):
         if not isinstance(other, AlarmCondSample):
@@ -56,26 +55,21 @@ class AlarmCondSample(I4cBaseModel):
                 and (self.aggregate_count == other.aggregate_count)
                 and (self.aggregate_method == other.aggregate_method)
                 and (self.rel == other.rel)
-                and (self.value == other.value)
-                and (self.age_min == other.age_min)
-                and (self.age_max == other.age_max))
+                and (self.value == other.value))
 
     async def insert_to_db(self, alarm_id, conn):
         sql_insert = dedent("""\
             insert into alarm_cond (alarm, log_row_category, device, 
                                     data_id, aggregate_period, aggregate_count, 
-                                    aggregate_method, rel, value_num, 
-                                    age_min, age_max
+                                    aggregate_method, rel, value_num
                                    ) values ($1, $2, $3,
                                              $4, $5, $6,
-                                             $7, $8, $9,
-                                             $10, $11)
+                                             $7, $8, $9)
             returning id
             """)
         await conn.fetchrow(sql_insert, alarm_id, AlarmCondLogRowCategory.sample, self.device,
                             self.data_id, self.aggregate_period, self.aggregate_count,
-                            self.aggregate_method, self.rel, self.value,
-                            self.age_min, self.age_max)
+                            self.aggregate_method, self.rel, self.value)
 
 
     @root_validator
@@ -271,7 +265,7 @@ class AlarmEventCheckResult(I4cBaseModel):
     alarmevent_count: Optional[int]
 
 
-async def alarmdef_get(credentials, name, *, pconn=None) -> AlarmDef:
+async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
                            select 
@@ -508,8 +502,99 @@ async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
 
             return PatchResponse(changed=True)
 
+alarm_check_load_sql = open("models\\alarm_check_load.sql").read()
+
+
+def prev_iterator(iterable, *, include_first=True):
+    prev = None
+    include_next = include_first
+    for current in iterable:
+        if include_next:
+            yield prev, current
+        include_next = True
+        prev = current
+
+
+def check_rel(rel, left, right):
+    if left is None:
+        return False
+    if right is None:
+        return False
+    if rel == "=":
+        return left == right
+    if rel == "!=":
+        return left != right
+    if rel == "*":
+        return left in right
+    if rel != "!*":
+        return left not in right
+    if rel == "<":
+        return left < right
+    if rel == "<=":
+        return left <= right
+    if rel == ">":
+        return left > right
+    if rel == ">=":
+        return left >= right
+    return False
+
 
 async def check_alarmevent(credentials, alarm, max_count):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            sql_alarm = "select * from alarm\n"
+            params = []
+            if alarm is not None:
+                params.append(alarm)
+                sql_alarm += "where id = $1\n"
+            if max_count is not None:
+                sql_alarm += "order by (now() - last_check) / nullif(max_freq,0) desc, last_check asc\n"
+            db_alarm = await conn.fetch(sql_alarm, *params)
+            for row_alarm_recno, row_alarm in enumerate(db_alarm, start=1):
+                if max_count is not None and row_alarm_recno > max_count:
+                    break
+
+                sql_cond = "select * from alarm_cond where alarm = $1 order by log_row_category" # cond/ev/sample order
+                db_conds = await conn.fetch(sql_cond, row_alarm["id"])
+                total_series = None
+                for row_cond_recno, row_cond in enumerate(db_conds, start=1):
+                    write_debug_sql("alarm_check_load_series.sql", alarm_check_load_sql, row_cond["device"], row_cond["data_id"], row_alarm["last_check"])
+                    db_series = await conn.fetch(alarm_check_load_sql, row_cond["device"], row_cond["data_id"], row_alarm["last_check"])
+                    current_series = series_intersect.Series()
+                    for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
+                        if row_cond["log_row_category"] == AlarmCondLogRowCategory.condition:
+                            if check_rel("=", row_cond["value_text"], r_series_prev["value_text"]):
+                                age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
+                                if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
+                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"])
+                                current_series.add(t)
+                        elif row_cond["log_row_category"] == AlarmCondLogRowCategory.event:
+                            if check_rel(row_cond["rel"], row_cond["value_text"], r_series_prev["value_text"]):
+                                age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
+                                age_max = timedelta(seconds=row_cond["age_max"] if row_cond["age_max"] else 0)
+                                if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
+                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"] - age_max)
+                                current_series.add(t)
+                        else:
+                            # todo 1: **********
+                            if r_series_prev["value_num"] if r_series_prev["value_num"] is not None else 999999 == 999999:
+                                t = series_intersect.TimePeriod(r_series_prev["timestamp"], r_series["timestamp"])
+                                current_series.add(t)
+
+                    debug_print(f"current_series ({row_cond_recno}):")
+                    debug_print(current_series)
+                    if total_series is None:
+                        total_series = current_series
+                    else:
+                        total_series = series_intersect.Series.intersect(total_series, current_series)
+                    if len(total_series) == 0:
+                        break
+                    debug_print(f"total_series ({row_cond_recno}):")
+                    debug_print(total_series)
+
+
+
+
     # todo 1: **********
     # a potenciális log szelet:
     #   alarm.last_check-tõl minden

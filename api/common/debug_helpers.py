@@ -70,3 +70,11 @@ def write_debug_sql(file_name, sql, *params):
             f'-- orig\n'
             f'{sql}')
         print(f'File written to: {file_name}')
+
+
+def debug_print(s, r=False):
+    if not debug_mode:
+        return
+    if r:
+        s = repr(s)
+    print(s)
