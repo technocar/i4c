@@ -1,0 +1,43 @@
+@import '../base'
+
+.main-header
+  padding: 0.5rem 0
+  background-color: $color-beau-blue
+  background-image: url(../assets/logo.png)
+  background-position: 0.25rem center
+  background-repeat: no-repeat
+  background-size: 2.5rem
+
+  h2
+    color: black
+    text-indent: 2rem
+    margin: 0
+    span
+      color: $color-madder_lake
+      margin: 0 .15rem
+
+  #logged_user
+    border-color: transparent
+    color: black
+
+  #logged_user::after
+    vertical-align: 0.2em
+
+
+
+  #logged_user:hover,
+  #logged_user:active,
+  #logged_user:focus
+    border-color: $color-madder_lake
+    background-color: transparent,
+    box-shadow: none
+
+  #logged_user:hover::after,
+  #logged_user:active::after,
+  #logged_user:focus::after
+      color: $color-madder_lake
+
+.breadcrumb
+    padding: 0
+    margin-top: 0.5rem
+    background-color: white

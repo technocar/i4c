@@ -30,7 +30,7 @@ export class WorkpieceDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.data.subscribe((r: any) => {
-      this.data = r.data;
+      this.data = r.workpiece;
       this.notes$.next(this.data.notes);
     });
   }

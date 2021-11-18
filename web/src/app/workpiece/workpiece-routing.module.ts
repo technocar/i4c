@@ -6,9 +6,14 @@ import { WorkpieceDetailComponent } from './workpiece-detail/workpiece-detail.co
 import { WorkpieceDetailResolver } from './workpiece-detail/workpiece-detail.resolver';
 
 const routes: Routes = [
-  { path: 'list', component: WorkPieceComponent, canActivate: [AuthGuard] },
-  { path: 'detail/:id', component: WorkpieceDetailComponent, canActivate: [AuthGuard], resolve: { data: WorkpieceDetailResolver } },
-  { path: '', redirectTo: 'list', pathMatch: "full"  }
+  { path: '',  children: [
+    { path: '', component: WorkPieceComponent, canActivate: [AuthGuard] },
+    { path: 'detail/:id', component: WorkpieceDetailComponent, canActivate: [AuthGuard],
+      resolve: { workpiece: WorkpieceDetailResolver },
+      data: { breadcrumb: (data: any) => `${data.workpiece.id}` }
+    }],
+    data: { breadcrumb: "Munkaszámok" }
+  }
 ];
 
 @NgModule({

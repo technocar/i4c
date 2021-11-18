@@ -13,7 +13,7 @@ import { AuthGuard } from './services/auth.guard';
 import { LoginComponent } from './login/login.component';
 import { CommonModule } from '@angular/common';
 import { CommonsModule } from './commons/commons.module';
-import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -30,12 +30,13 @@ import { NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
     FormsModule,
     CommonsModule,
     NgbProgressbarModule,
+    NgbDropdownModule,
     RouterModule.forRoot([
       { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard] },
       { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard] },
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard] },
       { path: 'tools', loadChildren: () => import('./tools/tools.module').then(m => m.ToolsModule), canActivate: [AuthGuard] },
-      { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard] },
+      { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard], data: { breadcrumb: "Kezdőlap" } },
       { path: 'login', component: LoginComponent },
       { path: '', redirectTo: 'selector', pathMatch: "full" }
     ])
