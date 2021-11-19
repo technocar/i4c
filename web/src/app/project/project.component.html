@@ -1,85 +1,82 @@
-<div class="container-lg">
-  <app-header></app-header>
-  <div id="toolbar" class="row align-items-end pb-2">
-    <div class="col-4 mr-2 form-group mb-0">
-      <label for="selectable_projects">Projektek</label>
-      <select id="selectable_projects" class="form-control" (change)="projectSelectionChanged()" [(ngModel)]="selectedProject">
-        <option [value]="''"> - </option>
-        <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
-      </select>
-    </div>
-    <div class="col-4 mr-2 form-group mb-0">
-      <label for="selectable_project_versions">Verziók</label>
-      <select id="selectable_project_versions" class="form-control" [(ngModel)]="selectedVersion">
-        <option *ngFor="let version of versions$ | async" [value]="version">{{version}}</option>
-      </select>
-    </div>
-    <div class="col-auto ml-2">
-      <button class="btn btn-primary"
-        (click)="install(selectedProject, selectedVersion)"
-        [disabled]="selectedProject == '' || selectedVersion == ''"
-      >
-        <i class="bi bi-cpu"></i>
-        Telepítés
-      </button>
-    </div>
+<div id="toolbar" class="row align-items-end pb-2">
+  <div class="col-4 mr-2 form-group mb-0">
+    <label for="selectable_projects">Projektek</label>
+    <select id="selectable_projects" class="form-control" (change)="projectSelectionChanged()" [(ngModel)]="selectedProject">
+      <option [value]="''"> - </option>
+      <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
+    </select>
   </div>
-  <div id="list" class="row">
-    <table class="table table-striped">
-      <thead>
+  <div class="col-4 mr-2 form-group mb-0">
+    <label for="selectable_project_versions">Verziók</label>
+    <select id="selectable_project_versions" class="form-control" [(ngModel)]="selectedVersion">
+      <option *ngFor="let version of versions$ | async" [value]="version">{{version}}</option>
+    </select>
+  </div>
+  <div class="col-auto ml-2">
+    <button class="btn btn-primary"
+      (click)="install(selectedProject, selectedVersion)"
+      [disabled]="selectedProject == '' || selectedVersion == ''"
+    >
+      <i class="bi bi-cpu"></i>
+      Telepítés
+    </button>
+  </div>
+</div>
+<div id="list" class="row">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>
+          <div class="row align-items-center">
+            <div class="col form-group mb-0">
+              <input id="from_date" type="date" class="form-control" [(ngModel)]="filterFromDate" (change)="filter()" ngbDatepicker #ds="ngbDatepicker" />
+            </div>
+            <div class="col-auto m-0 p-0"> - </div>
+            <div class="col form-group mb-0">
+              <input id="to_date" type="date" class="form-control" [(ngModel)]="filterToDate" (change)="filter()" ngbDatepicker #de="ngbDatepicker" />
+            </div>
+          </div>
+        </th>
+        <th>
+          <select class="form-control" (change)="filter()">
+            <option [value]="''"> - </option>
+            <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
+          </select>
+        </th>
+        <th><input type="number" class="form-control" (change)="filter()" (keyup.enter)="filter()" [(ngModel)]="filterVersion" /></th>
+        <th>
+          <select class="form-control" (change)="filter()">
+            <option *ngFor="let status of statuses" [value]="status[0]">{{status[1]}}</option>
+          </select>
+        </th>
+      </tr>
+      <tr class="text-center">
+        <th scope="col" class="ts">Időpont</th>
+        <th scope="col" class="project">Projekt</th>
+        <th scope="col" class="real_version">Verzió</th>
+        <th scope="col" class="status">Státusz</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-template [ngIf]="fetchingList$ | async">
         <tr>
-          <th>
-            <div class="row align-items-center">
-              <div class="col form-group mb-0">
-                <input id="from_date" type="date" class="form-control" [(ngModel)]="filterFromDate" (change)="filter()" ngbDatepicker #ds="ngbDatepicker" />
-              </div>
-              <div class="col-auto m-0 p-0"> - </div>
-              <div class="col form-group mb-0">
-                <input id="to_date" type="date" class="form-control" [(ngModel)]="filterToDate" (change)="filter()" ngbDatepicker #de="ngbDatepicker" />
+          <td colspan="7">
+            <div class="d-flex justify-content-center">
+              <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
               </div>
             </div>
-          </th>
-          <th>
-            <select class="form-control" (change)="filter()">
-              <option [value]="''"> - </option>
-              <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
-            </select>
-          </th>
-          <th><input type="number" class="form-control" (change)="filter()" (keyup.enter)="filter()" [(ngModel)]="filterVersion" /></th>
-          <th>
-            <select class="form-control" (change)="filter()">
-              <option *ngFor="let status of statuses" [value]="status[0]">{{status[1]}}</option>
-            </select>
-          </th>
+          </td>
         </tr>
-        <tr class="text-center">
-          <th scope="col" class="ts">Időpont</th>
-          <th scope="col" class="project">Projekt</th>
-          <th scope="col" class="real_version">Verzió</th>
-          <th scope="col" class="status">Státusz</th>
+      </ng-template>
+      <ng-template [ngIf]="!(fetchingList$ | async)">
+        <tr *ngFor="let item of installed$ | async" class="text-center">
+          <td>{{item.ts | date:"yyyy.MM.dd HH:mm"}}</td>
+          <td>{{item.project}}</td>
+          <td>{{item.real_version}} ({{item.invoked_version}})</td>
+          <td class="item.status">{{getStatusDesc(item.status)}}</td>
         </tr>
-      </thead>
-      <tbody>
-        <ng-template [ngIf]="fetchingList$ | async">
-          <tr>
-            <td colspan="7">
-              <div class="d-flex justify-content-center">
-                <div class="spinner-border" role="status">
-                  <span class="sr-only">Loading...</span>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template [ngIf]="!(fetchingList$ | async)">
-          <tr *ngFor="let item of installed$ | async" class="text-center">
-            <td>{{item.ts | date:"yyyy.MM.dd HH:mm"}}</td>
-            <td>{{item.project}}</td>
-            <td>{{item.real_version}} ({{item.invoked_version}})</td>
-            <td class="item.status">{{getStatusDesc(item.status)}}</td>
-          </tr>
-        </ng-template>
-      </tbody>
-    </table>
-  </div>
+      </ng-template>
+    </tbody>
+  </table>
 </div>

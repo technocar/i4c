@@ -1,4 +1,24 @@
-<router-outlet></router-outlet>
+<div class="container-lg pb-4">
+  <div class="main-header row justify-content-between align-items-center shadow-sm">
+    <h2 class="col-auto">I<span>4</span>C</h2>
+    <div ngbDropdown class="col-auto" *ngIf="isLoggedIn$ | async">
+      <button class="btn btn-outline-primary" id="logged_user" ngbDropdownToggle>{{loggedUserName$ | async}}</button>
+      <div ngbDropdownMenu aria-labelledby="logged_user">
+        <button ngbDropdownItem (click)="logout()">Kijelentkezés</button>
+      </div>
+    </div>
+  </div>
+  <nav aria-label="breadcrumb row" *ngIf="isLoggedIn$ | async">
+    <ol class="breadcrumb" >
+      <li class="breadcrumb-item" *ngFor="let breadcrumb of (breadcrumbs$ | async); last as isLast" [ngClass]="{ 'active': isLast }">
+        <a *ngIf="!isLast" href="#" [routerLink]="[breadcrumb.url]">{{ breadcrumb.label }}</a>
+        <ng-template [ngIf]="isLast">{{breadcrumb.label}}</ng-template>
+      </li>
+    </ol>
+  </nav>
+  <router-outlet></router-outlet>
+</div>
+
 
 <div *ngIf="loading" class="modal d-block" tabindex="-1">
   <div class="modal-dialog">
