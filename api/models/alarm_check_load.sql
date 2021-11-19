@@ -5,7 +5,9 @@ with
      $2::varchar(200) -- */ 'cf'
        as data_id,
      $3::timestamp with time zone -- */ '2021-08-24 07:56:00.957133+02'::timestamp with time zone
-       as last_check     
+       as last_check,
+     $4::timestamp with time zone -- */ '2021-08-24 07:56:00.957133+02'::timestamp with time zone
+       as "now"
    ),
   before as (
     select
@@ -32,6 +34,7 @@ with
     cross join p
     where 
       l.timestamp > p.last_check
+      and l.timestamp <= p."now"
       and l.device = p.device
       and l.data_id = p.data_id
   ),

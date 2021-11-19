@@ -6,6 +6,7 @@ import common
 import models.alarm
 from I4cAPI import I4cApiRouter
 from models import CommonStatusEnum
+import pytz
 
 router = I4cApiRouter(include_path="/alarm")
 
@@ -89,4 +90,9 @@ async def check_alarmevent(
     alarm: Optional[int] = Query(None),
     max_count: Optional[int] = Query(None)
 ):
+    def hun_tz(dt):
+        tz = pytz.timezone("Europe/Budapest")
+        return tz.localize(dt)
+
+    # return await models.alarm.check_alarmevent(credentials, alarm, max_count, override_last_check=hun_tz(datetime(2021,10,27,13)), override_now=hun_tz(datetime(2021,10,27,14)))
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)

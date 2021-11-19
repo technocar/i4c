@@ -1,4 +1,5 @@
 import math
+import textwrap
 from datetime import datetime, timedelta
 from enum import Enum
 from textwrap import dedent
@@ -272,6 +273,11 @@ class AlarmEventCheckResult(I4cBaseModel):
     alarmevent_count: Optional[int]
 
 
+class AlarmRecipientStatus(str, Enum):
+    outbox = "outbox"
+    sent = "sent"
+    deleted = "deleted"
+
 async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
@@ -533,7 +539,7 @@ def check_rel(rel, left, right):
         return left != right
     if rel == "*":
         return left in right
-    if rel != "!*":
+    if rel == "!*":
         return left not in right
     if rel == "<":
         return left < right
@@ -583,29 +589,37 @@ def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
                  / (n * sum(x ** 2 for x in xl) - sum(xl)**2))
 
 
-async def check_alarmevent(credentials, alarm, max_count):
+async def check_alarmevent(credentials, alarm, max_count, *, override_last_check=None, override_now=None):
     res = []
+    param_now = datetime.now() if override_now is None else override_now
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             sql_alarm = "select * from alarm\n"\
-                        "where (max_freq is null or last_report is null or (now() > last_report + max_freq * interval '1 second'))"
-            params = []
+                        "where (max_freq is null or last_report is null or ($1 > last_report + max_freq * interval '1 second'))"
+            params = [param_now]
             if alarm is not None:
                 params.append(alarm)
-                sql_alarm += "and id = $1\n"
+                sql_alarm += f"and id = ${len(alarm)}\n"
             if max_count is not None:
-                sql_alarm += "order by (now() - last_check) / nullif(max_freq,0) desc, last_check asc\n"
+                params.append(override_last_check)
+                sql_alarm += f"order by ($1 - coalesce(${len(alarm)}, last_check)) / nullif(max_freq,0) desc, last_check asc\n"
             db_alarm = await conn.fetch(sql_alarm, *params)
             for row_alarm_recno, row_alarm in enumerate(db_alarm, start=1):
                 if max_count is not None and row_alarm_recno > max_count:
                     break
 
+                last_check = row_alarm["last_check"] if override_last_check is None else override_last_check
+
                 sql_cond = "select * from alarm_cond where alarm = $1 order by log_row_category" # cond/ev/sample order
                 db_conds = await conn.fetch(sql_cond, row_alarm["id"])
                 total_series = None
                 for row_cond_recno, row_cond in enumerate(db_conds, start=1):
-                    write_debug_sql("alarm_check_load_series.sql", alarm_check_load_sql, row_cond["device"], row_cond["data_id"], row_alarm["last_check"])
-                    db_series = await conn.fetch(alarm_check_load_sql, row_cond["device"], row_cond["data_id"], row_alarm["last_check"])
+                    last_check_mod = last_check
+                    if total_series is not None and row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
+                        last_check_mod = min((i for i in (last_check_mod, total_series[0].start) if i is not None), default=None)
+                    write_debug_sql(f"alarm_check_load_series_{row_alarm_recno}_{row_cond_recno}.sql",
+                                    alarm_check_load_sql, row_cond["device"], row_cond["data_id"], last_check_mod, param_now)
+                    db_series = await conn.fetch(alarm_check_load_sql, row_cond["device"], row_cond["data_id"], last_check_mod, param_now)
                     current_series = series_intersect.Series()
                     agg_values = []
                     for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
@@ -613,16 +627,22 @@ async def check_alarmevent(credentials, alarm, max_count):
                             if check_rel("=", row_cond["value_text"], r_series_prev["value_text"]):
                                 age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
                                 if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
-                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"])
+                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"],
+                                                                    f'{row_cond["device"]} {row_cond["data_id"]} {row_cond["value_text"]}'
+                                                                    )
                                 current_series.add(t)
                         elif row_cond["log_row_category"] == AlarmCondLogRowCategory.event:
                             if check_rel(row_cond["rel"], row_cond["value_text"], r_series_prev["value_text"]):
                                 age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
                                 age_max = timedelta(seconds=row_cond["age_max"] if row_cond["age_max"] else 0)
                                 if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
-                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"] - age_max)
+                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"] - age_max,
+                                                                    f'{row_cond["device"]} {row_cond["data_id"]} '
+                                                                    f'{r_series_prev["value_text"]}       ({row_cond["rel"]} {row_cond["value_text"]})')
                                 current_series.add(t)
                         elif row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
+                            if not total_series.is_timestamp_in(r_series_prev["timestamp"]):
+                                continue
                             aggregated_value = None
                             if row_cond["aggregate_period"]:
                                 agg_time_len = (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() if len(agg_values) > 0 else 0
@@ -637,18 +657,43 @@ async def check_alarmevent(credentials, alarm, max_count):
                                     del agg_values[0]
                                 agg_values.append(r_series)
 
+                            debug_print(aggregated_value)
                             if check_rel(row_cond["rel"], aggregated_value, row_cond["value_num"]):
-                                t = series_intersect.TimePeriod(r_series_prev["timestamp"], r_series["timestamp"])
+                                t = series_intersect.TimePeriod(r_series_prev["timestamp"], r_series["timestamp"],
+                                                                f'{row_cond["device"]} {row_cond["data_id"]} '
+                                                                f'{aggregated_value}       ({row_cond["rel"]} {row_cond["value_num"]})')
                                 current_series.add(t)
 
+                    debug_print(f"current_series ({row_cond_recno}):")
+                    debug_print(current_series)
                     if total_series is None:
                         total_series = current_series
                     else:
                         total_series = series_intersect.Series.intersect(total_series, current_series)
                     if len(total_series) == 0:
                         break
+                    debug_print(f"total_series ({row_cond_recno}):")
+                    debug_print(total_series)
+
+                sql_update_alarm = "update alarm set last_check = $2"
 
                 if total_series is not None and len(total_series) > 0:
                     res.append(AlarmEventCheckResult(alarm=row_alarm["name"], alarmevent_count=len(total_series)))
-                    # todo 1: ********** create alarm events
+                    sql_insert = dedent("""\
+                        insert into alarm_event (alarm, created, summary, description) 
+                        values ($1, now(), $2, $3)
+                        returning id
+                        """)
+                    summary = f'{row_alarm["name"]}   {total_series[0].start} - {total_series[-1].end}'
+                    description = "\n\n".join(f'{s.start} - {s.end}\n{textwrap.indent(s.extra, " - ")}' for s in total_series)
+                    alarm_event_id = (await conn.fetchrow(sql_insert, row_alarm["id"], summary, description))[0]
+
+                    subs = await conn.fetch("select * from alarm_sub where alarm = $1", row_alarm["id"])
+                    for sub in subs:
+                        sql_r = 'insert into alarm_recipient (event, "user", method, address, "status") values ($1, $2, $3, $4, $5)'
+                        await conn.execute(sql_r, alarm_event_id, sub["user"], sub["method"], sub["address"], AlarmRecipientStatus.outbox)
+                    sql_update_alarm += ", last_report = $2"
+                sql_update_alarm += "where id = $1"
+                await conn.execute(sql_update_alarm, row_alarm["id"], param_now)
+
     return res
