@@ -43,22 +43,21 @@ async def alarmdef_list(
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], x_properties=dict(object="alarmsub", action="list"))
 async def alarmsub_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
-        alarm: Optional[int] = Query(None),
-        alarm_name: Optional[str] = Query(None),
-        alarm_name_mask: Optional[str] = Query(None),
+        alarm: Optional[str] = Query(None),
+        alarm_mask: Optional[str] = Query(None),
         seq: Optional[int] = Query(None),
         user: Optional[str] = Query(None),
         user_name: Optional[str] = Query(None),
         user_name_mask: Optional[str] = Query(None),
         method: Optional[models.alarm.AlarmMethod] = Query(None),
         status: Optional[CommonStatusEnum] = Query(None)):
-    return await models.alarm.alarmsub_list(credentials, alarm, alarm_name, alarm_name_mask, seq, user, user_name, user_name_mask, method, status)
+    return await models.alarm.alarmsub_list(credentials, alarm, alarm_mask, seq, user, user_name, user_name_mask, method, status)
 
 
 @router.get("/subs/{alarm}/{seq}", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarmsub", action="get"))
 async def alarmsub_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{alarm}/{seq}")),
-        alarm: int = Path(...),
+        alarm: str = Path(...),
         seq: int = Path(...)):
     res = await models.alarm.alarmsub_list(credentials, alarm=alarm, seq=seq)
     if len(res) > 0:
@@ -77,7 +76,7 @@ async def post_alarmsub(
 @router.patch("/subs/{alarm}/{seq}", response_model=models.common.PatchResponse, x_properties=dict(object="alarmsub", action="patch"))
 async def patch_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{alarm}/{seq}")),
-    alarm: int = Path(...),
+    alarm: str = Path(...),
     seq: int = Path(...),
     patch: models.alarm.AlarmSubPatchBody = Body(...),
 ):
@@ -87,7 +86,7 @@ async def patch_alarmsub(
 @router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarmevent", action="check"))
 async def check_alarmevent(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check")),
-    alarm: Optional[int] = Query(None),
+    alarm: Optional[str] = Query(None),
     max_count: Optional[int] = Query(None)
 ):
     def hun_tz(dt):
@@ -96,3 +95,4 @@ async def check_alarmevent(
 
     # return await models.alarm.check_alarmevent(credentials, alarm, max_count, override_last_check=hun_tz(datetime(2021,10,27,13,21)), override_now=hun_tz(datetime(2021,10,27,13,30)))
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)
+

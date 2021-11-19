@@ -17,6 +17,14 @@ from models.common import PatchResponse
 from fractions import Fraction
 
 
+async def get_alarm_id(conn, name: str):
+    sql = "select id from alarm where name = $1"
+    res = await conn.fetchrow(sql, name)
+    if res:
+        return res[0]
+    return None
+
+
 class AlarmCondLogRowCategory(str, Enum):
     sample = "SAMPLE"
     event = "EVENT"
@@ -214,7 +222,7 @@ class AlarmMethod(str, Enum):
 
 
 class AlarmSubIn(I4cBaseModel):
-    alarm: int
+    alarm: str
     seq: int
     user: Optional[str]
     method: AlarmMethod
@@ -224,7 +232,6 @@ class AlarmSubIn(I4cBaseModel):
 
 class AlarmSub(AlarmSubIn):
     id: int
-    alarm_name: str
     user_name: Optional[str]
 
 
@@ -277,6 +284,7 @@ class AlarmRecipientStatus(str, Enum):
     outbox = "outbox"
     sent = "sent"
     deleted = "deleted"
+
 
 async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
@@ -407,13 +415,19 @@ async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
         return res
 
 
-async def alarmsub_list(credentials, alarm=None, alarm_name=None, alarm_name_mask=None, seq=None, user=None,
+async def alarmsub_list(credentials, alarm:str = None, alarm_mask=None, seq=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, *, pconn=None) -> List[AlarmSub]:
     sql = dedent("""\
             with res as (
                 select
-                  als.*,
-                  al."name" as alarm_name,
+                  als.id,
+                  als.alarm as alarm_id,
+                  als.seq,
+                  als."user", 
+                  als.method,
+                  als.address,
+                  als.status,
+                  al."name" as alarm,
                   u."name" as user_name
                 from alarm_sub als
                 join alarm al on al.id = als.alarm
@@ -427,11 +441,8 @@ async def alarmsub_list(credentials, alarm=None, alarm_name=None, alarm_name_mas
         if alarm is not None:
             params.append(alarm)
             sql += f"and res.alarm = ${len(params)}\n"
-        if alarm_name is not None:
-            params.append(alarm_name)
-            sql += f"and res.alarm_name = ${len(alarm_name)}\n"
-        if alarm_name_mask is not None:
-            sql += "and " + common.db_helpers.filter2sql(alarm_name_mask, "res.alarm_name", params)
+        if alarm_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(alarm_mask, "res.alarm", params)
         if seq is not None:
             params.append(seq)
             sql += f"and res.seq = ${len(params)}\n"
@@ -440,7 +451,7 @@ async def alarmsub_list(credentials, alarm=None, alarm_name=None, alarm_name_mas
             sql += f"and res.user = ${len(params)}\n"
         if user_name is not None:
             params.append(user_name)
-            sql += f"and res.user_name = ${len(alarm_name)}\n"
+            sql += f"and res.user_name = ${len(params)}\n"
         if user_name_mask is not None:
             sql += "and " + common.db_helpers.filter2sql(user_name_mask, "res.user_name", params)
         if method is not None:
@@ -457,8 +468,11 @@ async def alarmsub_list(credentials, alarm=None, alarm_name=None, alarm_name_mas
 async def post_alarmsub(credentials, alarmsub:AlarmSub) -> AlarmSub:
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
+            alarm_id = get_alarm_id(conn, alarmsub.alarm)
+            if alarm_id is None:
+                raise HTTPException(status_code=404, detail="No record found")
             sql_check = "select * from alarm_sub where alarm = $1 and seq = $2"
-            pre_db = conn.execute(sql_check, alarmsub.alarm, alarmsub.seq)
+            pre_db = conn.execute(sql_check, alarm_id, alarmsub.seq)
             if pre_db:
                 sql_mod = dedent("""\
                     update alarm_sub
@@ -471,7 +485,7 @@ async def post_alarmsub(credentials, alarmsub:AlarmSub) -> AlarmSub:
             else:
                 sql_mod = "insert into alarm_sub (alarm, seq, \"user\", method, address, status)\n" \
                           "values ($1, $2, $3, $4, $5, $6)"
-            conn.execute(sql_mod, alarmsub.alarm, alarmsub.seq, alarmsub.user, alarmsub.method, alarmsub.address, alarmsub.status)
+            conn.execute(sql_mod, alarm_id, alarmsub.seq, alarmsub.user, alarmsub.method, alarmsub.address, alarmsub.status)
             res = await alarmsub_list(credentials, alarm=alarmsub.alarm, seq=alarmsub.seq)
             return res[0]
 
@@ -495,7 +509,8 @@ async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
             if patch.change.is_empty():
                 return PatchResponse(changed=True)
 
-            params = [alarm, seq]
+            alarm_id = al.id
+            params = [alarm_id, seq]
             sql = "update alarm_sub\nset\n"
             sep = ""
             if patch.change.status:
@@ -589,7 +604,7 @@ def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
                  / (n * sum(x ** 2 for x in xl) - sum(xl)**2))
 
 
-async def check_alarmevent(credentials, alarm, max_count, *, override_last_check=None, override_now=None):
+async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_check=None, override_now=None):
     res = []
     param_now = datetime.now() if override_now is None else override_now
     async with DatabaseConnection() as conn:
@@ -599,10 +614,10 @@ async def check_alarmevent(credentials, alarm, max_count, *, override_last_check
             params = [param_now]
             if alarm is not None:
                 params.append(alarm)
-                sql_alarm += f"and id = ${len(alarm)}\n"
+                sql_alarm += f"and \"name\" = ${len(params)}\n"
             if max_count is not None:
                 params.append(override_last_check)
-                sql_alarm += f"order by ($1 - coalesce(${len(alarm)}, last_check)) / nullif(max_freq,0) desc, last_check asc\n"
+                sql_alarm += f"order by ($1 - coalesce(${len(params)}, last_check)) / nullif(max_freq,0) desc, last_check asc\n"
             write_debug_sql("alarm.sql", sql_alarm, *params)
             db_alarm = await conn.fetch(sql_alarm, *params)
             for row_alarm_recno, row_alarm in enumerate(db_alarm, start=1):
