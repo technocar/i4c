@@ -21,7 +21,7 @@
   </div>
   <div class="form-group col-6">
     <label>Állapot</label>
-    <label>{{data.status}}</label>
+    <label class="{{data.status}}">{{getStatusDesc(data.status)}}</label>
   </div>
 </div>
 <ngb-accordion #files="ngbAccordion">

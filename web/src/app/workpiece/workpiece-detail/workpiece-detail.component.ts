@@ -17,6 +17,7 @@ export class WorkpieceDetailComponent implements OnInit {
   private id: string;
   data: WorkPiece;
   notes$: BehaviorSubject<WorkPieceNote[]> = new BehaviorSubject([]);
+  statuses: string[][] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -29,6 +30,7 @@ export class WorkpieceDetailComponent implements OnInit {
     }
 
   ngOnInit(): void {
+    this.statuses = this.apiService.getWorkPieceStatuses();
     this.route.data.subscribe((r: any) => {
       this.data = r.workpiece;
       this.notes$.next(this.data.notes);
@@ -85,5 +87,10 @@ export class WorkpieceDetailComponent implements OnInit {
     var download = this.apiService.getFile('test.pdf', 2);
     this.downloadService.register(download);
     this.downloadService.download();
+  }
+
+  getStatusDesc(code: string): string {
+    var status = this.statuses.find((s) => { return s[0] === code; });
+    return status ? status[1] : code;
   }
 }

@@ -1,3 +1,4 @@
+@import '../../base';
 
 #header {
   box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
@@ -9,4 +10,20 @@
 
 #toolbar {
   box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+}
+
+.done {
+  color: $color-green;
+}
+
+.fail {
+  color: $color-madder_lake;
+}
+
+.working {
+  color: $color-carolina_blue;
+}
+
+.todo {
+  color: $color-charcoal;
 }

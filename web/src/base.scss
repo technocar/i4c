@@ -3,17 +3,26 @@ $color-charcoal: #273E47;
 $color-beau_blue: #C1CFDA;
 $color-crimson: #941C2F;
 $color-madder_lake: #CC2936;
-
-$color-since: #aaa;
-$color-c_unavailable: rgb(73, 151, 77);
-$color-c_normal: $color-c_unavailable;
-$color-c_warning: rgb(218, 141, 0);
-$color-c_fault: rgb(196, 39, 39);
-$color-event: rgb(42, 132, 218);
-$color-sample: black;
-$color-hover: $color-event;
+$color-metalic_seaweed: #388697;
+$color-alloy_orange: #BD632F;
+$color-carolina_blue: #00A3FF;
+$color-harvest_gold: #D8973C;
+$color-green: #3B8E83;
 $color-gray: #aaa;
+
+$color-since: $color-gray;
+$color-c_unavailable: $color-green;
+$color-c_normal: $color-c_unavailable;
+$color-c_warning: $color-harvest_gold;
+$color-c_fault: $color-madder_lake;
+$color-event: $color-alloy_orange;
+$color-sample: $color-charcoal;
+$color-hover: $color-event;
+
 
 $color-background: #E6E8E6;
 $color-primary: #941C2F;
 $color-secondary: #03191E;
+
+$color-button: #00A0F4;
+$color-button_hover: #00A3FF;
