@@ -124,6 +124,10 @@ class Series:
 
         if merge_extra is None:
             def merge_extra(x,y):
+                if x is None:
+                    return y
+                if y is None:
+                    return x
                 return "\n".join((x,y))
 
         i1, i2 = 0,0

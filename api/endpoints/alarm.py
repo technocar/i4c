@@ -94,5 +94,5 @@ async def check_alarmevent(
         tz = pytz.timezone("Europe/Budapest")
         return tz.localize(dt)
 
-    # return await models.alarm.check_alarmevent(credentials, alarm, max_count, override_last_check=hun_tz(datetime(2021,10,27,13)), override_now=hun_tz(datetime(2021,10,27,14)))
+    # return await models.alarm.check_alarmevent(credentials, alarm, max_count, override_last_check=hun_tz(datetime(2021,10,27,13,21)), override_now=hun_tz(datetime(2021,10,27,13,30)))
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)

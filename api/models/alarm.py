@@ -603,6 +603,7 @@ async def check_alarmevent(credentials, alarm, max_count, *, override_last_check
             if max_count is not None:
                 params.append(override_last_check)
                 sql_alarm += f"order by ($1 - coalesce(${len(alarm)}, last_check)) / nullif(max_freq,0) desc, last_check asc\n"
+            write_debug_sql("alarm.sql", sql_alarm, *params)
             db_alarm = await conn.fetch(sql_alarm, *params)
             for row_alarm_recno, row_alarm in enumerate(db_alarm, start=1):
                 if max_count is not None and row_alarm_recno > max_count:
@@ -613,6 +614,9 @@ async def check_alarmevent(credentials, alarm, max_count, *, override_last_check
                 sql_cond = "select * from alarm_cond where alarm = $1 order by log_row_category" # cond/ev/sample order
                 db_conds = await conn.fetch(sql_cond, row_alarm["id"])
                 total_series = None
+                if row_alarm["window"] is not None:
+                    total_series = series_intersect.Series()
+                    total_series.add(series_intersect.TimePeriod(last_check - timedelta(seconds=row_alarm["window"]), None))
                 for row_cond_recno, row_cond in enumerate(db_conds, start=1):
                     last_check_mod = last_check
                     if total_series is not None and row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
@@ -685,7 +689,7 @@ async def check_alarmevent(credentials, alarm, max_count, *, override_last_check
                         returning id
                         """)
                     summary = f'{row_alarm["name"]}   {total_series[0].start} - {total_series[-1].end}'
-                    description = "\n\n".join(f'{s.start} - {s.end}\n{textwrap.indent(s.extra, " - ")}' for s in total_series)
+                    description = "\n\n".join(f'{s.start} - {s.end}\n{textwrap.indent(s.extra, " - ") if s is not None else ""}' for s in total_series)
                     alarm_event_id = (await conn.fetchrow(sql_insert, row_alarm["id"], summary, description))[0]
 
                     subs = await conn.fetch("select * from alarm_sub where alarm = $1", row_alarm["id"])

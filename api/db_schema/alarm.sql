@@ -9,6 +9,7 @@ drop table "alarm";
 create table "alarm" (
     id SERIAL PRIMARY KEY,
     name character varying (200) null constraint uq_alarm_name unique,
+    "window" double precision null, 
     max_freq double precision null,
     last_check timestamp with time zone not NULL,
     last_report timestamp with time zone NULL
@@ -95,7 +96,7 @@ delete from "alarm_sub";
 delete from "alarm_cond";
 delete from "alarm";
 
-insert into "alarm" values (5,'al1',0,'2021-11-16'::timestamp,null);
+insert into "alarm" values (5,'al1',200,10,'2021-11-16'::timestamp,null);
 insert into "alarm_cond" values (1,5,'EVENT','lathe','exec',null,null,null,'=',null,'ACTIVE',null,null);
 insert into "alarm_cond" values (2,5,'EVENT','lathe','pgm' ,null,null,null,'=',null,'ALARMTEST',null,null);
 insert into "alarm_cond" values (3,5,'SAMPLE','lathe','xl',2,null,'avg','>',100,null,null,null);
