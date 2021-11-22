@@ -21,12 +21,12 @@
   }
 
   > span:hover {
-    color: $color-event;
+    color: $color-button_hover;
     font-weight: bold;
   }
 
   > span.selected {
-    color: rgb(255, 79, 246);
+    color: $color-carolina_blue;
   }
 
   #nav_list,
@@ -45,7 +45,7 @@
   }
 
   #timestamp:hover {
-    color: $color-event;
+    color: $color-button_hover;
     cursor: pointer;
   }
 }
@@ -74,10 +74,10 @@
   .step {
     font-size: 1.6rem;
     position: absolute;
-    right: -22px;
+    right: -16px;
     cursor: pointer;
     z-index: 99;
-    color: black;
+    color: $color-button;
   }
 
   .step.before {
@@ -89,7 +89,7 @@
   }
 
   .step:hover {
-    color: $color-hover;
+    color: $color-button_hover;
   }
 
   @mixin type($color, $type) {

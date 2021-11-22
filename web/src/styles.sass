@@ -21,7 +21,7 @@
     margin-bottom: 0.5rem
     background-color: white
     border: none
-    border-bottom: 1px solid $color-gray
+    border-bottom: 1px solid $color-metalic_seaweed
     border-radius: 0
     > .card-header
       background-color: white
@@ -31,7 +31,7 @@
         text-align: left
         width: 100%
         font-weight: bold
-        color: $color-gray
+        color: $color-metalic_seaweed
         padding-left: 0
       > button::after
         position: absolute
@@ -41,23 +41,7 @@
         content: "▼"
 
 body
-  background: $color-background
-
-.primary
-  color: $color-primary
-
-.secondary
-  color: $color-secondary
-
-.btn-primary,
-.btn-primary.disabled,
-.btn-primary:disabled
-  background-color: $color-primary
-  border-color: $color-primary
-
-.btn-primary:hover
-  background-color: $color-secondary
-  border-color: $color-secondary
+  background: $color-background !important
 
 .container,
 .container-lg
@@ -67,3 +51,14 @@ body
   position: absolute
   margin-top: 0
   display: block
+
+
+
+$primary: $color-button
+$secondary: $color-charcoal
+$danger: $color-madder_lake
+$warning: $color-harvest_gold
+$success: $color-green
+$info: $color-metalic_seaweed
+$light: #F1FBFF
+@import "../node_modules/bootstrap/scss/bootstrap"
