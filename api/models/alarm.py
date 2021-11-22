@@ -345,7 +345,62 @@ class AlarmRecipPatchBody(I4cBaseModel):
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
-    pass
+    sql = dedent("""\
+            with 
+                res as (
+                    select
+                      als.id,
+                      als.groups,
+                      als."user", 
+                      als.method,
+                      als.address,
+                      als.status,
+                      u."name" as user_name
+                    from alarm_sub als
+                    left join "user" u on u.id = als."user"
+                    ),
+                al as (
+                    select "name", subsgroup
+                    from alarm
+                    )                
+            select * from res
+            where True
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        params = []
+        if id is not None:
+            params.append(id)
+            sql += f"and res.id = ${len(params)}\n"
+        if group is not None:
+            params.append(group)
+            sql += f"and res.groups @> array[${len(params)}]::varchar[200][]\n"
+        if group_mask is not None:
+            sql += "and exists (select * from unnest(res.groups) where " + common.db_helpers.filter2sql(group_mask, "unnest", params) + ")"
+        if user is not None:
+            params.append(user)
+            sql += f"and res.user = ${len(params)}\n"
+        if user_name is not None:
+            params.append(user_name)
+            sql += f"and res.user_name = ${len(params)}\n"
+        if user_name_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(user_name_mask, "res.user_name", params)
+        if method is not None:
+            params.append(method)
+            sql += f"and res.method = ${len(params)}\n"
+        if status is not None:
+            params.append(status)
+            sql += f"and res.status = ${len(params)}\n"
+        if address is not None:
+            params.append(address)
+            sql += f"and res.address = ${len(params)}\n"
+        if address_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(address_mask, "res.address", params)
+        if alarm is not None:
+            params.append(alarm)
+            sql += f" and exists(select * from al where array[al.subsgroup] <@ res.groups and al.\"name\" = ${len(params)})"
+        write_debug_sql("alarmsub_list.sql", sql, *params)
+        res = await conn.fetch(sql, *params)
+        return [AlarmSub(**dict(r)) for r in res]
 
 
 async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
@@ -519,67 +574,6 @@ async def subsgroups_list(credentials, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         res = await conn.fetch(sql)
         return [r[0] for r in res]
-
-
-async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
-                        user_name=None, user_name_mask=None, method=None, status=None, address=None,
-                        address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
-    sql = dedent("""\
-            with 
-                res as (
-                    select
-                      als.id,
-                      als.groups,
-                      als."user", 
-                      als.method,
-                      als.address,
-                      als.status,
-                      u."name" as user_name
-                    from alarm_sub als
-                    left join "user" u on u.id = als."user"
-                    ),
-                al as (
-                    select "name", subsgroup
-                    from alarm
-                    )                
-            select * from res
-            where True
-          """)
-    async with DatabaseConnection(pconn) as conn:
-        params = []
-        if id is not None:
-            params.append(id)
-            sql += f"and res.id = ${len(params)}\n"
-        if group is not None:
-            params.append(group)
-            sql += f"and res.groups @> array[${len(params)}]::varchar[200][]\n"
-        if group_mask is not None:
-            sql += "and exists (select * from unnest(res.groups) where " + common.db_helpers.filter2sql(group_mask, "unnest", params) + ")"
-        if user is not None:
-            params.append(user)
-            sql += f"and res.user = ${len(params)}\n"
-        if user_name is not None:
-            params.append(user_name)
-            sql += f"and res.user_name = ${len(params)}\n"
-        if user_name_mask is not None:
-            sql += "and " + common.db_helpers.filter2sql(user_name_mask, "res.user_name", params)
-        if method is not None:
-            params.append(method)
-            sql += f"and res.method = ${len(params)}\n"
-        if status is not None:
-            params.append(status)
-            sql += f"and res.status = ${len(params)}\n"
-        if address is not None:
-            params.append(address)
-            sql += f"and res.address = ${len(params)}\n"
-        if address_mask is not None:
-            sql += "and " + common.db_helpers.filter2sql(address_mask, "res.address", params)
-        if alarm is not None:
-            params.append(alarm)
-            sql += f" and exists(select * from al where array[al.subsgroup] <@ res.groups and al.\"name\" = ${len(params)})"
-        write_debug_sql("alarmsub_list.sql", sql, *params)
-        res = await conn.fetch(sql, *params)
-        return [AlarmSub(**dict(r)) for r in res]
 
 
 async def post_alarmsub(credentials, alarmsub:AlarmSubIn) -> AlarmSub:
