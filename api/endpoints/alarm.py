@@ -34,14 +34,14 @@ async def alarmdef_get(
 @router.get("/defs", response_model=List[models.alarm.AlarmDef], x_properties=dict(object="alarmdef", action="list"))
 async def alarmdef_list(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs")),
-    name_mask: Optional[str] = Query(None),
+    name_mask: Optional[List[str]] = Query(None),
     report_after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
     subs_status: Optional[CommonStatusEnum] = Query(None),
     subs_method: Optional[models.alarm.AlarmMethod] = Query(None),
     subs_address: Optional[str] = Query(None),
-    subs_address_mask: Optional[str] = Query(None),
+    subs_address_mask: Optional[List[str]] = Query(None),
     subs_user: Optional[str] = Query(None),
-    subs_user_mask: Optional[str] = Query(None)
+    subs_user_mask: Optional[List[str]] = Query(None)
 ):
     return await models.alarm.alarmdef_list(credentials, name_mask, report_after,
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
@@ -52,21 +52,21 @@ async def alarmsub_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
         id: Optional[str] = Query(None),
         group: Optional[str] = Query(None),
-        group_mask: Optional[str] = Query(None),
+        group_mask: Optional[List[str]] = Query(None),
         user: Optional[str] = Query(None),
         user_name: Optional[str] = Query(None),
-        user_name_mask: Optional[str] = Query(None),
+        user_name_mask: Optional[List[str]] = Query(None),
         method: Optional[models.alarm.AlarmMethod] = Query(None),
         status: Optional[CommonStatusEnum] = Query(None),
         address: Optional[str] = Query(None),
-        address_mask: Optional[str] = Query(None),
+        address_mask: Optional[List[str]] = Query(None),
         alarm: Optional[str] = Query(None)):
     return await models.alarm.alarmsub_list(credentials, id, group, group_mask, user, user_name, user_name_mask,
                                             method, status, address, address_mask, alarm)
 
 
 @router.get("/subsgroups", response_model=List[str], x_properties=dict(object="subsgroups", action="list"))
-async def alarmsub_get(
+async def subsgroups_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups"))):
     return await models.alarm.subsgroups_list(credentials)
 
@@ -111,3 +111,27 @@ async def check_alarmevent(
     # return await models.alarm.check_alarmevent(credentials, alarm, max_count, override_last_check=hun_tz(datetime(2021,10,27,13,21)), override_now=hun_tz(datetime(2021,10,27,13,30)))
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)
 
+
+@router.get("/events", response_model=List[models.alarm.AlarmEvent], x_properties=dict(object="alarmevent", action="list"))
+async def alarmevent_list(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/events")),
+        id: Optional[str] = Query(None),
+        alarm: Optional[str] = Query(None),
+        alarm_mask: Optional[List[str]] = Query(None),
+        user: Optional[str] = Query(None),
+        user_name: Optional[str] = Query(None),
+        user_name_mask: Optional[List[str]] = Query(None),
+        before: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
+        after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
+):
+    return await models.alarm.alarmevent_list(credentials, id, alarm, alarm_mask, user, user_name, user_name_mask, before, after)
+
+
+@router.get("/events/{id}", response_model=models.alarm.AlarmEvent, x_properties=dict(object="alarmevent", action="get"))
+async def alarmevent_get(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/events/{id}")),
+        id: int = Path(...)):
+    res = await models.alarm.alarmevent_list(credentials, id=id)
+    if len(res) > 0:
+        return res[0]
+    raise HTTPException(status_code=404, detail="No record found")

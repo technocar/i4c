@@ -302,6 +302,14 @@ class AlarmRecipientStatus(str, Enum):
     deleted = "deleted"
 
 
+class AlarmEvent(I4cBaseModel):
+    id: int
+    alarm: str
+    created: datetime
+    summary: str
+    description: str
+
+
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
@@ -790,3 +798,57 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                 await conn.execute(sql_update_alarm, row_alarm["id"], param_now)
 
     return res
+
+
+async def alarmevent_list(credentials, id=None, alarm=None, alarm_mask=None,
+                          user=None, user_name=None, user_name_mask=None, before=None, after=None, *, pconn=None) -> List[AlarmEvent]:
+    sql = dedent("""\
+            with 
+                res as (
+                    select
+                      ae.id,
+                      al."name" as alarm,
+                      ae.created, 
+                      ae.summary,
+                      ae.description
+                    from alarm_event ae
+                    left join "alarm" al on al.id = ae."alarm"
+                    ),
+                rec as (
+                    select
+                      ar.event, 
+                      ar."user",
+                      u."name" as "user_name"
+                    from alarm_recipient ar
+                    left join "user" u on u.id = ar."user"
+                )
+            select * from res
+            where True
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        params = []
+        if id is not None:
+            params.append(id)
+            sql += f"and res.id = ${len(params)}\n"
+        if alarm is not None:
+            params.append(alarm)
+            sql += f"and res.alarm = ${len(params)}\n"
+        if alarm_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(alarm_mask, "res.alarm", params)
+        if user is not None:
+            params.append(user)
+            sql += f"and exists (select * from rec where rec.event = res.id and rec.\"user\" = ${len(params)} )\n"
+        if user_name is not None:
+            params.append(user_name)
+            sql += f"and exists (select * from rec where rec.event = res.id and rec.user_name = ${len(params)} )\n"
+        if user_name_mask is not None:
+            sql += "and exists (select * from rec where rec.event = res.id and " + common.db_helpers.filter2sql(user_name_mask, "rec.user_name", params) + ")"
+        if before is not None:
+            params.append(before)
+            sql += f"and res.created <= ${len(params)}\n"
+        if after is not None:
+            params.append(after)
+            sql += f"and res.created >= ${len(params)}\n"
+        write_debug_sql("alarmevent_list.sql", sql, *params)
+        res = await conn.fetch(sql, *params)
+        return [AlarmEvent(**dict(r)) for r in res]
