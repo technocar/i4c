@@ -135,3 +135,39 @@ async def alarmevent_get(
     if len(res) > 0:
         return res[0]
     raise HTTPException(status_code=404, detail="No record found")
+
+
+@router.get("/recips", response_model=List[models.alarm.AlarmRecip], x_properties=dict(object="alarmrecip", action="list"))
+async def alarmrecips_list(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips")),
+        id: Optional[str] = Query(None),
+        alarm: Optional[str] = Query(None),
+        alarm_mask: Optional[List[str]] = Query(None),
+        event: Optional[int] = Query(None),
+        user: Optional[str] = Query(None),
+        user_name: Optional[str] = Query(None),
+        user_name_mask: Optional[List[str]] = Query(None),
+        method: Optional[models.alarm.AlarmMethod] = Query(None),
+        status: Optional[models.alarm.AlarmRecipientStatus] = Query(None),
+):
+    return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
+                                               user, user_name, user_name_mask, method, status)
+
+
+@router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, x_properties=dict(object="alarmrecip", action="get"))
+async def alarmrecips_get(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips/{id}")),
+        id: int = Path(...)):
+    res = await models.alarm.alarmrecips_list(credentials, id=id)
+    if len(res) > 0:
+        return res[0]
+    raise HTTPException(status_code=404, detail="No record found")
+
+
+@router.patch("/recips/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="alarmrecip", action="patch"))
+async def patch_alarmrecips(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/recips/{id}")),
+    id: int = Path(...),
+    patch: models.alarm.AlarmRecipPatchBody = Body(...),
+):
+    return await models.alarm.patch_alarmrecips(credentials, id, patch)

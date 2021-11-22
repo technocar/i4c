@@ -310,6 +310,38 @@ class AlarmEvent(I4cBaseModel):
     description: str
 
 
+class AlarmRecip(I4cBaseModel):
+    id: int
+    event: AlarmEvent
+    alarm: str
+    method: AlarmMethod
+    status: AlarmRecipientStatus
+
+
+class AlarmRecipPatchCondition(I4cBaseModel):
+    flipped: Optional[bool]
+    status: Optional[List[AlarmRecipientStatus]]
+
+    def match(self, recip:AlarmRecip):
+        r = ((self.status is None) or (recip.status in self.status))
+        if self.flipped is None or not self.flipped:
+            return r
+        else:
+            return not r
+
+
+class AlarmRecipPatchChange(I4cBaseModel):
+    status: Optional[AlarmRecipientStatus]
+
+    def is_empty(self):
+        return self.status is None
+
+
+class AlarmRecipPatchBody(I4cBaseModel):
+    conditions: List[AlarmRecipPatchCondition]
+    change: AlarmRecipPatchChange
+
+
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
@@ -852,3 +884,99 @@ async def alarmevent_list(credentials, id=None, alarm=None, alarm_mask=None,
         write_debug_sql("alarmevent_list.sql", sql, *params)
         res = await conn.fetch(sql, *params)
         return [AlarmEvent(**dict(r)) for r in res]
+
+
+async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, event=None,
+                           user=None, user_name=None, user_name_mask=None, method=None, status=None, *, pconn=None) -> List[AlarmRecip]:
+    sql = dedent("""\
+            with 
+                res as (
+                    select
+                      r.id, 
+                      a.name as alarm,
+                      r.method,
+                      r."status",
+                      e.id as event_id,
+                      e.created as event_created,
+                      e.summary as event_summary,
+                      e.description as event_description,
+                      r."user",
+                      u.name as user_name
+                    from alarm_recipient r
+                    join alarm_event e on e.id = r.event
+                    join alarm a on a.id = e.alarm
+                    left join "user" u on u.id = r."user"
+                )
+            select * from res
+            where True
+          """)
+    async with DatabaseConnection(pconn) as conn:
+        params = []
+        if id is not None:
+            params.append(id)
+            sql += f"and res.id = ${len(params)}\n"
+        if alarm is not None:
+            params.append(alarm)
+            sql += f"and res.alarm = ${len(params)}\n"
+        if alarm_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(alarm_mask, "res.alarm", params)
+        if event is not None:
+            params.append(event)
+            sql += f"and res.event_id = ${len(params)}\n"
+        if user is not None:
+            params.append(user)
+            sql += f"and res.\"user\" = ${len(params)}\n"
+        if user_name is not None:
+            params.append(user_name)
+            sql += f"and res.user_name = ${len(params)}\n"
+        if user_name_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(user_name_mask, "res.user_name", params)
+        if method is not None:
+            params.append(method)
+            sql += f"and res.method = ${len(params)}\n"
+        if status is not None:
+            params.append(status)
+            sql += f"and res.\"status\" = ${len(params)}\n"
+        res = await conn.fetch(sql, *params)
+        return [AlarmRecip(id=r["id"],
+                           event=AlarmEvent(id=r["event_id"],
+                                            alarm=r["alarm"],
+                                            created=r["event_created"],
+                                            summary=r["event_summary"],
+                                            description=r["event_description"]),
+                           alarm=r["alarm"],
+                           method=r["method"],
+                           status=r["status"]
+                           ) for r in res]
+
+
+async def patch_alarmrecips(credentials, id, patch: AlarmRecipPatchBody):
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            recip = await alarmrecips_list(credentials, id=id, pconn=conn)
+            if len(recip) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            recip = recip[0]
+
+            match = True
+            for cond in patch.conditions:
+                match = cond.match(recip)
+                if not match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+
+            params = [id]
+            sql = "update alarm_recipient\nset\n"
+            sep = ""
+            if patch.change.status:
+                params.append(patch.change.status)
+                sql += f"{sep}\"status\"=${len(params)}"
+                sep = ",\n"
+            sql += "\nwhere id = $1::int"
+            await conn.execute(sql, *params)
+
+            return PatchResponse(changed=True)
