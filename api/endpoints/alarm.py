@@ -35,31 +35,47 @@ async def alarmdef_get(
 async def alarmdef_list(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs")),
     name_mask: Optional[str] = Query(None),
-    report_after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z")
+    report_after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
+    subs_status: Optional[CommonStatusEnum] = Query(None),
+    subs_method: Optional[models.alarm.AlarmMethod] = Query(None),
+    subs_address: Optional[str] = Query(None),
+    subs_address_mask: Optional[str] = Query(None),
+    subs_user: Optional[str] = Query(None),
+    subs_user_mask: Optional[str] = Query(None)
 ):
-    return await models.alarm.alarmdef_list(credentials, name_mask, report_after)
+    return await models.alarm.alarmdef_list(credentials, name_mask, report_after,
+                                            subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], x_properties=dict(object="alarmsub", action="list"))
 async def alarmsub_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
-        alarm: Optional[str] = Query(None),
-        alarm_mask: Optional[str] = Query(None),
-        seq: Optional[int] = Query(None),
+        id: Optional[str] = Query(None),
+        group: Optional[str] = Query(None),
+        group_mask: Optional[str] = Query(None),
         user: Optional[str] = Query(None),
         user_name: Optional[str] = Query(None),
         user_name_mask: Optional[str] = Query(None),
         method: Optional[models.alarm.AlarmMethod] = Query(None),
-        status: Optional[CommonStatusEnum] = Query(None)):
-    return await models.alarm.alarmsub_list(credentials, alarm, alarm_mask, seq, user, user_name, user_name_mask, method, status)
+        status: Optional[CommonStatusEnum] = Query(None),
+        address: Optional[str] = Query(None),
+        address_mask: Optional[str] = Query(None),
+        alarm: Optional[str] = Query(None)):
+    return await models.alarm.alarmsub_list(credentials, id, group, group_mask, user, user_name, user_name_mask,
+                                            method, status, address, address_mask, alarm)
 
 
-@router.get("/subs/{alarm}/{seq}", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarmsub", action="get"))
+@router.get("/subsgroups", response_model=List[str], x_properties=dict(object="subsgroups", action="list"))
 async def alarmsub_get(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{alarm}/{seq}")),
-        alarm: str = Path(...),
-        seq: int = Path(...)):
-    res = await models.alarm.alarmsub_list(credentials, alarm=alarm, seq=seq)
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups"))):
+    return await models.alarm.subsgroups_list(credentials)
+
+
+@router.get("/subs/{id}", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarmsub", action="get"))
+async def alarmsub_get(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{id}")),
+        id: int = Path(...)):
+    res = await models.alarm.alarmsub_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
     raise HTTPException(status_code=404, detail="No record found")
@@ -73,14 +89,13 @@ async def post_alarmsub(
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
-@router.patch("/subs/{alarm}/{seq}", response_model=models.common.PatchResponse, x_properties=dict(object="alarmsub", action="patch"))
+@router.patch("/subs/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="alarmsub", action="patch"))
 async def patch_alarmsub(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{alarm}/{seq}")),
-    alarm: str = Path(...),
-    seq: int = Path(...),
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{id}")),
+    id: int = Path(...),
     patch: models.alarm.AlarmSubPatchBody = Body(...),
 ):
-    return await models.alarm.patch_alarmsub(credentials, alarm, seq, patch)
+    return await models.alarm.patch_alarmsub(credentials, id, patch)
 
 
 @router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarmevent", action="check"))

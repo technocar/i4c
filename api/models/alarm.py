@@ -208,13 +208,6 @@ class AlarmDefIn(I4cBaseModel):
     max_freq: Optional[float] = Field(None, description="sec")
 
 
-class AlarmDef(AlarmDefIn):
-    id: int
-    name: str
-    last_check: datetime
-    last_report: Optional[datetime]
-
-
 class AlarmMethod(str, Enum):
     email = "email"
     push = "push"
@@ -222,8 +215,7 @@ class AlarmMethod(str, Enum):
 
 
 class AlarmSubIn(I4cBaseModel):
-    alarm: str
-    seq: int
+    groups: List[str]
     user: Optional[str]
     method: AlarmMethod
     address: Optional[str]
@@ -235,16 +227,27 @@ class AlarmSub(AlarmSubIn):
     user_name: Optional[str]
 
 
+class AlarmDef(AlarmDefIn):
+    id: int
+    name: str
+    last_check: datetime
+    last_report: Optional[datetime]
+    subs: List[AlarmSub]
+
+
 class AlarmSubPatchCondition(I4cBaseModel):
     flipped: Optional[bool]
     status: Optional[CommonStatusEnum]
     address: Optional[str]
     empty_address: Optional[bool]
+    has_group: Optional[str]
 
     def match(self, alarmsub:AlarmSub):
         r = (((self.status is None) or (alarmsub.status == self.status))
              and ((self.address is None) or (self.address == alarmsub.address))
-             and ((self.empty_address is None) or (bool(alarmsub.address) != self.empty_address)))
+             and ((self.empty_address is None) or (bool(alarmsub.address) != self.empty_address))
+             and ((self.has_group is None) or (self.has_group in alarmsub.groups))
+             )
 
         if self.flipped is None or not self.flipped:
             return r
@@ -256,17 +259,30 @@ class AlarmSubPatchChange(I4cBaseModel):
     status: Optional[CommonStatusEnum]
     address: Optional[str]
     clear_address: Optional[bool]
+    add_groups: Optional[List[str]]
+    set_groups: Optional[List[str]]
+    remove_groups: Optional[List[str]]
 
     def is_empty(self):
         return self.status is None \
                and self.address is None \
-               and (self.clear_address is None or not self.clear_address)
+               and (self.clear_address is None or not self.clear_address) \
+               and self.add_groups is None \
+               and self.set_groups is None \
+               and self.remove_groups is None
+
 
     @root_validator
     def check_exclusive(cls, values):
         address, clear_address = values.get('address'), values.get('clear_address')
         if address is not None and clear_address:
             raise ValueError('address and clear_address are exclusive')
+
+        add_group, set_groups, remove_group = values.get('add_group'), values.get('set_groups'), values.get('remove_group')
+        if add_group is not None and set_groups is not None:
+            raise ValueError('add_group and set_groups are exclusive')
+        if remove_group is not None and set_groups is not None:
+            raise ValueError('remove_group and set_groups are exclusive')
         return values
 
 
@@ -286,11 +302,17 @@ class AlarmRecipientStatus(str, Enum):
     deleted = "deleted"
 
 
+async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
+                        user_name=None, user_name_mask=None, method=None, status=None, address=None,
+                        address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
+    pass
+
+
 async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
                            select 
-                             "id", "name", max_freq, last_check, last_report
+                             "id", "name", max_freq, last_check, last_report, "group"
                            from "alarm"
                            where "name" = $1
                            """)
@@ -350,7 +372,8 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
                         conditions=conds,
                         max_freq=idr["max_freq"],
                         last_check=idr["last_check"],
-                        last_report=idr["last_report"]
+                        last_report=idr["last_report"],
+                        subs=alarmsub_list(credentials, group=idr["group"], pconn=conn)
                         )
 
 
@@ -397,15 +420,46 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
             return new_alarm
 
 
-async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
-    sql = "select name from \"alarm\" where True\n"
+async def alarmdef_list(credentials, name_mask, report_after,
+                        subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask,
+                        *, pconn=None):
+    sql = dedent("""\
+            with
+              s as (
+                select als.*, u."name" as user_name
+                from alarm_sub als
+                left join "user" u on u.id = als."user")
+            select name 
+            from \"alarm\" res 
+            where True
+            """)
     async with DatabaseConnection(pconn) as conn:
         params = []
         if name_mask is not None:
-            sql += "and " + common.db_helpers.filter2sql(name_mask, "name", params)
+            sql += "and " + common.db_helpers.filter2sql(name_mask, "res.name", params)
         if report_after is not None:
             params.append(report_after)
-            sql += f"and last_report >= ${len(params)}\n"
+            sql += f"and res.last_report >= ${len(params)}\n"
+        if any(x is not None for x in (subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)):
+            sql_subs = f"and exists(select * from s where array[res.subsgroup] <@ s.groups"
+            if subs_status is not None:
+                params.append(subs_status)
+                sql += f"and s.status = ${len(params)}\n"
+            if subs_method is not None:
+                params.append(subs_method)
+                sql += f"and s.method = ${len(params)}\n"
+            if subs_user is not None:
+                params.append(subs_user)
+                sql += f"and s.user_name = ${len(params)}\n"
+            if subs_user_mask is not None:
+                sql += "and " + common.db_helpers.filter2sql(subs_user_mask, "s.user_name", params)
+            if subs_address is not None:
+                params.append(subs_address)
+                sql += f"and s.address = ${len(params)}\n"
+            if subs_address_mask is not None:
+                sql += "and " + common.db_helpers.filter2sql(subs_address_mask, "s.address", params)
+            sql_subs += ")"
+            sql += sql_subs
         alarms = await conn.fetch(sql, *params)
 
         res = []
@@ -415,37 +469,52 @@ async def alarmdef_list(credentials, name_mask, report_after, *, pconn=None):
         return res
 
 
-async def alarmsub_list(credentials, alarm:str = None, alarm_mask=None, seq=None, user=None,
-                        user_name=None, user_name_mask=None, method=None, status=None, *, pconn=None) -> List[AlarmSub]:
+async def subsgroups_list(credentials, *, pconn=None):
     sql = dedent("""\
-            with res as (
-                select
-                  als.id,
-                  als.alarm as alarm_id,
-                  als.seq,
-                  als."user", 
-                  als.method,
-                  als.address,
-                  als.status,
-                  al."name" as alarm,
-                  u."name" as user_name
-                from alarm_sub als
-                join alarm al on al.id = als.alarm
-                left join "user" u on u.id = als."user"
-                )
+            select distinct b.unnest subsgroup
+            from alarm_sub
+            cross join lateral (select unnest(alarm_sub.groups)) as b
+            order by 1
+            """)
+    async with DatabaseConnection(pconn) as conn:
+        res = await conn.fetch(sql)
+        return [r[0] for r in res]
+
+
+async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
+                        user_name=None, user_name_mask=None, method=None, status=None, address=None,
+                        address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
+    sql = dedent("""\
+            with 
+                res as (
+                    select
+                      als.id,
+                      als.groups,
+                      als."user", 
+                      als.method,
+                      als.address,
+                      als.status,
+                      u."name" as user_name
+                    from alarm_sub als
+                    left join "user" u on u.id = als."user"
+                    ),
+                al as (
+                    select "name", subsgroup
+                    from alarm
+                    )                
             select * from res
             where True
           """)
     async with DatabaseConnection(pconn) as conn:
         params = []
-        if alarm is not None:
-            params.append(alarm)
-            sql += f"and res.alarm = ${len(params)}\n"
-        if alarm_mask is not None:
-            sql += "and " + common.db_helpers.filter2sql(alarm_mask, "res.alarm", params)
-        if seq is not None:
-            params.append(seq)
-            sql += f"and res.seq = ${len(params)}\n"
+        if id is not None:
+            params.append(id)
+            sql += f"and res.id = ${len(params)}\n"
+        if group is not None:
+            params.append(group)
+            sql += f"and res.groups @> array[${len(params)}]::varchar[200][]\n"
+        if group_mask is not None:
+            sql += "and exists (select * from unnest(res.groups) where " + common.db_helpers.filter2sql(group_mask, "unnest", params) + ")"
         if user is not None:
             params.append(user)
             sql += f"and res.user = ${len(params)}\n"
@@ -460,40 +529,34 @@ async def alarmsub_list(credentials, alarm:str = None, alarm_mask=None, seq=None
         if status is not None:
             params.append(status)
             sql += f"and res.status = ${len(params)}\n"
+        if address is not None:
+            params.append(address)
+            sql += f"and res.address = ${len(params)}\n"
+        if address_mask is not None:
+            sql += "and " + common.db_helpers.filter2sql(address_mask, "res.address", params)
+        if alarm is not None:
+            params.append(alarm)
+            sql += f" and exists(select * from al where array[al.subsgroup] <@ res.groups and al.\"name\" = ${len(params)})"
         write_debug_sql("alarmsub_list.sql", sql, *params)
         res = await conn.fetch(sql, *params)
         return [AlarmSub(**dict(r)) for r in res]
 
 
-async def post_alarmsub(credentials, alarmsub:AlarmSub) -> AlarmSub:
+async def post_alarmsub(credentials, alarmsub:AlarmSubIn) -> AlarmSub:
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            alarm_id = get_alarm_id(conn, alarmsub.alarm)
-            if alarm_id is None:
-                raise HTTPException(status_code=404, detail="No record found")
-            sql_check = "select * from alarm_sub where alarm = $1 and seq = $2"
-            pre_db = conn.execute(sql_check, alarm_id, alarmsub.seq)
-            if pre_db:
-                sql_mod = dedent("""\
-                    update alarm_sub
-                    set "user" = $3,
-                        method = $4,
-                        address = $5,
-                        status = $6 
-                    where alarm = $1 and seq = $2
-                    """)
-            else:
-                sql_mod = "insert into alarm_sub (alarm, seq, \"user\", method, address, status)\n" \
-                          "values ($1, $2, $3, $4, $5, $6)"
-            conn.execute(sql_mod, alarm_id, alarmsub.seq, alarmsub.user, alarmsub.method, alarmsub.address, alarmsub.status)
-            res = await alarmsub_list(credentials, alarm=alarmsub.alarm, seq=alarmsub.seq)
+            sql_mod = "insert into alarm_sub (groups, \"user\", method, address, status)\n" \
+                      "values ($1, $2, $3, $4, $5)" \
+                      "returning id"
+            id = (await conn.fetchrow(sql_mod, alarmsub.groups, alarmsub.user, alarmsub.method, alarmsub.address, alarmsub.status))[0]
+            res = await alarmsub_list(credentials, id=id, pconn=conn)
             return res[0]
 
 
-async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
+async def patch_alarmsub(credentials, id, patch: AlarmSubPatchBody):
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            al = await alarmsub_list(credentials, alarm=alarm, seq=seq, pconn=conn)
+            al = await alarmsub_list(credentials, id=id, pconn=conn)
             if len(al) == 0:
                 raise HTTPException(status_code=404, detail="No record found")
             al = al[0]
@@ -509,8 +572,7 @@ async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
             if patch.change.is_empty():
                 return PatchResponse(changed=True)
 
-            alarm_id = al.id
-            params = [alarm_id, seq]
+            params = [id]
             sql = "update alarm_sub\nset\n"
             sep = ""
             if patch.change.status:
@@ -524,9 +586,21 @@ async def patch_alarmsub(credentials, alarm, seq, patch: AlarmSubPatchBody):
             if patch.change.clear_address:
                 sql += f"{sep}\"address\"= null"
                 sep = ",\n"
-            sql += "\nwhere alarm = $1::int and seq = $2"
-            if len(params) > 2:
-                await conn.execute(sql, *params)
+            if any(x is not None for x in (patch.change.add_groups, patch.change.set_groups, patch.change.remove_groups)):
+                groups = set(al.groups)
+                if patch.change.add_groups is not None:
+                    groups.update(patch.change.add_groups)
+                if patch.change.set_groups is not None:
+                    groups = set(patch.change.set_groups)
+                if patch.change.remove_groups is not None:
+                    for ci in patch.change.remove_groups:
+                        groups.discard(ci)
+                groups = sorted(list(groups))
+                params.append(groups)
+                sql += f"{sep}\"groups\"=${len(params)}"
+                sep = ",\n"
+            sql += "\nwhere id = $1::int"
+            await conn.execute(sql, *params)
 
             return PatchResponse(changed=True)
 

@@ -12,7 +12,8 @@ create table "alarm" (
     "window" double precision null, 
     max_freq double precision null,
     last_check timestamp with time zone not NULL,
-    last_report timestamp with time zone NULL
+    last_report timestamp with time zone NULL,
+    subsgroup character varying (200) not null
 ); 
 
 GRANT ALL ON TABLE public."alarm" TO aaa;
@@ -45,15 +46,12 @@ GRANT USAGE, SELECT ON SEQUENCE alarm_cond_id_seq TO postgres;
 
 create table "alarm_sub" (
     id SERIAL PRIMARY KEY,
-    alarm integer not null constraint fk_alarm references "alarm",
-    seq integer not null,
+    groups character varying (200)[] not null,
     "user" character varying (200) null constraint fk_alarm_sub_user references "user", 
     method character varying (200) not null,
     address character varying (200) null,
     status character varying (200) not null
 );
-
-CREATE UNIQUE INDEX idx_alarm_seq ON "alarm_sub" (alarm, seq);
 
 GRANT ALL ON TABLE "alarm_sub" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO aaa;
@@ -96,9 +94,9 @@ delete from "alarm_sub";
 delete from "alarm_cond";
 delete from "alarm";
 
-insert into "alarm" values (5,'al1',200,10,'2021-11-16'::timestamp,null);
+insert into "alarm" values (5,'al1',200,10,'2021-11-16'::timestamp,null,'grp1');
 insert into "alarm_cond" values (1,5,'EVENT','lathe','exec',null,null,null,'=',null,'ACTIVE',null,null);
 insert into "alarm_cond" values (2,5,'EVENT','lathe','pgm' ,null,null,null,'=',null,'ALARMTEST',null,null);
 insert into "alarm_cond" values (3,5,'SAMPLE','lathe','xl',2,null,'avg','>',100,null,null,null);
-insert into "alarm_sub" values (1,5,17,'1','none',null,'active');
+insert into "alarm_sub" values (1,Array['grp1','grp2'],'1','none',null,'active');
 */
