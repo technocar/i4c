@@ -781,7 +781,7 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                     description = "\n\n".join(f'{s.start} - {s.end}\n{textwrap.indent(s.extra, " - ") if s is not None else ""}' for s in total_series)
                     alarm_event_id = (await conn.fetchrow(sql_insert, row_alarm["id"], summary, description))[0]
 
-                    subs = await conn.fetch("select * from alarm_sub where alarm = $1", row_alarm["id"])
+                    subs = await conn.fetch("select * from alarm_sub where groups @> ARRAY[$1]::varchar[200][]", row_alarm["subsgroup"])
                     for sub in subs:
                         sql_r = 'insert into alarm_recipient (event, "user", method, address, "status") values ($1, $2, $3, $4, $5)'
                         await conn.execute(sql_r, alarm_event_id, sub["user"], sub["method"], sub["address"], AlarmRecipientStatus.outbox)
