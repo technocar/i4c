@@ -12,7 +12,7 @@ import common.db_helpers
 from common.debug_helpers import debug_print
 from common.exceptions import I4cInputValidationError
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
-from models import CommonStatusEnum
+from models import CommonStatusEnum, AlarmCondEventRel
 from models.common import PatchResponse
 from fractions import Fraction
 
@@ -98,13 +98,6 @@ class AlarmCondSample(I4cBaseModel):
             raise I4cInputValidationError('aggregate_period or aggregate_count are required')
         return values
 
-
-
-class AlarmCondEventRel(str, Enum):
-    eq = "="
-    neq = "!="
-    contains = "*"
-    not_contains = "!*"
 
 
 class AlarmCondEvent(I4cBaseModel):
