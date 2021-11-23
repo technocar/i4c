@@ -35,7 +35,7 @@ async def list_installation(
 
 @router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="installations", action="patch"))
 async def patch_installation(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/installations/{name}")),
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/installations/{id}")),
     id: int = Path(...),
     patch: models.installations.InstallationPatchBody = Body(...),
 ):

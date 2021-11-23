@@ -14,7 +14,7 @@ insert into role_grant values ('aaa', 'patch/projects/{name}', array[]::varchar[
 
 insert into role_grant values ('aaa', 'post/installations/{project}/{version}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/installations', array[]::varchar[]);
-insert into role_grant values ('aaa', 'patch/installations/{name}', array[]::varchar[]);
+insert into role_grant values ('aaa', 'patch/installations/{id}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/installations/{id}/{savepath:path}', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/projects/{name}/v/{ver}', array[]::varchar[]);
