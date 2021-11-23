@@ -5,7 +5,7 @@ from I4cAPI import I4cApi, I4cApiRouter
 from fastapi import Request
 from common import apicfg
 from common.exceptions import I4cInputValidationError
-from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools, batch, alarm
+from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools, batch, alarm, stat
 import uvicorn
 import common
 
@@ -20,6 +20,7 @@ app.include_router(workpiece.router, prefix="/workpiece", tags=["workpiece"])
 app.include_router(tools.router, prefix="/tools", tags=["tools"])
 app.include_router(batch.router, prefix="/batch", tags=["batch"])
 app.include_router(alarm.router, prefix="/alarm", tags=["alarm"])
+app.include_router(stat.router, prefix="/stat", tags=["stat"])
 
 
 # todo: exception-ök kezelése. Kellene valami saját exception és azt kellene eldobálni. Majd erre kellene írni egy

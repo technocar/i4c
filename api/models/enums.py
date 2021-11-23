@@ -16,6 +16,13 @@ class DeviceAuto(str, Enum):
     robot = "robot"
 
 
+class AlarmCondEventRel(str, Enum):
+    eq = "="
+    neq = "!="
+    contains = "*"
+    not_contains = "!*"
+
+
 class CommonStatusEnum(str, Enum):
     active = "active"
     inactive = "inactive"
