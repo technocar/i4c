@@ -1,4 +1,4 @@
-@import '/src/styles.sass';
+@import '../../../base';
 
 .table-striped tbody tr:nth-of-type(odd) {
   background-color: rgba(0, 0, 0, 0.02);
@@ -9,17 +9,36 @@
 }
 
 .batch {
-  color: black;
+  color: $color-button;
   text-decoration: none;
   cursor: pointer;
 }
 
 .batch:hover {
-  color: $color-event;
+  color: $color-button;
 }
 
 .batch:hover::after {
   content: "▼";
-  margin: 0.25rem 0 0 0.25rem;
   float: right;
+}
+
+.good {
+  background-color: $color-green;
+  color: white;
+}
+
+.bad {
+  background-color: $color-madder_lake;
+  color: white;
+}
+
+.inprogress {
+  background-color: $color-carolina_blue;
+  color: white;
+}
+
+.unknown {
+  background-color: $color-charcoal;
+  color: white;
 }

@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { ApiService, Download, DownloadState } from './services/api.service';
+import { AuthenticationService } from './services/auth.service';
+import { Breadcrumb, BreadcrumbService } from './services/breadcrumb.service';
 import { DownloadService } from './services/download.service';
 
 @Component({
@@ -15,12 +18,26 @@ export class AppComponent {
   downloadError: boolean = false;
   downloadErrorMsg: string = "";
   downloadProgress: number = 0;
+  loggedUserName$: BehaviorSubject<string> = new BehaviorSubject("");
+  isLoggedIn$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  breadcrumbs$: Observable<Breadcrumb[]>;
 
   constructor(
     private router: Router,
     private downloadService: DownloadService,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private authService: AuthenticationService,
+    private breadcrumbService: BreadcrumbService
   ) {
+    authService.currentUser.subscribe(r => {
+      if (r && authService.isAuthenticated()) {
+        this.loggedUserName$.next(r.username);
+        this.isLoggedIn$.next(true);
+      } else {
+        this.isLoggedIn$.next(false);
+        this.loggedUserName$.next("");
+      }
+    });
     this.router.events.subscribe(ev => {
       if (ev instanceof NavigationStart) {
         this.loading = true;
@@ -33,6 +50,8 @@ export class AppComponent {
         this.loading = false;
       }
     });
+
+    this.breadcrumbs$ = breadcrumbService.breadcrumbs$;
 
     downloadService.subscribe(
       (d: Download) => {
@@ -60,5 +79,9 @@ export class AppComponent {
     this.downloadService.cancelDownload();
     this.downloading = false;
     this.downloadProgress = 0;
+  }
+
+  logout() {
+    this.authService.logout();
   }
 }

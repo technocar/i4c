@@ -68,13 +68,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     this.filter();
   }
 
-  statuses = [
-    ['', ' - '],
-    ['good', $localize `:@@workpiece_status_good:Megfelel`],
-    ['bad', $localize `:@@workpiece_status_bad:Selejt`],
-    ['inprogress', $localize `:@@workpiece_status_inprogress:Folyamatban`],
-    ['unknown', $localize `:@@workpiece_status_unknown:Ismeretlen`]
-  ];
+  statuses: string[][] = [];
 
   private selected: string[] = [];
 
@@ -102,8 +96,8 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.statuses = this.apiService.getWorkPieceStatuses();
     this.getBacthes();
-
   }
 
   ngAfterViewInit(): void {

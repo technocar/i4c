@@ -1,87 +1,84 @@
-<div class="container-lg">
-  <app-header></app-header>
-  <div id="base" class="row">
-    <div class="form-group col-6">
-      <label>Munkadarab</label>
-      <label>{{data.id}}</label>
-    </div>
-    <div class="form-group col-6">
-      <label>Munkaszám</label>
-      <label>{{data.batch}}</label>
-    </div>
-    <div class="form-group col-6">
-      <label>Gyártás kezdete</label>
-      <label>{{data.begin_timestamp | date:"yyyy.MM.dd HH:mm:ss"}}</label>
-    </div>
-    <div class="form-group col-6">
-      <label>Gyártás vége</label>
-      <label>{{data.end_timestamp | date:"yyyy.MM.dd HH:mm:ss"}}</label>
-    </div>
-    <div class="form-group col-6">
-      <label>Folyamat</label>
-      <label>{{data.project}}</label>
-    </div>
-    <div class="form-group col-6">
-      <label>Állapot</label>
-      <label>{{data.status}}</label>
-    </div>
+<div id="base" class="row">
+  <div class="form-group col-6">
+    <label>Munkadarab</label>
+    <label>{{data.id}}</label>
   </div>
-  <ngb-accordion #files="ngbAccordion">
-    <ngb-panel title="Fájlok" cardClass="section">
-      <ng-template ngbPanelContent>
-        <a class="d-block" href="#" [routerLink]="" (click)="getFile(file.download_name)" *ngFor="let file of data.files">
-          <i class="bi bi-file-earmark"></i>
-          {{file.download_name}}</a>
-      </ng-template>
-    </ngb-panel>
-  </ngb-accordion>
-  <ngb-accordion #notes="ngbAccordion">
-    <ngb-panel title="Megjegyzések" cardClass="section">
-      <ng-template ngbPanelContent>
-        <div class="mb-2">
-          <button class="btn btn-primary" (click)="showDialog(new_note)">
-            <i class="bi bi-pencil-square"></i>
-            Új megjegyzés
-          </button>
-        </div>
-        <div class="card d-block mb-2" *ngFor="let note of data.notes">
-          <div class="card-body">
-            <h6 class="card-title">{{note.timestamp | date:"yyyy.MM.dd HH:mm"}} {{note.user}}
-              <i *ngIf="!note.deleted" class="bi bi-trash-fill delete-note" (click)="askNoteDelete(confirm_delete_note, note.note_id)"></i>
-            </h6>
-            <h6 class="card-subtitle mb-2 text-muted"><span *ngIf="note.deleted" class="badge badge-danger">törölve</span></h6>
-            <p *ngIf="!note.deleted" class="card-text">{{note.text}}</p>
-            <p *ngIf="note.deleted" class="card-text"><del>{{note.text}}</del></p>
-          </div>
-        </div>
-      </ng-template>
-    </ngb-panel>
-  </ngb-accordion>
-  <ngb-accordion #logs="ngbAccordion">
-    <ngb-panel title="Logok" cardClass="section">
-      <ng-template ngbPanelContent>
-        <table class="col table">
-          <thead>
-            <tr>
-              <th scope="col">időpont</th>
-              <th scope="col">sorszám</th>
-              <th scope="col">típus</th>
-              <th scope="col">megjegyzés</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let log of data.log">
-              <td>{{log.ts}}</td>
-              <td>{{log.seq}}</td>
-              <td>{{log.data}}</td>
-              <td>{{log.text}}</td>
-            </tr>
-          </tbody>
-        </table>
-      </ng-template>
-    </ngb-panel>
-  </ngb-accordion>
+  <div class="form-group col-6">
+    <label>Munkaszám</label>
+    <label>{{data.batch}}</label>
+  </div>
+  <div class="form-group col-6">
+    <label>Gyártás kezdete</label>
+    <label>{{data.begin_timestamp | date:"yyyy.MM.dd HH:mm:ss"}}</label>
+  </div>
+  <div class="form-group col-6">
+    <label>Gyártás vége</label>
+    <label>{{data.end_timestamp | date:"yyyy.MM.dd HH:mm:ss"}}</label>
+  </div>
+  <div class="form-group col-6">
+    <label>Folyamat</label>
+    <label>{{data.project}}</label>
+  </div>
+  <div class="form-group col-6">
+    <label>Állapot</label>
+    <label class="{{data.status}}">{{getStatusDesc(data.status)}}</label>
+  </div>
 </div>
+<ngb-accordion #files="ngbAccordion">
+  <ngb-panel title="Fájlok" cardClass="section">
+    <ng-template ngbPanelContent>
+      <a class="d-block" href="#" [routerLink]="" (click)="getFile(file.download_name)" *ngFor="let file of data.files">
+        <i class="bi bi-file-earmark"></i>
+        {{file.download_name}}</a>
+    </ng-template>
+  </ngb-panel>
+</ngb-accordion>
+<ngb-accordion #notes="ngbAccordion">
+  <ngb-panel title="Megjegyzések" cardClass="section">
+    <ng-template ngbPanelContent>
+      <div class="mb-2">
+        <button class="btn btn-primary" (click)="showDialog(new_note)">
+          <i class="bi bi-pencil-square"></i>
+          Új megjegyzés
+        </button>
+      </div>
+      <div class="card d-block mb-2" *ngFor="let note of data.notes">
+        <div class="card-body">
+          <h6 class="card-title">{{note.timestamp | date:"yyyy.MM.dd HH:mm"}} {{note.user}}
+            <i *ngIf="!note.deleted" class="bi bi-trash-fill delete-note" (click)="askNoteDelete(confirm_delete_note, note.note_id)"></i>
+          </h6>
+          <h6 class="card-subtitle mb-2 text-muted"><span *ngIf="note.deleted" class="badge badge-danger">törölve</span></h6>
+          <p *ngIf="!note.deleted" class="card-text">{{note.text}}</p>
+          <p *ngIf="note.deleted" class="card-text"><del>{{note.text}}</del></p>
+        </div>
+      </div>
+    </ng-template>
+  </ngb-panel>
+</ngb-accordion>
+<ngb-accordion #logs="ngbAccordion">
+  <ngb-panel title="Logok" cardClass="section">
+    <ng-template ngbPanelContent>
+      <table class="col table">
+        <thead>
+          <tr>
+            <th scope="col">időpont</th>
+            <th scope="col">sorszám</th>
+            <th scope="col">típus</th>
+            <th scope="col">megjegyzés</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of data.log">
+            <td>{{log.ts}}</td>
+            <td>{{log.seq}}</td>
+            <td>{{log.data}}</td>
+            <td>{{log.text}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-template>
+  </ngb-panel>
+</ngb-accordion>
 
 <ng-template #new_note let-modal>
   <div class="modal-header">

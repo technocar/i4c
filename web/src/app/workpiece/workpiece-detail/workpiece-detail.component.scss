@@ -1,4 +1,4 @@
-@import '../../../styles.sass';
+@import '../../../base';
 
 .form-group {
   label {
@@ -7,11 +7,28 @@
   }
 
   label:nth-child(1) {
-    color: $color-gray;
+    color: $color-metalic_seaweed;
   }
 }
 
 .delete-note {
   float: right;
-  color: $color-c_fault;
+  color: $color-madder_lake;
+  cursor: pointer;
+}
+
+.good {
+  color: $color-green;
+}
+
+.bad {
+  color: $color-madder_lake;
+}
+
+.inprogress {
+  color: $color-carolina_blue;
+}
+
+.unknown {
+  color: $color-charcoal;
 }

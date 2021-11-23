@@ -80,7 +80,15 @@ export class ApiService {
   private _toolEventTypes: string[][] = [
     ["install_tool", $localize `:@@tools_event_install_tool:Beszerelés`],
     ["remove_tool", $localize `:@@tools_event_remove_tool:Kiszerelés`]
-  ]
+  ];
+
+  private _workpieceStatuses: string[][] = [
+    ['', ' - '],
+    ['good', $localize `:@@workpiece_status_good:Megfelel`],
+    ['bad', $localize `:@@workpiece_status_bad:Selejt`],
+    ['inprogress', $localize `:@@workpiece_status_inprogress:Folyamatban`],
+    ['unknown', $localize `:@@workpiece_status_unknown:Ismeretlen`]
+  ];
 
   constructor(
     private http: HttpClient
@@ -210,6 +218,10 @@ export class ApiService {
     var params = new RequestParams();
     params.add("with_deleted", deleted);
     return this.http.get<WorkPiece>(`${this._apiUrl}/workpiece/${id}`, { params: params.getAll() });
+  }
+
+  getWorkPieceStatuses(): string[][] {
+    return this._workpieceStatuses;
   }
 
   updateWorkPiece(id: string, parameters: WorkPieceUpdate): Observable<UpdateResult> {

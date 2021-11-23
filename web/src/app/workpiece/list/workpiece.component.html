@@ -1,89 +1,87 @@
-<div class="container-lg">
-  <app-header></app-header>
-  <div id="toolbar" class="row align-items-center mb-3 justify-content-between">
-    <div class="custom-control custom-checkbox col-auto ml-2">
-      <input type="checkbox" class="custom-control-input" id="filter_wo_batch" [(ngModel)]="filterWOBatch">
-      <label class="custom-control-label" for="filter_wo_batch">munkaszám nélküliek</label>
-    </div>
-    <div class="btn-group col-auto">
-      <button #add_batch type="button" class="btn btn-outline-primary" (click)="showDialog(new_batch)" [disabled]="!canAddNewBatch()">beállít ({{getSelectedCount()}})</button>
-      <div class="btn-group" ngbDropdown role="group" aria-label="Button group with nested dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle-split" ngbDropdownToggle [disabled]="!canAddNewBatch()"></button>
-        <div class="dropdown-menu" ngbDropdownMenu>
-          <button ngbDropdownItem *ngFor="let item of batches$ | async" (click)="confirmBatchUpdate(confirm_set_batch, item)">{{item.batch}}</button>
-        </div>
+
+<div id="toolbar" class="row align-items-center mb-3 justify-content-between">
+  <div class="custom-control custom-checkbox col-auto ml-2">
+    <input type="checkbox" class="custom-control-input" id="filter_wo_batch" [(ngModel)]="filterWOBatch">
+    <label class="custom-control-label" for="filter_wo_batch">munkaszám nélküliek</label>
+  </div>
+  <div class="btn-group col-auto">
+    <button #add_batch type="button" class="btn btn-outline-primary" (click)="showDialog(new_batch)" [disabled]="!canAddNewBatch()">beállít ({{getSelectedCount()}})</button>
+    <div class="btn-group" ngbDropdown role="group" aria-label="Button group with nested dropdown">
+      <button class="btn btn-outline-primary dropdown-toggle-split" ngbDropdownToggle [disabled]="!canAddNewBatch()"></button>
+      <div class="dropdown-menu" ngbDropdownMenu>
+        <button ngbDropdownItem *ngFor="let item of batches$ | async" (click)="confirmBatchUpdate(confirm_set_batch, item)">{{item.batch}}</button>
       </div>
     </div>
   </div>
-  <div id="list" class="row">
-    <table class="table table-striped table-hover">
-      <thead>
+</div>
+<div id="list" class="row">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>&nbsp;</th>
+        <th><input class="form-control" [(ngModel)]="filterId" (change)="filter()" (keyup.enter)="filter()" /></th>
+        <th>
+          <div class="input-group">
+            <input class="form-control" placeholder="yyyy-mm-dd" name="dp" [(ngModel)]="filterDate" ngbDatepicker #d="ngbDatepicker">
+            <div class="input-group-append">
+              <button class="btn btn-outline-secondary" (click)="d.toggle()" type="button">
+                <i class="bi bi-calendar3"></i>
+              </button>
+            </div>
+          </div>
+        </th>
+        <th><ctrl-filter #filterProjectCtrl (valueChange)="filterProject = $event"></ctrl-filter></th>
+        <th><select class="form-control" [(ngModel)]="filterStatus" (change)="filter()">
+          <option *ngFor="let status of statuses" value="{{status[0]}}">{{status[1]}}</option>
+        </select></th>
+        <th><ctrl-filter #filterBatchCtrl (valueChange)="filterBatch = $event"></ctrl-filter></th>
+        <th>&nbsp;</th>
+      </tr>
+      <tr>
+        <th scope="col">
+          <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="select_all_workpieces" [ngModel]="isAllSelected" (change)="selectAll()">
+            <label class="custom-control-label" for="select_all_workpieces">&nbsp;</label>
+          </div>
+        </th>
+        <th scope="col" class="text-center">szám</th>
+        <th scope="col" class="text-center">elkészült</th>
+        <th scope="col" class="text-center">folyamat</th>
+        <th scope="col" class="text-center">állapot</th>
+        <th scope="col" class="text-center">munkaszám</th>
+        <th scope="col" class="text-center">&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-template [ngIf]="fetchingList$ | async">
         <tr>
-          <th>&nbsp;</th>
-          <th><input class="form-control" [(ngModel)]="filterId" (change)="filter()" (keyup.enter)="filter()" /></th>
-          <th>
-            <div class="input-group">
-              <input class="form-control" placeholder="yyyy-mm-dd" name="dp" [(ngModel)]="filterDate" ngbDatepicker #d="ngbDatepicker">
-              <div class="input-group-append">
-                <button class="btn btn-outline-secondary" (click)="d.toggle()" type="button">
-                  <i class="bi bi-calendar3"></i>
-                </button>
+          <td colspan="7">
+            <div class="d-flex justify-content-center">
+              <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
               </div>
             </div>
-          </th>
-          <th><ctrl-filter #filterProjectCtrl (valueChange)="filterProject = $event"></ctrl-filter></th>
-          <th><select class="form-control" [(ngModel)]="filterStatus" (change)="filter()">
-            <option *ngFor="let status of statuses" value="{{status[0]}}">{{status[1]}}</option>
-          </select></th>
-          <th><ctrl-filter #filterBatchCtrl (valueChange)="filterBatch = $event"></ctrl-filter></th>
-          <th>&nbsp;</th>
+          </td>
         </tr>
-        <tr>
-          <th scope="col">
+      </ng-template>
+      <ng-template [ngIf]="!(fetchingList$ | async)">
+        <tr *ngFor="let item of workPieces$ | async; index as i">
+          <td>
             <div class="custom-control custom-checkbox">
-              <input type="checkbox" class="custom-control-input" id="select_all_workpieces" [ngModel]="isAllSelected" (change)="selectAll()">
-              <label class="custom-control-label" for="select_all_workpieces">&nbsp;</label>
+              <input type="checkbox" class="custom-control-input" id="select_{{i}}" [ngModel]="item.selected" (change)="select(item)">
+              <label class="custom-control-label" for="select_{{i}}">&nbsp;</label>
             </div>
-          </th>
-          <th scope="col" class="text-center">szám</th>
-          <th scope="col" class="text-center">elkészült</th>
-          <th scope="col" class="text-center">folyamat</th>
-          <th scope="col" class="text-center">állapot</th>
-          <th scope="col" class="text-center">munkaszám</th>
-          <th scope="col" class="text-center">&nbsp;</th>
+          </td>
+          <td class="text-center">{{item.id}}</td>
+          <td class="text-center">{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
+          <td class="text-center">{{item.project}}</td>
+          <td class="text-center"><span class="badge {{item.status}}">{{getStatusDesc(item.status)}}</span></td>
+          <td class="text-center batch" [ngbPopover]="batch_list" [placement]="'bottom-left'" [container]="'body'" [popoverClass]="'menu-context'">{{item.batch}}</td>
+          <td class="text-center"><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
         </tr>
-      </thead>
-      <tbody>
-        <ng-template [ngIf]="fetchingList$ | async">
-          <tr>
-            <td colspan="7">
-              <div class="d-flex justify-content-center">
-                <div class="spinner-border" role="status">
-                  <span class="sr-only">Loading...</span>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template [ngIf]="!(fetchingList$ | async)">
-          <tr *ngFor="let item of workPieces$ | async; index as i">
-            <td>
-              <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="select_{{i}}" [ngModel]="item.selected" (change)="select(item)">
-                <label class="custom-control-label" for="select_{{i}}">&nbsp;</label>
-              </div>
-            </td>
-            <td class="text-center">{{item.id}}</td>
-            <td class="text-center">{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
-            <td class="text-center">{{item.project}}</td>
-            <td class="text-center">{{getStatusDesc(item.status)}}</td>
-            <td class="text-center batch" [ngbPopover]="batch_list" [placement]="'bottom-left'" [container]="'body'" [popoverClass]="'menu-context'">{{item.batch}}</td>
-            <td class="text-center"><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
-          </tr>
-        </ng-template>
-      </tbody>
-    </table>
-  </div>
+      </ng-template>
+    </tbody>
+  </table>
 </div>
 
 <ng-template #batch_list>

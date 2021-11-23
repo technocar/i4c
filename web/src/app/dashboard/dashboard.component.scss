@@ -1,4 +1,4 @@
-@import '../../styles.sass';
+@import '../../base';
 
 #loading {
   .loading-container {
@@ -10,27 +10,23 @@
   }
 }
 
-#header {
+#navs {
   background-color: white;
-  .toolbar {
-    margin-bottom: 0.5rem;
-    box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
+
+  > span,
+  > a {
+    font-size: 1.5rem;
+    cursor: pointer;
   }
-  #navs {
-    > .row > span,
-    > .row > a {
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
 
-    > .row > span:hover {
-      color: $color-event;
-      font-weight: bold;
-    }
+  > span:hover {
+    color: $color-button_hover;
+    font-weight: bold;
+  }
 
-    .row > span.selected {
-      color: rgb(255, 79, 246);
-    }
+  > span.selected {
+    color: $color-carolina_blue;
   }
 
   #nav_list,
@@ -49,7 +45,7 @@
   }
 
   #timestamp:hover {
-    color: $color-event;
+    color: $color-button_hover;
     cursor: pointer;
   }
 }
@@ -78,10 +74,10 @@
   .step {
     font-size: 1.6rem;
     position: absolute;
-    right: -22px;
+    right: -16px;
     cursor: pointer;
     z-index: 99;
-    color: black;
+    color: $color-button;
   }
 
   .step.before {
@@ -93,7 +89,7 @@
   }
 
   .step:hover {
-    color: $color-hover;
+    color: $color-button_hover;
   }
 
   @mixin type($color, $type) {

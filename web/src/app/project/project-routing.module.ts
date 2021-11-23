@@ -5,7 +5,7 @@ import { ProjectComponent } from './project.component';
 import { ProjectResolver } from './project.resolver';
 
 const routes: Routes = [
-  { path: '', component: ProjectComponent, canActivate: [AuthGuard], resolve: { data: ProjectResolver } }
+  { path: '', component: ProjectComponent, canActivate: [AuthGuard], resolve: { data: ProjectResolver }, data: { breadcrumb: "Telepítés" } }
 ];
 
 @NgModule({

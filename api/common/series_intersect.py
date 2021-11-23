@@ -1,22 +1,24 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Any
 
 
 class TimePeriod:
     """ representing an [start, end) intervall """
-    __slots__ = ['start', 'end']
+    __slots__ = ['start', 'end', 'extra']
     start: Optional[datetime]
     end: Optional[datetime]
+    extra: Any
 
-    def __init__(self, start:Optional[datetime] = None, end:Optional[datetime] = None):
+    def __init__(self, start:Optional[datetime] = None, end:Optional[datetime] = None, extra=None):
         self.start = start
         self.end = end
+        self.extra = extra
 
     def __str__(self):
-        return f"{self.start} - {self.end}"
+        return f"{self.start} - {self.end} - {self.extra}"
 
     def __repr__(self):
-        return f"TimePeriod({self.start!r}, {self.end!r})"
+        return f"TimePeriod({self.start!r}, {self.end!r}, {self.extra!r})"
 
 
     def is_timestamp_in(self, p: Optional[datetime]):
@@ -28,6 +30,25 @@ class TimePeriod:
             if p is not None and (self.end <= p):
                 return False
         return True
+
+
+class SeriesIterator:
+    """
+    :type _s: Series
+    """
+    def __init__(self, s):
+        """
+        :param s: Series
+        """
+        self._s = s
+        self._index = 0
+
+    def __next__(self):
+        if self._index < len(self._s):
+            res = self._s[self._index]
+            self._index += 1
+            return res
+        raise StopIteration
 
 
 class Series:
@@ -45,6 +66,12 @@ class Series:
 
     def __len__(self):
         return len(self._items)
+
+    def __getitem__(self, item):
+        return self._items[item]
+
+    def __iter__(self):
+        return SeriesIterator(self)
 
     def add(self, tnew:TimePeriod):
 
@@ -84,15 +111,24 @@ class Series:
         self._items.insert(idx, tnew)
 
     @staticmethod
-    def intersect(s1, s2):
+    def intersect(s1, s2, merge_extra=None):
         """
         :type s1: Series
         :type s2: Series
+        :type merge_extra
         :rtype Series
         """
         res = Series()
         if len(s1._items) == 0 or len(s2._items) == 0:
             return res
+
+        if merge_extra is None:
+            def merge_extra(x,y):
+                if x is None:
+                    return y
+                if y is None:
+                    return x
+                return "\n".join((x,y))
 
         i1, i2 = 0,0
         item1 = s1._items[i1]  # type: TimePeriod
@@ -104,6 +140,7 @@ class Series:
             min(item1.start, item2.start)
 
         intervall_start = None
+        intervall_extra = None
         intervall_started = False
         while True:
             item1 = s1._items[i1]  # type: TimePeriod
@@ -112,10 +149,11 @@ class Series:
             if item1.is_timestamp_in(p) and item2.is_timestamp_in(p):
                 if not intervall_started:
                     intervall_started = True
+                    intervall_extra = merge_extra(item1.extra, item2.extra)
                     intervall_start = p
             else:
                 if intervall_started:
-                    res._items.append(TimePeriod(intervall_start, p))
+                    res._items.append(TimePeriod(intervall_start, p, intervall_extra))
                     intervall_started = False
 
             if item1.end == p:
@@ -131,8 +169,17 @@ class Series:
             item1 = s1._items[i1]  # type: TimePeriod
             item2 = s2._items[i2]  # type: TimePeriod
 
-            p = min(i for i in (item1.start, item1.end, item2.start, item2.end) if i is not None and (p is None or i > p))
+            p = min((i for i in (item1.start, item1.end, item2.start, item2.end) if i is not None and (p is None or i > p)), default=None)
+            if p is None:
+                break
 
         if intervall_started:
-            res._items.append(TimePeriod(intervall_start, None))
+            res._items.append(TimePeriod(intervall_start, None, intervall_extra))
         return res
+
+    def is_timestamp_in(self,p: Optional[datetime]):
+        """ p = None => p = -inf """
+        for i in self._items:
+            if i.is_timestamp_in(p):
+                return True
+        return False

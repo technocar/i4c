@@ -1,4 +1,4 @@
-@import '/src/styles.sass';
+@import '/src/base';
 
 a:hover {
   text-decoration: none;
@@ -19,24 +19,30 @@ h5 {
 
 .card.dashboard {
   h5 {
-    color: rgb(95, 8, 122);
+    color: $color-metalic_seaweed;
   }
 }
 
 .card.batch {
   h5 {
-    color: $color-sample;
+    color: black;
   }
 }
 
 .card.analyses {
   h5 {
-    color: $color-c_normal;
+    color: $color-indigo_dye;
   }
 }
 
 .card.install {
   h5 {
-    color: $color-c_warning;
+    color: $color-madder_lake;
+  }
+}
+
+.card.tools {
+  h5 {
+    color: $color-alloy_orange;
   }
 }

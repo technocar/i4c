@@ -1110,7 +1110,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/defs?name_mask=a&report_after=2021-11-15T15:53:11.123456Z",
+							"raw": "localhost:5000/alarm/defs?name_mask=a",
 							"host": [
 								"localhost"
 							],
@@ -1126,7 +1126,8 @@
 								},
 								{
 									"key": "report_after",
-									"value": "2021-11-15T15:53:11.123456Z"
+									"value": "2021-11-15T15:53:11.123456Z",
+									"disabled": true
 								}
 							]
 						}
@@ -1140,7 +1141,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"string\",\r\n        \"data_id\": \"string\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0,\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0\r\n}",
+							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"condition\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"ct\",\r\n        \"value\": \"Normal\",\r\n        \"age_min\": 9\r\n      }\r\n    },\r\n    {\r\n      \"event\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"exec\",\r\n        \"rel\": \"=\",\r\n        \"value\": \"READY\",\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    },\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"cf\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1163,13 +1164,13 @@
 					"response": []
 				},
 				{
-					"name": "alarmsub put",
+					"name": "alarmsub post",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"alarm\": 5,\r\n    \"seq\": 17,\r\n    \"user\": \"1\",\r\n    \"method\": \"none\",\r\n    \"address\": null,\r\n    \"status\": \"active\"\r\n}",
+							"raw": "{\r\n    \"groups\": [\"grp1\", \"grp2\"],\r\n    \"user\": \"1\",\r\n    \"method\": \"none\",\r\n    \"address\": null,\r\n    \"status\": \"active\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1196,7 +1197,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/subs?user_name_mask=teszt",
+							"raw": "localhost:5000/alarm/subs?user_name_mask=teszt&group=grp1&group_mask=p2",
 							"host": [
 								"localhost"
 							],
@@ -1209,6 +1210,14 @@
 								{
 									"key": "user_name_mask",
 									"value": "teszt"
+								},
+								{
+									"key": "group",
+									"value": "grp1"
+								},
+								{
+									"key": "group_mask",
+									"value": "p2"
 								}
 							]
 						}
@@ -1221,7 +1230,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/subs/5/17",
+							"raw": "localhost:5000/alarm/subs/7",
 							"host": [
 								"localhost"
 							],
@@ -1229,8 +1238,7 @@
 							"path": [
 								"alarm",
 								"subs",
-								"5",
-								"17"
+								"7"
 							]
 						}
 					},
@@ -1243,7 +1251,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"inactive\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"inactive\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"active\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"active\",\r\n        \"add_groups\": [\"grp3\"]\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1251,7 +1259,7 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/alarm/subs/5/17",
+							"raw": "localhost:5000/alarm/subs/7",
 							"host": [
 								"localhost"
 							],
@@ -1259,8 +1267,7 @@
 							"path": [
 								"alarm",
 								"subs",
-								"5",
-								"17"
+								"7"
 							]
 						}
 					},
@@ -1293,6 +1300,168 @@
 									"value": "12",
 									"disabled": true
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmsubs subsgroups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/subsgroups",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"subsgroups"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmevent list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/events?user_name_mask=teszt",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"events"
+							],
+							"query": [
+								{
+									"key": "user_name_mask",
+									"value": "teszt"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmevent get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/events/2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"events",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmrecips list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/recips?user_name_mask=teszt",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"recips"
+							],
+							"query": [
+								{
+									"key": "user_name_mask",
+									"value": "teszt"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmrecips get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/alarm/recips/2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"recips",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "alarmrecipient patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"sent\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"outbox\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/alarm/recips/2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"alarm",
+								"recips",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "stat",
+			"item": [
+				{
+					"name": "stat list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/stat/def",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def"
 							]
 						}
 					},

@@ -41,7 +41,10 @@ def param2sql_type(p):
 def debug_sql_replace(sql, *params):
     def p(match):
         idx = int(match.group("num")) - 1
-        p = params[idx]
+        if idx < len(params):
+            p = params[idx]
+        else:
+            p = "**** Missing param ****"
         return param2sql_str(p) + match.group("rem")
 
     regex = r"([$](?P<num>\d+))(?P<rem>\D|$)"
