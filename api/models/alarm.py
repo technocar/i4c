@@ -400,7 +400,7 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
                            select 
-                             "id", "name", max_freq, last_check, last_report, "group"
+                             "id", "name", max_freq, last_check, last_report, "subsgroup"
                            from "alarm"
                            where "name" = $1
                            """)
@@ -455,13 +455,14 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
                                                                       value=r["value_text"],
                                                                       age_min=r["age_min"])))
 
+        subs = await alarmsub_list(credentials, group=idr["subsgroup"], pconn=conn)
         return AlarmDef(id=idr["id"],
                         name=idr["name"],
                         conditions=conds,
                         max_freq=idr["max_freq"],
                         last_check=idr["last_check"],
                         last_report=idr["last_report"],
-                        subs=alarmsub_list(credentials, group=idr["group"], pconn=conn)
+                        subs=subs
                         )
 
 
