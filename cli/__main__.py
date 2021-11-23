@@ -214,115 +214,23 @@ def make_callback(**outer_args):
     return f
 
 
-def follow_ref(apidef, ref):
-    path_items = ref.split("/")
-    if path_items[0] == "#":
-        sch = apidef
-        for path_item in path_items[1:]:
-            sch = sch[path_item]
-        return sch
-    else:
-        return None
-
-
-def get_data_type(apidef, param, *, all_fields=True):
-    """
-    Take an openapi def and a parameter definition, and extracts data type information. Returns a dict with the
-    extracted information.
-
-    :param apidef: openapi dict
-    :param param: parameter, body property, schema, or object reference
-    :param all_fields: fill in all the fields, even if not found in the definition
-    :return: a dict with the following members: required, title, default, is_array, data_type, value_list
-    """
-
-    if all_fields:
-        res = dict(required=False, title=None, default=None, is_array=False, data_type=None, value_list=None)
-    else:
-        res = {}
-
-    if "allOf" in param:
-        for i in param["allOf"]:
-            temp = get_data_type(apidef, i, all_fields=False)
-            res.update(temp)
-
-    if "$ref" in param:
-        ref = param["$ref"]
-        sch = follow_ref(apidef, ref)
-        if sch:
-            temp = get_data_type(apidef, sch, all_fields=False)
-            res.update(temp)
-        else:
-            log.warning("param $ref to external doc, not following")
-            # TODO we need fallback
-
-    if "schema" in param:
-        temp = get_data_type(apidef, param["schema"], all_fields=False)
-        res.update(temp)
-
-    if "type" in param:
-        param_type = param["type"]
-
-        if param_type == "array":
-            res["is_array"] = True
-            if "items" in param:
-                temp = get_data_type(apidef, param["items"], all_fields=False)
-                res.update(temp)
-        else:
-            res["data_type"] = param_type
-
-        if "enum" in param:
-            res["value_list"] = param["enum"]
-
-    if "description" in param:
-        res["description"] = param["description"]
-    if "title" in param:
-        res["title"] = param["title"]
-    if "default" in param:
-        res["default"] = param["default"]
-    if "required" in param:
-        res["required"] = param["required"]
-
-    return res
-
-
-def dig(d, path):
-    enum = (i for i in path)
-    while d is not None:
-        fld = next(enum, None)
-        if fld is None:
-            return d
-        d = d.get(fld, None)
-    return None
-
-
-def make_commands(api_def):
+def make_commands(api_def: I4CDef):
     """
     Make click Groups and Commands based on command_mapping, which is derived from openapi.json
     """
 
-    for (obj, actions) in api_def.command_mapping.items():
-        if len(actions) == 1:
+    for (obj_name, obj) in api_def.objects.items():
+        if len(obj.actions) == 1:
             grp = top_grp
         else:
             # TODO get description for the object
             # openapi/rest does not have a concept of objects, thus we need some custom data
             help = f"Command group for managing {obj} data."
-            grp = click.Group(obj, help=help)
+            grp = click.Group(obj_name, help=help)
             top_grp.add_command(grp)
-        for (act, (path, method, info)) in actions.items():
-            title = info.get("title", None)
-
-            desc = info.get("description", None)
-            resp = dig(info, ["responses", "200", "content", "application/json", "schema"])
-            if resp:
-                if "$ref" in resp:
-                    _, _, cls = resp["$ref"].rpartition("/")
-                else:
-                    cls = act.capitalize() + obj.capitalize() + "Response" # TODO doc command does not understand this
-                desc = f"{desc} Returns a {cls} object. Use the `doc {cls}` command to get details."
-
-            help = "\n\n".join(filter(None, [title, desc, f"Calls {method.upper()} {path}"]))
+            
+        for (action_name, action) in obj.actions.items():
+            # , (path, method, info)
 
             params = []
             for param in info.get("parameters", []):
@@ -407,7 +315,7 @@ def make_commands(api_def):
                     help="Output file name. If omitted or -, stdout is used."))
 
             callback = make_do(path=path, method=method, ep=info)
-            cmd_name = act if len(actions) > 1 else obj
+            cmd_name = action_name if len(actions) > 1 else obj_name
             cmd = click.Command(cmd_name, callback=callback, params=params, help=help)
             grp.add_command(cmd)
 
