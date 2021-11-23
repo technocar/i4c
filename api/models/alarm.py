@@ -199,6 +199,7 @@ class AlarmCondId(AlarmCond):
 class AlarmDefIn(I4cBaseModel):
     conditions: List[AlarmCond]
     max_freq: Optional[float] = Field(None, description="sec")
+    subsgroup: str
 
 
 class AlarmMethod(str, Enum):
@@ -462,6 +463,7 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
                         max_freq=idr["max_freq"],
                         last_check=idr["last_check"],
                         last_report=idr["last_report"],
+                        subsgroup=idr["subsgroup"],
                         subs=subs
                         )
 
@@ -473,21 +475,23 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
             new_last_check = datetime.now()
             if old_alarm is None:
                 sql_insert = dedent("""\
-                    insert into alarm (name, max_freq, last_check) values ($1, $2, $3)
+                    insert into alarm (name, max_freq, last_check, subsgroup) values ($1, $2, $3, $4)
                     returning id
                     """)
-                alarm_id = (await conn.fetchrow(sql_insert, name, alarm.max_freq, new_last_check))[0]
+                alarm_id = (await conn.fetchrow(sql_insert, name, alarm.max_freq, new_last_check, alarm.subsgroup))[0]
                 old_alarm = AlarmDef(
                         id=alarm_id,
                         name=name,
                         conditions=[],
                         max_freq=alarm.max_freq,
                         last_check=new_last_check,
-                        last_report=None
+                        last_report=None,
+                        subsgroup=alarm.subsgroup,
+                        subs=await alarmsub_list(credentials, group=alarm.subsgroup, pconn=conn)
                         )
             else:
-                sql_update = "update alarm set max_freq = $2, last_check = $3 where name = $1"
-                await conn.execute(sql_update, name, alarm.max_freq, new_last_check)
+                sql_update = "update alarm set max_freq = $2, last_check = $3, subsgroup = $4 where name = $1"
+                await conn.execute(sql_update, name, alarm.max_freq, new_last_check, alarm.subsgroup)
                 old_alarm.last_check = new_last_check
 
             nc = alarm.conditions
