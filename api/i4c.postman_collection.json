@@ -1279,7 +1279,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/events/check",
+							"raw": "localhost:5000/alarm/events/check?alarm=coolant-while-cutting",
 							"host": [
 								"localhost"
 							],
@@ -1299,6 +1299,10 @@
 									"key": "max_count",
 									"value": "12",
 									"disabled": true
+								},
+								{
+									"key": "alarm",
+									"value": "coolant-while-cutting"
 								}
 							]
 						}
