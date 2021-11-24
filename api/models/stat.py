@@ -453,3 +453,29 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
                 # todo: update xydef
 
             return PatchResponse(changed=True)
+
+
+class StatTimeseriesDataSeries(I4cBaseModel):
+    name: str
+    x: List[datetime]
+    y: List[float]
+
+
+class StatTimeseriesData(I4cBaseModel):
+    stat_def: StatDef
+    series: List[StatTimeseriesDataSeries]
+
+
+class StatXYData(I4cBaseModel):
+    # todo 1: **********
+    pass
+
+
+class StatData(I4cBaseModel):
+    timeseriesdata: Optional[StatTimeseriesData]
+    xydata: Optional[StatXYData]
+
+
+async def statdata_get(credentials, id) -> StatData:
+    # todo 1: **********
+    return StatData()

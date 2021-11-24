@@ -1503,6 +1503,26 @@
 					"response": []
 				},
 				{
+					"name": "stat get Copy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/stat/def/-1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"-1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "stat post",
 					"request": {
 						"method": "POST",
