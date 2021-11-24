@@ -10,6 +10,7 @@ import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 import isodate
 from models import AlarmCondEventRel
+from models.common import PatchResponse
 
 
 class StatUser(I4cBaseModel):
@@ -55,6 +56,7 @@ class StatTimeseriesFilter(I4cBaseModel):
         await conn.execute(sql_insert, ts_id,
                            self.device, self.data_id, self.rel,
                            self.value, self.age_min, self.age_max)
+
 
 class StatTimeseriesMetric(I4cBaseModel):
     """ category="SAMPLE" only """
@@ -135,9 +137,9 @@ class StatTimeseriesDef(I4cBaseModel):
             raise ValueError('agg_func and agg_sep both must be present or ommited')
         return values
 
-    async def insert_to_db(self, def_id, conn):
+    async def insert_to_db(self, stat_id, conn):
         sql_insert = dedent("""\
-            insert into stat_timeseries (stat,
+            insert into stat_timeseries (id,
                                          after, before, duration,
                                          metric_device, metric_data_id, agg_func,
                                          agg_sep_device, agg_sep_data_id, series_sep_device,
@@ -147,21 +149,57 @@ class StatTimeseriesDef(I4cBaseModel):
                    $5, $6, $7, 
                    $8, $9, $10, 
                    $11, $12
-            returning id
             """)
-        id = (await conn.fetchrow(sql_insert, def_id,
-                           self.after, self.before, self.duration,
-                           self.metric.device, self.metric.data_id, self.agg_func,
-
-                           self.agg_sep.device if self.agg_sep is not None else None,
-                           self.agg_sep.data_id if self.agg_sep is not None else None,
-                           self.series_sep.device if self.series_sep is not None else None,
-
-                           self.series_sep.data_id if self.series_sep is not None else None,
-                           self.xaxis))[0]
+        await conn.execute(sql_insert, stat_id, *self.get_sql_params())
 
         for f in self.filter:
-            await f.insert_to_db(id, conn)
+            await f.insert_to_db(stat_id, conn)
+
+    def get_sql_params(self):
+        return [self.after, self.before, self.duration,
+                self.metric.device, self.metric.data_id, self.agg_func,
+
+                self.agg_sep.device if self.agg_sep is not None else None,
+                self.agg_sep.data_id if self.agg_sep is not None else None,
+                self.series_sep.device if self.series_sep is not None else None,
+
+                self.series_sep.data_id if self.series_sep is not None else None,
+                self.xaxis]
+
+
+    async def update_to_db(self, stat_id, new_state, conn):
+        """
+        :param stat_id:
+        :param new_state: StatTimeseriesDef
+        :param conn:
+        :return:
+        """
+        sql_update = dedent("""\
+            update stat_timeseries
+            set
+              after=$2,
+              before=$3,
+              duration=$4::varchar(200)::interval,
+              
+              metric_device=$5,
+              metric_data_id=$6,
+              agg_func=$7,
+              
+              agg_sep_device=$8,
+              agg_sep_data_id=$9,
+              series_sep_device=$10,
+              
+              series_sep_data_id=$11,
+              xaxis=$12
+            where id = $1
+            """)
+        await conn.execute(sql_update, stat_id, *new_state.get_sql_params())
+
+        for f in self.filter:
+            # todo: *****************
+            # await f.insert_to_db(stat_id, conn)
+            pass
+
 
     @classmethod
     def get_visualsettings(cls):
@@ -269,7 +307,7 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                       st.xaxis as st_xaxis  
                     from stat s
                     join "user" u on u.id = s."user"
-                    left join "stat_timeseries" st on st.stat = s."id"
+                    left join "stat_timeseries" st on st."id" = s."id"
                     )                
             select * from res
             where True
@@ -300,6 +338,7 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                 if d["st_id"] is not None:
                     d["st_filter"] = await StatTimeseriesFilter.load_filters(conn, d["st_id"])
                     timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_')
+                # todo: xydef
                 res.append(StatDef(**d,timeseriesdef=timeseriesdef))
             return res
 
@@ -337,10 +376,63 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
 
 async def stat_delete(credentials, id):
     async with DatabaseConnection() as conn:
-        sql = "delete from stat where id = $1"
-        await conn.execute(sql, id)
+        async with conn.transaction(isolation='repeatable_read'):
+            st = await stat_list(credentials, id=id, pconn=conn)
+            if len(st) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            st = st[0]
+
+            if st.user != credentials.user_id:
+                if 'delete any' not in credentials.info_features:
+                    raise HTTPException(status_code=400, detail="Unable to delete other's statistics")
+
+            sql = "delete from stat where id = $1"
+            await conn.execute(sql, id)
 
 
 async def stat_patch(credentials, id, patch:StatPatchBody):
-    # todo 1: **********
-    pass
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            st = await stat_list(credentials, id=id, pconn=conn)
+            if len(st) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            st = st[0]
+
+            if st.user != credentials.user_id:
+                if 'patch any' not in credentials.info_features:
+                    raise HTTPException(status_code=400, detail="Unable to modify other's statistics")
+
+            match = True
+            for cond in patch.conditions:
+                match = cond.match(st)
+                if not match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+
+            params = [id]
+            sql = "update stat\nset\nmodified=now()"
+            if patch.change.shared is not None:
+                params.append(patch.change.shared)
+                sql += f",\nshared = ${len(params)}::boolean"
+            sql += "\nwhere id = $1"
+            await conn.execute(sql, *params)
+
+            if patch.change.timeseriesdef is not None:
+                if st.xydef is not None:
+                    # todo: clear xydef
+                    pass
+                if st.timeseriesdef is not None:
+                    await st.timeseriesdef.update_to_db(st.id, patch.change.timeseriesdef, conn)
+                else:
+                    await patch.change.timeseriesdef.insert_to_db(st.id, conn)
+
+            if patch.change.xydef is not None:
+                if st.timeseriesdef is not None:
+                    conn.execute('delete from stat_timeseries where "id" = $1', st.id)
+                # todo: update xydef
+
+            return PatchResponse(changed=True)

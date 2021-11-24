@@ -20,8 +20,7 @@ GRANT ALL ON TABLE public."stat" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_id_seq TO postgres;
 
 create table "stat_timeseries" (
-    id SERIAL PRIMARY KEY,
-    stat integer not null constraint fk_pv references "stat" on delete cascade,
+    id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
     
     after timestamp with time zone NULL,
     before timestamp with time zone NULL,
@@ -38,9 +37,7 @@ create table "stat_timeseries" (
 
 
 GRANT ALL ON TABLE public."stat_timeseries" TO aaa;
-GRANT USAGE, SELECT ON SEQUENCE stat_timeseries_id_seq TO aaa;
 GRANT ALL ON TABLE public."stat_timeseries" TO postgres;
-GRANT USAGE, SELECT ON SEQUENCE stat_timeseries_id_seq TO postgres;
 
 create table "stat_timeseries_filter" (
     id SERIAL PRIMARY KEY,
@@ -65,6 +62,6 @@ delete from "stat_timeseries";
 delete from "stat";
 
 insert into "stat" values (-1, 'stat1', '1', false , now());
-insert into "stat_timeseries" values (-1, -1, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, 'timestamp');
+insert into "stat_timeseries" values (-1, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, 'timestamp');
 insert into "stat_timeseries_filter" values (-1, -1, 'lathe', 'pgm', '*', 'a', null, null);
 */
