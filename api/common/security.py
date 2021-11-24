@@ -9,6 +9,7 @@ basic_security = HTTPBasic()
 
 
 class CredentialsAndFeatures(HTTPBasicCredentials):
+    user_id: str
     info_features: Set[str]
 
 
@@ -47,4 +48,4 @@ class security_checker:
                 detail="Authentication failed",
                 headers={"WWW-Authenticate": "Basic"})
 
-        return CredentialsAndFeatures(username=credentials.username, password=credentials.password, info_features=info_features)
+        return CredentialsAndFeatures(user_id=uid, username=credentials.username, password=credentials.password, info_features=info_features)
