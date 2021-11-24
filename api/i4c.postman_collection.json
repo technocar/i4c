@@ -1141,7 +1141,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"condition\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"ct\",\r\n        \"value\": \"Normal\",\r\n        \"age_min\": 9\r\n      }\r\n    },\r\n    {\r\n      \"event\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"exec\",\r\n        \"rel\": \"=\",\r\n        \"value\": \"READY\",\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    },\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"cf\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0\r\n}",
+							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"condition\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"ct\",\r\n        \"value\": \"Normal\",\r\n        \"age_min\": 9\r\n      }\r\n    },\r\n    {\r\n      \"event\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"exec\",\r\n        \"rel\": \"=\",\r\n        \"value\": \"READY\",\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    },\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"cf\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0,\r\n  \"subsgroup\": \"grp1\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1149,7 +1149,7 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/alarm/defs/al1",
+							"raw": "localhost:5000/alarm/defs/al2",
 							"host": [
 								"localhost"
 							],
@@ -1157,7 +1157,7 @@
 							"path": [
 								"alarm",
 								"defs",
-								"al1"
+								"al2"
 							]
 						}
 					},
@@ -1279,7 +1279,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/events/check",
+							"raw": "localhost:5000/alarm/events/check?alarm=coolant-while-cutting",
 							"host": [
 								"localhost"
 							],
@@ -1299,6 +1299,10 @@
 									"key": "max_count",
 									"value": "12",
 									"disabled": true
+								},
+								{
+									"key": "alarm",
+									"value": "coolant-while-cutting"
 								}
 							]
 						}
@@ -1454,6 +1458,85 @@
 						"method": "GET",
 						"header": [],
 						"url": {
+							"raw": "localhost:5000/stat/def?name=stat2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def"
+							],
+							"query": [
+								{
+									"key": "name_mask",
+									"value": "tat",
+									"disabled": true
+								},
+								{
+									"key": "name",
+									"value": "stat2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/stat/def/-1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"-1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat get Copy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/stat/def/-1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"-1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"stat2\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": {\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"filter\": [\r\n            {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"pgm\",\r\n                \"rel\": \"*\",\r\n                \"value\": \"a\",\r\n                \"age_min\": null,\r\n                \"age_max\": null\r\n            }\r\n        ],\r\n        \"metric\": {\r\n            \"device\": \"lathe\",\r\n            \"data_id\": \"sl\"\r\n        },\r\n        \"agg_func\": null,\r\n        \"agg_sep\": null,\r\n        \"series_sep\": null,\r\n        \"xaxis\": \"timestamp\",\r\n        \"visualsettings\": {}\r\n    },\r\n    \"xydef\": null\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
 							"raw": "localhost:5000/stat/def",
 							"host": [
 								"localhost"
@@ -1462,6 +1545,64 @@
 							"path": [
 								"stat",
 								"def"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"stat2\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": {\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"filter\": [\r\n            {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"pgm\",\r\n                \"rel\": \"*\",\r\n                \"value\": \"a\",\r\n                \"age_min\": null,\r\n                \"age_max\": null\r\n            }\r\n        ],\r\n        \"metric\": {\r\n            \"device\": \"lathe\",\r\n            \"data_id\": \"sl\"\r\n        },\r\n        \"agg_func\": null,\r\n        \"agg_sep\": null,\r\n        \"series_sep\": null,\r\n        \"xaxis\": \"timestamp\",\r\n        \"visualsettings\": {}\r\n    },\r\n    \"xydef\": null\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/stat/def/22",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"22"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": {\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"filter\": [\r\n                {\r\n                    \"device\": \"lathe\",\r\n                    \"data_id\": \"pgm\",\r\n                    \"rel\": \"*\",\r\n                    \"value\": \"a\",\r\n                    \"age_min\": null,\r\n                    \"age_max\": null\r\n                }\r\n            ],\r\n            \"metric\": {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"sl\"\r\n            },\r\n            \"agg_func\": null,\r\n            \"agg_sep\": null,\r\n            \"series_sep\": null,\r\n            \"xaxis\": \"timestamp\",\r\n            \"visualsettings\": {}\r\n        },\r\n        \"xydef\": null\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/stat/def/-1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"-1"
 							]
 						}
 					},

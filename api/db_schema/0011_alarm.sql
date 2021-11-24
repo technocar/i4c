@@ -8,7 +8,7 @@ drop table "alarm";
 
 create table "alarm" (
     id SERIAL PRIMARY KEY,
-    name character varying (200) null constraint uq_alarm_name unique,
+    name character varying (200) not null constraint uq_alarm_name unique,
     "window" double precision null, 
     max_freq double precision null,
     last_check timestamp with time zone not NULL,
