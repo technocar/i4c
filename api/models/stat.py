@@ -9,6 +9,8 @@ from pydantic import root_validator, validator, Field
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 import isodate
+
+from common.cmp_list import cmp_list
 from models import AlarmCondEventRel
 from models.common import PatchResponse
 
@@ -31,6 +33,7 @@ class StatUser(I4cBaseModel):
 
 class StatTimeseriesFilter(I4cBaseModel):
     """ category="EVENT" only """
+    id: Optional[int]
     device: str
     data_id: str
     rel: AlarmCondEventRel
@@ -52,10 +55,21 @@ class StatTimeseriesFilter(I4cBaseModel):
                                    ) values ($1, 
                                              $2, $3, $4, 
                                              $5, $6, $7)
+            returning id
             """)
-        await conn.execute(sql_insert, ts_id,
-                           self.device, self.data_id, self.rel,
-                           self.value, self.age_min, self.age_max)
+        self.id = (await conn.fetchrow(sql_insert, ts_id,
+                                       self.device, self.data_id, self.rel,
+                                       self.value, self.age_min, self.age_max))[0]
+
+    def __eq__(self, other):
+        if not isinstance(other, StatTimeseriesFilter):
+            return False
+        return ((self.device == other.device)
+                and (self.data_id == other.data_id)
+                and (self.rel == other.rel)
+                and (self.value == other.value)
+                and (self.age_min == other.age_min)
+                and (self.age_max == other.age_max))
 
 
 class StatTimeseriesMetric(I4cBaseModel):
@@ -195,10 +209,13 @@ class StatTimeseriesDef(I4cBaseModel):
             """)
         await conn.execute(sql_update, stat_id, *new_state.get_sql_params())
 
-        for f in self.filter:
-            # todo: *****************
-            # await f.insert_to_db(stat_id, conn)
-            pass
+        insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
+        for f in insert:
+            await f.insert_to_db(stat_id, conn)
+        for d in delete:
+            if d.id is None:
+                raise HTTPException(status_code=500, detail="Missing id from StatTimeseriesFilter")
+            await conn.execute("delete from stat_timeseries_filter where id = $1", d.id)
 
 
     @classmethod
@@ -224,7 +241,7 @@ class StatTimeseriesDef(I4cBaseModel):
 class StatXYDef(I4cBaseModel):
     # todo 1: **********
 
-    async def insert_to_db(self, conn):
+    async def insert_to_db(self, stat_id, conn):
         # todo 1: **********
         pass
 
