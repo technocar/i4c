@@ -20,12 +20,12 @@ interface MetricFilterError {
 
 export interface MetricFilterModel {
   direction: string,
-  relation: string,
-  metricId: string,
-  metricType: string,
-  metricName: string,
-  value: string,
-  extra: string
+  relation?: string,
+  metricId?: string,
+  metricType?: string,
+  metricName?: string,
+  value?: string,
+  extra?: string
 }
 
 interface SelectedEventValues {
@@ -43,6 +43,7 @@ export class MetaFilterComponent implements OnInit {
   private _activeModal: NgbModalRef;
 
   @Input('metaList') metaList: Meta[];
+  @Input('selectableTypes') selectableTypes: string[];
   @Output("onFilter") onFilter: EventEmitter<MetricFilterModel> = new EventEmitter();
 
   @ViewChild('dialog') dialog;
@@ -53,19 +54,15 @@ export class MetaFilterComponent implements OnInit {
 
   metricTree: Metric[] = [];
   searchModel: MetricFilterModel = {
-      direction: "-1",
-      metricId: undefined,
-      metricType: undefined,
-      metricName: undefined,
-      relation: undefined,
-      value: undefined,
-      extra: undefined
+    direction: "-1"
   };
   searchError: MetricFilterError = {
     show: false,
     message: ""
   };
   selectedEventValues: string[] = [];
+
+  disableMetricSelection: boolean = false;
 
   constructor(private modalService: NgbModal) { }
 
@@ -139,7 +136,13 @@ export class MetaFilterComponent implements OnInit {
     this.searchError.show = false;
   }
 
-  show() {
+  show(model?: MetricFilterModel, disableMetricSelection?: boolean) {
+    if (model)
+      this.searchModel = model;
+    else
+      this.searchModel = { direction: "-1" };
+    this.disableMetricSelection = disableMetricSelection === true;
+
     this.metricTree = this.getMetrics(undefined, undefined) ?? [];
     this._activeModal = this.modalService.open(this.dialog);
   }
@@ -182,6 +185,9 @@ export class MetaFilterComponent implements OnInit {
         break;
     }
     items = this.metaList.filter((value: Meta, index: Number, array: Meta[]) => {
+
+      if ((this.selectableTypes ?? []).length > 0 && this.selectableTypes.indexOf(value.category) === -1)
+        return false;
 
       if (ids.length === 0)
         return true;

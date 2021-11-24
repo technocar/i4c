@@ -1,9 +1,10 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { parseMessage } from '@angular/localize/src/utils';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map, scan, tap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -177,7 +178,7 @@ export class ApiService {
     return this.http.get<ListItem[]>(`${this._apiUrl}/log/find`, { params });
   }
 
-  getMeta(device: DeviceType): Observable<Meta[]> {
+  getMeta(): Observable<Meta[]> {
     return this.http.get<Meta[]>(`${this._apiUrl}/log/meta`);
   }
 
@@ -310,5 +311,11 @@ export class ApiService {
       body: tool
     };
     return this.http.delete<ArrayBuffer>(`${this._apiUrl}/tools`, options);
+  }
+
+  getStatDefs(parameters: StatDefParams): Observable<StatDef[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+    return this.http.get<StatDef[]>(`${this._apiUrl}/stat/def`, { params: params.getAll() });
   }
 }

@@ -190,7 +190,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getMetaList(): Observable<Meta[]> {
-    return this.apiService.getMeta(this.device)
+    return this.apiService.getMeta()
       .pipe(
         tap(r => {
         this._metaList = r ?? [];

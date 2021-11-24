@@ -36,6 +36,7 @@ import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootst
       { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard] },
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard] },
       { path: 'tools', loadChildren: () => import('./tools/tools.module').then(m => m.ToolsModule), canActivate: [AuthGuard] },
+      { path: 'analyses', loadChildren: () => import('./analyses/analyses.module').then(m => m.AnalysesModule), canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard], data: { breadcrumb: "Kezdőlap" } },
       { path: 'login', component: LoginComponent },
       { path: '', redirectTo: 'selector', pathMatch: "full" }

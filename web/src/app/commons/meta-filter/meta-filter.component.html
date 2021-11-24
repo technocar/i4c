@@ -10,7 +10,7 @@
       <div class="form-group">
         <label for="search_metrics" class="mr-2">Metric</label>
         <div #tree ngbDropdown class="d-inline-block">
-          <button type="button" class="btn btn-outline-primary" id="search_metrics" ngbDropdownToggle>{{searchModel.metricName ? searchModel.metricName : 'Select metric...'}}</button>
+          <button type="button" class="btn btn-outline-primary" id="search_metrics" ngbDropdownToggle [disabled]="disableMetricSelection">{{searchModel.metricName ? searchModel.metricName : 'Select metric...'}}</button>
           <div ngbDropdownMenu aria-labelledby="search_metrics" (click)="toggleMetricNode($event)">
             <ul>
               <ng-container

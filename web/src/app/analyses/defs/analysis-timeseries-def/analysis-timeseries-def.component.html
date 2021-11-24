@@ -1,3 +1,22 @@
 <div class="row">
-
+  <fieldset class="filters col">
+    <legend>szűrő</legend>
+    <div class="filter row" *ngFor="let filter of filters$ | async">
+      <input readonly class="col" value="{{filter.metricName}}" />
+      <input readonly class="col" value="{{filter.relation}}" />
+      <input readonly class="col" value="{{filter.value}}" />
+      <button class="btn btn-outline-primary col-auto" title="módosítás" (click)="updateFilter(filter)">
+        <i class="bi bi-pencil"></i>
+      </button>
+      <button class="btn btn-outline-danger col-auto" title="törlés">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    <button class="btn btn-primary" (click)="newFilter()">
+      <i class="bi bi-plus"></i>
+      hozzadás...
+    </button>
+  </fieldset>
 </div>
+
+<app-meta-filter #metaFilter [metaList]="metaList" (onFilter)="saveFilter($event)"></app-meta-filter>
