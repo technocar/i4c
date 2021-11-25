@@ -35,7 +35,7 @@ class AlarmCondSampleAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q4th = "q4th"
+    q3th = "q3th"
     slope = "slope"
 
 
@@ -693,7 +693,7 @@ def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
             return frac_index(o, (len(o) - 1) / 2)
         elif method == AlarmCondSampleAggMethod.q1st:
             return frac_index(o, (len(o) - 1) / 4)
-        elif method == AlarmCondSampleAggMethod.q4th:
+        elif method == AlarmCondSampleAggMethod.q3th:
             return frac_index(o, (len(o) - 1) * 3 / 4)
     elif method == AlarmCondSampleAggMethod.slope:
         n = len(agg_values)
@@ -755,7 +755,7 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                                     t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"],
                                                                     f'{row_cond["device"]} {row_cond["data_id"]} {row_cond["value_text"]}'
                                                                     )
-                                current_series.add(t)
+                                    current_series.add(t)
                         elif row_cond["log_row_category"] == AlarmCondLogRowCategory.event:
                             if check_rel(row_cond["rel"], row_cond["value_text"], r_series_prev["value_text"]):
                                 age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
@@ -764,7 +764,7 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                                     t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"] - age_max,
                                                                     f'{row_cond["device"]} {row_cond["data_id"]} '
                                                                     f'{r_series_prev["value_text"]}       ({row_cond["rel"]} {row_cond["value_text"]})')
-                                current_series.add(t)
+                                    current_series.add(t)
                         elif row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
                             if not total_series.is_timestamp_in(r_series_prev["timestamp"]):
                                 continue
