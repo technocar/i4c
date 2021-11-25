@@ -35,7 +35,7 @@ class AlarmCondSampleAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q3th = "q3th"
+    q3rd = "q3rd"
     slope = "slope"
 
 
