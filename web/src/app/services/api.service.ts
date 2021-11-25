@@ -186,6 +186,14 @@ export class ApiService {
     return this.http.get<EventValues[]>(`${this._apiUrl}/${device}/event_values`);
   }
 
+  getEventOperations(): string[][] {
+    return [
+      ['*=', $localize `:@@event_operation_*=:tartalmaz`],
+      ['*!=', $localize `:@@event_operation_*!=:nem tartalmaz`],
+      ['=', $localize `:@@event_operation_=:teljes egyezés`]
+    ];
+  }
+
   getProjects(name?: string, status?: string, file?: string): Observable<Project[]> {
     var params = new RequestParams();
     params.add("name", name);
