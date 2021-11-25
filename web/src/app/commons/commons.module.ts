@@ -4,24 +4,31 @@ import { AppHeaderComponent } from './app-header/app-header.component';
 import { RouterModule } from '@angular/router';
 import { FilterControlComponent } from './filter/filter.component';
 import { FormsModule } from '@angular/forms';
-import { NgbPopoverModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbAlertModule, NgbButtonsModule, NgbDropdownModule, NgbPopoverModule, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
+import { MetaFilterComponent } from './meta-filter/meta-filter.component';
 
 
 
 @NgModule({
   declarations: [
     AppHeaderComponent,
-    FilterControlComponent
+    FilterControlComponent,
+    MetaFilterComponent
   ],
   imports: [
     CommonModule,
     RouterModule,
     FormsModule,
-    NgbPopoverModule
+    NgbPopoverModule,
+    NgbTypeaheadModule,
+    NgbAlertModule,
+    NgbDropdownModule,
+    NgbButtonsModule
   ],
   exports: [
     AppHeaderComponent,
-    FilterControlComponent
+    FilterControlComponent,
+    MetaFilterComponent
   ]
 })
 export class CommonsModule { }

@@ -8,7 +8,7 @@ import { SnapshotMillComponent } from './/snapshots/snapshot-mill/snapshot-mill.
 import { SnapshotLatheComponent } from './snapshots/snapshot-lathe/snapshot-lathe.component';
 import { SnapshotRobotComponent } from './snapshots/snapshot-robot/snapshot-robot.component';
 import { SnapshotGomComponent } from './snapshots/snapshot-gom/snapshot-gom.component';
-import { NgbAlertModule, NgbDatepickerModule, NgbDropdownModule, NgbNavModule, NgbPopoverModule, NgbTimepickerModule, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDatepickerModule, NgbNavModule, NgbPopoverModule, NgbTimepickerModule } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
 import { CommonsModule }  from '../commons/commons.module';
 
@@ -30,9 +30,6 @@ import { CommonsModule }  from '../commons/commons.module';
     NgbDatepickerModule,
     NgbTimepickerModule,
     NgbNavModule,
-    NgbTypeaheadModule,
-    NgbAlertModule,
-    NgbDropdownModule,
     CommonsModule
   ]
 })

@@ -1,0 +1,9 @@
+@import '../../base';
+
+.card {
+  border: none;
+  .card-header {
+    border: none;
+    background-color: $color-beau_blue;
+  }
+}
