@@ -4,6 +4,7 @@ import { MetaFilterComponent, MetaFilterMode, MetricFilterModel } from 'src/app/
 import { ApiService } from 'src/app/services/api.service';
 import { AggFunc, Meta, StatDefBase, StatTimeSeriesData, StatTimeSeriesDef, StatTimesSeriesFilter } from 'src/app/services/models/api';
 import { AanalysisDef } from '../../analyses.component';
+import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
 @Component({
   selector: 'app-analysis-timeseries-def',
@@ -14,8 +15,8 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
 
   @Input("def") def: StatTimeSeriesDef;
   @Input("metaList") metaList: Meta[];
-  @ViewChild("metaFilter") metaFilter: MetaFilterComponent;
-  @ViewChild("metricSelector") metricSelector: MetaFilterComponent;
+  @ViewChild('period') period: AnalysisDatetimeDefComponent;
+
 
   private _selectedFilter: StatTimesSeriesFilter;
   private _metricSelectorMode: string;
@@ -55,11 +56,20 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
           title: ""
         }
       };
-
+    else {
+      this.filters$.next(this.def.filter ?? []);
+      this.def.visualsettings = this.def.visualsettings ?? { title: "", subtitle: "" };
+    }
   }
 
   getDef(): StatDefBase {
-    throw new Error('Method not implemented.');
+    var pDef = this.period.getDef();
+    this.def.after = pDef.after;
+    this.def.before = pDef.before;
+    this.def.duration = pDef.duration;
+    this.def.filter = this.filters$.value.slice(0);
+    this.def.agg_func = (this.def.agg_func ?? "") === "" ? undefined : this.def.agg_func;
+    return this.def;
   }
 
   newFilter() {
@@ -88,23 +98,24 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
     this.filters$.next(filters);
   }
 
-  showMetricSelector(mode: string) {
-    this._metricSelectorMode = mode;
-    this.metricSelector.selectableTypes = mode == "metric" ? ["EVENT"] : ["SAMPLE"];
-    this.metricSelector.show();
+  selectMetric(meta: Meta) {
+    this.def.metric = {
+      data_id: meta.data_id,
+      device: meta.device
+    };
   }
 
-  selectMetric(metric: MetricFilterModel) {
-    switch (this._metricSelectorMode) {
-      case "metric":
-        this.def.metric = { data_id: metric.metricId, name: metric.metricName, device: metric.device };
-        break;
-      case "agg_sep":
-        this.def.agg_sep = { data_id: metric.metricId, name: metric.metricName, device: metric.device };
-        break;
-      case "separator_sep":
-        this.def.agg_sep = { data_id: metric.metricId, name: metric.metricName, device: metric.device };
-        break;
-    }
+  selectAggSep(meta: Meta) {
+    this.def.agg_sep = {
+      data_id: meta.data_id,
+      device: meta.device
+    };
+  }
+
+  selectSeriesSep(meta: Meta) {
+    this.def.series_sep = {
+      data_id: meta.data_id,
+      device: meta.device
+    };
   }
 }

@@ -10,7 +10,7 @@ export interface AanalysisDef {
   getDef(): StatDefBase
 }
 
-enum AnalsysType { TimeSeries = 'timeseries', XY = 'xy' }
+export enum AnalysisType { TimeSeries = '0', XY = '1' }
 
 @Component({
   selector: 'app-analyses',
@@ -37,8 +37,8 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   analysesOwn$: BehaviorSubject<StatDef[]> = new BehaviorSubject([]);
   analysesOthers$: BehaviorSubject<StatDef[]> = new BehaviorSubject([]);
   analysisTypes: string[][] = [
-    [AnalsysType.TimeSeries, $localize `:@@analysis_type_timeseries:idősoros`],
-    [AnalsysType.XY, $localize `:@@analysis_type_xy:XY`]
+    [AnalysisType.TimeSeries, $localize `:@@analysis_type_timeseries:idősoros`],
+    [AnalysisType.XY, $localize `:@@analysis_type_xy:XY`]
   ]
 
   constructor(
@@ -67,7 +67,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     this.apiService.getStatDefs({
       name: !this.filterNameCtrl.mask ? this.filterName : undefined,
       name_mask: this.filterNameCtrl.mask ? this.filterName : undefined,
-      type: this.filterType
+      type: (this.filterType ?? "") === "" ? undefined : this.filterType
     }).subscribe(r => {
       r = r ?? [];
       this.analysesOwn$.next(r.filter((i) => i.user?.id === this.authService.currentUserValue.id));
@@ -84,7 +84,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
       queryParams: {
         fm: this._filterModified,
         fn: this.filterNameCtrl.queryParam,
-        ft: this.filterType,
+        ft: (this.filterType ?? "") === "" ? undefined : this.filterType,
         fs: this.filterShared
       },
       queryParamsHandling: 'merge'
@@ -92,11 +92,11 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     this.getAnalyses();
   }
 
-  getAnalaysisType(analysis: StatDef): AnalsysType {
-    return analysis.timeseriesdef ? AnalsysType.TimeSeries : AnalsysType.XY;
+  getAnalaysisType(analysis: StatDef): AnalysisType {
+    return analysis.timeseriesdef ? AnalysisType.TimeSeries : AnalysisType.XY;
   }
 
-  getAnalsysTypeDesc(code: AnalsysType): string {
+  getAnalsysTypeDesc(code: AnalysisType): string {
     var type = this.analysisTypes.find((t) => { return t[0] === code; });
     if (type)
       return type[1];

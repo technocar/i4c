@@ -326,4 +326,19 @@ export class ApiService {
     params.addFromObject(parameters);
     return this.http.get<StatDef[]>(`${this._apiUrl}/stat/def`, { params: params.getAll() });
   }
+
+  getStatDef(id: string): Observable<StatDef> {
+    if (id == "-1")
+      return of({
+        id: -1,
+        modified: (new Date()).toISOString(),
+        name: "új elemzés",
+        shared: false,
+        timeseriesdef: undefined,
+        xydef: undefined,
+        user: undefined
+      });
+    else
+      return this.http.get<StatDef>(`${this._apiUrl}/stat/def/${id}`);
+  }
 }

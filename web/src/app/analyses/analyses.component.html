@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12 mb-4 mt-4">
-    <a href="#" [routerLink]="['-1']" class="btn btn-primary" >
+    <a href="#" [routerLink]="['-1', '0']" class="btn btn-primary" >
       <i class="bi bi-plus"></i>
       új idősoros...
     </a>
@@ -42,7 +42,7 @@
     </thead>
     <tbody>
       <ng-template [ngIf]="fetching$ | async">
-        <tr>
+        <tr class="loading">
           <td colspan="7">
             <div class="d-flex justify-content-center">
               <div class="spinner-border" role="status">
@@ -53,7 +53,7 @@
         </tr>
       </ng-template>
       <ng-template [ngIf]="!(fetching$ | async)">
-        <tr *ngFor="let item of analysesOwn$ | async; index as i" class="{{getAnalaysisType(item)}}">
+        <tr *ngFor="let item of analysesOwn$ | async; index as i" class="{{getAnalaysisType(item)}}" [routerLink]="[item.id]">
           <td><a href="#" [routerLink]="['/analyses/' + item.id]">{{item.name}}</a></td>
           <td>{{getAnalsysTypeDesc(getAnalaysisType(item))}}</td>
           <td>{{item.modified | date:'yyyy.MM.dd HH:mm'}}</td>
@@ -79,7 +79,7 @@
     </thead>
     <tbody>
       <ng-template [ngIf]="fetching$ | async">
-        <tr>
+        <tr class="loading">
           <td colspan="7">
             <div class="d-flex justify-content-center">
               <div class="spinner-border" role="status">
@@ -90,7 +90,7 @@
         </tr>
       </ng-template>
       <ng-template [ngIf]="!(fetching$ | async)">
-        <tr *ngFor="let item of analysesOthers$ | async; index as i" class="{{getAnalaysisType(item)}}">
+        <tr *ngFor="let item of analysesOthers$ | async; index as i" class="{{getAnalaysisType(item)}}" [routerLink]="[item.id]">
           <td>{{item.user?.name}}</td>
           <td>{{item.name}}</td>
           <td>{{getAnalsysTypeDesc(getAnalaysisType(item))}}</td>
