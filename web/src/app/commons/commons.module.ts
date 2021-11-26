@@ -6,6 +6,7 @@ import { FilterControlComponent } from './filter/filter.component';
 import { FormsModule } from '@angular/forms';
 import { NgbAlertModule, NgbButtonsModule, NgbDropdownModule, NgbPopoverModule, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 import { MetaFilterComponent } from './meta-filter/meta-filter.component';
+import { MetaSelectorComponent } from './meta-selector/meta-selector.component';
 
 
 
@@ -13,7 +14,8 @@ import { MetaFilterComponent } from './meta-filter/meta-filter.component';
   declarations: [
     AppHeaderComponent,
     FilterControlComponent,
-    MetaFilterComponent
+    MetaFilterComponent,
+    MetaSelectorComponent
   ],
   imports: [
     CommonModule,
@@ -28,7 +30,8 @@ import { MetaFilterComponent } from './meta-filter/meta-filter.component';
   exports: [
     AppHeaderComponent,
     FilterControlComponent,
-    MetaFilterComponent
+    MetaFilterComponent,
+    MetaSelectorComponent
   ]
 })
 export class CommonsModule { }

@@ -17,8 +17,9 @@ export class AnalysisComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.data.subscribe(r => {
-      this.metaList = r[0];
-    })
+      this.metaList = r.data[0];
+    });
+
   }
 
 }

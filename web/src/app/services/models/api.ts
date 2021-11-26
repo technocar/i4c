@@ -1,4 +1,3 @@
-import { Operator } from "rxjs";
 import { DeviceType } from "./constants";
 
 export interface ErrorDetail {
@@ -321,10 +320,10 @@ export interface StatDateTimeDef extends StatDefBase {
   duration: string
 }
 
-export enum AggFunc { Avg = 'avg', Median = 'median', FirstPercentile = '1st pctl', FourthPercentile = '4th percentile', Min = 'min', Max = 'max' }
+export enum AggFunc { Avg = 'avg', Median = 'median', FirstQuartile = 'q1st', ThirdQuartile = 'q3rd', Min = 'min', Max = 'max' }
 
 export interface StatTimeSeriesDef extends StatDateTimeDef {
-  filter: StatTimesSeriesFilter,
+  filter: StatTimesSeriesFilter[],
   metric: Meta,
   agg_func: AggFunc,
   agg_sep: Meta,

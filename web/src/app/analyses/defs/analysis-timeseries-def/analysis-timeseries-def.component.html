@@ -1,22 +1,64 @@
-<div class="row">
-  <fieldset class="filters col">
+<div class="row m-0">
+  <fieldset class="filters col-12 p-4 border">
     <legend>szűrő</legend>
-    <div class="filter row" *ngFor="let filter of filters$ | async">
-      <input readonly class="col" value="{{filter.metricName}}" />
-      <input readonly class="col" value="{{filter.relation}}" />
-      <input readonly class="col" value="{{filter.value}}" />
-      <button class="btn btn-outline-primary col-auto" title="módosítás" (click)="updateFilter(filter)">
-        <i class="bi bi-pencil"></i>
-      </button>
-      <button class="btn btn-outline-danger col-auto" title="törlés">
+    <div class="filter row mr-0 mt-2" *ngFor="let filter of filters$ | async">
+      <div class="col">
+        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" ></app-meta-selector>
+      </div>
+      <select class="col form-control mr-2" [ngModel]="filter.rel">
+        <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
+      </select>
+      <input class="col form-control mr-2" [ngModel]="filter.value" />
+      <button class="btn btn-outline-danger col-auto" title="törlés" (click)="deleteFilter(filter)">
         <i class="bi bi-trash"></i>
       </button>
     </div>
-    <button class="btn btn-primary" (click)="newFilter()">
+    <button class="btn btn-primary mt-4" (click)="newFilter()">
       <i class="bi bi-plus"></i>
       hozzadás...
     </button>
   </fieldset>
+  <fieldset class="parms col-6 p-4 border">
+    <legend>paraméterek</legend>
+    <div class="row form-group">
+      <label class="col">mérőszám</label>
+      <div class="input-group col">
+        <input type="text" class="form-control" aria-label="" readonly>
+        <div class="input-group-append">
+          <button class="btn btn-outline-primary" type="button" (click)="showMetricSelector('metric')">...</button>
+        </div>
+      </div>
+    </div>
+    <div class="row form-group">
+      <label class="col">x tengely</label>
+      <select class="col form-control">
+        <option value="timestamp">dátum</option>
+        <option value="sequence">szekvencia</option>
+      </select>
+    </div>
+    <div class="row form-group">
+      <label class="col">elválasztó</label>
+      <div class="input-group col">
+        <input type="text" class="form-control" aria-label="" readonly>
+        <div class="input-group-append">
+          <button class="btn btn-outline-primary" type="button" (click)="showMetricSelector('agg_sep')">...</button>
+        </div>
+      </div>
+    </div>
+    <div class="row form-group">
+      <label class="col">összesítés</label>
+      <select class="col form-control">
+        <option *ngFor="let item of aggFuncs" [value]="item[0]">{{item[1]}}</option>
+      </select>
+    </div>
+    <div class="row form-group">
+      <label class="col">görbe elválasztó</label>
+      <div class="input-group col">
+        <input type="text" class="form-control" aria-label="" readonly>
+        <div class="input-group-append">
+          <button class="btn btn-outline-primary" type="button" (click)="showMetricSelector('series_sep')">...</button>
+        </div>
+      </div>
+    </div>
+  </fieldset>
 </div>
-
-<app-meta-filter #metaFilter [metaList]="metaList" (onFilter)="saveFilter($event)"></app-meta-filter>

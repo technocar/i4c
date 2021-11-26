@@ -3,13 +3,16 @@ import { NgForm } from '@angular/forms';
 import { NgbActiveModal, NgbModal, NgbModalRef, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { merge, Observable, OperatorFunction, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { ApiService } from 'src/app/services/api.service';
 import { EventValues, Meta } from 'src/app/services/models/api';
+import { DeviceType } from 'src/app/services/models/constants';
 
 interface Metric {
   id: string,
   name: string,
   type: string,
   level: string,
+  device: string,
   children: Metric[]
 }
 
@@ -20,6 +23,7 @@ interface MetricFilterError {
 
 export interface MetricFilterModel {
   direction: string,
+  device?: DeviceType,
   relation?: string,
   metricId?: string,
   metricType?: string,
@@ -31,6 +35,8 @@ export interface MetricFilterModel {
 interface SelectedEventValues {
   name: string
 }
+
+export enum MetaFilterMode { Search = 0, Select = 1 }
 
 @Component({
   selector: 'app-meta-filter',
@@ -44,6 +50,8 @@ export class MetaFilterComponent implements OnInit {
 
   @Input('metaList') metaList: Meta[];
   @Input('selectableTypes') selectableTypes: string[];
+  @Input('mode') mode: MetaFilterMode = MetaFilterMode.Select;
+  @Input('onlySelector') onlySelector: boolean;
   @Output("onFilter") onFilter: EventEmitter<MetricFilterModel> = new EventEmitter();
 
   @ViewChild('dialog') dialog;
@@ -61,10 +69,16 @@ export class MetaFilterComponent implements OnInit {
     message: ""
   };
   selectedEventValues: string[] = [];
+  eventOps: string[][] = [];
 
   disableMetricSelection: boolean = false;
 
-  constructor(private modalService: NgbModal) { }
+  constructor(
+    private modalService: NgbModal,
+    private apiService: ApiService)
+  {
+    this.eventOps = apiService.getEventOperations();
+  }
 
   ngOnInit(): void {
   }
@@ -216,6 +230,7 @@ export class MetaFilterComponent implements OnInit {
         name: name,
         type: ids.length === 0 ? item[level] : ids[0],
         level: level,
+        device: item.device,
         children: this.getMetrics(ids.concat([item[level]]), parentLevels.concat([level]))
       });
     }
