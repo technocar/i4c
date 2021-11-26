@@ -1,20 +1,17 @@
-import math
 import textwrap
 from datetime import datetime, timedelta
 from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
-
 from fastapi import HTTPException
 from pydantic import Field, root_validator
-
 import common.db_helpers
 from common.debug_helpers import debug_print
 from common.exceptions import I4cInputValidationError
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
+from common.tools import frac_index
 from models import CommonStatusEnum, AlarmCondEventRel
 from models.common import PatchResponse
-from fractions import Fraction
 
 
 async def get_alarm_id(conn, name: str):
@@ -673,14 +670,6 @@ def check_rel(rel, left, right):
     return False
 
 
-def frac_index(list, index):
-    i = math.floor(index)
-    x = Fraction(index - i).limit_denominator()
-    if x == 0:
-        return list[i]
-    return float(list[i]*(1-x) + list[i+1]*x)
-
-
 def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
     agg_values = [v for v in agg_values if v["value_num"] is not None]
     if not agg_values:
@@ -738,6 +727,7 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                 if row_alarm["window"] is not None:
                     total_series = series_intersect.Series()
                     total_series.add(series_intersect.TimePeriod(last_check - timedelta(seconds=row_alarm["window"]), None))
+                # todo 5: maybe use "timestamp" AND "sequence" for intervals instead of "timestamp" only
                 for row_cond_recno, row_cond in enumerate(db_conds, start=1):
                     last_check_mod = last_check
                     if total_series is not None and row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
@@ -773,14 +763,14 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                                 agg_time_len = (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() if len(agg_values) > 0 else 0
                                 if agg_time_len >= row_cond["aggregate_period"]:
                                     aggregated_value = calc_aggregate(row_cond["aggregate_method"], agg_values, AlarmCondSampleAggSlopeKind.time)
-                                agg_values.append(r_series)
+                                agg_values.append(r_series_prev)
                                 while (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() > row_cond["aggregate_period"]:
                                     del agg_values[0]
                             if row_cond["aggregate_count"]:
                                 if len(agg_values) == row_cond["aggregate_count"]:
                                     aggregated_value = calc_aggregate(row_cond["aggregate_method"], agg_values, AlarmCondSampleAggSlopeKind.position)
                                     del agg_values[0]
-                                agg_values.append(r_series)
+                                agg_values.append(r_series_prev)
 
                             debug_print(aggregated_value)
                             if check_rel(row_cond["rel"], aggregated_value, row_cond["value_num"]):

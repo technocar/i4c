@@ -1503,7 +1503,7 @@
 					"response": []
 				},
 				{
-					"name": "stat get Copy",
+					"name": "stat get data",
 					"request": {
 						"method": "GET",
 						"header": [],

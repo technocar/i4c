@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
 from typing import Optional, List
@@ -7,11 +7,13 @@ from fastapi import HTTPException
 from isodate import ISO8601Error
 from pydantic import root_validator, validator, Field
 import common.db_helpers
-from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
+from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect
 import isodate
 
 from common.cmp_list import cmp_list
-from models import AlarmCondEventRel
+from common.tools import frac_index, optimize_timestamp_label
+from models import AlarmCondEventRel, alarm
+from models.alarm import prev_iterator
 from models.common import PatchResponse
 
 
@@ -82,9 +84,15 @@ class StatTimeseriesAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q4th = "q4th"
+    q3rd = "q3rd"
     min = "min"
     max = "max"
+
+
+class StatTimeseriesSeriesName(str, Enum):
+    separator_event = "separator_event"
+    sequence = "sequence"
+    timestamp = "timestamp"
 
 
 class StatTimeseriesXAxis(str, Enum):
@@ -127,6 +135,7 @@ class StatTimeseriesDef(I4cBaseModel):
     agg_func: Optional[StatTimeseriesAggMethod]
     agg_sep: Optional[StatSepEvent]
     series_sep: Optional[StatSepEvent]
+    series_name: Optional[StatTimeseriesSeriesName]
     xaxis: StatTimeseriesXAxis
     visualsettings: StatTimeseriesVisualSettings
 
@@ -156,13 +165,13 @@ class StatTimeseriesDef(I4cBaseModel):
             insert into stat_timeseries (id,
                                          after, before, duration,
                                          metric_device, metric_data_id, agg_func,
-                                         agg_sep_device, agg_sep_data_id, series_sep_device,
-                                         series_sep_data_id, xaxis)
+                                         agg_sep_device, agg_sep_data_id, series_name,
+                                         series_sep_device, series_sep_data_id, xaxis)
             select $1, 
                    $2, $3, $4::varchar(200)::interval, 
                    $5, $6, $7, 
                    $8, $9, $10, 
-                   $11, $12
+                   $11, $12, $13
             """)
         await conn.execute(sql_insert, stat_id, *self.get_sql_params())
 
@@ -175,8 +184,9 @@ class StatTimeseriesDef(I4cBaseModel):
 
                 self.agg_sep.device if self.agg_sep is not None else None,
                 self.agg_sep.data_id if self.agg_sep is not None else None,
-                self.series_sep.device if self.series_sep is not None else None,
+                self.series_name,
 
+                self.series_sep.device if self.series_sep is not None else None,
                 self.series_sep.data_id if self.series_sep is not None else None,
                 self.xaxis]
 
@@ -201,10 +211,11 @@ class StatTimeseriesDef(I4cBaseModel):
               
               agg_sep_device=$8,
               agg_sep_data_id=$9,
-              series_sep_device=$10,
+              series_name=$10,
               
-              series_sep_data_id=$11,
-              xaxis=$12
+              series_sep_device=$11,
+              series_sep_data_id=$12,
+              xaxis=$13
             where id = $1
             """)
         await conn.execute(sql_update, stat_id, *new_state.get_sql_params())
@@ -319,6 +330,7 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                       st.agg_func as st_agg_func,
                       st.agg_sep_device as st_agg_sep_device,
                       st.agg_sep_data_id as st_agg_sep_data_id,
+                      st.series_name as st_series_name,
                       st.series_sep_device as st_series_sep_device,
                       st.series_sep_data_id as st_series_sep_data_id,
                       st.xaxis as st_xaxis  
@@ -384,7 +396,7 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
 
             return StatDef(id=stat_id,
                            user=StatUser(id=credentials.user_id, name=user_display_name),
-                           modified=datetime.now(),
+                           modified=datetime.now(timezone.utc),
                            name=stat.name,
                            shared=stat.shared,
                            timeseriesdef=stat.timeseriesdef,
@@ -457,7 +469,8 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
 class StatTimeseriesDataSeries(I4cBaseModel):
     name: str
-    x: List[datetime]
+    x_timestamp: Optional[List[datetime]]
+    x_relative: Optional[List[float]] = Field(None, description="relative sec to first item")
     y: List[float]
 
 
@@ -476,6 +489,162 @@ class StatData(I4cBaseModel):
     xydata: Optional[StatXYData]
 
 
-async def statdata_get(credentials, id) -> StatData:
+def resolve_time_period(after, before, duration):
+    def v(*val):
+        return all(x is not None for x in val)
+
+    duration = isodate.parse_duration(duration) if v(duration) else None
+    before = before if v(before) else after + duration if v(after, duration) else datetime.now(timezone.utc)
+    after = after if v(after) else before - duration
+    return after, before
+
+
+def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
+    agg_values = [v for v in agg_values if v["value_num"] is not None]
+    if not agg_values:
+        return None
+    if method == StatTimeseriesAggMethod.avg:
+        return sum(v["value_num"] for v in agg_values) / len(agg_values)
+    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4st):
+        o = sorted(v["value_num"] for v in agg_values)
+        if method == StatTimeseriesAggMethod.median:
+            return frac_index(o, (len(o) - 1) / 2)
+        elif method == StatTimeseriesAggMethod.q1st:
+            return frac_index(o, (len(o) - 1) / 4)
+        elif method == StatTimeseriesAggMethod.q3th:
+            return frac_index(o, (len(o) - 1) * 3 / 4)
+    elif method == StatTimeseriesAggMethod.min:
+        return min(v["value_num"] for v in agg_values)
+    elif method == StatTimeseriesAggMethod.max:
+        return max(v["value_num"] for v in agg_values)
+
+
+async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
+    after, before = resolve_time_period(st.timeseriesdef.after, st.timeseriesdef.before, st.timeseriesdef.duration)
+
+    total_series = series_intersect.Series()
+    total_series.add(series_intersect.TimePeriod(after, before))
+
+    filters = await conn.fetch("select * from stat_timeseries_filter where timeseries = $1", st.id)
+    # todo 5: maybe use "timestamp" AND "sequence" for intervals instead of "timestamp" only
+    for filter in filters:
+        db_series = await conn.fetch(alarm.alarm_check_load_sql, filter["device"], filter["data_id"], after, before)
+        current_series = series_intersect.Series()
+        for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
+            if alarm.check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
+                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] else 0)
+                age_max = timedelta(seconds=filter["age_max"] if filter["age_max"] else 0)
+                if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
+                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                    r_series["timestamp"] - age_max)
+                    current_series.add(t)
+        total_series = series_intersect.Series.intersect(total_series, current_series)
+        del current_series
+
+
+    def create_StatTimeseriesDataSeries():
+        res = StatTimeseriesDataSeries(name="", y=[])
+        if st.timeseriesdef.xaxis == StatTimeseriesXAxis.timestamp:
+            res.x_relative = []
+            res.x_timestamp = []
+        return res
+
+    current_series = create_StatTimeseriesDataSeries()
+    res = StatData(timeseriesdata=StatTimeseriesData(stat_def=st, series=[current_series]))
+    last_series_sep_value = None
+
+    def record_output(aggregated_value, ts):
+        if aggregated_value is None:
+            return
+        if (current_series.name == "") and st.timeseriesdef.series_name:
+            if st.timeseriesdef.series_name == StatTimeseriesSeriesName.separator_event:
+                if last_series_sep_value:
+                    current_series.name = last_series_sep_value
+            elif st.timeseriesdef.series_name == StatTimeseriesSeriesName.sequence:
+                current_series.name = str(len(res.timeseriesdata.series))
+        if current_series.x_timestamp is not None:
+            current_series.x_timestamp.append(ts)
+            if current_series.x_relative is not None:
+                current_series.x_relative.append((ts-current_series.x_timestamp[0]).total_seconds())
+        current_series.y.append(aggregated_value)
+
+    if len(total_series) > 0:
+        md_series = await conn.fetch(alarm.alarm_check_load_sql,
+                                     st.timeseriesdef.metric.device,
+                                     st.timeseriesdef.metric.data_id,
+                                     total_series[0].start or after,
+                                     total_series[-1].end or before)
+        agg_sep_ts = []
+        if st.timeseriesdef.agg_sep:
+            agg_sep_series = await conn.fetch(alarm.alarm_check_load_sql,
+                                         st.timeseriesdef.agg_sep.device,
+                                         st.timeseriesdef.agg_sep.data_id,
+                                         total_series[0].start or after,
+                                         total_series[-1].end or before)
+            agg_sep_ts = [r["timestamp"] for r in agg_sep_series]
+
+        series_sep_ts = []
+        if st.timeseriesdef.series_sep:
+            series_sep_series = await conn.fetch(alarm.alarm_check_load_sql,
+                                         st.timeseriesdef.series_sep.device,
+                                         st.timeseriesdef.series_sep.data_id,
+                                         total_series[0].start or after,
+                                         total_series[-1].end or before)
+            series_sep_ts = [(r["timestamp"], r["value_text"]) for r in series_sep_series]
+
+        agg_values = []
+        md_prev = None
+        for md_prev, md in prev_iterator(md_series, include_first=False):
+            if not total_series.is_timestamp_in(md_prev["timestamp"]):
+                continue
+
+            aggregated_value = None
+            if st.timeseriesdef.agg_sep:
+                while agg_sep_ts and agg_sep_ts[0] < md_prev["timestamp"]:
+                    del agg_sep_ts[0]
+                if agg_sep_ts and agg_sep_ts[0] < md["timestamp"]:
+                    aggregated_value = calc_aggregate(st.timeseriesdef.agg_func, agg_values)
+                    agg_values = []
+                agg_values.append(md_prev)
+            else:
+                aggregated_value = md_prev["value_num"]
+
+            while series_sep_ts and series_sep_ts[0][0] < md_prev["timestamp"]:
+                last_series_sep_value = series_sep_ts[0][1]
+                del series_sep_ts[0]
+
+            record_output(aggregated_value, md_prev["timestamp"])
+
+            if series_sep_ts and series_sep_ts[0][0] < md["timestamp"]:
+                current_series = create_StatTimeseriesDataSeries()
+                res.timeseriesdata.series.append(current_series)
+
+        if agg_values:
+            aggregated_value = calc_aggregate(st.timeseriesdef.agg_func, agg_values)
+            record_output(aggregated_value, md_prev["timestamp"])
+
+    if st.timeseriesdef.series_name == StatTimeseriesSeriesName.timestamp:
+        ts = [(s.x_timestamp[0],s) for s in res.timeseriesdata.series if s.x_timestamp]
+        tso = optimize_timestamp_label([s[0] for s in ts])
+        for s, o in zip(ts, tso):
+            s[1].name = o
+    return res
+
+
+async def statdata_get_xy(st:StatDef, conn) -> StatData:
     # todo 1: **********
-    return StatData()
+    pass
+
+
+async def statdata_get(credentials, id) -> StatData:
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            st = await stat_list(credentials, id=id, pconn=conn)
+            if len(st) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            st = st[0]
+            if st.timeseriesdef is not None:
+                return await statdata_get_timeseries(st, conn)
+            elif st.xydef is not None:
+                return await statdata_get_xy(st, conn)
+            return StatData()

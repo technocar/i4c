@@ -30,9 +30,10 @@ create table "stat_timeseries" (
     agg_func character varying (200) null,
     agg_sep_device character varying (200) null,
     agg_sep_data_id character varying (200) null,
+    series_name character varying (200) null,
     series_sep_device character varying (200) null,
     series_sep_data_id character varying (200) null,
-    xaxis character varying (200) null
+    xaxis character varying (200) not null
 ); 
 
 
@@ -62,6 +63,6 @@ delete from "stat_timeseries";
 delete from "stat";
 
 insert into "stat" values (-1, 'stat1', '1', false , now());
-insert into "stat_timeseries" values (-1, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, 'timestamp');
+insert into "stat_timeseries" values (-1, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, null, 'timestamp');
 insert into "stat_timeseries_filter" values (-1, -1, 'lathe', 'pgm', '*', 'a', null, null);
 */
