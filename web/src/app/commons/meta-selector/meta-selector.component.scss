@@ -1,0 +1,83 @@
+.dropdown {
+  width: 100%;
+}
+
+button.dropdown-toggle {
+  width: 100%;
+
+  i {
+    float: right;
+  }
+}
+
+button.dropdown-toggle::after {
+  display: none;
+}
+
+input[type="submit"] {
+  display: none;
+}
+
+#metric_list + .dropdown-menu {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0 1rem;
+}
+
+li {
+  white-space: nowrap;
+}
+
+li, i {
+  cursor: pointer;
+}
+
+li {
+  button.category {
+    position: relative;
+    top: -2px;
+  }
+}
+
+.closed {
+  > ul {
+    display: none;
+  }
+  > .bi-plus-square {
+    display: inline-block;
+  }
+
+  > .bi-dash-square {
+    display: none;
+  }
+}
+
+.opened {
+  > ul {
+    display: block;
+  }
+
+  > .bi-plus-square {
+    display: none;
+  }
+
+  > .bi-dash-square {
+    display: inline-block;
+  }
+}
+
+.leaf {
+  padding: 0.25rem;
+  > .bi-plus-square,
+  > .bi-dash-square {
+    display: none;
+  }
+}
+
+.leaf:hover {
+  background-color: rgb(190, 243, 250);
+}

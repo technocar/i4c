@@ -1,0 +1,15 @@
+<div class="row">
+  <input type="datetime-local" class="form-control col-auto" [ngModel]="timestamp | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="timestamp = $event" />
+  <div class="btn-group btn-group-toggle col-auto" ngbRadioGroup name="radioBasic" [(ngModel)]="direction">
+    <label ngbButtonLabel class="btn-primary">
+      <input ngbButton type="radio" [value]="1">követő
+    </label>
+    <label ngbButtonLabel class="btn-primary">
+      <input ngbButton type="radio" [value]="0">megelőző
+    </label>
+  </div>
+  <input type="number" class="form-control col-auto" [(ngModel)]="count" />
+  <select class="form-control col-auto" [(ngModel)]="period">
+    <option *ngFor="let p of periods" [value]="p[0]">{{p[1]}}</option>
+  </select>
+</div>

@@ -1,40 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { NgForm } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { NgbActiveModal, NgbDateStruct, NgbModal, NgbTimeStruct, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
-import { BehaviorSubject, forkJoin, merge, Observable, OperatorFunction, Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { NgbDateStruct, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
+import { BehaviorSubject, forkJoin, Observable, Subscription } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { MetaFilterComponent, MetricFilterModel } from '../commons/meta-filter/meta-filter.component';
 import { ApiService } from '../services/api.service';
 import { Category, EventLog, EventValues, FindParams, ListItem, Meta, Snapshot } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
-
-interface Metric {
-  id: string,
-  name: string,
-  type: string,
-  level: string,
-  children: Metric[]
-}
-
-interface SearchError {
-  show: boolean,
-  message: string
-}
-
-interface SearchModel {
-  direction: string,
-  relation: string,
-  metricId: string,
-  metricType: string,
-  metricName: string,
-  value: string,
-  extra: string
-}
-
-interface SelectedEventValues {
-  name: string
-}
 
 @Component({
   selector: 'app-dashboard',
@@ -42,10 +15,8 @@ interface SelectedEventValues {
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
-  @ViewChild('eventValuesSelector', {static: true}) instance: NgbTypeahead;
-  focus$ = new Subject<string>();
-  click$ = new Subject<string>();
 
+  @ViewChild("searchDialog") searchDialog: MetaFilterComponent;
 
   _currentDate: NgbDateStruct;
   _currentTime: NgbTimeStruct;
@@ -57,21 +28,7 @@ export class DashboardComponent implements OnInit {
   isEventDataLoaded: boolean = false;
   isListMode: boolean = false;
   listWindow: number = 20;
-  metricTree: Metric[] = [];
-  searchModel: SearchModel = {
-      direction: "-1",
-      metricId: undefined,
-      metricType: undefined,
-      metricName: undefined,
-      relation: undefined,
-      value: undefined,
-      extra: undefined
-  };
-  searchError: SearchError = {
-    show: false,
-    message: ""
-  };
-  selectedEventValues: string[] = [];
+
   get currentDate(): NgbDateStruct {
     return this._currentDate;
   }
@@ -98,7 +55,14 @@ export class DashboardComponent implements OnInit {
 
   isAutoMode: boolean = false;
   snapshot: Snapshot;
-  device: DeviceType;
+  private _device: DeviceType;
+  public get device(): DeviceType {
+    return this._device;
+  }
+  public set device(value: DeviceType) {
+    this._device = value;
+    this.getMetaListOfDevice();
+  }
   timestamp: number;
   backwardTime: number = 30; //in seconds
   forwardTime: number = 30; //in seconds
@@ -106,9 +70,10 @@ export class DashboardComponent implements OnInit {
   events$: BehaviorSubject<EventLog[]> = new BehaviorSubject([]);
   list$: BehaviorSubject<ListItem[]> = new BehaviorSubject([]);
 
+  metaListOfDevice: Meta[] = [];
+
   constructor(
     private apiService: ApiService,
-    private modalService: NgbModal,
     private route: ActivatedRoute
   ) {
     this.setTimestamp(this.getCurrentDate());
@@ -121,7 +86,6 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     forkJoin([this.getMetaList()/*, this.getAllEventValues()*/])
       .subscribe(r => {
-        this.metricTree = this.getMetrics(undefined, undefined);
         this.startUpdateInterval();
       });
   }
@@ -155,6 +119,10 @@ export class DashboardComponent implements OnInit {
       this.getSnapshot();
     else
       this.getList();
+  }
+
+  getMetaListOfDevice() {
+    this.metaListOfDevice = this._metaList.filter((m) => { return m.device === this._device; });
   }
 
   startUpdateInterval() {
@@ -222,10 +190,11 @@ export class DashboardComponent implements OnInit {
   }
 
   getMetaList(): Observable<Meta[]> {
-    return this.apiService.getMeta(this.device)
+    return this.apiService.getMeta()
       .pipe(
         tap(r => {
         this._metaList = r ?? [];
+        this.getMetaListOfDevice();
       }));
   }
 
@@ -311,132 +280,22 @@ export class DashboardComponent implements OnInit {
     return "";
   }
 
-  openSearch(content) {
-    this.modalService.open(content);
+  openSearch() {
+    this.searchDialog.show();
   }
 
-  getMetrics(ids: string[], parentLevels: string[]): Metric[] {
-    let children: Metric[] = [];
-    let items: Meta[] = [];
-    let level: string;
-    ids = ids ?? [];
-    parentLevels = parentLevels ?? [];
-    let parentLevel = parentLevels.length > 0 ? parentLevels[parentLevels.length - 1] : "";
-    switch(parentLevel) {
-      case "category":
-        level = "system1";
-        break;
-      case "system1":
-        level = "system2";
-        break;
-      case "system2":
-        level = "data_id";
-        break;
-      case "data_id":
-        return [];
-      default:
-        level = "category";
-        break;
-    }
-    items = this._metaList.filter((value: Meta, index: Number, array: Meta[]) => {
-      let ok = value.device === this.device;
-      if (!ok)
-        return false;
-
-      if (ids.length === 0)
-        return true;
-
-      for (let i = 0; i < ids.length; i++)
-        if (ids[i] !== value[parentLevels[i]])
-          return false;
-
-      return true;
-    });
-
-    for (let item of items) {
-      let idx = children.findIndex((value) => {
-        return value.id === item[level]
-      });
-
-      if (idx > -1)
-        continue;
-
-      let name = level === "data_id" ? item.nice_name : item[level];
-      if (name == undefined || name == "")
-        name = item.data_id;
-
-      children.push({
-        id: item[level],
-        name: name,
-        type: ids.length === 0 ? item[level] : ids[0],
-        level: level,
-        children: this.getMetrics(ids.concat([item[level]]), parentLevels.concat([level]))
-      });
-    }
-
-    children = children.sort((a, b) => {
-      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-    });
-
-    return children;
-  }
-
-  toggleMetricNode(event: Event) {
-    let target = (event.target as HTMLElement);
-    let isCategorySelection = target.classList.contains("category");
-    let allowedNodes = ["LI", "I", "SPAN"];
-    if (allowedNodes.indexOf(target.nodeName) === -1 && !isCategorySelection)
-      return;
-
-    let node = target.closest('li');
-
-    if (node.classList.contains("leaf") || isCategorySelection) {
-      if (this.searchModel.metricType !== node.getAttribute("type")) {
-        this.searchModel.value = undefined;
-        this.searchModel.relation = undefined;
-        this.searchModel.extra = undefined;
-      }
-      this.searchModel.metricType = node.getAttribute("type");
-      if (isCategorySelection) {
-        this.searchModel.metricId = undefined;
-        this.searchModel.metricName = node.querySelector('span').innerText;
-      } else {
-        this.searchModel.metricId = node.id;
-        this.searchModel.metricName = node.innerText;
-      }
-      if (this.searchModel.metricType === "EVENT") {
-        this.getEventValues(this.searchModel.metricId);
-      }
-      node.closest(".dropdown-menu").classList.toggle("show");
-      let dropdown = node.closest(".dropdown") as HTMLElement;
-      dropdown.classList.toggle("show");
-      let button = dropdown.querySelector(".dropdown-toggle") as HTMLButtonElement;
-      //button.innerText = node.innerText;
-      button.setAttribute("aria-expanded", "false");
-    } else {
-      if (node.classList.contains("closed"))
-      {
-        node.classList.remove("closed");
-        node.classList.add("opened");
-      } else {
-        node.classList.remove("opened");
-        node.classList.add("closed");
-      }
-    }
-  }
-
-  search(form: NgForm, modal: NgbActiveModal) {
-    console.log(this.searchModel);
+  search(model: MetricFilterModel) {
+    console.log(model);
 
     let req: FindParams = {
       device: this.device,
-      afterCount: this.searchModel.direction === "1" ? 1 : undefined,
-      beforeCount: this.searchModel.direction === "-1" ? 1 : undefined,
-      category: this.searchModel.metricType,
-      relation: this.searchModel.relation,
-      value: (this.searchModel.value ?? "").toString().split('|'),
-      name: this.searchModel.metricId,
-      extra: this.searchModel.extra
+      afterCount: model.direction === "1" ? 1 : undefined,
+      beforeCount: model.direction === "-1" ? 1 : undefined,
+      category: model.metricType,
+      relation: model.relation,
+      value: (model.value ?? "").toString().split('|'),
+      name: model.metricId,
+      extra: model.extra
     };
 
     if (!req.afterCount && !req.beforeCount) {
@@ -449,18 +308,15 @@ export class DashboardComponent implements OnInit {
       if ((r ?? []).length > 0)
         t = new Date(r[0].timestamp).getTime();
       this.setTimestamp(t);
-      modal.close();
+      this.searchDialog.close();
     }, (err: HttpErrorResponse) => {
-      this.searchError.show = true;
+      let message = "";
       if (err.status === 404)
-        this.searchError.message = err?.error?.detail ?? "No log found!";
+        message = err?.error?.detail ?? "No log found!";
       else
-        this.searchError.message = err?.error?.detail ?? "Some error happened!";
+        message = err?.error?.detail ?? "Some error happened!";
+      this.searchDialog.showError(message);
     });
-  }
-
-  searchDataChanged(event: Event) {
-    this.searchError.show = false;
   }
 
   dateTimeSettingsShown() {
@@ -488,25 +344,6 @@ export class DashboardComponent implements OnInit {
     if (layout === "list" && this._stopped && this._lastListTimestamp != this.timestamp) {
       this.getList();
     }
-  }
-
-  getEventValues(id: string) {
-    let event = this._allEventValues.find((event) => {
-      return event.data_id === id;
-    });
-
-    this.selectedEventValues = event?.values ?? [];
-  }
-
-  searchForEventValues: OperatorFunction<string, readonly string[]> = (text$: Observable<string>) => {
-    const debouncedText$ = text$.pipe(debounceTime(200), distinctUntilChanged());
-    const clicksWithClosedPopup$ = this.click$/*.pipe(filter(() => !this.instance.isPopupOpen()))*/;
-    const inputFocus$ = this.focus$;
-
-    return merge(debouncedText$, inputFocus$, clicksWithClosedPopup$).pipe(
-      map(term => (term === '' ? this.selectedEventValues
-        : this.selectedEventValues.filter(v => v.toLowerCase().indexOf(term.toLowerCase()) > -1)).slice(0, 10))
-    );
   }
 
   stepList(item: ListItem, direction: number) {

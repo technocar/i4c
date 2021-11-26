@@ -1,0 +1,26 @@
+<div #dropdown ngbDropdown class="d-inline-block" (openChange)="toggle($event)" dropdownClass="meta-selector">
+  <button type="button" class="btn btn-outline-primary" id="metric_list" ngbDropdownToggle>
+    {{selectedMetric?.name ? selectedMetric.name : 'válasszon...'}}
+    <i class="bi bi-caret-down-fill"></i>
+  </button>
+  <div ngbDropdownMenu aria-labelledby="metric_list" (click)="toggleMetricNode($event)">
+    <ul>
+      <ng-container
+        *ngTemplateOutlet="metricListTmpl; context:{ list: metricTree }"
+      ></ng-container>
+    </ul>
+    <ng-template #metricListTmpl let-list="list">
+      <li *ngFor="let item of list" id="{{item.id}}" class="closed {{item.children.length === 0 ? 'leaf' : '' }}" data-type="{{item.type}}">
+        <i class="bi bi-plus-square"></i>
+        <i class="bi bi-dash-square"></i>
+        <span class="pl-2 pr-2">{{ item.name }}</span>
+        <button *ngIf="item.level === 'category' && item.name === 'CONDITION'" type="button" class="category btn btn-sm btn-outline-primary">kiválaszt</button>
+        <ul *ngIf="item.children.length > 0">
+          <ng-container
+            *ngTemplateOutlet="metricListTmpl; context:{ list: item.children }"
+          ></ng-container>
+        </ul>
+      </li>
+    </ng-template>
+ </div>
+</div>

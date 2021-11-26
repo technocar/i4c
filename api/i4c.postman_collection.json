@@ -1279,7 +1279,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/events/check",
+							"raw": "localhost:5000/alarm/events/check?alarm=coolant-while-cutting",
 							"host": [
 								"localhost"
 							],
@@ -1299,6 +1299,10 @@
 									"key": "max_count",
 									"value": "12",
 									"disabled": true
+								},
+								{
+									"key": "alarm",
+									"value": "coolant-while-cutting"
 								}
 							]
 						}
@@ -1480,6 +1484,26 @@
 				},
 				{
 					"name": "stat get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/stat/def/-1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"-1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat get Copy",
 					"request": {
 						"method": "GET",
 						"header": [],

@@ -111,14 +111,14 @@ export interface FindParams {
 export interface Meta {
   device: DeviceType,
   data_id: string,
-  name: string,
-  nice_name: string,
-  system1: string,
-  system2: string,
-  category: Category,
-  type: string,
-  subtype: string,
-  unit: string
+  name?: string,
+  nice_name?: string,
+  system1?: string,
+  system2?: string,
+  category?: Category,
+  type?: string,
+  subtype?: string,
+  unit?: string
 }
 
 export interface FindResponse {
@@ -291,4 +291,72 @@ export interface ToolListParams {
   timestamp?: Date,
   sequence?: number,
   max_count?: number
+}
+
+export interface StatDefParams {
+  id?: string,
+  user?: string,
+  name?: string,
+  name_mask?: string,
+  type?: string
+}
+
+export interface StatDef {
+  id: number,
+  name: string,
+  user: User,
+  shared: boolean,
+  modified: string,
+  timeseriesdef: StatTimeSeriesDef,
+  xydef: StatXYDef
+}
+
+export interface StatDefBase {
+}
+
+export interface StatDateTimeDef extends StatDefBase {
+  after: string,
+  before: string,
+  duration: string
+}
+
+export enum AggFunc { Avg = 'avg', Median = 'median', FirstQuartile = 'q1st', ThirdQuartile = 'q3rd', Min = 'min', Max = 'max' }
+
+export interface StatTimeSeriesDef extends StatDateTimeDef {
+  filter: StatTimesSeriesFilter[],
+  metric: Meta,
+  agg_func: AggFunc,
+  agg_sep: Meta,
+  series_sep: Meta,
+  xaxis: string | number,
+  visualsettings: StatVisualSettings
+}
+
+export interface StatTimesSeriesFilter {
+  device: DeviceType,
+  data_id: string,
+  rel: string,
+  value: any,
+  age_min: number,
+  age_max: number
+}
+
+export interface StatVisualSettings {
+  title: string,
+  subtitle: string
+}
+
+export interface StatTimeSeriesData {
+  def: StatTimeSeriesDef,
+  series: StatTimeSeriesDataSerie[]
+}
+
+export interface StatTimeSeriesDataSerie {
+ name: string,
+ x: string[],
+ y: number[]
+}
+
+export interface StatXYDef {
+
 }
