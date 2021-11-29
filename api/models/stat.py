@@ -84,7 +84,7 @@ class StatTimeseriesAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q3rd = "q3rd"
+    q4th = "q4th"
     min = "min"
     max = "max"
 
@@ -122,7 +122,7 @@ class StatSepEvent(I4cBaseModel):
 
 
 class StatTimeseriesVisualSettings(I4cBaseModel):
-    # todo 1: **********
+    # todo 1: *** StatTimeseriesVisualSettings
     pass
 
 
@@ -262,7 +262,7 @@ class StatXYFieldDef(I4cBaseModel):
 
 
 class StatXYVisualSettings(I4cBaseModel):
-    # todo 1: **********
+    # todo 1: *** StatXYVisualSettings
     pass
 
 
@@ -517,8 +517,11 @@ class StatTimeseriesDataSeries(I4cBaseModel):
 
 
 class StatXYData(I4cBaseModel):
-    # todo 1: **********
-    pass
+    x: StatXYFieldDef
+    y: Optional[StatXYFieldDef]
+    shape: StatXYFieldDef
+    color: StatXYFieldDef
+    others: List[StatXYFieldDef]
 
 
 class StatData(I4cBaseModel):
@@ -543,14 +546,14 @@ def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
         return None
     if method == StatTimeseriesAggMethod.avg:
         return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4st):
+    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4th):
         o = sorted(v["value_num"] for v in agg_values)
         if method == StatTimeseriesAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
         elif method == StatTimeseriesAggMethod.q1st:
-            return frac_index(o, (len(o) - 1) / 4)
+            return frac_index(o, (len(o) - 1) / 5)
         elif method == StatTimeseriesAggMethod.q3th:
-            return frac_index(o, (len(o) - 1) * 3 / 4)
+            return frac_index(o, (len(o) - 1) * 4 / 5)
     elif method == StatTimeseriesAggMethod.min:
         return min(v["value_num"] for v in agg_values)
     elif method == StatTimeseriesAggMethod.max:
@@ -570,11 +573,15 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
         current_series = series_intersect.Series()
         for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
             if alarm.check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
-                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] else 0)
-                age_max = timedelta(seconds=filter["age_max"] if filter["age_max"] else 0)
-                if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
-                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
-                                                    r_series["timestamp"] - age_max)
+                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] and filter["age_min"] > 0 else 0)
+                age_max = timedelta(seconds=filter["age_max"]) if filter["age_max"] else None
+                if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
+                    if age_max is None or r_series["timestamp"] + age_max > r_series["timestamp"]:
+                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                        r_series["timestamp"])
+                    else:
+                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                        r_series_prev["timestamp"] + age_max)
                     current_series.add(t)
         total_series = series_intersect.Series.intersect(total_series, current_series)
         del current_series
@@ -686,3 +693,26 @@ async def statdata_get(credentials, id) -> StatData:
             elif st.xydef is not None:
                 return await statdata_get_xy(st, conn)
             return StatData()
+
+
+class StatXYMateFieldType(str, Enum):
+    numeric = "numeric"
+    category = "category"
+    label = "label"
+
+
+class StatXYMetaField(I4cBaseModel):
+    name: str
+    displayname: str
+    type: StatXYMateFieldType
+    value_list: List[str]
+
+
+class StatXYMetaObject(I4cBaseModel):
+    name: str
+    displayname: str
+    fields: List[StatXYMetaField]
+
+
+class StatXYMeta(I4cBaseModel):
+    objects: StatXYMetaObject
