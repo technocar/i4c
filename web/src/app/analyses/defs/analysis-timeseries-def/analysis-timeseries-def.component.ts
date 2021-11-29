@@ -1,8 +1,7 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { MetaFilterComponent, MetaFilterMode, MetricFilterModel } from 'src/app/commons/meta-filter/meta-filter.component';
 import { ApiService } from 'src/app/services/api.service';
-import { AggFunc, Meta, StatDefBase, StatTimeSeriesData, StatTimeSeriesDef, StatTimesSeriesFilter } from 'src/app/services/models/api';
+import { AggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter } from 'src/app/services/models/api';
 import { AanalysisDef } from '../../analyses.component';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
@@ -75,6 +74,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
   newFilter() {
     var filters = this.filters$.value;
     filters.push({
+      id: Math.max(...filters.map(f => f.id)) + 1,
       device: undefined,
       data_id: undefined,
       rel: undefined,
