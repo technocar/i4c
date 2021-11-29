@@ -32,7 +32,7 @@ class AlarmCondSampleAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q3rd = "q3rd"
+    q4th = "q4th"
     slope = "slope"
 
 
@@ -684,14 +684,14 @@ def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
         return None
     if method == AlarmCondSampleAggMethod.avg:
         return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (AlarmCondSampleAggMethod.median, AlarmCondSampleAggMethod.q1st, AlarmCondSampleAggMethod.q4st):
+    elif method in (AlarmCondSampleAggMethod.median, AlarmCondSampleAggMethod.q1st, AlarmCondSampleAggMethod.q4th):
         o = sorted(v["value_num"] for v in agg_values)
         if method == AlarmCondSampleAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
         elif method == AlarmCondSampleAggMethod.q1st:
-            return frac_index(o, (len(o) - 1) / 4)
+            return frac_index(o, (len(o) - 1) / 5)
         elif method == AlarmCondSampleAggMethod.q3th:
-            return frac_index(o, (len(o) - 1) * 3 / 4)
+            return frac_index(o, (len(o) - 1) * 4 / 5)
     elif method == AlarmCondSampleAggMethod.slope:
         n = len(agg_values)
         if n == 1:

@@ -84,7 +84,7 @@ class StatTimeseriesAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q3rd = "q3rd"
+    q4th = "q4th"
     min = "min"
     max = "max"
 
@@ -122,7 +122,7 @@ class StatSepEvent(I4cBaseModel):
 
 
 class StatTimeseriesVisualSettings(I4cBaseModel):
-    # todo 1: **********
+    # todo 1: *** StatTimeseriesVisualSettings
     pass
 
 
@@ -262,7 +262,7 @@ class StatXYFieldDef(I4cBaseModel):
 
 
 class StatXYVisualSettings(I4cBaseModel):
-    # todo 1: **********
+    # todo 1: *** StatXYVisualSettings
     pass
 
 
@@ -517,8 +517,11 @@ class StatTimeseriesDataSeries(I4cBaseModel):
 
 
 class StatXYData(I4cBaseModel):
-    # todo 1: **********
-    pass
+    x: StatXYFieldDef
+    y: Optional[StatXYFieldDef]
+    shape: StatXYFieldDef
+    color: StatXYFieldDef
+    others: List[StatXYFieldDef]
 
 
 class StatData(I4cBaseModel):
@@ -543,14 +546,14 @@ def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
         return None
     if method == StatTimeseriesAggMethod.avg:
         return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4st):
+    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4th):
         o = sorted(v["value_num"] for v in agg_values)
         if method == StatTimeseriesAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
         elif method == StatTimeseriesAggMethod.q1st:
-            return frac_index(o, (len(o) - 1) / 4)
+            return frac_index(o, (len(o) - 1) / 5)
         elif method == StatTimeseriesAggMethod.q3th:
-            return frac_index(o, (len(o) - 1) * 3 / 4)
+            return frac_index(o, (len(o) - 1) * 4 / 5)
     elif method == StatTimeseriesAggMethod.min:
         return min(v["value_num"] for v in agg_values)
     elif method == StatTimeseriesAggMethod.max:
@@ -686,3 +689,26 @@ async def statdata_get(credentials, id) -> StatData:
             elif st.xydef is not None:
                 return await statdata_get_xy(st, conn)
             return StatData()
+
+
+class StatXYMateFieldType(str, Enum):
+    numeric = "numeric"
+    category = "category"
+    label = "label"
+
+
+class StatXYMetaField(I4cBaseModel):
+    name: str
+    displayname: str
+    type: StatXYMateFieldType
+    value_list: List[str]
+
+
+class StatXYMetaObject(I4cBaseModel):
+    name: str
+    displayname: str
+    fields: List[StatXYMetaField]
+
+
+class StatXYMeta(I4cBaseModel):
+    objects: StatXYMetaObject
