@@ -134,10 +134,10 @@ export interface User {
   id: string,
   name: string,
   login_name: string,
-  pub_key: string,
-  roles: string[],
-  status: string,
-  roles_eff: string[]
+  pub_key?: string,
+  roles?: string[],
+  status?: string,
+  roles_eff?: string[]
 }
 
 export interface Extra {

@@ -1,9 +1,10 @@
+<app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
 <div class="row m-0">
-  <fieldset class="filters col-12 p-4 border">
+  <fieldset class="filters col-12 p-4">
     <legend>szűrő</legend>
     <div class="filter row mr-0 mt-2" *ngFor="let filter of filters$ | async">
       <div class="col">
-        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" ></app-meta-selector>
+        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" ></app-meta-selector>
       </div>
       <select class="col form-control mr-2" [ngModel]="filter.rel">
         <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
@@ -18,15 +19,12 @@
       hozzadás...
     </button>
   </fieldset>
-  <fieldset class="parms col-6 p-4 border">
+  <fieldset class="params col p-4 mt-4 mr-2">
     <legend>paraméterek</legend>
     <div class="row form-group">
-      <label class="col">mérőszám</label>
-      <div class="input-group col">
-        <input type="text" class="form-control" aria-label="" readonly>
-        <div class="input-group-append">
-          <button class="btn btn-outline-primary" type="button" (click)="showMetricSelector('metric')">...</button>
-        </div>
+      <label class="col-6">mérőszám</label>
+      <div class="col p-0">
+        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id"></app-meta-selector>
       </div>
     </div>
     <div class="row form-group">
@@ -37,28 +35,34 @@
       </select>
     </div>
     <div class="row form-group">
-      <label class="col">elválasztó</label>
-      <div class="input-group col">
-        <input type="text" class="form-control" aria-label="" readonly>
-        <div class="input-group-append">
-          <button class="btn btn-outline-primary" type="button" (click)="showMetricSelector('agg_sep')">...</button>
-        </div>
+      <label class="col-6">elválasztó</label>
+      <div class="col p-0">
+        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id"></app-meta-selector>
       </div>
     </div>
     <div class="row form-group">
       <label class="col">összesítés</label>
       <select class="col form-control">
+        <option value="">nincs</option>
         <option *ngFor="let item of aggFuncs" [value]="item[0]">{{item[1]}}</option>
       </select>
     </div>
     <div class="row form-group">
-      <label class="col">görbe elválasztó</label>
-      <div class="input-group col">
-        <input type="text" class="form-control" aria-label="" readonly>
-        <div class="input-group-append">
-          <button class="btn btn-outline-primary" type="button" (click)="showMetricSelector('series_sep')">...</button>
-        </div>
+      <label class="col-6">görbe elválasztó</label>
+      <div class="col p-0">
+        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id"></app-meta-selector>
       </div>
+    </div>
+  </fieldset>
+  <fieldset class="chart-settings col p-4 mt-4 ml-2">
+    <legend>grafikon beállítás</legend>
+    <div class="row form-group">
+      <label class="col">megnevezés</label>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.title" />
+    </div>
+    <div class="row form-group">
+      <label class="col">rövid magyarázat</label>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" />
     </div>
   </fieldset>
 </div>

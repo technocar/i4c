@@ -63,9 +63,26 @@ $info: $color-metalic_seaweed
 $light: #F1FBFF
 @import "../node_modules/bootstrap/scss/bootstrap"
 
-legend
-  display: inline-block
-  width: auto
-  padding: 0 0.5rem
-  background-color: $color-beau_blue
+fieldset
+  border: 1px solid $color-light-gray
   border-radius: 5px
+  legend
+    display: inline-block
+    width: auto
+    padding: 0 0.5rem
+    background-color: $light
+    border-radius: 5px
+    font-size: 1rem
+    color: $primary
+    border: 1px solid $color-light-gray
+
+.accordion
+  .card-header
+    button
+      width: 100%
+      text-align: left
+    button::after
+      content: "⏶"
+      float: right
+    button.collapsed::after
+      content: "⏷"

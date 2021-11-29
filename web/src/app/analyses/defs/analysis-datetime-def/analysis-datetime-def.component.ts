@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { StatDateTimeDef } from 'src/app/services/models/api';
 import { AanalysisDef } from '../../analyses.component';
 
@@ -10,6 +10,8 @@ import { AanalysisDef } from '../../analyses.component';
 export class AnalysisDatetimeDefComponent implements OnInit, AanalysisDef {
 
   private _timestamp: string;
+
+  @Input('def') def: StatDateTimeDef;
 
   get timestamp(): string { return this._timestamp; }
   set timestamp(value: string) { this._timestamp = (new Date(value)).toISOString(); }
@@ -31,6 +33,16 @@ export class AnalysisDatetimeDefComponent implements OnInit, AanalysisDef {
   }
 
   ngOnInit(): void {
+    if (this.def) {
+      this.direction = this.def.after ? 1 : -1;
+      this.timestamp = this.def.after ?? this.def.before ?? this.timestamp;
+      if (this.def.duration && this.def.duration.length > 2) {
+        if (typeof this.def.duration[1] === 'number')
+          this.count = parseInt(this.def.duration[1]);
+        if (['Y', 'M', 'd', 'H'].indexOf(this.def.duration[2]))
+          this.period = this.def.duration[2];
+      }
+    }
   }
 
   getDef(): StatDateTimeDef {

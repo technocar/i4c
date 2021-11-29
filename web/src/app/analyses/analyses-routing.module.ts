@@ -11,7 +11,11 @@ const routes: Routes = [
       { path: '', component: AnalysesComponent, canActivate: [AuthGuard] },
       { path: ':id', component: AnalysisComponent, canActivate: [AuthGuard],
         resolve: { data: AnalysisResolver },
-        data: { breadcrumb: (data: any) => `${(data.data ?? []).length > 2 ? data.data[1].name : "???"}` }
+        data: { breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[1]?.name ?? "Új elemzés" : "???"}` }
+      },
+      { path: ':id/:type', component: AnalysisComponent, canActivate: [AuthGuard],
+        resolve: { data: AnalysisResolver },
+        data: { breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[1]?.name ?? "Új elemzés" : "???"}` }
       }
     ],
     data: { breadcrumb: 'Adatelemzések' }
