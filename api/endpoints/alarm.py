@@ -147,11 +147,12 @@ async def alarmrecips_list(
         user: Optional[str] = Query(None),
         user_name: Optional[str] = Query(None),
         user_name_mask: Optional[List[str]] = Query(None),
+        user_status: Optional[CommonStatusEnum] = Query(None),
         method: Optional[models.alarm.AlarmMethod] = Query(None),
         status: Optional[models.alarm.AlarmRecipientStatus] = Query(None),
 ):
     return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
-                                               user, user_name, user_name_mask, method, status)
+                                               user, user_name, user_name_mask, user_status, method, status)
 
 
 @router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, x_properties=dict(object="alarmrecip", action="get"))

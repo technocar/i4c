@@ -301,12 +301,20 @@ class AlarmEvent(I4cBaseModel):
     description: str
 
 
+class AlarmRecipUser(I4cBaseModel):
+    id: str
+    name: str
+    status: CommonStatusEnum
+
+
 class AlarmRecip(I4cBaseModel):
     id: int
     event: AlarmEvent
     alarm: str
     method: AlarmMethod
     status: AlarmRecipientStatus
+    user: AlarmRecipUser
+    address: Optional[str]
 
 
 class AlarmRecipPatchCondition(I4cBaseModel):
@@ -871,7 +879,8 @@ async def alarmevent_list(credentials, id=None, alarm=None, alarm_mask=None,
 
 
 async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, event=None,
-                           user=None, user_name=None, user_name_mask=None, method=None, status=None, *, pconn=None) -> List[AlarmRecip]:
+                           user=None, user_name=None, user_name_mask=None, user_status=None,
+                           method=None, status=None, *, pconn=None) -> List[AlarmRecip]:
     sql = dedent("""\
             with 
                 res as (
@@ -884,8 +893,10 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                       e.created as event_created,
                       e.summary as event_summary,
                       e.description as event_description,
+                      r."address",
                       r."user",
-                      u.name as user_name
+                      u.name as user_name,
+                      u."status" as user_status
                     from alarm_recipient r
                     join alarm_event e on e.id = r.event
                     join alarm a on a.id = e.alarm
@@ -921,6 +932,9 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
         if status is not None:
             params.append(status)
             sql += f"and res.\"status\" = ${len(params)}\n"
+        if user_status is not None:
+            params.append(user_status)
+            sql += f"and res.\"user_status\" = ${len(params)}\n"
         res = await conn.fetch(sql, *params)
         return [AlarmRecip(id=r["id"],
                            event=AlarmEvent(id=r["event_id"],
@@ -930,7 +944,11 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                                             description=r["event_description"]),
                            alarm=r["alarm"],
                            method=r["method"],
-                           status=r["status"]
+                           status=r["status"],
+                           address=r["address"],
+                           user=AlarmRecipUser(id=r["user"],
+                                               name=r["user_name"],
+                                               status=r["user_status"])
                            ) for r in res]
 
 
