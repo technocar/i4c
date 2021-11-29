@@ -1,5 +1,11 @@
 <div class="row">
   <div class="col-12">
-    <app-analysis-timeseries-def [metaList]="metaList"></app-analysis-timeseries-def>
+    <ngb-accordion #settings="ngbAccordion" activeIds="{{isNew() ? 'analysis-settings' : ''}}" type="light">
+      <ngb-panel title="Beállítások" cardClass="settings" id="analysis-settings">
+        <ng-template ngbPanelContent>
+          <app-analysis-timeseries-def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>
+        </ng-template>
+      </ngb-panel>
+    </ngb-accordion>
   </div>
 </div>
