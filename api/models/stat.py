@@ -573,11 +573,15 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
         current_series = series_intersect.Series()
         for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
             if alarm.check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
-                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] else 0)
-                age_max = timedelta(seconds=filter["age_max"] if filter["age_max"] else 0)
-                if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
-                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
-                                                    r_series["timestamp"] - age_max)
+                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] and filter["age_min"] > 0 else 0)
+                age_max = timedelta(seconds=filter["age_max"]) if filter["age_max"] else None
+                if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
+                    if age_max is None or r_series["timestamp"] + age_max > r_series["timestamp"]:
+                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                        r_series["timestamp"])
+                    else:
+                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                        r_series_prev["timestamp"] + age_max)
                     current_series.add(t)
         total_series = series_intersect.Series.intersect(total_series, current_series)
         del current_series
