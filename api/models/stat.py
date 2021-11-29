@@ -84,7 +84,7 @@ class StatTimeseriesAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q3rd = "q3rd"
+    q4th = "q4th"
     min = "min"
     max = "max"
 
@@ -122,7 +122,7 @@ class StatSepEvent(I4cBaseModel):
 
 
 class StatTimeseriesVisualSettings(I4cBaseModel):
-    # todo 1: **********
+    # todo 1: *** StatTimeseriesVisualSettings
     pass
 
 
@@ -249,8 +249,50 @@ class StatTimeseriesDef(I4cBaseModel):
         return StatTimeseriesDef(**d)
 
 
+class StatXYObject(str, Enum):
+    workpiece = "workpiece"
+    mazakprogram = "mazakprogram"
+    batch = "batch"
+    tool = "tool"
+
+
+class StatXYFieldDef(I4cBaseModel):
+    name: str
+    # todo ?: params: List[str]
+
+
+class StatXYVisualSettings(I4cBaseModel):
+    # todo 1: *** StatXYVisualSettings
+    pass
+
+
+class StatXYFilterRel(str, Enum):
+    eq = "="
+    neq = "!="
+    less = "<"
+    leq = "<="
+    gtr = ">"
+    geq = ">="
+
+
+class StatXYFilter(I4cBaseModel):
+    field: StatXYFieldDef
+    rel: StatXYFilterRel
+    value: str
+
+
 class StatXYDef(I4cBaseModel):
-    # todo 1: **********
+    objname: StatXYObject
+    after: Optional[datetime]
+    before: Optional[datetime]
+    duration: Optional[str]
+    x: StatXYFieldDef
+    y: Optional[StatXYFieldDef]
+    shape: StatXYFieldDef
+    color: StatXYFieldDef
+    others: List[StatXYFieldDef]
+    filters: List[StatXYFilter]
+    visualsettings: StatXYVisualSettings
 
     async def insert_to_db(self, stat_id, conn):
         # todo 1: **********
@@ -474,19 +516,18 @@ class StatTimeseriesDataSeries(I4cBaseModel):
     y: List[float]
 
 
-class StatTimeseriesData(I4cBaseModel):
-    stat_def: StatDef
-    series: List[StatTimeseriesDataSeries]
-
-
 class StatXYData(I4cBaseModel):
-    # todo 1: **********
-    pass
+    x: StatXYFieldDef
+    y: Optional[StatXYFieldDef]
+    shape: StatXYFieldDef
+    color: StatXYFieldDef
+    others: List[StatXYFieldDef]
 
 
 class StatData(I4cBaseModel):
-    timeseriesdata: Optional[StatTimeseriesData]
-    xydata: Optional[StatXYData]
+    stat_def: StatDef
+    timeseriesdata: Optional[List[StatTimeseriesDataSeries]]
+    xydata: Optional[List[StatXYData]]
 
 
 def resolve_time_period(after, before, duration):
@@ -505,14 +546,14 @@ def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
         return None
     if method == StatTimeseriesAggMethod.avg:
         return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4st):
+    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4th):
         o = sorted(v["value_num"] for v in agg_values)
         if method == StatTimeseriesAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
         elif method == StatTimeseriesAggMethod.q1st:
-            return frac_index(o, (len(o) - 1) / 4)
+            return frac_index(o, (len(o) - 1) / 5)
         elif method == StatTimeseriesAggMethod.q3th:
-            return frac_index(o, (len(o) - 1) * 3 / 4)
+            return frac_index(o, (len(o) - 1) * 4 / 5)
     elif method == StatTimeseriesAggMethod.min:
         return min(v["value_num"] for v in agg_values)
     elif method == StatTimeseriesAggMethod.max:
@@ -532,11 +573,15 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
         current_series = series_intersect.Series()
         for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
             if alarm.check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
-                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] else 0)
-                age_max = timedelta(seconds=filter["age_max"] if filter["age_max"] else 0)
-                if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
-                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
-                                                    r_series["timestamp"] - age_max)
+                age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] and filter["age_min"] > 0 else 0)
+                age_max = timedelta(seconds=filter["age_max"]) if filter["age_max"] else None
+                if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
+                    if age_max is None or r_series["timestamp"] + age_max > r_series["timestamp"]:
+                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                        r_series["timestamp"])
+                    else:
+                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                        r_series_prev["timestamp"] + age_max)
                     current_series.add(t)
         total_series = series_intersect.Series.intersect(total_series, current_series)
         del current_series
@@ -550,7 +595,7 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
         return res
 
     current_series = create_StatTimeseriesDataSeries()
-    res = StatData(timeseriesdata=StatTimeseriesData(stat_def=st, series=[current_series]))
+    res = StatData(stat_def=st, timeseriesdata=[current_series])
     last_series_sep_value = None
 
     def record_output(aggregated_value, ts):
@@ -561,7 +606,7 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
                 if last_series_sep_value:
                     current_series.name = last_series_sep_value
             elif st.timeseriesdef.series_name == StatTimeseriesSeriesName.sequence:
-                current_series.name = str(len(res.timeseriesdata.series))
+                current_series.name = str(len(res.timeseriesdata))
         if current_series.x_timestamp is not None:
             current_series.x_timestamp.append(ts)
             if current_series.x_relative is not None:
@@ -617,14 +662,14 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
 
             if series_sep_ts and series_sep_ts[0][0] < md["timestamp"]:
                 current_series = create_StatTimeseriesDataSeries()
-                res.timeseriesdata.series.append(current_series)
+                res.timeseriesdata.append(current_series)
 
         if agg_values:
             aggregated_value = calc_aggregate(st.timeseriesdef.agg_func, agg_values)
             record_output(aggregated_value, md_prev["timestamp"])
 
     if st.timeseriesdef.series_name == StatTimeseriesSeriesName.timestamp:
-        ts = [(s.x_timestamp[0],s) for s in res.timeseriesdata.series if s.x_timestamp]
+        ts = [(s.x_timestamp[0],s) for s in res.timeseriesdata if s.x_timestamp]
         tso = optimize_timestamp_label([s[0] for s in ts])
         for s, o in zip(ts, tso):
             s[1].name = o
@@ -648,3 +693,26 @@ async def statdata_get(credentials, id) -> StatData:
             elif st.xydef is not None:
                 return await statdata_get_xy(st, conn)
             return StatData()
+
+
+class StatXYMateFieldType(str, Enum):
+    numeric = "numeric"
+    category = "category"
+    label = "label"
+
+
+class StatXYMetaField(I4cBaseModel):
+    name: str
+    displayname: str
+    type: StatXYMateFieldType
+    value_list: List[str]
+
+
+class StatXYMetaObject(I4cBaseModel):
+    name: str
+    displayname: str
+    fields: List[StatXYMetaField]
+
+
+class StatXYMeta(I4cBaseModel):
+    objects: StatXYMetaObject

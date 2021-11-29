@@ -32,7 +32,7 @@ class AlarmCondSampleAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1th"
-    q3rd = "q3rd"
+    q4th = "q4th"
     slope = "slope"
 
 
@@ -684,14 +684,14 @@ def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
         return None
     if method == AlarmCondSampleAggMethod.avg:
         return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (AlarmCondSampleAggMethod.median, AlarmCondSampleAggMethod.q1st, AlarmCondSampleAggMethod.q4st):
+    elif method in (AlarmCondSampleAggMethod.median, AlarmCondSampleAggMethod.q1st, AlarmCondSampleAggMethod.q4th):
         o = sorted(v["value_num"] for v in agg_values)
         if method == AlarmCondSampleAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
         elif method == AlarmCondSampleAggMethod.q1st:
-            return frac_index(o, (len(o) - 1) / 4)
+            return frac_index(o, (len(o) - 1) / 5)
         elif method == AlarmCondSampleAggMethod.q3th:
-            return frac_index(o, (len(o) - 1) * 3 / 4)
+            return frac_index(o, (len(o) - 1) * 4 / 5)
     elif method == AlarmCondSampleAggMethod.slope:
         n = len(agg_values)
         if n == 1:
@@ -756,12 +756,19 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                                     current_series.add(t)
                         elif row_cond["log_row_category"] == AlarmCondLogRowCategory.event:
                             if check_rel(row_cond["rel"], row_cond["value_text"], r_series_prev["value_text"]):
-                                age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
-                                age_max = timedelta(seconds=row_cond["age_max"] if row_cond["age_max"] else 0)
-                                if r_series_prev["timestamp"] + age_min < r_series["timestamp"] - age_max:
-                                    t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"] - age_max,
-                                                                    f'{row_cond["device"]} {row_cond["data_id"]} '
-                                                                    f'{r_series_prev["value_text"]}       ({row_cond["rel"]} {row_cond["value_text"]})')
+                                age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] and row_cond["age_min"] > 0 else 0)
+                                age_max = timedelta(seconds=row_cond["age_max"]) if row_cond["age_max"] else None
+                                if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
+                                    if age_max is None or r_series["timestamp"] + age_max > r_series["timestamp"]:
+                                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                                        r_series["timestamp"],
+                                                                        f'{row_cond["device"]} {row_cond["data_id"]} '
+                                                                        f'{r_series_prev["value_text"]}       ({row_cond["rel"]} {row_cond["value_text"]})')
+                                    else:
+                                        t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min,
+                                                                        r_series_prev["timestamp"] + age_max,
+                                                                        f'{row_cond["device"]} {row_cond["data_id"]} '
+                                                                        f'{r_series_prev["value_text"]}       ({row_cond["rel"]} {row_cond["value_text"]})')
                                     current_series.add(t)
                         elif row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
                             if not total_series.is_timestamp_in(r_series_prev["timestamp"]):
