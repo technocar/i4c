@@ -133,12 +133,12 @@ delete from "stat_timeseries_filter" where id<0;
 delete from "stat_timeseries" where id<0;
 delete from "stat" where id<0;
 
-insert into "stat" values (-1, 'stat1', '1', false , now());
-insert into "stat_timeseries" values (-1, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, null, 'timestamp');
-insert into "stat_timeseries_filter" values (-1, -1, 'lathe', 'pgm', '*', 'a', null, null);
+insert into "stat" values (-2, 'stat1', '1', false , now());
+insert into "stat_timeseries" values (-2, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, null, 'timestamp');
+insert into "stat_timeseries_filter" values (-2, -2, 'lathe', 'pgm', '*', 'a', null, null);
 
-insert into "stat" values (-2, 'stat-2', '1', false , now());
-insert into "stat_xy" values (-2, 'mazakprogram', null, null, 'P1M'::interval, 'avg_x_load', 'avg_y_load', null, null); 
+insert into "stat" values (-3, 'stat-2', '1', false , now());
+insert into "stat_xy" values (-3, 'mazakprogram', null, null, 'P1M'::interval, 'avg_x_load', 'avg_y_load', null, null); 
 
 
 */
