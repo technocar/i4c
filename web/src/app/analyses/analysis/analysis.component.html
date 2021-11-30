@@ -12,10 +12,10 @@
     <button class="btn btn-primary" (click)="getChart()">Adatok lekérdezése</button>
   </div>
   <div id="chart-container" class="col-12">
-    <canvas #chart class="chart"></canvas>
     <div *ngIf="chartError" class="alert alert-danger text-center" role="alert">
       {{chartErrorMsg}}
     </div>
+    <canvas #chart class="chart"></canvas>
     <div *ngIf="chartLoading$ | async" class="chart-loading-indicator text-center">
       <div class="spinner-border" role="status">
         <span class="sr-only">Loading...</span>

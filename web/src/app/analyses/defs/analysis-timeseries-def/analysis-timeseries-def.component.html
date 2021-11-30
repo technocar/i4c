@@ -2,18 +2,42 @@
 <div class="row m-0">
   <fieldset class="filters col-12 p-4">
     <legend>szűrő</legend>
-    <div class="filter row mr-0 mt-2" *ngFor="let filter of filters$ | async">
-      <div class="col">
-        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" ></app-meta-selector>
-      </div>
-      <select class="col form-control mr-2" [ngModel]="filter.rel">
-        <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
-      </select>
-      <input class="col form-control mr-2" [ngModel]="filter.value" />
-      <button class="btn btn-outline-danger col-auto" title="törlés" (click)="deleteFilter(filter)">
-        <i class="bi bi-trash"></i>
-      </button>
-    </div>
+    <table class="table mr-0 mt-2 text-center">
+      <thead>
+        <th scope="col" width="25%">esemény</th>
+        <th scope="col" width="15%">kapcsolat</th>
+        <th scope="col">érték</th>
+        <th scope="col" width="10%">age min</th>
+        <th scope="col" width="10%">age max</th>
+        <th></th>
+      </thead>
+      <tbody>
+        <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
+          <td>
+            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" ></app-meta-selector>
+          </td>
+          <td>
+            <select class="form-control mr-2" [ngModel]="filter.rel">
+              <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
+            </select>
+          </td>
+          <td>
+            <input class="form-control mr-2" [ngModel]="filter.value" />
+          </td>
+          <td>
+            <input type="number" class="form-control mr-2" [ngModel]="filter.age_min" />
+          </td>
+          <td>
+            <input type="number" class="form-control mr-2" [ngModel]="filter.age_max" />
+          </td>
+          <td>
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     <button class="btn btn-primary mt-4" (click)="newFilter()">
       <i class="bi bi-plus"></i>
       hozzadás...
@@ -29,22 +53,32 @@
     </div>
     <div class="row form-group">
       <label class="col">x tengely</label>
-      <select class="col form-control">
+      <select class="col form-control"  [(ngModel)]="def.xaxis">
         <option value="timestamp">dátum</option>
         <option value="sequence">szekvencia</option>
       </select>
     </div>
-    <div class="row form-group">
-      <label class="col-6">elválasztó</label>
-      <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id"></app-meta-selector>
+    <div class="row group">
+      <div class="col">
+        <div class="row form-group">
+          <label class="col-6">elválasztó</label>
+          <div class="col p-0">
+            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id"></app-meta-selector>
+          </div>
+        </div>
+        <div class="row form-group">
+          <label class="col">összesítés</label>
+          <select class="col form-control"  [(ngModel)]="def.agg_func">
+            <option value="">nincs</option>
+            <option *ngFor="let item of aggFuncs" [value]="item[0]">{{item[1]}}</option>
+          </select>
+        </div>
       </div>
     </div>
     <div class="row form-group">
-      <label class="col">összesítés</label>
-      <select class="col form-control">
-        <option value="">nincs</option>
-        <option *ngFor="let item of aggFuncs" [value]="item[0]">{{item[1]}}</option>
+      <label class="col">adatsor elnevezése</label>
+      <select class="col form-control" [(ngModel)]="def.series_name">
+        <option *ngFor="let item of seriesNameTypes" [value]="item[0]">{{item[1]}}</option>
       </select>
     </div>
     <div class="row form-group">
@@ -64,5 +98,31 @@
       <label class="col">rövid magyarázat</label>
       <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" />
     </div>
+    <fieldset class="row p-4 mt-4" *ngFor="let axis of ['x', 'y']">
+      <legend>{{axis}} tengely</legend>
+      <div class="col">
+        <div class="row form-group">
+          <label class="col">felirat</label>
+          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" />
+        </div>
+      </div>
+    </fieldset>
+    <fieldset class="row p-4 mt-4">
+      <legend>Jelmagyarázat</legend>
+      <div class="col">
+        <div class="row form-group">
+          <label class="col">pozició</label>
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position">
+            <option *ngFor="let p of labels.legend.positions" [value]="p[0]">{{p[1]}}</option>
+          </select>
+        </div>
+        <div class="row form-group">
+          <label class="col">igazítás</label>
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align">
+            <option *ngFor="let a of labels.legend.aligns" [value]="a[0]">{{a[1]}}</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
   </fieldset>
 </div>

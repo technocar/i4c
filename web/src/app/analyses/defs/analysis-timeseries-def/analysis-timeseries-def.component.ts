@@ -1,7 +1,8 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { AggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter } from 'src/app/services/models/api';
+import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition } from 'src/app/services/models/api';
+import { Labels } from 'src/app/services/models/constants';
 import { AanalysisDef } from '../../analyses.component';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
@@ -17,19 +18,24 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
 
 
-  private _selectedFilter: StatTimesSeriesFilter;
-  private _metricSelectorMode: string;
-
   filters$: BehaviorSubject<StatTimesSeriesFilter[]> = new BehaviorSubject([]);
 
   aggFuncs: string[][] = [
-    [AggFunc.Avg, $localize `:@@agg_func_avg:átlag`],
-    [AggFunc.Median, $localize `:@@agg_func_median:median`],
-    [AggFunc.Min, $localize `:@@agg_func_min:min`],
-    [AggFunc.Max, $localize `:@@agg_func_max:max`],
-    [AggFunc.FirstQuartile, $localize `:@@agg_func_q1st:1. kvantilis`],
-    [AggFunc.ThirdQuartile, $localize `:@@agg_func_q3rd:3. kvantilis`]
+    [StatTimeSeriesAggFunc.Avg, $localize `:@@stat_timeseries_agg_func_avg:átlag`],
+    [StatTimeSeriesAggFunc.Median, $localize `:@@stat_timeseries_agg_func_median:median`],
+    [StatTimeSeriesAggFunc.Min, $localize `:@@stat_timeseries_agg_func_min:min`],
+    [StatTimeSeriesAggFunc.Max, $localize `:@@stat_timeseries_agg_func_max:max`],
+    [StatTimeSeriesAggFunc.FirstQuartile, $localize `:@@stat_timeseries_agg_func_q1st:1. kvantilis`],
+    [StatTimeSeriesAggFunc.ThirdQuartile, $localize `:@@stat_timeseries_agg_func_q3rd:3. kvantilis`]
   ];
+
+  seriesNameTypes: string[][] = [
+    [StatTimeSeriesName.Timestamp, $localize `:@@stat_timeseries_series_name_type_timestamp:időpont`],
+    [StatTimeSeriesName.Sequence, $localize `:@@stat_timeseries_series_name_type_sequence:szekvencia`],
+    [StatTimeSeriesName.SeparatorEvent, $localize `:@@stat_timeseries_series_name_type_sepaarator_event:elválasztó`]
+  ];
+
+  labels = Labels.analysis;
 
   eventOps: string[][] = [];
 
@@ -46,23 +52,44 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
         duration: undefined,
         filter: [],
         metric: undefined,
-        agg_func: AggFunc.Avg,
+        agg_func: StatTimeSeriesAggFunc.Avg,
         agg_sep: undefined,
         series_sep: undefined,
+        series_name: StatTimeSeriesName.Timestamp,
         xaxis: undefined,
-        visualsettings: {
-          subtitle: "",
-          title: ""
-        }
+        visualsettings: undefined
       };
     else {
       this.filters$.next(this.def.filter ?? []);
-      this.def.visualsettings = this.def.visualsettings ?? { title: "", subtitle: "" };
     }
+    this.setDefualtVisualSettings();
+  }
+
+  setDefualtVisualSettings() {
+    var defaults = {
+      title: "",
+      subtitle: "",
+      legend: {
+        align: StatVisualSettingsLegendAlign.Center,
+        position: StatVisualSettingsLegendPosition.Top
+      },
+      xaxis: {
+        caption: ""
+      },
+      yaxis: {
+        caption: ""
+      }
+    };
+
+    if (!this.def.visualsettings)
+      this.def.visualsettings = defaults;
+    else
+      this.def.visualsettings = Object.assign(defaults, this.def.visualsettings);
   }
 
   getDef(): StatDefBase {
     var pDef = this.period.getDef();
+    console.log(pDef);
     this.def.after = pDef.after;
     this.def.before = pDef.before;
     this.def.duration = pDef.duration;
