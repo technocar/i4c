@@ -697,7 +697,7 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
             if patch.change.timeseriesdef is not None:
                 if st.xydef is not None:
-                    conn.execute('delete from stat_xy where "id" = $1', st.id)
+                    await conn.execute('delete from stat_xy where "id" = $1', st.id)
                 if st.timeseriesdef is not None:
                     await st.timeseriesdef.update_to_db(st.id, patch.change.timeseriesdef, conn)
                 else:
@@ -705,13 +705,7 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
             if patch.change.xydef is not None:
                 if st.timeseriesdef is not None:
-                    # todo 1: ******* itt valami nagyon furcsa
-                    # conn.execute('delete from stat_timeseries where "id" = $1', st.id)
-                    conn.execute('update stat_timeseries set series_name = ''1''')  # where "id" = $1', st.id)
-                    conn.execute('delete from stat_timeseries')# where "id" = $1', st.id)
-                    conn.execute('insert into "stat" values (-3, ''stat1'', ''1'', false , now());')
-                    conn.execute('insert into "stat_timeseries" values (-3, null, null, ''P1M''::interval, ''lathe'', ''sl'', null, null, null, null, null, null, ''timestamp'');')
-                    return
+                    await conn.execute('delete from stat_timeseries where "id" = $1', st.id)
                 if st.xydef is not None:
                     await st.xydef.update_to_db(st.id, patch.change.xydef, conn)
                 else:
