@@ -333,6 +333,7 @@ export interface StatTimeSeriesDef extends StatDateTimeDef {
 }
 
 export interface StatTimesSeriesFilter {
+  id: number,
   device: DeviceType,
   data_id: string,
   rel: string,
@@ -346,17 +347,27 @@ export interface StatVisualSettings {
   subtitle: string
 }
 
-export interface StatTimeSeriesData {
-  def: StatTimeSeriesDef,
-  series: StatTimeSeriesDataSerie[]
-}
-
-export interface StatTimeSeriesDataSerie {
- name: string,
- x: string[],
- y: number[]
-}
-
 export interface StatXYDef {
 
+}
+
+export interface StatDefUpdateConditions {
+  flipped?: boolean,
+  shared?: boolean
+}
+
+export interface StatDefUpdate {
+  conditions: StatDefUpdateConditions[],
+  change: StatDef
+}
+
+export interface StatDataTimeSeries {
+  name: string,
+  x_timestamp: string[],
+  x_relative: number[],
+  y: number[]
+}
+
+export interface StatData {
+  timeseriesdata: StatDataTimeSeries[]
 }

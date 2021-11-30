@@ -43,3 +43,8 @@ insert into "user" values ('jack', 'jack', 'active', 'jack', '/uOlIfQ4rm9yY/8CzZ
 
 insert into "user_role" values ('joe', 'auth_read');
 insert into "user_role" values ('jason', 'all_write');
+
+
+
+
+
