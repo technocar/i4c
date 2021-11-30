@@ -1,10 +1,9 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { parseMessage } from '@angular/localize/src/utils';
 import { Observable, of } from 'rxjs';
-import { distinctUntilChanged, map, scan, tap } from 'rxjs/operators';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -340,5 +339,18 @@ export class ApiService {
       });
     else
       return this.http.get<StatDef>(`${this._apiUrl}/stat/def/${id}`);
+  }
+
+  addNewStatDef(def: StatDef): Observable<StatDef> {
+    def.id = undefined;
+    return this.http.post<StatDef>(`${this._apiUrl}/stat/def`, def);
+  }
+
+  updateStatDef(id: number, updateObj: StatDefUpdate): Observable<UpdateResult> {
+    return this.http.patch<UpdateResult>(`${this._apiUrl}/stat/def/${id}`, updateObj);
+  }
+
+  getStatData(id: number): Observable<StatData> {
+    return this.http.get<StatData>(`${this._apiUrl}/stat/data/${id}`);
   }
 }
