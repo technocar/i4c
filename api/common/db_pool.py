@@ -12,7 +12,7 @@ class DatabaseConnection:
         self.conn = None
         self.conn_id = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> asyncpg.connection.Connection:
         if self.pconn is not None:
             self.conn = self.pconn
         else:
