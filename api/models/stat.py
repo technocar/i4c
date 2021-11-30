@@ -231,7 +231,7 @@ class StatTimeseriesDef(I4cBaseModel):
 
     @classmethod
     def get_visualsettings(cls):
-        # todo 1: **********
+        # todo 1: *** StatTimeseriesDef.get_visualsettings
         return StatTimeseriesVisualSettings()
 
     @classmethod
@@ -249,16 +249,69 @@ class StatTimeseriesDef(I4cBaseModel):
         return StatTimeseriesDef(**d)
 
 
-class StatXYObject(str, Enum):
+class StatXYObjectType(str, Enum):
     workpiece = "workpiece"
     mazakprogram = "mazakprogram"
     batch = "batch"
     tool = "tool"
 
 
+class StatXYObjectParam(I4cBaseModel):
+    id: Optional[int]
+    key: str
+    value: Optional[str]
+
+    @classmethod
+    async def load_params(cls, conn, xy_id):
+        sql = "select * from stat_xy_object_params where xy = $1"
+        res = await conn.fetch(sql, xy_id)
+        return [StatXYObjectParam(**r) for r in res]
+
+    async def insert_to_db(self, xy_id, conn):
+        sql_insert = dedent("""\
+            insert into stat_xy_object_params (xy, key, value) 
+                values ($1, $2, $3)
+            returning id
+            """)
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.key, self.value))[0]
+
+    def __eq__(self, other):
+        if not isinstance(other, StatXYObjectParam):
+            return False
+        return ((self.key == other.key)
+                and (self.value == other.value))
+
+
+class StatXYObject(I4cBaseModel):
+    type: StatXYObjectType
+    params: List[StatXYObjectParam]
+
+
 class StatXYFieldDef(I4cBaseModel):
-    name: str
-    # todo ?: params: List[str]
+    field_name: str
+
+
+class StatXYOther(StatXYFieldDef):
+    id: Optional[int]
+
+    @classmethod
+    async def load_others(cls, conn, xy_id):
+        sql = "select id, field_name from stat_xy_other where xy = $1"
+        res = await conn.fetch(sql, xy_id)
+        return [StatXYOther(**r) for r in res]
+
+    async def insert_to_db(self, xy_id, conn):
+        sql_insert = dedent("""\
+            insert into stat_xy_other (xy, field_name) 
+                values ($1, $2)
+            returning id
+            """)
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field_name))[0]
+
+    def __eq__(self, other):
+        if not isinstance(other, StatXYOther):
+            return False
+        return self.field_name == other.field_name
 
 
 class StatXYVisualSettings(I4cBaseModel):
@@ -276,27 +329,161 @@ class StatXYFilterRel(str, Enum):
 
 
 class StatXYFilter(I4cBaseModel):
-    field: StatXYFieldDef
+    id: Optional[int]
+    field_name: StatXYFieldDef
     rel: StatXYFilterRel
     value: str
 
+    @classmethod
+    async def load_filters(cls, conn, xy_id):
+        sql = "select * from stat_xy_filter where xy = $1"
+        res = await conn.fetch(sql, xy_id)
+        return [StatXYFilter(**r) for r in res]
+
+    async def insert_to_db(self, xy_id, conn):
+        sql_insert = dedent("""\
+            insert into stat_xy_filter (xy, field_name, rel, value) 
+                values ($1, $2, $3, $4)
+            returning id
+            """)
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field_name, self.rel, self.value))[0]
+
+    def __eq__(self, other):
+        if not isinstance(other, StatXYFilter):
+            return False
+        return ((self.field_name == other.field_name)
+                and (self.rel == other.rel)
+                and (self.value == other.value))
+
 
 class StatXYDef(I4cBaseModel):
-    objname: StatXYObject
+    obj: StatXYObject
     after: Optional[datetime]
     before: Optional[datetime]
     duration: Optional[str]
     x: StatXYFieldDef
     y: Optional[StatXYFieldDef]
-    shape: StatXYFieldDef
-    color: StatXYFieldDef
-    others: List[StatXYFieldDef]
-    filters: List[StatXYFilter]
+    shape: Optional[StatXYFieldDef]
+    color: Optional[StatXYFieldDef]
+    other: List[StatXYOther]
+    filter: List[StatXYFilter]
     visualsettings: StatXYVisualSettings
 
+    @validator('duration')
+    def duration_validator(cls, v):
+        if v is not None:
+            try:
+                isodate.parse_duration(v)
+            except ISO8601Error:
+                raise ValueError('Invalid duration format. Use ISO8601')
+        return v
+
+    @root_validator
+    def check_exclusive(cls, values):
+        after_s, before_s, duration_s = values.get('after') is not None, values.get('before') is not None, values.get(
+            'duration') is not None
+        period_s = sum(int(x) for x in (after_s, before_s, duration_s))
+        if period_s in (0, 3) or (period_s == 1 and before_s):
+            raise ValueError('invalid (after, before, duration) configuration.')
+        return values
+
     async def insert_to_db(self, stat_id, conn):
-        # todo 1: **********
-        pass
+        sql_insert = dedent("""\
+            insert into stat_xy (id,
+                                 object_name, after, before, 
+                                 duration, x_field, y_field, 
+                                 shape, color)
+            select $1, 
+                   $2, $3, $4,
+                   $5::varchar(200)::interval, $6, $7, 
+                   $8, $9
+            """)
+        await conn.execute(sql_insert, stat_id, *self.get_sql_params())
+
+        for p in self.obj.params:
+            await p.insert_to_db(stat_id, conn)
+
+        for o in self.other:
+            await o.insert_to_db(stat_id, conn)
+
+        for f in self.filter:
+            await f.insert_to_db(stat_id, conn)
+
+    def get_sql_params(self):
+        return [self.obj.type, self.after, self.before,
+                self.duration, self.x.field_name, self.y.field_name if self.y else None,
+
+                self.shape.field_name if self.shape else None, self.color.field_name if self.color else None
+                ]
+
+    async def update_to_db(self, stat_id, new_state, conn):
+        """
+        :param stat_id:
+        :param new_state: StatXYDef
+        :param conn:
+        :return:
+        """
+        sql_update = dedent("""\
+            update stat_xy
+            set
+              object_name=$2, 
+              after=$3, 
+              before=$4, 
+                                 
+              duration=$5::varchar(200)::interval, 
+              x_field=$6, 
+              y_field=$7, 
+                                 
+              shape=$8, 
+              color=$9
+            where id = $1
+            """)
+        await conn.execute(sql_update, stat_id, *new_state.get_sql_params())
+
+        insert, delete, _, _ = cmp_list(self.obj.params, new_state.obj.params)
+        for f in insert:
+            await f.insert_to_db(stat_id, conn)
+        for d in delete:
+            if d.id is None:
+                raise HTTPException(status_code=500, detail="Missing id from StatXYObjectParam")
+            await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
+
+        insert, delete, _, _ = cmp_list(self.other, new_state.other)
+        for f in insert:
+            await f.insert_to_db(stat_id, conn)
+        for d in delete:
+            if d.id is None:
+                raise HTTPException(status_code=500, detail="Missing id from StatXYFieldDef")
+            await conn.execute("delete from stat_xy_other where id = $1", d.id)
+
+        insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
+        for f in insert:
+            await f.insert_to_db(stat_id, conn)
+        for d in delete:
+            if d.id is None:
+                raise HTTPException(status_code=500, detail="Missing id from StatXYFilter")
+            await conn.execute("delete from stat_xy_filter where id = $1", d.id)
+
+    @classmethod
+    def get_visualsettings(cls):
+        # todo 1: *** StatXYDef.get_visualsettings
+        return StatTimeseriesVisualSettings()
+
+    @classmethod
+    def create_from_dict(cls, d, prefix):
+        if prefix:
+            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+        else:
+            d = dict(d)
+        if d["id"] is None:
+            return None
+        d["obj"] = StatXYObject(type=d["object_name"], params=d["object_param"])
+        d["x"] = StatXYFieldDef(field_name=d["x_field"])
+        d["y"] = StatXYFieldDef(field_name=d["y_field"]) if d["y_field"] is not None else None
+        d["shape"] = StatXYFieldDef(field_name=d["shape"]) if d["shape"] is not None else None
+        d["color"] = StatXYFieldDef(field_name=d["color"]) if d["color"] is not None else None
+        d["visualsettings"] = cls.get_visualsettings()
+        return StatXYDef(**d)
 
 
 class StatDefIn(I4cBaseModel):
@@ -375,10 +562,21 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                       st.series_name as st_series_name,
                       st.series_sep_device as st_series_sep_device,
                       st.series_sep_data_id as st_series_sep_data_id,
-                      st.xaxis as st_xaxis  
+                      st.xaxis as st_xaxis,
+                      
+                      sx.id as sx_id,
+                      sx.object_name as sx_object_name,
+                      sx.after as sx_after,
+                      sx.before as sx_before,
+                      sx.duration::varchar(200) as sx_duration,
+                      sx.x_field as sx_x_field,
+                      sx.y_field as sx_y_field,
+                      sx.shape as sx_shape,
+                      sx.color as sx_color
                     from stat s
                     join "user" u on u.id = s."user"
                     left join "stat_timeseries" st on st."id" = s."id"
+                    left join "stat_xy" sx on sx."id" = s."id"
                     )                
             select * from res
             where True
@@ -406,11 +604,16 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
             for r in res_db:
                 d = dict(r)
                 d["user"] = StatUser.create_from_dict(d, 'u_')
+                timeseriesdef, xydef = None, None
                 if d["st_id"] is not None:
                     d["st_filter"] = await StatTimeseriesFilter.load_filters(conn, d["st_id"])
                     timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_')
-                # todo: xydef
-                res.append(StatDef(**d,timeseriesdef=timeseriesdef))
+                if d["sx_id"] is not None:
+                    d["sx_object_param"] = await StatXYObjectParam.load_params(conn, d["sx_id"])
+                    d["sx_other"] = await StatXYOther.load_others(conn, d["sx_id"])
+                    d["sx_filter"] = await StatXYFilter.load_filters(conn, d["sx_id"])
+                    xydef = StatXYDef.create_from_dict(d, 'sx_')
+                res.append(StatDef(**d, timeseriesdef=timeseriesdef, xydef=xydef))
             return res
 
 
@@ -494,8 +697,7 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
             if patch.change.timeseriesdef is not None:
                 if st.xydef is not None:
-                    # todo: clear xydef
-                    pass
+                    conn.execute('delete from stat_xy where "id" = $1', st.id)
                 if st.timeseriesdef is not None:
                     await st.timeseriesdef.update_to_db(st.id, patch.change.timeseriesdef, conn)
                 else:
@@ -503,8 +705,17 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
             if patch.change.xydef is not None:
                 if st.timeseriesdef is not None:
-                    conn.execute('delete from stat_timeseries where "id" = $1', st.id)
-                # todo: update xydef
+                    # todo 1: ******* itt valami nagyon furcsa
+                    # conn.execute('delete from stat_timeseries where "id" = $1', st.id)
+                    conn.execute('update stat_timeseries set series_name = ''1''')  # where "id" = $1', st.id)
+                    conn.execute('delete from stat_timeseries')# where "id" = $1', st.id)
+                    conn.execute('insert into "stat" values (-3, ''stat1'', ''1'', false , now());')
+                    conn.execute('insert into "stat_timeseries" values (-3, null, null, ''P1M''::interval, ''lathe'', ''sl'', null, null, null, null, null, null, ''timestamp'');')
+                    return
+                if st.xydef is not None:
+                    await st.xydef.update_to_db(st.id, patch.change.xydef, conn)
+                else:
+                    await patch.change.xydef.insert_to_db(st.id, conn)
 
             return PatchResponse(changed=True)
 
@@ -519,8 +730,8 @@ class StatTimeseriesDataSeries(I4cBaseModel):
 class StatXYData(I4cBaseModel):
     x: StatXYFieldDef
     y: Optional[StatXYFieldDef]
-    shape: StatXYFieldDef
-    color: StatXYFieldDef
+    shape: Optional[StatXYFieldDef]
+    color: Optional[StatXYFieldDef]
     others: List[StatXYFieldDef]
 
 
@@ -677,7 +888,7 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
 
 
 async def statdata_get_xy(st:StatDef, conn) -> StatData:
-    # todo 1: **********
+    # todo 1: ********** statdata_get_xy
     pass
 
 
@@ -708,11 +919,30 @@ class StatXYMetaField(I4cBaseModel):
     value_list: List[str]
 
 
+class StatXYMetaObjectParamType(str, Enum):
+    int = "int"
+    float = "float"
+    str = "str"
+    datetime = "datetime"
+
+
+class StatXYMetaObjectParam(I4cBaseModel):
+    name: str
+    type: StatXYMetaObjectParamType
+    label: str
+
+
 class StatXYMetaObject(I4cBaseModel):
     name: str
     displayname: str
     fields: List[StatXYMetaField]
+    params: List[StatXYMetaObjectParam]
 
 
 class StatXYMeta(I4cBaseModel):
-    objects: StatXYMetaObject
+    objects: List[StatXYMetaObject]
+
+
+async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
+    # todo 1: ********** get_xymeta
+    pass

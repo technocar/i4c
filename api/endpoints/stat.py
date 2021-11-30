@@ -63,3 +63,12 @@ async def stat_get(
     id: int = Path(...),
 ):
     return await models.stat.statdata_get(credentials, id)
+
+
+@router.get("/xymeta", response_model=models.stat.StatXYMeta, x_properties=dict(object="statxymeta", action="get"))
+async def get_xymeta(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/xymeta")),
+    after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z, default 1 year"),
+):
+    return await models.stat.get_xymeta(credentials, after)
+

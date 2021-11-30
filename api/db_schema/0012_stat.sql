@@ -1,4 +1,8 @@
 /* 
+drop table "stat_xy_filter";
+drop table "stat_xy_other";
+drop table "stat_xy_object_params";
+drop table "stat_xy";
 drop table "stat_timeseries_filter";
 drop table "stat_timeseries";
 drop table "stat";
@@ -57,12 +61,84 @@ GRANT USAGE, SELECT ON SEQUENCE stat_timeseries_filter_id_seq TO aaa;
 GRANT ALL ON TABLE "stat_timeseries_filter" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_timeseries_filter_id_seq TO postgres;
 
+
+create table "stat_xy" (
+    id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
+    
+    object_name character varying (200) not null,
+    
+    after timestamp with time zone NULL,
+    before timestamp with time zone NULL,
+    duration interval null,
+    
+    x_field character varying (200) not null,
+    y_field character varying (200) null,
+    shape character varying (200) null,
+    color character varying (200) null
+); 
+
+
+GRANT ALL ON TABLE public."stat_xy" TO aaa;
+GRANT ALL ON TABLE public."stat_xy" TO postgres;
+
+create table "stat_xy_object_params" (
+    id SERIAL PRIMARY KEY,
+    xy integer not null constraint fk_pv references "stat_xy" on delete cascade,
+    
+    key character varying (200) not null,
+    value character varying (200) null
+);
+
+GRANT ALL ON TABLE "stat_xy_object_params" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_xy_object_params_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_xy_object_params" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_xy_object_params_id_seq TO postgres;
+
+
+create table "stat_xy_other" (
+    id SERIAL PRIMARY KEY,
+    xy integer not null constraint fk_pv references "stat_xy" on delete cascade,
+    
+    field_name character varying (200) not null
+);
+
+GRANT ALL ON TABLE "stat_xy_other" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_xy_other_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_xy_other" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_xy_other_id_seq TO postgres;
+
+
+create table "stat_xy_filter" (
+    id SERIAL PRIMARY KEY,
+    xy integer not null constraint fk_pv references "stat_xy" on delete cascade,
+    
+    field_name character varying (200) not null,
+    rel character varying (200) not null,
+    value character varying (200) not null
+);
+
+GRANT ALL ON TABLE "stat_xy_filter" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_xy_filter_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_xy_filter" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_xy_filter_id_seq TO postgres;
+
+
+
 /*
-delete from "stat_timeseries_filter";
-delete from "stat_timeseries";
-delete from "stat";
+delete from "stat_xy_filter" where id<0;
+delete from "stat_xy_other" where id<0;
+delete from "stat_xy_object_params" where id<0;
+delete from "stat_xy" where id<0;
+delete from "stat_timeseries_filter" where id<0;
+delete from "stat_timeseries" where id<0;
+delete from "stat" where id<0;
 
 insert into "stat" values (-1, 'stat1', '1', false , now());
 insert into "stat_timeseries" values (-1, null, null, 'P1M'::interval, 'lathe', 'sl', null, null, null, null, null, null, 'timestamp');
 insert into "stat_timeseries_filter" values (-1, -1, 'lathe', 'pgm', '*', 'a', null, null);
+
+insert into "stat" values (-2, 'stat-2', '1', false , now());
+insert into "stat_xy" values (-2, 'mazakprogram', null, null, 'P1M'::interval, 'avg_x_load', 'avg_y_load', null, null); 
+
+
 */
