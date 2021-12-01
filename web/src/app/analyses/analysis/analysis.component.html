@@ -1,6 +1,18 @@
 <div class="row">
+  <div class="col-12 mb-4">
+    <div class="row align-items-center justify-content-between m-0">
+      <button class="btn btn-primary col-auto mr-4" (click)="saveAs()" *ngIf="isOwn()">
+        <i class="bi bi-save2"></i>
+        Mentés másként...
+      </button>
+      <div class="custom-control custom-checkbox col-auto" *ngIf="isOwn()">
+        <input type="checkbox" class="custom-control-input" id="shared" [(ngModel)]="def.shared" (change)="shareChanged()" />
+        <label class="custom-control-label" for="shared">megosztott</label>
+      </div>
+    </div>
+  </div>
   <div class="col-12">
-    <ngb-accordion #settings="ngbAccordion" activeIds="{{isNew() ? 'analysis-settings' : ''}}" type="light">
+    <ngb-accordion #settings="ngbAccordion" activeIds="{{isNew() ? 'analysis-settings' : ''}}" type="light" [destroyOnHide]="false">
       <ngb-panel title="Beállítások" cardClass="settings" id="analysis-settings">
         <ng-template ngbPanelContent>
           <app-analysis-timeseries-def #timeseries_def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>
@@ -9,7 +21,7 @@
     </ngb-accordion>
   </div>
   <div class="col-12 mt-4 mb-4 text-center">
-    <button class="btn btn-primary" (click)="getChart()">Adatok lekérdezése</button>
+    <button class="btn btn-outline-primary" (click)="getChart()">Adatok lekérdezése</button>
   </div>
   <div id="chart-container" class="col-12">
     <div *ngIf="chartError" class="alert alert-danger text-center" role="alert">

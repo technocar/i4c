@@ -70,8 +70,8 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
       type: (this.filterType ?? "") === "" ? undefined : this.filterType
     }).subscribe(r => {
       r = r ?? [];
-      this.analysesOwn$.next(r.filter((i) => i.user?.id === this.authService.currentUserValue.id));
-      this.analysesOthers$.next(r.filter((i) => i.user?.id !== this.authService.currentUserValue.id));
+      this.analysesOwn$.next(r.filter((i) => i.user?.id == this.authService.currentUserValue.id));
+      this.analysesOthers$.next(r.filter((i) => i.user?.id != this.authService.currentUserValue.id));
     }, (err) => {
     }, () => {
       this.fetching$.next(false);
