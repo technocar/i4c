@@ -54,7 +54,7 @@ with
       and l.timestamp <= p.before
       and l.device = 'robot'
       and l.data_id='program_start'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
-                                        itt a robot programj�nak a nev�b�l kell majd kikeresni, hogy az melyik project-nek a r�sze  */
+                                                 itt a robot programjanak a nevebol kell majd kikeresni, hogy az melyik project-nek a resze  */
   ),
   discover_log as (
     select 

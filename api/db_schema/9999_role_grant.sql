@@ -61,3 +61,4 @@ insert into role_grant values ('aaa', 'put/stat/def', array[]::varchar[]);
 insert into role_grant values ('aaa', 'delete/stat/def/{id}', array['delete any']::varchar[]);
 insert into role_grant values ('aaa', 'patch/stat/def/{id}', array['patch any']::varchar[]);
 insert into role_grant values ('aaa', 'get/stat/data/{id}', array[]::varchar[]);
+insert into role_grant values ('aaa', 'get/stat/xymeta', array[]::varchar[]);
