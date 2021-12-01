@@ -1,7 +1,9 @@
+import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { Chart, registerables  } from 'chart.js';
+import { Chart, ChartConfiguration, registerables, TitleOptions  } from 'chart.js';
+import { _DeepPartialObject } from 'chart.js/types/utils';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ApiService } from 'src/app/services/api.service';
@@ -11,6 +13,22 @@ import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 
 Chart.register(...registerables);
+
+class HSLColor {
+  hue: number;
+  saturation: number;
+  lightness: number;
+
+  constructor(hue: number, saturation: number, lightess: number) {
+    this.hue = hue;
+    this.saturation = saturation;
+    this.lightness = lightess;
+  }
+
+  public toString(): string {
+    return `hsl(${this.hue}, ${this.saturation * 100}%, ${this.lightness * 100}%)`;
+  }
+}
 
 @Component({
   selector: 'app-analysis',
@@ -46,6 +64,7 @@ export class AnalysisComponent implements OnInit {
     this.route.data.subscribe(r => {
       this.metaList = r.data[0];
       this.def = r.data[1];
+      this.processDef();
       if (this.def)
         this.origDef = JSON.parse(JSON.stringify(this.def));
     });
@@ -82,6 +101,7 @@ export class AnalysisComponent implements OnInit {
   }
 
   getChart() {
+    this.buildDef();
     if (this.hasChanges()) {
       this.def.modified = (new Date()).toISOString();
     }
@@ -94,6 +114,9 @@ export class AnalysisComponent implements OnInit {
     saving.subscribe(r => {
       if (r)
         this.getData();
+    }, (err) => {
+      this.chartError = true;
+      this.chartErrorMsg = this.apiService.getErrorMsg(err).toLocaleString();
     });
   }
 
@@ -116,43 +139,64 @@ export class AnalysisComponent implements OnInit {
       });
   }
 
-  buildChart(data: StatData) {
+  buildChart(result: StatData) {
     var ctx = this.chart.nativeElement.getContext('2d');
 
-    this._chartInstance = new Chart(ctx, {
-      type: 'bar',
+    if (!result?.timeseriesdata || result?.timeseriesdata?.length === 0) {
+      this.chartError = true;
+      this.chartErrorMsg = $localize `:@@chart_no_data:Nincs megjeleníthető adat!`;
+      return;
+    }
+
+    var startColor: HSLColor = new HSLColor(191, 0.46, 0.41);
+    var endColor: HSLColor = new HSLColor(172, 0.41, 0.39);
+    var datePipe = new DatePipe('en-US');
+
+    var options: ChartConfiguration = {
+      type: 'line',
       data: {
-          labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-          datasets: [{
-              label: '# of Votes',
-              data: [12, 19, 3, 5, 2, 3],
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                  'rgba(255, 99, 132, 1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
-                  'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-          }]
+        datasets: result.timeseriesdata.map((series, seriesIndex, seriesList) => { return  {
+          label: seriesList.length === 1 ? "" : series.name,
+          data: series.y.map((value, i) => {
+            return {
+              x: result.stat_def.timeseriesdef.xaxis === "timestamp" ? datePipe.transform(new Date(series["x_" + result.stat_def.timeseriesdef.xaxis][i]), "yyyy.MM.dd HH:mm:ss") : series["x_" + result.stat_def.timeseriesdef.xaxis][i],
+              y: value
+            }
+          }),
+          backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor).toString(),
+          borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor).toString(),
+          borderWidth: 1
+        }})
       },
       options: {
-          scales: {
-              y: {
-                  beginAtZero: true
-              }
+        plugins: {
+          title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.title),
+          subtitle: this.setChartTitle(this.def.timeseriesdef.visualsettings?.subtitle),
+          legend: {
+            display:  result.timeseriesdata.length > 1,
+            align: this.def.timeseriesdef.visualsettings?.legend?.align,
+            position: this.def.timeseriesdef.visualsettings?.legend?.position
           }
+        },
+        scales: {
+          yaxis: {
+            title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.yaxis?.caption)
+          },
+          xaxis: {
+            title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.xaxis?.caption)
+          }
+        }
       }
-    })
+    };
+
+    this._chartInstance = new Chart(ctx, options);
+  }
+
+  setChartTitle(title: string): _DeepPartialObject<TitleOptions> {
+    return {
+      display: (title ?? "") !== "",
+      text: title
+    };
   }
 
   save(): Observable<boolean> {
@@ -185,5 +229,15 @@ export class AnalysisComponent implements OnInit {
       });
     });
     return result;
+  }
+
+  getChartSeriesColor(index: number, count: number, firstColor: HSLColor, lastColor: HSLColor): HSLColor {
+    var color = new HSLColor(
+      firstColor.hue * (count - (index + 1)) / count + lastColor.hue * (index + 1) / count,
+      firstColor.saturation * (count - (index + 1)) / count + lastColor.saturation * (index + 1) / count,
+      firstColor.lightness * (count - (index + 1)) / count + lastColor.lightness * (index + 1) / count
+    );
+    console.log(color.toString());
+    return color;
   }
 }

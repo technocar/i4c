@@ -320,14 +320,16 @@ export interface StatDateTimeDef extends StatDefBase {
   duration: string
 }
 
-export enum AggFunc { Avg = 'avg', Median = 'median', FirstQuartile = 'q1st', ThirdQuartile = 'q3rd', Min = 'min', Max = 'max' }
+export enum StatTimeSeriesAggFunc { Avg = 'avg', Median = 'median', FirstQuartile = 'q1st', ThirdQuartile = 'q3rd', Min = 'min', Max = 'max' }
+export enum StatTimeSeriesName { SeparatorEvent = 'seperator_event', Sequence = 'sequence', Timestamp = 'timestamp' }
 
 export interface StatTimeSeriesDef extends StatDateTimeDef {
   filter: StatTimesSeriesFilter[],
   metric: Meta,
-  agg_func: AggFunc,
+  agg_func: StatTimeSeriesAggFunc,
   agg_sep: Meta,
   series_sep: Meta,
+  series_name: StatTimeSeriesName,
   xaxis: string | number,
   visualsettings: StatVisualSettings
 }
@@ -342,9 +344,24 @@ export interface StatTimesSeriesFilter {
   age_max: number
 }
 
+export interface StatVisualSettingsAxis {
+  caption: string
+}
+
+export enum StatVisualSettingsLegendPosition { Top = 'top', Bottom = 'bottom', Left = 'left', Right = 'right', ChartArea = 'chartArea' }
+export enum StatVisualSettingsLegendAlign { Start = 'start', Center = 'center', End = 'end' }
+
+export interface StatVisualSettingsLegend {
+  position: StatVisualSettingsLegendPosition,
+  align: StatVisualSettingsLegendAlign
+}
+
 export interface StatVisualSettings {
   title: string,
-  subtitle: string
+  subtitle: string,
+  xaxis: StatVisualSettingsAxis,
+  yaxis: StatVisualSettingsAxis,
+  legend: StatVisualSettingsLegend
 }
 
 export interface StatXYDef {
@@ -369,5 +386,6 @@ export interface StatDataTimeSeries {
 }
 
 export interface StatData {
+  stat_def: StatDef,
   timeseriesdata: StatDataTimeSeries[]
 }
