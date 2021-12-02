@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
@@ -122,9 +123,94 @@ class StatSepEvent(I4cBaseModel):
         return None
 
 
-class StatTimeseriesVisualSettings(I4cBaseModel):
-    # todo 1: *** StatTimeseriesVisualSettings
-    pass
+class StatVisualSettingsAxis(I4cBaseModel):
+    caption: Optional[str]
+
+    @classmethod
+    def create_from_dict(cls, d, prefix):
+        if prefix:
+            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+        else:
+            d = dict(d)
+        d = defaultdict(lambda: None, **d)
+        return StatVisualSettingsAxis(caption=d["caption"])
+
+
+class StatVisualSettingsLegendPosition(str, Enum):
+    Top = 'top'
+    Bottom = 'bottom'
+    Left = 'left'
+    Right = 'right'
+    ChartArea = 'chartArea'
+
+
+class StatVisualSettingsLegendAlign(str, Enum):
+    Start = 'start'
+    Center = 'center'
+    End = 'end'
+
+
+class StatVisualSettingsLegend(I4cBaseModel):
+    position: Optional[StatVisualSettingsLegendPosition]
+    align: Optional[StatVisualSettingsLegendAlign]
+
+    @classmethod
+    def create_from_dict(cls, d, prefix):
+        if prefix:
+            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+        else:
+            d = dict(d)
+        d = defaultdict(lambda: None, **d)
+        return StatVisualSettingsLegend(position=d["position"],
+                                        align=d["align"])
+
+
+class StatVisualSettings(I4cBaseModel):
+    title: Optional[str]
+    subtitle: Optional[str]
+    xaxis: Optional[StatVisualSettingsAxis]
+    yaxis: Optional[StatVisualSettingsAxis]
+    legend: Optional[StatVisualSettingsLegend]
+
+    @classmethod
+    def create_from_dict(cls, d, prefix):
+        if prefix:
+            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+        else:
+            d = dict(d)
+        d = defaultdict(lambda: None, **d)
+        return StatVisualSettings(title=d["title"],
+                                  subtitle=d["subtitle"],
+                                  xaxis=StatVisualSettingsAxis.create_from_dict(d, "xaxis_"),
+                                  yaxis=StatVisualSettingsAxis.create_from_dict(d, "yaxis_"),
+                                  legend=StatVisualSettingsLegend.create_from_dict(d, "legend_"))
+
+    async def insert_or_update_db(self, ts_id, conn):
+        exists = await conn.fetchrow("select id from stat_visual_setting where id = $1", ts_id)
+        if exists:
+            sql = dedent("""\
+                update stat_visual_setting 
+                set 
+                  title = $2,
+                  subtitle = $3,
+                  xaxis_caption = $4,
+                  yaxis_caption = $5,
+                  legend_position = $6,
+                  legend_align = $7
+                where id = $1
+                """)
+        else:
+            sql = dedent("""\
+                insert into stat_visual_setting (id, title, subtitle,
+                                                 xaxis_caption, yaxis_caption, legend_position,
+                                                 legend_align   
+                                                ) values ($1, $2, $3, 
+                                                          $4, $5, $6, 
+                                                          $7)
+                """)
+        await conn.execute(sql, ts_id, self.title, self.subtitle,
+                           self.xaxis.caption, self.yaxis.caption, self.legend.position,
+                           self.legend.align)
 
 
 class StatTimeseriesDef(I4cBaseModel):
@@ -138,7 +224,7 @@ class StatTimeseriesDef(I4cBaseModel):
     series_sep: Optional[StatSepEvent]
     series_name: Optional[StatTimeseriesSeriesName]
     xaxis: StatTimeseriesXAxis
-    visualsettings: StatTimeseriesVisualSettings
+    visualsettings: StatVisualSettings
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -178,6 +264,8 @@ class StatTimeseriesDef(I4cBaseModel):
 
         for f in self.filter:
             await f.insert_to_db(stat_id, conn)
+
+        await self.visualsettings.insert_or_update_db(stat_id, conn)
 
     def get_sql_params(self):
         return [self.after, self.before, self.duration,
@@ -229,24 +317,27 @@ class StatTimeseriesDef(I4cBaseModel):
                 raise HTTPException(status_code=500, detail="Missing id from StatTimeseriesFilter")
             await conn.execute("delete from stat_timeseries_filter where id = $1", d.id)
 
+        await new_state.visualsettings.insert_or_update_db(stat_id, conn)
+
 
     @classmethod
-    def get_visualsettings(cls):
-        # todo 1: *** StatTimeseriesDef.get_visualsettings
-        return StatTimeseriesVisualSettings()
-
-    @classmethod
-    def create_from_dict(cls, d, prefix):
+    def create_from_dict(cls, d, prefix, keep_prefix=None):
         if prefix:
-            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+            dn = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+            if keep_prefix:
+                for p in keep_prefix:
+                    dn.update({k: v for k, v in d.items() if k.startswith(p)})
         else:
-            d = dict(d)
+            dn = dict(d)
+        d = dn
+        del dn
+
         if d["id"] is None:
             return None
         d["metric"] = StatTimeseriesMetric(device=d["metric_device"], data_id=d["metric_data_id"])
         d["agg_sep"] = StatSepEvent.create_from_dict(d, "agg_sep_")
         d["series_sep"] = StatSepEvent.create_from_dict(d, "series_sep_")
-        d["visualsettings"] = cls.get_visualsettings()
+        d["visualsettings"] = StatVisualSettings.create_from_dict(d, "vs_")
         return StatTimeseriesDef(**d)
 
 
@@ -291,6 +382,11 @@ class StatXYObject(I4cBaseModel):
 class StatXYFieldDef(I4cBaseModel):
     field_name: str
 
+    def __eq__(self, other):
+        if not isinstance(other, StatXYFieldDef):
+            return False
+        return self.field_name == other.field_name
+
 
 class StatXYOther(StatXYFieldDef):
     id: Optional[int]
@@ -315,11 +411,6 @@ class StatXYOther(StatXYFieldDef):
         return self.field_name == other.field_name
 
 
-class StatXYVisualSettings(I4cBaseModel):
-    # todo 1: *** StatXYVisualSettings
-    pass
-
-
 class StatXYFilterRel(str, Enum):
     eq = "="
     neq = "!="
@@ -331,15 +422,18 @@ class StatXYFilterRel(str, Enum):
 
 class StatXYFilter(I4cBaseModel):
     id: Optional[int]
-    field_name: StatXYFieldDef
+    field: StatXYFieldDef
     rel: StatXYFilterRel
     value: str
 
     @classmethod
     async def load_filters(cls, conn, xy_id):
         sql = "select * from stat_xy_filter where xy = $1"
-        res = await conn.fetch(sql, xy_id)
-        return [StatXYFilter(**r) for r in res]
+        res_d = await conn.fetch(sql, xy_id)
+        res = []
+        for r in res_d:
+            res.append(StatXYFilter(id=r["id"], field=StatXYFieldDef(field_name=r["field_name"]), rel=r["rel"], value= r["value"]))
+        return res
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
@@ -347,12 +441,12 @@ class StatXYFilter(I4cBaseModel):
                 values ($1, $2, $3, $4)
             returning id
             """)
-        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field_name, self.rel, self.value))[0]
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field.field_name, self.rel, self.value))[0]
 
     def __eq__(self, other):
         if not isinstance(other, StatXYFilter):
             return False
-        return ((self.field_name == other.field_name)
+        return ((self.field == other.field)
                 and (self.rel == other.rel)
                 and (self.value == other.value))
 
@@ -368,7 +462,7 @@ class StatXYDef(I4cBaseModel):
     color: Optional[StatXYFieldDef]
     other: List[StatXYOther]
     filter: List[StatXYFilter]
-    visualsettings: StatXYVisualSettings
+    visualsettings: StatVisualSettings
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -409,6 +503,9 @@ class StatXYDef(I4cBaseModel):
 
         for f in self.filter:
             await f.insert_to_db(stat_id, conn)
+
+        await self.visualsettings.insert_or_update_db(stat_id, conn)
+
 
     def get_sql_params(self):
         return [self.obj.type, self.after, self.before,
@@ -465,17 +562,20 @@ class StatXYDef(I4cBaseModel):
                 raise HTTPException(status_code=500, detail="Missing id from StatXYFilter")
             await conn.execute("delete from stat_xy_filter where id = $1", d.id)
 
-    @classmethod
-    def get_visualsettings(cls):
-        # todo 1: *** StatXYDef.get_visualsettings
-        return StatTimeseriesVisualSettings()
+        await new_state.visualsettings.insert_or_update_db(stat_id, conn)
 
     @classmethod
-    def create_from_dict(cls, d, prefix):
+    def create_from_dict(cls, d, prefix, keep_prefix=None):
         if prefix:
-            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+            dn = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+            if keep_prefix:
+                for p in keep_prefix:
+                    dn.update({k: v for k, v in d.items() if k.startswith(p)})
         else:
-            d = dict(d)
+            dn = dict(d)
+        d = dn
+        del dn
+
         if d["id"] is None:
             return None
         d["obj"] = StatXYObject(type=d["object_name"], params=d["object_param"])
@@ -483,7 +583,7 @@ class StatXYDef(I4cBaseModel):
         d["y"] = StatXYFieldDef(field_name=d["y_field"]) if d["y_field"] is not None else None
         d["shape"] = StatXYFieldDef(field_name=d["shape"]) if d["shape"] is not None else None
         d["color"] = StatXYFieldDef(field_name=d["color"]) if d["color"] is not None else None
-        d["visualsettings"] = cls.get_visualsettings()
+        d["visualsettings"] = StatVisualSettings.create_from_dict(d, "vs_")
         return StatXYDef(**d)
 
 
@@ -573,11 +673,19 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                       sx.x_field as sx_x_field,
                       sx.y_field as sx_y_field,
                       sx.shape as sx_shape,
-                      sx.color as sx_color
+                      sx.color as sx_color,
+                      
+                      vs.title as vs_title,
+                      vs.subtitle as vs_subtitle,
+                      vs.xaxis_caption as vs_xaxis_caption,
+                      vs.yaxis_caption as vs_yaxis_caption,
+                      vs.legend_position as vs_legend_position,
+                      vs.legend_align as vs_legend_align                      
                     from stat s
                     join "user" u on u.id = s."user"
                     left join "stat_timeseries" st on st."id" = s."id"
                     left join "stat_xy" sx on sx."id" = s."id"
+                    left join "stat_visual_setting" vs on vs."id" = s."id"
                     )                
             select * from res
             where True
@@ -608,12 +716,12 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                 timeseriesdef, xydef = None, None
                 if d["st_id"] is not None:
                     d["st_filter"] = await StatTimeseriesFilter.load_filters(conn, d["st_id"])
-                    timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_')
+                    timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_', ['vs_'])
                 if d["sx_id"] is not None:
                     d["sx_object_param"] = await StatXYObjectParam.load_params(conn, d["sx_id"])
                     d["sx_other"] = await StatXYOther.load_others(conn, d["sx_id"])
                     d["sx_filter"] = await StatXYFilter.load_filters(conn, d["sx_id"])
-                    xydef = StatXYDef.create_from_dict(d, 'sx_')
+                    xydef = StatXYDef.create_from_dict(d, 'sx_', ['vs_'])
                 res.append(StatDef(**d, timeseriesdef=timeseriesdef, xydef=xydef))
             return res
 

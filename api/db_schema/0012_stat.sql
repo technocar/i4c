@@ -5,6 +5,7 @@ drop table "stat_xy_object_params";
 drop table "stat_xy";
 drop table "stat_timeseries_filter";
 drop table "stat_timeseries";
+drop table "stat_visual_setting";
 drop table "stat";
 */
 
@@ -22,6 +23,24 @@ GRANT ALL ON TABLE public."stat" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE stat_id_seq TO aaa;
 GRANT ALL ON TABLE public."stat" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_id_seq TO postgres;
+
+create table "stat_visual_setting" (
+    id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
+    
+    title character varying (200) null,
+    subtitle character varying (200) null,
+    
+    xaxis_caption character varying (200) null,
+    yaxis_caption character varying (200) null,
+    
+    legend_position character varying (200) null,
+    legend_align character varying (200) null
+); 
+
+
+GRANT ALL ON TABLE public."stat_visual_setting" TO aaa;
+GRANT ALL ON TABLE public."stat_visual_setting" TO postgres;
+
 
 create table "stat_timeseries" (
     id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
@@ -131,6 +150,7 @@ delete from "stat_xy_object_params" where id<0;
 delete from "stat_xy" where id<0;
 delete from "stat_timeseries_filter" where id<0;
 delete from "stat_timeseries" where id<0;
+delete from "stat_visual_setting" where id<0;
 delete from "stat" where id<0;
 
 insert into "stat" values (-2, 'stat1', '1', false , now());
