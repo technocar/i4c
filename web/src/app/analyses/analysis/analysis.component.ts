@@ -1,8 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { Chart, ChartConfiguration, registerables, TitleOptions  } from 'chart.js';
+import { Chart, ChartConfiguration, FontSpec, registerables, TitleOptions  } from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import { _DeepPartialObject } from 'chart.js/types/utils';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
@@ -14,19 +15,21 @@ import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/
 
 Chart.register(...registerables);
 
-class HSLColor {
+class HSLAColor {
   hue: number;
   saturation: number;
   lightness: number;
+  alpha: number;
 
-  constructor(hue: number, saturation: number, lightess: number) {
+  constructor(hue: number, saturation: number, lightess: number, alpha: number) {
     this.hue = hue;
     this.saturation = saturation;
     this.lightness = lightess;
+    this.alpha = alpha;
   }
 
   public toString(): string {
-    return `hsl(${this.hue}, ${this.saturation * 100}%, ${this.lightness * 100}%)`;
+    return `hsla(${this.hue}, ${this.saturation * 100}%, ${this.lightness * 100}%, ${this.alpha})`;
   }
 }
 
@@ -55,7 +58,8 @@ export class AnalysisComponent implements OnInit {
     private route: ActivatedRoute,
     private authService: AuthenticationService,
     private modalService: NgbModal,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private router: Router
   ) {
     this.analysisType = (route.snapshot.paramMap.get("type") ?? "0") as AnalysisType;
   }
@@ -84,6 +88,10 @@ export class AnalysisComponent implements OnInit {
 
   isNew(): boolean {
     return (this.def?.id ?? -1) === -1;
+  }
+
+  isOwn(): boolean {
+    return this.def.user?.id == this.authService.currentUserValue.id;
   }
 
   hasChanges(): boolean {
@@ -115,8 +123,7 @@ export class AnalysisComponent implements OnInit {
       if (r)
         this.getData();
     }, (err) => {
-      this.chartError = true;
-      this.chartErrorMsg = this.apiService.getErrorMsg(err).toLocaleString();
+      this.showChartError(this.apiService.getErrorMsg(err).toString());
     });
   }
 
@@ -132,8 +139,7 @@ export class AnalysisComponent implements OnInit {
       .subscribe(r => {
         this.buildChart(r);
       }, (err) => {
-        this.chartError = true;
-        this.chartErrorMsg = this.apiService.getErrorMsg(err).toString();
+        this.showChartError(this.apiService.getErrorMsg(err).toString());
       }, () => {
         this.chartLoading$.next(false);
       });
@@ -142,52 +148,95 @@ export class AnalysisComponent implements OnInit {
   buildChart(result: StatData) {
     var ctx = this.chart.nativeElement.getContext('2d');
 
-    if (!result?.timeseriesdata || result?.timeseriesdata?.length === 0) {
-      this.chartError = true;
-      this.chartErrorMsg = $localize `:@@chart_no_data:Nincs megjeleníthető adat!`;
+    if (!result?.timeseriesdata
+      || result.timeseriesdata.length === 0) {
+      this.showChartError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
       return;
     }
 
-    var startColor: HSLColor = new HSLColor(191, 0.46, 0.41);
-    var endColor: HSLColor = new HSLColor(172, 0.41, 0.39);
+    var startColor: HSLAColor = new HSLAColor(191, 0.46, 0.41, 1);
+    var endColor: HSLAColor = new HSLAColor(172, 0.41, 0.39, 1);
     var datePipe = new DatePipe('en-US');
+    var relativeChart = result.timeseriesdata.length > 1;
+    var xaxisPropName = "x_" + (!relativeChart ? "timestamp" : "relative");
+    var xyChart = !(this.def.timeseriesdef.xaxis === 'sequence');
 
-    var options: ChartConfiguration = {
-      type: 'line',
-      data: {
-        datasets: result.timeseriesdata.map((series, seriesIndex, seriesList) => { return  {
-          label: seriesList.length === 1 ? "" : series.name,
-          data: series.y.map((value, i) => {
-            return {
-              x: result.stat_def.timeseriesdef.xaxis === "timestamp" ? datePipe.transform(new Date(series["x_" + result.stat_def.timeseriesdef.xaxis][i]), "yyyy.MM.dd HH:mm:ss") : series["x_" + result.stat_def.timeseriesdef.xaxis][i],
-              y: value
-            }
-          }),
-          backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor).toString(),
-          borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor).toString(),
-          borderWidth: 1
-        }})
-      },
-      options: {
-        plugins: {
-          title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.title),
-          subtitle: this.setChartTitle(this.def.timeseriesdef.visualsettings?.subtitle),
-          legend: {
-            display:  result.timeseriesdata.length > 1,
-            align: this.def.timeseriesdef.visualsettings?.legend?.align,
-            position: this.def.timeseriesdef.visualsettings?.legend?.position
-          }
+    try {
+      var options: ChartConfiguration = {
+        type: 'line',
+        data: {
+          datasets: result.timeseriesdata.map((series, seriesIndex, seriesList) => { return  {
+            label: seriesList.length === 1 ? "" : series.name,
+            data: series.y.map((value, i) => {
+              let xValue = series[xaxisPropName];
+              return {
+                x: (xValue ?? null) === null ? i.toString() : xValue[i],
+                y: value
+              }
+            }),
+            backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 0.3).toString(),
+            borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
+            borderWidth: 2,
+            fill: true
+          }})
         },
-        scales: {
-          yaxis: {
-            title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.yaxis?.caption)
+        options: {
+          plugins: {
+            title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.title),
+            subtitle: this.setChartTitle(this.def.timeseriesdef.visualsettings?.subtitle),
+            legend: {
+              display:  result.timeseriesdata.length > 1,
+              align: this.def.timeseriesdef.visualsettings?.legend?.align,
+              position: this.def.timeseriesdef.visualsettings?.legend?.position
+            }
           },
-          xaxis: {
-            title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.xaxis?.caption)
+          scales: {
+            y: {
+              title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.yaxis?.caption)
+            },
+            x: {
+              type: xyChart ? 'time' : 'linear',
+              title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.xaxis?.caption),
+              time: {
+                displayFormats: {
+                    hour: 'H:mm',
+                    second: 's',
+                    minute: 'm:ss',
+                    day: relativeChart ? 'd' : 'MMM d'
+                },
+                tooltipFormat: relativeChart ? 'ss' : 'yyyy.MM.dd HH:mm:ss',
+                minUnit: 'second'
+              },
+              grid: {
+                display: xyChart
+              },
+              ticks: {
+                display: xyChart,
+                font: (ctx, options) => {
+                  var font: FontSpec = {
+                    family: undefined,
+                    lineHeight: undefined,
+                    size: undefined,
+                    style: undefined,
+                    weight: undefined
+                  };
+                  if (ctx.tick?.major)
+                    font.weight = 'bold';
+                  return font;
+                },
+                major: {
+                  enabled: true
+                }
+              },
+              bounds: 'ticks'
+            }
           }
         }
-      }
-    };
+      };
+    }
+    catch(err) {
+      this.showChartError(err);
+    }
 
     this._chartInstance = new Chart(ctx, options);
   }
@@ -200,6 +249,9 @@ export class AnalysisComponent implements OnInit {
   }
 
   save(): Observable<boolean> {
+    if (!this.isOwn())
+      return of(true);
+
     if (this.isNew())
       return this.apiService.addNewStatDef(this.def)
         .pipe(
@@ -217,11 +269,14 @@ export class AnalysisComponent implements OnInit {
       );
   }
 
-  askForName(): Observable<boolean> {
+  askForName(dontSave: boolean = false): Observable<boolean> {
     var result: Observable<boolean> = new Observable((observer) => {
       this.modalService.open(this.newDialog).result.then(r => {
         if (r === "save") {
-          this.save().subscribe(r => observer.next(r), (err => observer.error(err)));
+          if (!dontSave)
+            this.save().subscribe(r => observer.next(r), (err => observer.error(err)));
+          else
+            observer.next(true);
           return true;
         } else
           observer.next(false);
@@ -231,13 +286,48 @@ export class AnalysisComponent implements OnInit {
     return result;
   }
 
-  getChartSeriesColor(index: number, count: number, firstColor: HSLColor, lastColor: HSLColor): HSLColor {
-    var color = new HSLColor(
+  shareChanged() {
+    this.save().subscribe(
+      r => {},
+      err => {
+        alert(this.apiService.getErrorMsg(err));
+      }
+    );
+  }
+
+  getChartSeriesColor(index: number, count: number, firstColor: HSLAColor, lastColor: HSLAColor, alpha: number): HSLAColor {
+    var color = new HSLAColor(
       firstColor.hue * (count - (index + 1)) / count + lastColor.hue * (index + 1) / count,
       firstColor.saturation * (count - (index + 1)) / count + lastColor.saturation * (index + 1) / count,
-      firstColor.lightness * (count - (index + 1)) / count + lastColor.lightness * (index + 1) / count
+      firstColor.lightness * (count - (index + 1)) / count + lastColor.lightness * (index + 1) / count,
+      alpha
     );
     console.log(color.toString());
     return color;
+  }
+
+  showChartError(message: string) {
+    this.chartError = true;
+    this.chartErrorMsg = message;
+  }
+
+  saveAs() {
+    this.askForName(true).subscribe(r => {
+      if (r) {
+        this.def.id = -1;
+        this.def.shared = false;
+        this.def.user = {
+          id: this.authService.currentUserValue.id,
+          name: this.authService.currentUserValue.username,
+          login_name: this.authService.currentUserValue.username
+        }
+        this.save().subscribe(sr => {
+          if (sr)
+            this.router.navigate(['/analyses', this.def.id]);
+        }, (err) => {
+          alert(this.apiService.getErrorMsg(err));
+        })
+      }
+    })
   }
 }
