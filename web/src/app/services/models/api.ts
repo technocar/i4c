@@ -320,7 +320,7 @@ export interface StatDateTimeDef extends StatDefBase {
   duration: string
 }
 
-export enum StatTimeSeriesAggFunc { Avg = 'avg', Median = 'median', FirstQuartile = 'q1st', ThirdQuartile = 'q3rd', Min = 'min', Max = 'max' }
+export enum StatTimeSeriesAggFunc { Avg = 'avg', Median = 'median', FirstQuartile = 'q1th', FourQuartile = 'q4th', Min = 'min', Max = 'max' }
 export enum StatTimeSeriesName { SeparatorEvent = 'seperator_event', Sequence = 'sequence', Timestamp = 'timestamp' }
 
 export interface StatTimeSeriesDef extends StatDateTimeDef {
@@ -364,10 +364,6 @@ export interface StatVisualSettings {
   legend: StatVisualSettingsLegend
 }
 
-export interface StatXYDef {
-
-}
-
 export interface StatDefUpdateConditions {
   flipped?: boolean,
   shared?: boolean
@@ -388,4 +384,71 @@ export interface StatDataTimeSeries {
 export interface StatData {
   stat_def: StatDef,
   timeseriesdata: StatDataTimeSeries[]
+}
+
+export interface StatXYMeta {
+  objects: StatXYMetaObject[]
+}
+
+export interface StatXYMetaObject {
+  name: string,
+  displayname: string,
+  fields: StatXYMetaObjectField[],
+  params: StatXYMetaObjectParam[]
+}
+
+export enum StatMetaObjectFieldType { Numeric = 'numeric', Catgeory = 'category', Label = 'label' }
+
+export interface StatXYMetaObjectField {
+  name: string,
+  displayname: string,
+  type: StatXYMetaObjectField,
+  value_list: string[]
+}
+
+export interface StatXYMetaObjectParam {
+  name: string,
+  type: number,
+  label: string
+}
+
+export interface StatXYDef extends StatDateTimeDef {
+  obj: StatXYObject,
+  x: StatXYField,
+  y: StatXYField,
+  shape: StatXYField,
+  color: StatXYField,
+  other: StatXYOther[],
+  filter: StatXYFilter[],
+  visualsettings: StatVisualSettings
+}
+
+export enum StatXYObjectType { Workpiece = 'workpiece', MazakProgram = 'mazakprogram', Batch = 'batch', Tool = 'tool' }
+export interface StatXYObject {
+  type: StatXYObjectType ,
+  params: StatXYParam[]
+}
+
+export interface StatXYField {
+  field_name: string
+}
+
+export interface StatXYOther {
+  field_name: string,
+  id: number
+}
+
+export interface StatXYFilter {
+  id: number,
+  field: StatXYField
+  rel: StatXYFilterRel,
+  value: string
+}
+
+export enum StatXYFilterRel { Equal = '=', NotEqual = '!=', Lesser = '<', LesserEqual = '<=', Greater = '>', GreaterEqual = '>=' }
+
+export interface StatXYParam {
+  id: number,
+  key: string,
+  value: string
 }

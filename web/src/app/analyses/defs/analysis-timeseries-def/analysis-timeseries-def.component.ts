@@ -26,7 +26,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
     [StatTimeSeriesAggFunc.Min, $localize `:@@stat_timeseries_agg_func_min:min`],
     [StatTimeSeriesAggFunc.Max, $localize `:@@stat_timeseries_agg_func_max:max`],
     [StatTimeSeriesAggFunc.FirstQuartile, $localize `:@@stat_timeseries_agg_func_q1st:1. kvantilis`],
-    [StatTimeSeriesAggFunc.ThirdQuartile, $localize `:@@stat_timeseries_agg_func_q3rd:3. kvantilis`]
+    [StatTimeSeriesAggFunc.FourQuartile, $localize `:@@stat_timeseries_agg_func_q3rd:4. kvantilis`]
   ];
 
   seriesNameTypes: string[][] = [

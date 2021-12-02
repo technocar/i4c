@@ -36,7 +36,7 @@
             ],
             "scripts": [
               "node_modules/chart.js/dist/chart.min.js",
-              "node_module/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"
+              "node_modules/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"
             ]
           },
           "configurations": {
@@ -104,7 +104,7 @@
             ],
             "scripts": [
               "node_modules/chart.js/dist/chart.min.js",
-              "node_module/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"
+              "node_modules/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"
             ]
           }
         },

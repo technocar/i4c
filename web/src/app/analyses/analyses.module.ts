@@ -9,6 +9,7 @@ import { NgbAccordionModule, NgbButtonsModule, NgbModalModule } from '@ng-bootst
 import { AnalysisDatetimeDefComponent } from './defs/analysis-datetime-def/analysis-datetime-def.component';
 import { AnalysisTimeseriesDefComponent } from './defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisComponent } from './analysis/analysis.component';
+import { AnalysisXyDefComponent } from './defs/analysis-xy-def/analysis-xy-def.component';
 
 
 @NgModule({
@@ -16,7 +17,8 @@ import { AnalysisComponent } from './analysis/analysis.component';
     AnalysesComponent,
     AnalysisDatetimeDefComponent,
     AnalysisTimeseriesDefComponent,
-    AnalysisComponent
+    AnalysisComponent,
+    AnalysisXyDefComponent
   ],
   imports: [
     CommonModule,

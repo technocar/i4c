@@ -37,7 +37,7 @@ export class AnalysisDatetimeDefComponent implements OnInit, AanalysisDef {
       this.direction = this.def.after ? 1 : -1;
       this.timestamp = this.def.after ?? this.def.before ?? this.timestamp;
       if (this.def.duration && this.def.duration.length > 2) {
-        if (typeof this.def.duration[1] === 'number')
+        if (!isNaN(+this.def.duration[1]))
           this.count = parseInt(this.def.duration[1]);
         if (['Y', 'M', 'd', 'H'].indexOf(this.def.duration[2]))
           this.period = this.def.duration[2];
