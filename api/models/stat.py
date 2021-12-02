@@ -801,7 +801,8 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
         return res
 
     current_series = create_StatTimeseriesDataSeries()
-    res = StatData(stat_def=st, timeseriesdata=[current_series])
+    res = StatData(stat_def=st, timeseriesdata=[])
+    res.timeseriesdata.append(current_series)
     last_series_sep_value = None
 
     def record_output(aggregated_value, ts):
