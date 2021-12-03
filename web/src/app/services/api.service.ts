@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -353,5 +353,42 @@ export class ApiService {
 
   getStatData(id: number): Observable<StatData> {
     return this.http.get<StatData>(`${this._apiUrl}/stat/data/${id}`);
+  }
+
+  getStatXYMeta(after: Date): Observable<StatXYMeta> {
+    var params = new RequestParams();
+    params.add("after", after);
+    return this.http.get<StatXYMeta>(`${this._apiUrl}/stat/xymeta`, { params: params.getAll() });
+  }
+
+  getAnalysisData(id: string): Observable<[StatDef, Meta[]]> {
+    return new Observable<[StatDef, Meta[]]>((observer) => {
+      var result: [StatDef, Meta[]] = [undefined, undefined];
+      this.getStatDef(id).subscribe(def => {
+        result[0] = def;
+        if (!def) {
+          observer.next(result);
+          observer.complete();
+        } else {
+          if (def.timeseriesdef)
+            this.getMeta().subscribe(meta => {
+              result[1] = meta;
+              observer.next(result);
+              observer.complete();
+            },
+            (err) => { observer.error(err); observer.complete(); });
+          else {
+            observer.next(result);
+            observer.complete();
+          }
+        }
+      },
+      (err) => { observer.error(err); observer.complete(); });
+
+      return {
+        unsubscribe() {
+        }
+      };
+    });
   }
 }

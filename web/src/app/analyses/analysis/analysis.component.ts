@@ -29,7 +29,7 @@ class HSLAColor {
   }
 
   public toString(): string {
-    return `hsla(${this.hue}, ${this.saturation * 100}%, ${this.lightness * 100}%, ${this.alpha})`;
+    return `hsla(${Math.round(this.hue)}, ${Math.round(this.saturation * 100)}%, ${Math.round(this.lightness * 100) }%, ${this.alpha})`;
   }
 }
 
@@ -66,8 +66,8 @@ export class AnalysisComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.data.subscribe(r => {
-      this.metaList = r.data[0];
-      this.def = r.data[1];
+      this.metaList = r.data[1];
+      this.def = r.data[0];
       this.processDef();
       if (this.def)
         this.origDef = JSON.parse(JSON.stringify(this.def));
@@ -154,8 +154,8 @@ export class AnalysisComponent implements OnInit {
       return;
     }
 
-    var startColor: HSLAColor = new HSLAColor(191, 0.46, 0.41, 1);
-    var endColor: HSLAColor = new HSLAColor(172, 0.41, 0.39, 1);
+    var startColor: HSLAColor = new HSLAColor(240, 0.17, 0.76, 1);
+    var endColor: HSLAColor = new HSLAColor(240, 0.82, 0.11 , 1);
     var datePipe = new DatePipe('en-US');
     var relativeChart = result.timeseriesdata.length > 1;
     var xaxisPropName = "x_" + (!relativeChart ? "timestamp" : "relative");
@@ -165,22 +165,29 @@ export class AnalysisComponent implements OnInit {
       var options: ChartConfiguration = {
         type: 'line',
         data: {
-          datasets: result.timeseriesdata.map((series, seriesIndex, seriesList) => { return  {
-            label: seriesList.length === 1 ? "" : series.name,
-            data: series.y.map((value, i) => {
-              let xValue = series[xaxisPropName];
-              return {
-                x: (xValue ?? null) === null ? i.toString() : xValue[i],
-                y: value
-              }
-            }),
-            backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 0.3).toString(),
-            borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
-            borderWidth: 2,
-            fill: true
+          datasets: result.timeseriesdata.map((series, seriesIndex, seriesList) => {
+            console.log(seriesIndex);
+            return  {
+              label: seriesList.length === 1 ? "" : series.name,
+              data: series.y.map((value, i) => {
+                let xValue = series[xaxisPropName];
+                return {
+                  x: (xValue ?? null) === null ? i.toString() : (relativeChart ? xValue[i] * 1000.00 : xValue[i]),
+                  y: value
+                }
+              }),
+              backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 0.3).toString(),
+              borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
+              borderWidth: 2,
+              fill: false
           }})
         },
         options: {
+          elements: {
+            point: {
+              radius: 0
+            }
+          },
           plugins: {
             title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.title),
             subtitle: this.setChartTitle(this.def.timeseriesdef.visualsettings?.subtitle),
@@ -200,12 +207,13 @@ export class AnalysisComponent implements OnInit {
               time: {
                 displayFormats: {
                     hour: 'H:mm',
-                    second: 's',
+                    millisecond: 's.SSS',
+                    second: 's.SSS',
                     minute: 'm:ss',
                     day: relativeChart ? 'd' : 'MMM d'
                 },
-                tooltipFormat: relativeChart ? 'ss' : 'yyyy.MM.dd HH:mm:ss',
-                minUnit: 'second'
+                tooltipFormat: relativeChart ? 's.SSS' : 'yyyy.MM.dd HH:mm:ss',
+                minUnit: 'millisecond'
               },
               grid: {
                 display: xyChart
@@ -296,12 +304,17 @@ export class AnalysisComponent implements OnInit {
   }
 
   getChartSeriesColor(index: number, count: number, firstColor: HSLAColor, lastColor: HSLAColor, alpha: number): HSLAColor {
-    var color = new HSLAColor(
-      firstColor.hue * (count - (index + 1)) / count + lastColor.hue * (index + 1) / count,
-      firstColor.saturation * (count - (index + 1)) / count + lastColor.saturation * (index + 1) / count,
-      firstColor.lightness * (count - (index + 1)) / count + lastColor.lightness * (index + 1) / count,
-      alpha
-    );
+    var hsl2hsv = (h,s,l,v=s*Math.min(l,1-l)+l) => [h, v?2-2*l/v:0, v];
+    let hsv2hsl = (h,s,v,l=v-v*s/2, m=Math.min(l,1-l)) => [h,m?(v-l)/m:0,l];
+    var hsvA = hsl2hsv(firstColor.hue, firstColor.saturation, firstColor.lightness);
+    var hsvB = hsl2hsv(lastColor.hue, lastColor.saturation, lastColor.lightness);
+    var hsvColor = [
+      hsvA[0] * (count - (index + 1)) / count + hsvB[0] * (index + 1) / count,
+      hsvA[1] * (count - (index + 1)) / count + hsvB[1] * (index + 1) / count,
+      hsvA[2] * (count - (index + 1)) / count + hsvB[2] * (index + 1) / count
+    ];
+    var hslColor = hsv2hsl(hsvColor[0], hsvColor[1], hsvColor[2]);
+    var color = new HSLAColor(hslColor[0], hslColor[1], hslColor[2], alpha);
     console.log(color.toString());
     return color;
   }

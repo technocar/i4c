@@ -12,11 +12,11 @@ import { Meta, StatDef } from 'src/app/services/models/api';
 @Injectable({
   providedIn: 'root'
 })
-export class AnalysisResolver implements Resolve<[Meta[], StatDef]> {
+export class AnalysisResolver implements Resolve<[StatDef, Meta[]]> {
   constructor(
     private apiService: ApiService) {}
 
-  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[Meta[], StatDef]> {
-    return forkJoin([this.apiService.getMeta(), this.apiService.getStatDef(route.paramMap.get("id"))]);
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[StatDef, Meta[]]> {
+    return this.apiService.getAnalysisData(route.paramMap.get("id"));
   }
 }

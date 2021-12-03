@@ -12,7 +12,7 @@
     </div>
   </div>
   <div class="col-12">
-    <ngb-accordion #settings="ngbAccordion" activeIds="{{isNew() ? 'analysis-settings' : ''}}" type="light" [destroyOnHide]="false">
+    <ngb-accordion #settings="ngbAccordion" activeIds="{{isNew() ? 'analysis-settings' : ''}}" type="light" [destroyOnHide]="false" [animation]="true">
       <ngb-panel title="Beállítások" cardClass="settings" id="analysis-settings">
         <ng-template ngbPanelContent>
           <app-analysis-timeseries-def #timeseries_def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>

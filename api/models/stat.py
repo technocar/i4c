@@ -85,7 +85,7 @@ class StatTimeseriesMetric(I4cBaseModel):
 class StatTimeseriesAggMethod(str, Enum):
     avg = "avg"
     median = "median"
-    q1st = "q1th"
+    q1st = "q1st"
     q4th = "q4th"
     min = "min"
     max = "max"
@@ -866,7 +866,7 @@ def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
             return frac_index(o, (len(o) - 1) / 2)
         elif method == StatTimeseriesAggMethod.q1st:
             return frac_index(o, (len(o) - 1) / 5)
-        elif method == StatTimeseriesAggMethod.q3th:
+        elif method == StatTimeseriesAggMethod.q4th:
             return frac_index(o, (len(o) - 1) * 4 / 5)
     elif method == StatTimeseriesAggMethod.min:
         return min(v["value_num"] for v in agg_values)
