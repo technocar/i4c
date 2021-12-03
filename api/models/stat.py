@@ -388,6 +388,12 @@ class StatXYFieldDef(I4cBaseModel):
         return self.field_name == other.field_name
 
 
+class StatXYFieldValue(I4cBaseModel):
+    field_name: str
+    value_num: Optional[float]
+    value_text: Optional[str]
+
+
 class StatXYOther(StatXYFieldDef):
     id: Optional[int]
 
@@ -432,7 +438,7 @@ class StatXYFilter(I4cBaseModel):
         res_d = await conn.fetch(sql, xy_id)
         res = []
         for r in res_d:
-            res.append(StatXYFilter(id=r["id"], field=StatXYFieldDef(field_name=r["field_name"]), rel=r["rel"], value= r["value"]))
+            res.append(StatXYFilter(id=r["id"], field=StatXYFieldDef(field_name=r["field_name"]), rel=r["rel"], value=r["value"]))
         return res
 
     async def insert_to_db(self, xy_id, conn):
@@ -831,11 +837,11 @@ class StatTimeseriesDataSeries(I4cBaseModel):
 
 
 class StatXYData(I4cBaseModel):
-    x: StatXYFieldDef
-    y: Optional[StatXYFieldDef]
-    shape: Optional[StatXYFieldDef]
-    color: Optional[StatXYFieldDef]
-    others: List[StatXYFieldDef]
+    x: StatXYFieldValue
+    y: Optional[StatXYFieldValue]
+    shape: Optional[StatXYFieldValue]
+    color: Optional[StatXYFieldValue]
+    others: List[StatXYFieldValue]
 
 
 class StatData(I4cBaseModel):
@@ -874,7 +880,7 @@ def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
         return max(v["value_num"] for v in agg_values)
 
 
-async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
+async def statdata_get_timeseries(credentials, st:StatDef, conn) -> StatData:
     after, before = resolve_time_period(st.timeseriesdef.after, st.timeseriesdef.before, st.timeseriesdef.duration)
 
     total_series = series_intersect.Series()
@@ -989,25 +995,6 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
         for s, o in zip(ts, tso):
             s[1].name = o
     return res
-
-
-async def statdata_get_xy(st:StatDef, conn) -> StatData:
-    # todo 1: ********** statdata_get_xy
-    pass
-
-
-async def statdata_get(credentials, id) -> StatData:
-    async with DatabaseConnection() as conn:
-        async with conn.transaction(isolation='repeatable_read'):
-            st = await stat_list(credentials, id=id, pconn=conn)
-            if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
-            st = st[0]
-            if st.timeseriesdef is not None:
-                return await statdata_get_timeseries(st, conn)
-            elif st.xydef is not None:
-                return await statdata_get_xy(st, conn)
-            return StatData()
 
 
 class StatXYMateFieldType(str, Enum):
@@ -1146,3 +1133,67 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
 
         res = StatXYMeta(objects=[mazakprogram, mazaksubprogram, workpiece, batch, tool])
         return res
+
+stat_xy_mazakprogram_sql = open("models\\stat_xy_mazakprogram.sql").read()
+stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
+
+
+async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
+    after, before = resolve_time_period(st.xydef.after, st.xydef.before, st.xydef.duration)
+
+    meta = await get_xymeta(credentials, after)
+
+    res = StatData(stat_def=st, xydata=[])
+    if st.xydef.obj.type == StatXYObjectType.mazakprogram:
+        meta_mazakprogram = [m for m in meta.objects if m.name == 'mazakprogram']
+        if len(meta_mazakprogram) != 1:
+            raise HTTPException(status_code=400, detail="Invalid meta data")
+        meta_mazakprogram = meta_mazakprogram[0]
+        db_objs = await conn.fetch(stat_xy_mazakprogram_sql, before, after)
+
+        def get_field_value(dbo, f:StatXYFieldDef):
+            res = StatXYFieldValue(field_name=f.field_name)
+            meta_field = [m for m in meta_mazakprogram.fields if m.name == f.field_name]
+            if len(meta_field) != 1:
+                raise HTTPException(status_code=400, detail="Invalid field name")
+            meta_field = meta_field[0]
+
+            if "mf_"+f.field_name in dbo:
+                if meta_field.type == StatXYMateFieldType.numeric:
+                    res.value_num = dbo["mf_"+f.field_name]
+                else:
+                    res.value_text = dbo["mf_" + f.field_name]
+            else:
+                # todo 1: ***** load "<agg>_<axis>_load" measures
+                pass
+            return res
+
+        for dbo in db_objs:
+            cox = get_field_value(dbo, st.xydef.x)
+            co = StatXYData(x=cox, others=[])
+            if st.xydef.y:
+                co.y = get_field_value(dbo, st.xydef.x)
+            if st.xydef.shape:
+                co.shape = get_field_value(dbo, st.xydef.shape)
+            if st.xydef.color:
+                co.color = get_field_value(dbo, st.xydef.color)
+            for o in st.xydef.other:
+                co.others.append(get_field_value(dbo, o))
+    else:
+        # todo 1: **********
+        raise Exception("Not implemented")
+    return res
+
+
+async def statdata_get(credentials, id) -> StatData:
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            st = await stat_list(credentials, id=id, pconn=conn)
+            if len(st) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            st = st[0]
+            if st.timeseriesdef is not None:
+                return await statdata_get_timeseries(credentials, st, conn)
+            elif st.xydef is not None:
+                return await statdata_get_xy(credentials, st, conn)
+            return StatData()
