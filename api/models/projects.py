@@ -51,6 +51,7 @@ class ProjectPatchBody(I4cBaseModel):
 class ProjectIn(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
+    # todo 5: This should be Optional[Dict[str,str]] insted of json data.
     extra: Optional[str]
 
 
