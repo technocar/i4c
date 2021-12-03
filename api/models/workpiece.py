@@ -213,7 +213,7 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
             if patch.change.is_empty():
                 return PatchResponse(changed=True)
 
-            if patch.change.status or patch.change.batch:
+            if patch.change.status or patch.change.batch or patch.change.delete_batch:
                 sql_check_db = "select * from workpiece where id = $1"
                 dbr = await conn.fetchrow(sql_check_db, id)
                 params = [id]
