@@ -296,7 +296,7 @@ export class ApiService {
   getTools(parameters: ToolListParams): Observable<Tool[]> {
     var params = new RequestParams();
     params.addFromObject(parameters);
-    return this.http.get<Tool[]>(`${this._apiUrl}/tools/list`, { params: params.getAll() });
+    return this.http.get<Tool[]>(`${this._apiUrl}/tools`, { params: params.getAll() });
   }
 
   getToolUsageList(): Observable<ToolUsage[]> {
