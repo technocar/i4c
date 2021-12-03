@@ -641,7 +641,7 @@ class StatPatchBody(I4cBaseModel):
     change: StatPatchChange
 
 
-async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=None,
+async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, name=None, name_mask=None,
                     type:Optional[StatTimeseriesType] = None, *, pconn=None) -> List[StatDef]:
     sql = dedent("""\
             with 
@@ -688,12 +688,12 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                     left join "stat_visual_setting" vs on vs."id" = s."id"
                     )                
             select * from res
-            where True
+            where (res.shared or res.u_id = $1) 
           """)
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction():
             await conn.execute("SET LOCAL intervalstyle = 'iso_8601';")
-            params = []
+            params = [credentials.user_id]
             if id is not None:
                 params.append(id)
                 sql += f"and res.id = ${len(params)}\n"
