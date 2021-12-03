@@ -17,7 +17,8 @@ class Project(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
     versions: List[str] = Field(..., title="List of versions. Numbers are version numbers others are labels.")
-    extra: str
+    # todo 5: This should be Optional[Dict[str,str]] insted of json data.
+    extra: Optional[str]
 
 
 class ProjectPatchCondition(I4cBaseModel):
