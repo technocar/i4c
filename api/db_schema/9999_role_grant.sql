@@ -32,7 +32,7 @@ insert into role_grant values ('aaa', 'get/workpiece/{id}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/workpiece', array[]::varchar[]);
 insert into role_grant values ('aaa', 'patch/workpiece/{id}', array[]::varchar[]);
 
-insert into role_grant values ('aaa', 'get/tools/list', array[]::varchar[]);
+insert into role_grant values ('aaa', 'get/tools', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/tools/list_usage', array[]::varchar[]);
 insert into role_grant values ('aaa', 'put/tools', array[]::varchar[]);
 insert into role_grant values ('aaa', 'delete/tools', array[]::varchar[]);

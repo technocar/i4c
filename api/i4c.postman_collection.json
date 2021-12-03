@@ -819,14 +819,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece/Unavailable debug:92a024b9",
+							"raw": "localhost:5000/workpiece/5348",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"Unavailable debug:92a024b9"
+								"5348"
 							],
 							"query": [
 								{
@@ -891,14 +891,42 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/workpiece/Unavailable debug:92a024b9",
+							"raw": "localhost:5000/workpiece/5348",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"workpiece",
-								"Unavailable debug:92a024b9"
+								"5348"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "workpiece patch2",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [],\r\n    \"change\": {\r\n        \"delete_batch\": true\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/workpiece/5348",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"workpiece",
+								"5348"
 							]
 						}
 					},
@@ -998,14 +1026,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/tools/list?device=lathe",
+							"raw": "localhost:5000/tools?device=lathe",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
-								"tools",
-								"list"
+								"tools"
 							],
 							"query": [
 								{
@@ -1529,7 +1556,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"stat2\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": {\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"filter\": [\r\n            {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"pgm\",\r\n                \"rel\": \"*\",\r\n                \"value\": \"a\",\r\n                \"age_min\": null,\r\n                \"age_max\": null\r\n            }\r\n        ],\r\n        \"metric\": {\r\n            \"device\": \"lathe\",\r\n            \"data_id\": \"sl\"\r\n        },\r\n        \"agg_func\": null,\r\n        \"agg_sep\": null,\r\n        \"series_sep\": null,\r\n        \"xaxis\": \"timestamp\",\r\n        \"visualsettings\": {}\r\n    },\r\n    \"xydef\": null\r\n}",
+							"raw": "{\r\n    \"name\": \"stat2\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": {\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"filter\": [\r\n            {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"pgm\",\r\n                \"rel\": \"*\",\r\n                \"value\": \"a\",\r\n                \"age_min\": null,\r\n                \"age_max\": null\r\n            }\r\n        ],\r\n        \"metric\": {\r\n            \"device\": \"lathe\",\r\n            \"data_id\": \"sl\"\r\n        },\r\n        \"agg_func\": null,\r\n        \"agg_sep\": null,\r\n        \"series_sep\": null,\r\n        \"xaxis\": \"timestamp\",\r\n        \"visualsettings\": {\r\n            \"title\": null,\r\n            \"subtitle\": null,\r\n            \"xaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"yaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"legend\": {\r\n                \"position\": null,\r\n                \"align\": null\r\n            }\r\n        }\r\n\r\n    },\r\n    \"xydef\": null\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1557,7 +1584,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"stat_xy2\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": null,\r\n    \"xydef\": {\r\n        \"obj\": {\r\n            \"type\": \"mazakprogram\",\r\n            \"params\": []\r\n        },\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"x\": {\r\n            \"field_name\": \"avg_x_load\"\r\n        },\r\n        \"y\": {\r\n            \"field_name\": \"avg_y_load\"\r\n        },\r\n        \"shape\": null,\r\n        \"color\": null,\r\n        \"other\": [],\r\n        \"filter\": [],\r\n        \"visualsettings\": {}\r\n    }\r\n}",
+							"raw": "{\r\n    \"name\": \"stat_xy2\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": null,\r\n    \"xydef\": {\r\n        \"obj\": {\r\n            \"type\": \"mazakprogram\",\r\n            \"params\": []\r\n        },\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"x\": {\r\n            \"field_name\": \"avg_x_load\"\r\n        },\r\n        \"y\": {\r\n            \"field_name\": \"avg_y_load\"\r\n        },\r\n        \"shape\": null,\r\n        \"color\": null,\r\n        \"other\": [],\r\n        \"filter\": [],\r\n        \"visualsettings\": {\r\n            \"title\": null,\r\n            \"subtitle\": null,\r\n            \"xaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"yaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"legend\": {\r\n                \"position\": null,\r\n                \"align\": null\r\n            }\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1614,7 +1641,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": {\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"filter\": [\r\n               ],\r\n            \"metric\": {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"sl\"\r\n            },\r\n            \"agg_func\": null,\r\n            \"agg_sep\": null,\r\n            \"series_sep\": null,\r\n            \"series_name\": \"timestamp\",\r\n            \"xaxis\": \"timestamp\",\r\n            \"visualsettings\": {}\r\n        },\r\n        \"xydef\": null\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": {\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"filter\": [\r\n               ],\r\n            \"metric\": {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"sl\"\r\n            },\r\n            \"agg_func\": null,\r\n            \"agg_sep\": null,\r\n            \"series_sep\": null,\r\n            \"series_name\": \"timestamp\",\r\n            \"xaxis\": \"timestamp\",\r\n            \"visualsettings\": {\r\n                \"title\": null,\r\n                \"subtitle\": null,\r\n                \"xaxis\": {\r\n                    \"caption\": null\r\n                },\r\n                \"yaxis\": {\r\n                    \"caption\": null\r\n                },\r\n                \"legend\": {\r\n                    \"position\": null,\r\n                    \"align\": null\r\n                }\r\n            }\r\n        },\r\n        \"xydef\": null\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1643,7 +1670,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": {\r\n            \"obj\": {\r\n                \"type\": \"mazakprogram\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"x\": {\r\n                \"field_name\": \"avg_x_load\"\r\n            },\r\n            \"y\": {\r\n                \"field_name\": \"avg_y_load\"\r\n            },\r\n            \"shape\": null,\r\n            \"color\": null,\r\n            \"other\": [],\r\n            \"filter\": [],\r\n            \"visualsettings\": {}\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": {\r\n            \"obj\": {\r\n                \"type\": \"mazakprogram\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"x\": {\r\n                \"field_name\": \"avg_x_load\"\r\n            },\r\n            \"y\": {\r\n                \"field_name\": \"avg_y_load\"\r\n            },\r\n            \"shape\": null,\r\n            \"color\": null,\r\n            \"other\": [],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n                \"title\": \"valami\",\r\n                \"subtitle\": null,\r\n                \"xaxis\": {\r\n                    \"caption\": \"x-tengely\"\r\n                },\r\n                \"yaxis\": {\r\n                    \"caption\": \"y-tengely\"\r\n                },\r\n                \"legend\": {\r\n                    \"position\": null,\r\n                    \"align\": null\r\n                }\r\n            }\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1651,7 +1678,7 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:5000/stat/def/-1",
+							"raw": "localhost:5000/stat/def/-3",
 							"host": [
 								"localhost"
 							],
@@ -1659,7 +1686,7 @@
 							"path": [
 								"stat",
 								"def",
-								"-1"
+								"-3"
 							]
 						}
 					},
