@@ -208,8 +208,10 @@ class StatVisualSettings(I4cBaseModel):
                                                           $7)
                 """)
         await conn.execute(sql, ts_id, self.title, self.subtitle,
-                           self.xaxis.caption, self.yaxis.caption, self.legend.position,
-                           self.legend.align)
+                           self.xaxis.caption if self.xaxis else None,
+                           self.yaxis.caption if self.yaxis else None,
+                           self.legend.position if self.legend else None,
+                           self.legend.align if self.legend else None)
 
 
 class StatTimeseriesDef(I4cBaseModel):
