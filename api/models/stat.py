@@ -4,19 +4,18 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
 from typing import Optional, List
-
 from fastapi import HTTPException
 from isodate import ISO8601Error
 from pydantic import root_validator, validator, Field
 import common.db_helpers
-from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect
+from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect, write_debug_sql
 import isodate
-
 from common.cmp_list import cmp_list
 from common.tools import frac_index, optimize_timestamp_label
 from models import AlarmCondEventRel, alarm
 from models.alarm import prev_iterator
 from models.common import PatchResponse
+import re
 
 
 class StatUser(I4cBaseModel):
@@ -82,7 +81,7 @@ class StatTimeseriesMetric(I4cBaseModel):
     data_id: str
 
 
-class StatTimeseriesAggMethod(str, Enum):
+class StatAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1st"
@@ -219,7 +218,7 @@ class StatTimeseriesDef(I4cBaseModel):
     duration: Optional[str]
     filter: List[StatTimeseriesFilter]
     metric: StatTimeseriesMetric
-    agg_func: Optional[StatTimeseriesAggMethod]
+    agg_func: Optional[StatAggMethod]
     agg_sep: Optional[StatSepEvent]
     series_sep: Optional[StatSepEvent]
     series_name: Optional[StatTimeseriesSeriesName]
@@ -860,24 +859,27 @@ def resolve_time_period(after, before, duration):
     return after, before
 
 
-def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
-    agg_values = [v for v in agg_values if v["value_num"] is not None]
+def calc_aggregate(method: StatAggMethod, agg_values, *, from_record=True):
+    if from_record:
+        agg_values = [v["value_num"] for v in agg_values if v["value_num"] is not None]
+    else:
+        agg_values = [v for v in agg_values if v is not None]
     if not agg_values:
         return None
-    if method == StatTimeseriesAggMethod.avg:
-        return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4th):
-        o = sorted(v["value_num"] for v in agg_values)
-        if method == StatTimeseriesAggMethod.median:
+    if method == StatAggMethod.avg:
+        return sum(v for v in agg_values) / len(agg_values)
+    elif method in (StatAggMethod.median, StatAggMethod.q1st, StatAggMethod.q4th):
+        o = sorted(v for v in agg_values)
+        if method == StatAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
-        elif method == StatTimeseriesAggMethod.q1st:
+        elif method == StatAggMethod.q1st:
             return frac_index(o, (len(o) - 1) / 5)
-        elif method == StatTimeseriesAggMethod.q4th:
+        elif method == StatAggMethod.q4th:
             return frac_index(o, (len(o) - 1) * 4 / 5)
-    elif method == StatTimeseriesAggMethod.min:
-        return min(v["value_num"] for v in agg_values)
-    elif method == StatTimeseriesAggMethod.max:
-        return max(v["value_num"] for v in agg_values)
+    elif method == StatAggMethod.min:
+        return min(v for v in agg_values)
+    elif method == StatAggMethod.max:
+        return max(v for v in agg_values)
 
 
 async def statdata_get_timeseries(credentials, st:StatDef, conn) -> StatData:
@@ -1034,10 +1036,18 @@ class StatXYMeta(I4cBaseModel):
     objects: List[StatXYMetaObject]
 
 
-async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
+class StatXYMozakAxis(str, Enum):
+    x = "x"
+    y = "y"
+    z = "z"
+    b = "b"
+    c = "c"
+
+
+async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> StatXYMeta:
     if after is None:
         after = datetime.utcnow() - timedelta(days=365)
-    async with DatabaseConnection() as conn:
+    async with DatabaseConnection(pconn) as conn:
         mazak_fields = [
             StatXYMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
             StatXYMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
@@ -1048,8 +1058,8 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
             StatXYMetaField(name="workpiece good/bad", displayname="munkadarab jó/hibás",type=StatXYMateFieldType.category),
             StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric)
         ]
-        for axis in ("x","y","z","b","c"):
-            for agg in StatTimeseriesAggMethod:
+        for axis in StatXYMozakAxis:
+            for agg in StatAggMethod:
                 mazak_fields.append(
                     StatXYMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
 
@@ -1138,10 +1148,22 @@ stat_xy_mazakprogram_sql = open("models\\stat_xy_mazakprogram.sql").read()
 stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
 
 
+class LoadMeasureItem:
+    def __init__(self, timestamp, value_num):
+        self.timestamp = timestamp
+        self.value_num = value_num
+
+
+async def load_measure(conn, after, before, mf_device, measure):
+    db_objs = await conn.fetch(stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
+    write_debug_sql(f"stat_xy_mazakprogram_measure__{mf_device}__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
+    return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
+
+
 async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     after, before = resolve_time_period(st.xydef.after, st.xydef.before, st.xydef.duration)
 
-    meta = await get_xymeta(credentials, after)
+    meta = await get_xymeta(credentials, after, pconn=conn)
 
     res = StatData(stat_def=st, xydata=[])
     if st.xydef.obj.type == StatXYObjectType.mazakprogram:
@@ -1150,8 +1172,10 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
             raise HTTPException(status_code=400, detail="Invalid meta data")
         meta_mazakprogram = meta_mazakprogram[0]
         db_objs = await conn.fetch(stat_xy_mazakprogram_sql, before, after)
+        write_debug_sql("stat_xy_mazakprogram.sql", stat_xy_mazakprogram_sql, before, after)
+        agg_measures = {}
 
-        def get_field_value(dbo, f:StatXYFieldDef):
+        async def get_field_value(dbo, f:StatXYFieldDef):
             res = StatXYFieldValue(field_name=f.field_name)
             meta_field = [m for m in meta_mazakprogram.fields if m.name == f.field_name]
             if len(meta_field) != 1:
@@ -1164,21 +1188,48 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
                 else:
                     res.value_text = dbo["mf_" + f.field_name]
             else:
-                # todo 1: ***** load "<agg>_<axis>_load" measures
-                pass
+                regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
+                match = re.fullmatch(regex, f.field_name)
+                if not match:
+                    raise Exception("Invalid field name: "+f.field_name)
+                try:
+                    agg = StatAggMethod[match.group("agg")]
+                    axis = StatXYMozakAxis[match.group("axis")]
+                except KeyError:
+                    raise Exception("Invalid field name: " + f.field_name)
+                mf_device = dbo["mf_device"]
+                mf_start = dbo["mf_start"]
+                mf_end = dbo["mf_end"]
+                key = (mf_device, axis)
+                if key not in agg_measures:
+                    measure = axis+'l' if axis != StatXYMozakAxis.b else 'al'
+                    prods_measure = await load_measure(conn, after, before, mf_device, measure)
+                    agg_measures[key] = prods_measure
+                prods_measure = agg_measures[key]
+                age_min = [x.value for x in st.xydef.obj.params if x.key == "age_min"]
+                age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
+                age_max = [x.value for x in st.xydef.obj.params if x.key == "age_max"]
+                age_max = timedelta(seconds=float(age_max[0])) if age_max else None
+
+                prod_measure = [x.value_num for x in prods_measure
+                                if (mf_start + age_min <= x.timestamp < mf_end
+                                    and x.timestamp < mf_start + age_max if age_max is not None else True)]
+
+                res.value_num = calc_aggregate(agg, prod_measure, from_record=False)
             return res
 
         for dbo in db_objs:
-            cox = get_field_value(dbo, st.xydef.x)
+            cox = await get_field_value(dbo, st.xydef.x)
             co = StatXYData(x=cox, others=[])
             if st.xydef.y:
-                co.y = get_field_value(dbo, st.xydef.x)
+                co.y = await get_field_value(dbo, st.xydef.y)
             if st.xydef.shape:
-                co.shape = get_field_value(dbo, st.xydef.shape)
+                co.shape = await get_field_value(dbo, st.xydef.shape)
             if st.xydef.color:
-                co.color = get_field_value(dbo, st.xydef.color)
+                co.color = await get_field_value(dbo, st.xydef.color)
             for o in st.xydef.other:
-                co.others.append(get_field_value(dbo, o))
+                co.others.append(await get_field_value(dbo, o))
+            res.xydata.append(co)
     else:
         # todo 1: **********
         raise Exception("Not implemented")
