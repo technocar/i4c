@@ -36,7 +36,7 @@ class StatUser(I4cBaseModel):
 
 class StatTimeseriesFilter(I4cBaseModel):
     """ category="EVENT" only """
-    id: Optional[int]
+    id: Optional[int] = Field(None, hidden_from_schema=True)
     device: str
     data_id: str
     rel: AlarmCondEventRel
@@ -348,7 +348,7 @@ class StatXYObjectType(str, Enum):
 
 
 class StatXYObjectParam(I4cBaseModel):
-    id: Optional[int]
+    id: Optional[int] = Field(None, hidden_from_schema=True)
     key: str
     value: Optional[str]
 
@@ -378,29 +378,23 @@ class StatXYObject(I4cBaseModel):
     params: List[StatXYObjectParam]
 
 
-class StatXYFieldDef(I4cBaseModel):
-    field_name: str
-
-    def __eq__(self, other):
-        if not isinstance(other, StatXYFieldDef):
-            return False
-        return self.field_name == other.field_name
-
-
 class StatXYFieldValue(I4cBaseModel):
     field_name: str
     value_num: Optional[float]
     value_text: Optional[str]
 
 
-class StatXYOther(StatXYFieldDef):
-    id: Optional[int]
+class StatXYOther(I4cBaseModel):
+    id: Optional[int] = Field(None, hidden_from_schema=True)
+    field_name: str
 
     @classmethod
     async def load_others(cls, conn, xy_id):
         sql = "select id, field_name from stat_xy_other where xy = $1"
         res = await conn.fetch(sql, xy_id)
-        return [StatXYOther(**r) for r in res]
+        res_b = [StatXYOther(**r) for r in res]
+        res_a = [b.field_name for b in res_b]
+        return res_a,res_b
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
@@ -426,8 +420,8 @@ class StatXYFilterRel(str, Enum):
 
 
 class StatXYFilter(I4cBaseModel):
-    id: Optional[int]
-    field: StatXYFieldDef
+    id: Optional[int] = Field(None, hidden_from_schema=True)
+    field: str
     rel: StatXYFilterRel
     value: str
 
@@ -437,7 +431,7 @@ class StatXYFilter(I4cBaseModel):
         res_d = await conn.fetch(sql, xy_id)
         res = []
         for r in res_d:
-            res.append(StatXYFilter(id=r["id"], field=StatXYFieldDef(field_name=r["field_name"]), rel=r["rel"], value=r["value"]))
+            res.append(StatXYFilter(id=r["id"], field=r["field_name"], rel=r["rel"], value=r["value"]))
         return res
 
     async def insert_to_db(self, xy_id, conn):
@@ -446,7 +440,7 @@ class StatXYFilter(I4cBaseModel):
                 values ($1, $2, $3, $4)
             returning id
             """)
-        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field.field_name, self.rel, self.value))[0]
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field, self.rel, self.value))[0]
 
     def __eq__(self, other):
         if not isinstance(other, StatXYFilter):
@@ -461,11 +455,12 @@ class StatXYDef(I4cBaseModel):
     after: Optional[datetime]
     before: Optional[datetime]
     duration: Optional[str]
-    x: StatXYFieldDef
-    y: Optional[StatXYFieldDef]
-    shape: Optional[StatXYFieldDef]
-    color: Optional[StatXYFieldDef]
-    other: List[StatXYOther]
+    x: str
+    y: Optional[str]
+    shape: Optional[str]
+    color: Optional[str]
+    other: List[str]
+    other_internal: List[StatXYOther] = Field([], hidden_from_schema=True)
     filter: List[StatXYFilter]
     visualsettings: StatVisualSettings
 
@@ -504,7 +499,7 @@ class StatXYDef(I4cBaseModel):
             await p.insert_to_db(stat_id, conn)
 
         for o in self.other:
-            await o.insert_to_db(stat_id, conn)
+            await StatXYOther(field_name=o).insert_to_db(stat_id, conn)
 
         for f in self.filter:
             await f.insert_to_db(stat_id, conn)
@@ -514,9 +509,8 @@ class StatXYDef(I4cBaseModel):
 
     def get_sql_params(self):
         return [self.obj.type, self.after, self.before,
-                self.duration, self.x.field_name, self.y.field_name if self.y else None,
-
-                self.shape.field_name if self.shape else None, self.color.field_name if self.color else None
+                self.duration, self.x, self.y,
+                self.shape, self.color
                 ]
 
     async def update_to_db(self, stat_id, new_state, conn):
@@ -551,12 +545,13 @@ class StatXYDef(I4cBaseModel):
                 raise HTTPException(status_code=500, detail="Missing id from StatXYObjectParam")
             await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
 
-        insert, delete, _, _ = cmp_list(self.other, new_state.other)
+        new_other = [StatXYOther(field_name=o) for o in new_state.other]
+        insert, delete, _, _ = cmp_list(self.other_internal, new_other)
         for f in insert:
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYFieldDef")
+                raise HTTPException(status_code=500, detail="Missing id from StatXYOther")
             await conn.execute("delete from stat_xy_other where id = $1", d.id)
 
         insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
@@ -584,10 +579,8 @@ class StatXYDef(I4cBaseModel):
         if d["id"] is None:
             return None
         d["obj"] = StatXYObject(type=d["object_name"], params=d["object_param"])
-        d["x"] = StatXYFieldDef(field_name=d["x_field"])
-        d["y"] = StatXYFieldDef(field_name=d["y_field"]) if d["y_field"] is not None else None
-        d["shape"] = StatXYFieldDef(field_name=d["shape"]) if d["shape"] is not None else None
-        d["color"] = StatXYFieldDef(field_name=d["color"]) if d["color"] is not None else None
+        d["x"] = d["x_field"]
+        d["y"] = d["y_field"]
         d["visualsettings"] = StatVisualSettings.create_from_dict(d, "vs_")
         return StatXYDef(**d)
 
@@ -724,7 +717,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                     timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_', ['vs_'])
                 if d["sx_id"] is not None:
                     d["sx_object_param"] = await StatXYObjectParam.load_params(conn, d["sx_id"])
-                    d["sx_other"] = await StatXYOther.load_others(conn, d["sx_id"])
+                    d["sx_other"], d["sx_other_internal"] = await StatXYOther.load_others(conn, d["sx_id"])
                     d["sx_filter"] = await StatXYFilter.load_filters(conn, d["sx_id"])
                     xydef = StatXYDef.create_from_dict(d, 'sx_', ['vs_'])
                 res.append(StatDef(**d, timeseriesdef=timeseriesdef, xydef=xydef))
@@ -1175,28 +1168,28 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         write_debug_sql("stat_xy_mazakprogram.sql", stat_xy_mazakprogram_sql, before, after)
         agg_measures = {}
 
-        async def get_field_value(dbo, f:StatXYFieldDef):
-            res = StatXYFieldValue(field_name=f.field_name)
-            meta_field = [m for m in meta_mazakprogram.fields if m.name == f.field_name]
+        async def get_field_value(dbo, field_name:str):
+            res = StatXYFieldValue(field_name=field_name)
+            meta_field = [m for m in meta_mazakprogram.fields if m.name == field_name]
             if len(meta_field) != 1:
                 raise HTTPException(status_code=400, detail="Invalid field name")
             meta_field = meta_field[0]
 
-            if "mf_"+f.field_name in dbo:
+            if "mf_"+field_name in dbo:
                 if meta_field.type == StatXYMateFieldType.numeric:
-                    res.value_num = dbo["mf_"+f.field_name]
+                    res.value_num = dbo["mf_" + field_name]
                 else:
-                    res.value_text = dbo["mf_" + f.field_name]
+                    res.value_text = dbo["mf_" + field_name]
             else:
                 regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
-                match = re.fullmatch(regex, f.field_name)
+                match = re.fullmatch(regex, field_name)
                 if not match:
-                    raise Exception("Invalid field name: "+f.field_name)
+                    raise Exception("Invalid field name: " + field_name)
                 try:
                     agg = StatAggMethod[match.group("agg")]
                     axis = StatXYMozakAxis[match.group("axis")]
                 except KeyError:
-                    raise Exception("Invalid field name: " + f.field_name)
+                    raise Exception("Invalid field name: " + field_name)
                 mf_device = dbo["mf_device"]
                 mf_start = dbo["mf_start"]
                 mf_end = dbo["mf_end"]
