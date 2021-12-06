@@ -345,6 +345,7 @@ class StatTimeseriesDef(I4cBaseModel):
 class StatXYObjectType(str, Enum):
     workpiece = "workpiece"
     mazakprogram = "mazakprogram"
+    mazaksubprogram = "mazaksubprogram"
     batch = "batch"
     tool = "tool"
 
@@ -1059,7 +1060,7 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
                     StatXYMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
 
         mazakprogram = StatXYMetaObject(
-            name="mazakprogram",
+            name=StatXYObjectType.mazakprogram,
             displayname="mazakprogram",
             fields=mazak_fields,
             params=[
@@ -1069,7 +1070,7 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
         )
 
         mazaksubprogram = StatXYMetaObject(**dict(mazakprogram))
-        mazaksubprogram.name = "mazaksubprogram"
+        mazaksubprogram.name = StatXYObjectType.mazaksubprogram
         mazaksubprogram.displayname = "mazaksubprogram"
         mazaksubprogram.fields = list(mazak_fields)
         mazaksubprogram.fields.insert(4, StatXYMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category))
@@ -1101,14 +1102,14 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
             workpiece_fields.append(StatXYMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
 
         workpiece = StatXYMetaObject(
-            name="workpiece",
+            name=StatXYObjectType.workpiece,
             displayname="munkadarab",
             fields=workpiece_fields,
             params=[]
         )
 
         batch = StatXYMetaObject(
-            name="batch",
+            name=StatXYObjectType.batch,
             displayname="batch",
             fields=[
                 StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
@@ -1125,7 +1126,7 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
         )
 
         tool = StatXYMetaObject(
-            name="tool",
+            name=StatXYObjectType.tool,
             displayname="tool",
             fields=[
                 StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
@@ -1140,6 +1141,7 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
         return res
 
 stat_xy_mazakprogram_sql = open("models\\stat_xy_mazakprogram.sql").read()
+stat_xy_mazaksubprogram_sql = open("models\\stat_xy_mazaksubprogram.sql").read()
 stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
 
 
@@ -1161,13 +1163,19 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     meta = await get_xymeta(credentials, after, pconn=conn)
 
     res = StatData(stat_def=st, xydata=[])
-    if st.xydef.obj.type == StatXYObjectType.mazakprogram:
-        meta_mazakprogram = [m for m in meta.objects if m.name == 'mazakprogram']
+    if st.xydef.obj.type in (StatXYObjectType.mazakprogram, StatXYObjectType.mazaksubprogram):
+        meta_mazakprogram = [m for m in meta.objects if m.name == st.xydef.obj.type]
         if len(meta_mazakprogram) != 1:
             raise HTTPException(status_code=400, detail="Invalid meta data")
         meta_mazakprogram = meta_mazakprogram[0]
-        db_objs = await conn.fetch(stat_xy_mazakprogram_sql, before, after)
-        write_debug_sql("stat_xy_mazakprogram.sql", stat_xy_mazakprogram_sql, before, after)
+        if st.xydef.obj.type == StatXYObjectType.mazakprogram:
+            sql = stat_xy_mazakprogram_sql
+        elif st.xydef.obj.type == StatXYObjectType.mazaksubprogram:
+            sql = stat_xy_mazaksubprogram_sql
+        else:
+            sql = None
+        write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
+        db_objs = await conn.fetch(sql, before, after)
         agg_measures = {}
 
         async def get_field_value(dbo, field_name:str):

@@ -37,6 +37,16 @@ with
       and l.device in ('lathe', 'mill')
       and l.data_id='pgm'
   ),
+  p_spgm as (
+    select l.device, l.value_text as "subprogram", l.timestamp, l.sequence
+    from log l
+    cross join p
+    where
+      l.timestamp >= p.after
+      and l.timestamp <= p.before
+      and l.device in ('lathe', 'mill')
+      and l.data_id='spgm'
+  ),
   map_project_version as (
     select
       f.savepath,
@@ -81,13 +91,36 @@ with
   discover_log as (
     select 
       wb.timestamp as mf_start,
-      we.timestamp as mf_end,
+      least(spgm_next.timestamp, we.timestamp) as mf_end,
       wb.device as mf_device,
       w_pgm."program" as mf_program,
+      wb."subprogram" as mf_subprogram,
       w_project."project" as mf_project,
       w_project."version" as "mf_project version",
       w_gb.gb as "mf_workpiece good/bad"
-    from p_begin wb
+    from p_spgm wb
+    left join lateral (
+      select * from (
+        select 
+          w.*,
+          rank() over (order by w.timestamp desc, w.sequence desc) r
+        from p_begin as w
+        where
+          w.timestamp < wb.timestamp
+          or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
+      ) a
+      where a.r = 1) w_exec_begin on w_exec_begin.device = wb.device
+    left join lateral (
+      select * from (
+        select 
+          w.*,
+          rank() over (order by w.timestamp asc, w.sequence asc) r
+        from p_spgm as w
+        where
+          w.timestamp > wb.timestamp
+          or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
+      ) a
+      where a.r = 1) spgm_next on spgm_next.device = wb.device    
     left join lateral (
       select * from (
         select 
