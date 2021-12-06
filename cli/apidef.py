@@ -148,35 +148,57 @@ ACTION PROPERTIES:
 """
 
 
+def _proc_auth(a):
+    """
+    'a' is the required OpenAPI 'Security Scheme Object' items.
+    Return the classification for the entire requirement.
+    """
+    # this is rudimentary. optimally we could support other auth schemes,
+    # but we only use this one, so whatever
+    if not a:
+        return "noauth"
+    if len(a) == 1 and a[0] == {"type": "http", "scheme": "basic"}:
+        return "basic"
+    else:
+        return "unknown"
+
+
+def _proc_sch(sch): # TODO try remove self
+    title = sch.get("title", None)
+    # TODO not very good this is
+    # $ref can appear at various points, array items, top level
+    # title can be in inherited parts, but apparently top is stronger
+    # we might need some deep auto-follow and merge non-override
+    # keep the "object" type to indicate a documentation link
+    # but embed the enumeration types
+
+    return title, False, "unknown", None
+
+
+def preproc_def(apidef):
+    # TODO bring singulare allOf to parent level
+    # TODO embed $ref
+
+    def descend(level):
+        if "$ref" in level:
+            refd = level["$ref"]
+            if refd.startswith("#/components/schemas/"):
+                refd = refd[21:]
+            refd = apidef["components"]["schemas"][refd]
+            for (k, v) in refd.items():
+                if k not in level:
+                    level[k] = v
+        for (k, v) in level.items():
+            if isinstance(v, dict):
+                descend(v)
+
+    descend(apidef)
+
+
 class I4CDef:
     content = None
     objects: Dict[str, Obj] = {}
     schema: Dict[str, Schema] = {}
-
-    def __proc_auth(self, a):
-        """
-        'a' is the required OpenAPI 'Security Scheme Object' items.
-        Return the classification for the entire requirement.
-        """
-        # this is rudimentary. optimally we could support other auth schemes,
-        # but we only use this one, so whatever
-        if not a:
-            return "noauth"
-        if len(a) == 1 and a[0] == {"type": "http", "scheme": "basic"}:
-            return "basic"
-        else:
-            return "unknown"
-
-    def __proc_sch(self, sch): # TODO try remove self
-        title = sch.get("title", None)
-        # TODO not very good this is
-        # $ref can appear at various points, array items, top level
-        # title can be in inherited parts, but apparently top is stronger
-        # we might need some deep auto-follow and merge non-override
-        # keep the "object" type to indicate a documentation link
-        # but embed the enumeration types
-
-        return title, False, "unknown", None
 
     def __init__(self, *, base_url=None, def_file=None):
         if def_file:
@@ -192,6 +214,8 @@ class I4CDef:
                 self.content = json.load(u)
         else:
             raise Exception("Either base url or definition file required.")
+
+        preproc_def(self.content)
 
         # TODO collect schema objects
 
@@ -219,7 +243,7 @@ class I4CDef:
 
                 sec = info.get("security", [])
                 sec = [[self.content["components"]["securitySchemes"][k] for k in s.keys()] for s in sec]
-                sec = [self.__proc_auth(a) for a in sec]
+                sec = [_proc_auth(a) for a in sec]
                 if "noauth" in sec:
                     action.security = 'noauth'
                 elif "basic" in sec:
@@ -236,7 +260,7 @@ class I4CDef:
                     par.required = p.get("required", False)
                     sch = p.get("schema", None)
                     if sch:
-                        (par.title, par.is_array, par.type, par.sch_obj) = self.__proc_sch(p)
+                        (par.title, par.is_array, par.type, par.sch_obj) = _proc_sch(p)
                     else:
                         par.title = None
                         par.is_array = False
