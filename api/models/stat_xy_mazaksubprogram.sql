@@ -75,7 +75,7 @@ with
                   from map_project_version m
                   where 
                     m.timestamp <= r.timestamp
-                 ) mpv on mpv.savepath = 'robot\\'||r."program"   /* todo: use proper path */
+                 ) mpv on mpv.savepath = 'robot/'||r."program"   /* todo: use proper path */
                           and mpv.r = 1
   ),
   workpiece_gb as (
