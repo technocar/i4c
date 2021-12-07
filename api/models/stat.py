@@ -1093,8 +1093,7 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
             join meta m on m.device = l.device and m.data_id = l.data_id
             where 
               l.device = 'gom'
-              and m.system1 = 'deviance'
-              and m.data_id != '*'
+              and m.system1 = 'dev'
               and l.timestamp > $1::timestamp with time zone
             order by 1""")
 
@@ -1143,6 +1142,8 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> S
 stat_xy_mazakprogram_sql = open("models\\stat_xy_mazakprogram.sql").read()
 stat_xy_mazaksubprogram_sql = open("models\\stat_xy_mazaksubprogram.sql").read()
 stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
+stat_xy_workpiece_sql = open("models\\stat_xy_workpiece.sql").read()
+stat_xy_workpiece_measure_sql = open("models\\stat_xy_workpiece_measure.sql").read()
 
 
 class LoadMeasureItem:
@@ -1151,9 +1152,15 @@ class LoadMeasureItem:
         self.value_num = value_num
 
 
-async def load_measure(conn, after, before, mf_device, measure):
+async def load_measure_mazak(conn, after, before, mf_device, measure):
     db_objs = await conn.fetch(stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
     write_debug_sql(f"stat_xy_mazakprogram_measure__{mf_device}__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
+    return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
+
+
+async def load_measure_workpiece(conn, after, before, measure):
+    db_objs = await conn.fetch(stat_xy_workpiece_measure_sql, before, after, measure)
+    write_debug_sql(f"stat_xy_workpiece_measure__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, measure)
     return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
 
 
@@ -1163,79 +1170,112 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     meta = await get_xymeta(credentials, after, pconn=conn)
 
     res = StatData(stat_def=st, xydata=[])
-    if st.xydef.obj.type in (StatXYObjectType.mazakprogram, StatXYObjectType.mazaksubprogram):
-        meta_mazakprogram = [m for m in meta.objects if m.name == st.xydef.obj.type]
-        if len(meta_mazakprogram) != 1:
-            raise HTTPException(status_code=400, detail="Invalid meta data")
-        meta_mazakprogram = meta_mazakprogram[0]
-        if st.xydef.obj.type == StatXYObjectType.mazakprogram:
-            sql = stat_xy_mazakprogram_sql
-        elif st.xydef.obj.type == StatXYObjectType.mazaksubprogram:
-            sql = stat_xy_mazaksubprogram_sql
-        else:
-            sql = None
-        write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
-        db_objs = await conn.fetch(sql, before, after)
-        agg_measures = {}
-
-        async def get_field_value(dbo, field_name:str):
-            res = StatXYFieldValue(field_name=field_name)
-            meta_field = [m for m in meta_mazakprogram.fields if m.name == field_name]
-            if len(meta_field) != 1:
-                raise HTTPException(status_code=400, detail="Invalid field name")
-            meta_field = meta_field[0]
-
-            if "mf_"+field_name in dbo:
-                if meta_field.type == StatXYMateFieldType.numeric:
-                    res.value_num = dbo["mf_" + field_name]
-                else:
-                    res.value_text = dbo["mf_" + field_name]
-            else:
-                regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
-                match = re.fullmatch(regex, field_name)
-                if not match:
-                    raise Exception("Invalid field name: " + field_name)
-                try:
-                    agg = StatAggMethod[match.group("agg")]
-                    axis = StatXYMozakAxis[match.group("axis")]
-                except KeyError:
-                    raise Exception("Invalid field name: " + field_name)
-                mf_device = dbo["mf_device"]
-                mf_start = dbo["mf_start"]
-                mf_end = dbo["mf_end"]
-                key = (mf_device, axis)
-                if key not in agg_measures:
-                    measure = axis+'l' if axis != StatXYMozakAxis.b else 'al'
-                    prods_measure = await load_measure(conn, after, before, mf_device, measure)
-                    agg_measures[key] = prods_measure
-                prods_measure = agg_measures[key]
-                age_min = [x.value for x in st.xydef.obj.params if x.key == "age_min"]
-                age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
-                age_max = [x.value for x in st.xydef.obj.params if x.key == "age_max"]
-                age_max = timedelta(seconds=float(age_max[0])) if age_max else None
-
-                prod_measure = [x.value_num for x in prods_measure
-                                if (mf_start + age_min <= x.timestamp < mf_end
-                                    and x.timestamp < mf_start + age_max if age_max is not None else True)]
-
-                res.value_num = calc_aggregate(agg, prod_measure, from_record=False)
-            return res
-
-        for dbo in db_objs:
-            cox = await get_field_value(dbo, st.xydef.x)
-            co = StatXYData(x=cox, others=[])
-            if st.xydef.y:
-                co.y = await get_field_value(dbo, st.xydef.y)
-            if st.xydef.shape:
-                co.shape = await get_field_value(dbo, st.xydef.shape)
-            if st.xydef.color:
-                co.color = await get_field_value(dbo, st.xydef.color)
-            for o in st.xydef.other:
-                co.others.append(await get_field_value(dbo, o))
-            res.xydata.append(co)
+    meta = [m for m in meta.objects if m.name == st.xydef.obj.type]
+    if len(meta) != 1:
+        raise HTTPException(status_code=400, detail="Invalid meta data")
+    meta = meta[0]
+    if st.xydef.obj.type == StatXYObjectType.mazakprogram:
+        sql = stat_xy_mazakprogram_sql
+    elif st.xydef.obj.type == StatXYObjectType.mazaksubprogram:
+        sql = stat_xy_mazaksubprogram_sql
+    elif st.xydef.obj.type == StatXYObjectType.workpiece:
+        sql = stat_xy_workpiece_sql
     else:
         # todo 1: **********
         raise Exception("Not implemented")
+    write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
+    db_objs = await conn.fetch(sql, before, after)
+    agg_measures = {}
+
+    async def get_field_value(dbo, field_name:str):
+        res = StatXYFieldValue(field_name=field_name)
+        meta_field = [m for m in meta.fields if m.name == field_name]
+        if len(meta_field) != 1:
+            raise HTTPException(status_code=400, detail="Invalid field name: "+field_name)
+        meta_field = meta_field[0]
+
+        if "mf_"+field_name in dbo:
+            if meta_field.type == StatXYMateFieldType.numeric:
+                res.value_num = dbo["mf_" + field_name]
+            else:
+                res.value_text = dbo["mf_" + field_name]
+        else:
+            if st.xydef.obj.type in (StatXYObjectType.mazakprogram, StatXYObjectType.mazaksubprogram):
+                res.value_num = await get_detail_field_mazak(dbo, field_name)
+            elif st.xydef.obj.type == StatXYObjectType.workpiece:
+                res.value_num = await get_detail_field_workpiece(dbo, field_name)
+            else:
+                # todo 1: **********
+                raise Exception("Not implemented")
+        return res
+
+    async def get_detail_field_mazak(dbo, field_name):
+        regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
+        match = re.fullmatch(regex, field_name)
+        if not match:
+            raise Exception("Invalid field name: " + field_name)
+        try:
+            agg = StatAggMethod[match.group("agg")]
+            axis = StatXYMozakAxis[match.group("axis")]
+        except KeyError:
+            raise Exception("Invalid field name: " + field_name)
+        mf_device = dbo["mf_device"]
+        mf_start = dbo["mf_start"]
+        mf_end = dbo["mf_end"]
+        key = (mf_device, axis)
+        if key not in agg_measures:
+            measure = axis + 'l' if axis != StatXYMozakAxis.b else 'al'
+            prods_measure = await load_measure_mazak(conn, after, before, mf_device, measure)
+            agg_measures[key] = prods_measure
+        prods_measure = agg_measures[key]
+        age_min = [x.value for x in st.xydef.obj.params if x.key == "age_min"]
+        age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
+        age_max = [x.value for x in st.xydef.obj.params if x.key == "age_max"]
+        age_max = timedelta(seconds=float(age_max[0])) if age_max else None
+        prod_measure = [x.value_num for x in prods_measure
+                        if (mf_start + age_min <= x.timestamp < mf_end
+                            and x.timestamp < mf_start + age_max if age_max is not None else True)]
+        return calc_aggregate(agg, prod_measure, from_record=False)
+
+    async def get_detail_field_workpiece(dbo, field_name):
+        regex = r"gom (?P<measure>.+) deviance"
+        match = re.fullmatch(regex, field_name)
+        if not match:
+            raise Exception("Invalid field name: " + field_name)
+        measure = match.group("measure")
+
+        if measure == "max":
+            return max(filter(lambda x: x is not None,
+                              [await get_detail_field_workpiece(dbo, m.name) for m in meta.fields
+                               if re.fullmatch(regex, m.name) and (m.name != field_name)]),
+                       default=None)
+
+        mf_start = dbo["mf_start"]
+        mf_end = dbo["mf_end"]
+        key = measure
+        if key not in agg_measures:
+            workpieces_measure = await load_measure_workpiece(conn, after, before, measure)
+            agg_measures[key] = workpieces_measure
+        workpieces_measure = agg_measures[key]
+        workpiece_measure = [x for x in workpieces_measure if mf_start <= x.timestamp < mf_end]
+        if not workpiece_measure:
+            return None
+        return max(workpiece_measure, key=lambda x:x.timestamp).value_num
+
+
+    for dbo in db_objs:
+        cox = await get_field_value(dbo, st.xydef.x)
+        co = StatXYData(x=cox, others=[])
+        if st.xydef.y:
+            co.y = await get_field_value(dbo, st.xydef.y)
+        if st.xydef.shape:
+            co.shape = await get_field_value(dbo, st.xydef.shape)
+        if st.xydef.color:
+            co.color = await get_field_value(dbo, st.xydef.color)
+        for o in st.xydef.other:
+            co.others.append(await get_field_value(dbo, o))
+        res.xydata.append(co)
+
     return res
 
 
