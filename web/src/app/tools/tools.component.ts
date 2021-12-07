@@ -42,7 +42,7 @@ export class ToolsComponent implements OnInit {
     this.events = this.apiService.getToolEventTypes();
     this.apiService.getDevices()
       .subscribe(r => {
-        this.devices$.next(r);
+        this.devices$.next(r.filter((d) => [ DeviceType.Lathe, DeviceType.Mill ].indexOf(d.id) > -1));
         if (!this.filterDevice)
           this.filterDevice = r[0].id;
         this.getTools();
