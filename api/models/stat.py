@@ -1145,6 +1145,7 @@ stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sq
 stat_xy_workpiece_sql = open("models\\stat_xy_workpiece.sql").read()
 stat_xy_workpiece_measure_sql = open("models\\stat_xy_workpiece_measure.sql").read()
 stat_xy_batch_sql = open("models\\stat_xy_batch.sql").read()
+stat_xy_tool_sql = open("models\\stat_xy_tool.sql").read()
 
 
 class LoadMeasureItem:
@@ -1183,6 +1184,8 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         sql = stat_xy_workpiece_sql
     elif st.xydef.obj.type == StatXYObjectType.batch:
         sql = stat_xy_batch_sql
+    elif st.xydef.obj.type == StatXYObjectType.tool:
+        sql = stat_xy_tool_sql
     else:
         # todo 1: **********
         raise Exception("Not implemented")
