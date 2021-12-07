@@ -142,8 +142,8 @@ class I4CConnection:
             token = base64.b64encode(token).decode()
             headers["Authorization"] = f"Basic {token}"
 
-        if isinstance(data, dict):
-            data = json.dumps(data)
+        if any(isinstance(data, t) for t in (dict, list, str, int, float, bool)):
+            data = json.dumps(data).encode()
             headers["Content-Type"] = "application/json"
         elif isinstance(data, bytes):
             headers["Content-Type"] = "application/octet-stream"
