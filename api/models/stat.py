@@ -1144,6 +1144,7 @@ stat_xy_mazaksubprogram_sql = open("models\\stat_xy_mazaksubprogram.sql").read()
 stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
 stat_xy_workpiece_sql = open("models\\stat_xy_workpiece.sql").read()
 stat_xy_workpiece_measure_sql = open("models\\stat_xy_workpiece_measure.sql").read()
+stat_xy_batch_sql = open("models\\stat_xy_batch.sql").read()
 
 
 class LoadMeasureItem:
@@ -1180,6 +1181,8 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         sql = stat_xy_mazaksubprogram_sql
     elif st.xydef.obj.type == StatXYObjectType.workpiece:
         sql = stat_xy_workpiece_sql
+    elif st.xydef.obj.type == StatXYObjectType.batch:
+        sql = stat_xy_batch_sql
     else:
         # todo 1: **********
         raise Exception("Not implemented")
@@ -1206,7 +1209,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
                 res.value_num = await get_detail_field_workpiece(dbo, field_name)
             else:
                 # todo 1: **********
-                raise Exception("Not implemented")
+                raise Exception("Invalid field name: " + field_name)
         return res
 
     async def get_detail_field_mazak(dbo, field_name):
