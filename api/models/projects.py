@@ -17,7 +17,8 @@ class Project(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
     versions: List[str] = Field(..., title="List of versions. Numbers are version numbers others are labels.")
-    extra: str
+    # todo 5: This should be Optional[Dict[str,str]] insted of json data.
+    extra: Optional[str]
 
 
 class ProjectPatchCondition(I4cBaseModel):
@@ -50,6 +51,7 @@ class ProjectPatchBody(I4cBaseModel):
 class ProjectIn(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
+    # todo 5: This should be Optional[Dict[str,str]] insted of json data.
     extra: Optional[str]
 
 
@@ -359,7 +361,12 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
                 from project_file pf
                 group by pf.project_ver
                 )
-            select pv.id as project_ver, pv.ver, pl.labels, pv.status, rf.files
+            select 
+              pv.id as project_ver, 
+              pv.ver, 
+              coalesce(pl.labels, array[]::varchar[]) labels, 
+              pv.status, 
+              coalesce(rf.files, array[]::varchar[]) files
             from project_version pv
             left join pl on pl.project = pv.project and pl.ver = pv.ver
             left join rf on rf.project_ver = pv.id

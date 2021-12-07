@@ -12,7 +12,7 @@ router = I4cApiRouter(include_path="/stat")
 
 @router.get("/def", response_model=List[models.stat.StatDef], x_properties=dict(object="statdef", action="list"))
 async def stat_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/def")),
+        credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def")),
         id: Optional[int] = Query(None),
         user_id: Optional[str] = Query(None),
         name: Optional[str] = Query(None),

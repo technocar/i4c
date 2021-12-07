@@ -68,6 +68,7 @@ def sign(private_key, data):
 
 class I4CConnection:
     _api_def: I4CDef
+    api_def_file: str
     profile_file: str
     base_url: str
     profile: str
@@ -75,7 +76,7 @@ class I4CConnection:
     password: str
     private_key: str
 
-    def __init__(self, *, profile_file=None, api_def=None, base_url=None, profile=None, user=None, password=None, private_key=None):
+    def __init__(self, *, profile_file=None, api_def=None, base_url=None, api_def_file=None, profile=None, user=None, password=None, private_key=None):
         if not profile_file:
             profile_file = os.environ.get("i4c-profile", None)
         if not profile_file:
@@ -96,12 +97,15 @@ class I4CConnection:
                 private_key = p.get("private-key", None)
             if not base_url:
                 base_url = p.get("base-url")
+            if not api_def_file:
+                api_def_file = p.get("api-def-file")
             # TODO openapi file to the profile and then store
 
         if base_url.endswith("/"):
             base_url = base_url[:-1]
 
         self._api_def = api_def
+        self.api_def_file = api_def_file
         self.base_url = base_url
         self.profile = profile
         self.user = user
@@ -138,8 +142,8 @@ class I4CConnection:
             token = base64.b64encode(token).decode()
             headers["Authorization"] = f"Basic {token}"
 
-        if isinstance(data, dict):
-            data = json.dumps(data)
+        if any(isinstance(data, t) for t in (dict, list, str, int, float, bool)):
+            data = json.dumps(data).encode()
             headers["Content-Type"] = "application/json"
         elif isinstance(data, bytes):
             headers["Content-Type"] = "application/octet-stream"
@@ -162,7 +166,7 @@ class I4CConnection:
 
     def api_def(self):
         if self._api_def is None:
-            self._api_def = I4CDef(base_url=self.base_url)
+            self._api_def = I4CDef(base_url=self.base_url, def_file=self.api_def_file)
         return self._api_def
 
 
@@ -171,7 +175,7 @@ class I4CConnection:
         Invokes a logical function, as defined by the interface. If the interface does not define logical objects,
         they will be automatically generated from paths. Get information about the available logical functions with
         .api_def().objects()
-        
+
         :param obj: logical object, as defined by the interface.
         :param action: logical action, as defined by the interface.
         :param params: path and query parameters.

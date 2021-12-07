@@ -4,19 +4,18 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
 from typing import Optional, List
-
 from fastapi import HTTPException
 from isodate import ISO8601Error
 from pydantic import root_validator, validator, Field
 import common.db_helpers
-from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect
+from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect, write_debug_sql
 import isodate
-
 from common.cmp_list import cmp_list
 from common.tools import frac_index, optimize_timestamp_label
 from models import AlarmCondEventRel, alarm
 from models.alarm import prev_iterator
 from models.common import PatchResponse
+import re
 
 
 class StatUser(I4cBaseModel):
@@ -37,7 +36,7 @@ class StatUser(I4cBaseModel):
 
 class StatTimeseriesFilter(I4cBaseModel):
     """ category="EVENT" only """
-    id: Optional[int]
+    id: Optional[int] = Field(None, hidden_from_schema=True)
     device: str
     data_id: str
     rel: AlarmCondEventRel
@@ -82,7 +81,7 @@ class StatTimeseriesMetric(I4cBaseModel):
     data_id: str
 
 
-class StatTimeseriesAggMethod(str, Enum):
+class StatAggMethod(str, Enum):
     avg = "avg"
     median = "median"
     q1st = "q1st"
@@ -209,8 +208,10 @@ class StatVisualSettings(I4cBaseModel):
                                                           $7)
                 """)
         await conn.execute(sql, ts_id, self.title, self.subtitle,
-                           self.xaxis.caption, self.yaxis.caption, self.legend.position,
-                           self.legend.align)
+                           self.xaxis.caption if self.xaxis else None,
+                           self.yaxis.caption if self.yaxis else None,
+                           self.legend.position if self.legend else None,
+                           self.legend.align if self.legend else None)
 
 
 class StatTimeseriesDef(I4cBaseModel):
@@ -219,7 +220,7 @@ class StatTimeseriesDef(I4cBaseModel):
     duration: Optional[str]
     filter: List[StatTimeseriesFilter]
     metric: StatTimeseriesMetric
-    agg_func: Optional[StatTimeseriesAggMethod]
+    agg_func: Optional[StatAggMethod]
     agg_sep: Optional[StatSepEvent]
     series_sep: Optional[StatSepEvent]
     series_name: Optional[StatTimeseriesSeriesName]
@@ -344,12 +345,13 @@ class StatTimeseriesDef(I4cBaseModel):
 class StatXYObjectType(str, Enum):
     workpiece = "workpiece"
     mazakprogram = "mazakprogram"
+    mazaksubprogram = "mazaksubprogram"
     batch = "batch"
     tool = "tool"
 
 
 class StatXYObjectParam(I4cBaseModel):
-    id: Optional[int]
+    id: Optional[int] = Field(None, hidden_from_schema=True)
     key: str
     value: Optional[str]
 
@@ -379,23 +381,23 @@ class StatXYObject(I4cBaseModel):
     params: List[StatXYObjectParam]
 
 
-class StatXYFieldDef(I4cBaseModel):
+class StatXYFieldValue(I4cBaseModel):
     field_name: str
-
-    def __eq__(self, other):
-        if not isinstance(other, StatXYFieldDef):
-            return False
-        return self.field_name == other.field_name
+    value_num: Optional[float]
+    value_text: Optional[str]
 
 
-class StatXYOther(StatXYFieldDef):
-    id: Optional[int]
+class StatXYOther(I4cBaseModel):
+    id: Optional[int] = Field(None, hidden_from_schema=True)
+    field_name: str
 
     @classmethod
     async def load_others(cls, conn, xy_id):
         sql = "select id, field_name from stat_xy_other where xy = $1"
         res = await conn.fetch(sql, xy_id)
-        return [StatXYOther(**r) for r in res]
+        res_b = [StatXYOther(**r) for r in res]
+        res_a = [b.field_name for b in res_b]
+        return res_a,res_b
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
@@ -421,8 +423,8 @@ class StatXYFilterRel(str, Enum):
 
 
 class StatXYFilter(I4cBaseModel):
-    id: Optional[int]
-    field: StatXYFieldDef
+    id: Optional[int] = Field(None, hidden_from_schema=True)
+    field: str
     rel: StatXYFilterRel
     value: str
 
@@ -432,7 +434,7 @@ class StatXYFilter(I4cBaseModel):
         res_d = await conn.fetch(sql, xy_id)
         res = []
         for r in res_d:
-            res.append(StatXYFilter(id=r["id"], field=StatXYFieldDef(field_name=r["field_name"]), rel=r["rel"], value= r["value"]))
+            res.append(StatXYFilter(id=r["id"], field=r["field_name"], rel=r["rel"], value=r["value"]))
         return res
 
     async def insert_to_db(self, xy_id, conn):
@@ -441,7 +443,7 @@ class StatXYFilter(I4cBaseModel):
                 values ($1, $2, $3, $4)
             returning id
             """)
-        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field.field_name, self.rel, self.value))[0]
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field, self.rel, self.value))[0]
 
     def __eq__(self, other):
         if not isinstance(other, StatXYFilter):
@@ -456,11 +458,12 @@ class StatXYDef(I4cBaseModel):
     after: Optional[datetime]
     before: Optional[datetime]
     duration: Optional[str]
-    x: StatXYFieldDef
-    y: Optional[StatXYFieldDef]
-    shape: Optional[StatXYFieldDef]
-    color: Optional[StatXYFieldDef]
-    other: List[StatXYOther]
+    x: str
+    y: Optional[str]
+    shape: Optional[str]
+    color: Optional[str]
+    other: List[str]
+    other_internal: List[StatXYOther] = Field([], hidden_from_schema=True)
     filter: List[StatXYFilter]
     visualsettings: StatVisualSettings
 
@@ -499,7 +502,7 @@ class StatXYDef(I4cBaseModel):
             await p.insert_to_db(stat_id, conn)
 
         for o in self.other:
-            await o.insert_to_db(stat_id, conn)
+            await StatXYOther(field_name=o).insert_to_db(stat_id, conn)
 
         for f in self.filter:
             await f.insert_to_db(stat_id, conn)
@@ -509,9 +512,8 @@ class StatXYDef(I4cBaseModel):
 
     def get_sql_params(self):
         return [self.obj.type, self.after, self.before,
-                self.duration, self.x.field_name, self.y.field_name if self.y else None,
-
-                self.shape.field_name if self.shape else None, self.color.field_name if self.color else None
+                self.duration, self.x, self.y,
+                self.shape, self.color
                 ]
 
     async def update_to_db(self, stat_id, new_state, conn):
@@ -546,12 +548,13 @@ class StatXYDef(I4cBaseModel):
                 raise HTTPException(status_code=500, detail="Missing id from StatXYObjectParam")
             await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
 
-        insert, delete, _, _ = cmp_list(self.other, new_state.other)
+        new_other = [StatXYOther(field_name=o) for o in new_state.other]
+        insert, delete, _, _ = cmp_list(self.other_internal, new_other)
         for f in insert:
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYFieldDef")
+                raise HTTPException(status_code=500, detail="Missing id from StatXYOther")
             await conn.execute("delete from stat_xy_other where id = $1", d.id)
 
         insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
@@ -579,10 +582,8 @@ class StatXYDef(I4cBaseModel):
         if d["id"] is None:
             return None
         d["obj"] = StatXYObject(type=d["object_name"], params=d["object_param"])
-        d["x"] = StatXYFieldDef(field_name=d["x_field"])
-        d["y"] = StatXYFieldDef(field_name=d["y_field"]) if d["y_field"] is not None else None
-        d["shape"] = StatXYFieldDef(field_name=d["shape"]) if d["shape"] is not None else None
-        d["color"] = StatXYFieldDef(field_name=d["color"]) if d["color"] is not None else None
+        d["x"] = d["x_field"]
+        d["y"] = d["y_field"]
         d["visualsettings"] = StatVisualSettings.create_from_dict(d, "vs_")
         return StatXYDef(**d)
 
@@ -641,7 +642,7 @@ class StatPatchBody(I4cBaseModel):
     change: StatPatchChange
 
 
-async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=None,
+async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, name=None, name_mask=None,
                     type:Optional[StatTimeseriesType] = None, *, pconn=None) -> List[StatDef]:
     sql = dedent("""\
             with 
@@ -688,12 +689,12 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                     left join "stat_visual_setting" vs on vs."id" = s."id"
                     )                
             select * from res
-            where True
+            where (res.shared or res.u_id = $1) 
           """)
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction():
             await conn.execute("SET LOCAL intervalstyle = 'iso_8601';")
-            params = []
+            params = [credentials.user_id]
             if id is not None:
                 params.append(id)
                 sql += f"and res.id = ${len(params)}\n"
@@ -719,7 +720,7 @@ async def stat_list(credentials, id=None, user_id=None, name=None, name_mask=Non
                     timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_', ['vs_'])
                 if d["sx_id"] is not None:
                     d["sx_object_param"] = await StatXYObjectParam.load_params(conn, d["sx_id"])
-                    d["sx_other"] = await StatXYOther.load_others(conn, d["sx_id"])
+                    d["sx_other"], d["sx_other_internal"] = await StatXYOther.load_others(conn, d["sx_id"])
                     d["sx_filter"] = await StatXYFilter.load_filters(conn, d["sx_id"])
                     xydef = StatXYDef.create_from_dict(d, 'sx_', ['vs_'])
                 res.append(StatDef(**d, timeseriesdef=timeseriesdef, xydef=xydef))
@@ -831,11 +832,11 @@ class StatTimeseriesDataSeries(I4cBaseModel):
 
 
 class StatXYData(I4cBaseModel):
-    x: StatXYFieldDef
-    y: Optional[StatXYFieldDef]
-    shape: Optional[StatXYFieldDef]
-    color: Optional[StatXYFieldDef]
-    others: List[StatXYFieldDef]
+    x: StatXYFieldValue
+    y: Optional[StatXYFieldValue]
+    shape: Optional[StatXYFieldValue]
+    color: Optional[StatXYFieldValue]
+    others: List[StatXYFieldValue]
 
 
 class StatData(I4cBaseModel):
@@ -854,27 +855,30 @@ def resolve_time_period(after, before, duration):
     return after, before
 
 
-def calc_aggregate(method: StatTimeseriesAggMethod, agg_values):
-    agg_values = [v for v in agg_values if v["value_num"] is not None]
+def calc_aggregate(method: StatAggMethod, agg_values, *, from_record=True):
+    if from_record:
+        agg_values = [v["value_num"] for v in agg_values if v["value_num"] is not None]
+    else:
+        agg_values = [v for v in agg_values if v is not None]
     if not agg_values:
         return None
-    if method == StatTimeseriesAggMethod.avg:
-        return sum(v["value_num"] for v in agg_values) / len(agg_values)
-    elif method in (StatTimeseriesAggMethod.median, StatTimeseriesAggMethod.q1st, StatTimeseriesAggMethod.q4th):
-        o = sorted(v["value_num"] for v in agg_values)
-        if method == StatTimeseriesAggMethod.median:
+    if method == StatAggMethod.avg:
+        return sum(v for v in agg_values) / len(agg_values)
+    elif method in (StatAggMethod.median, StatAggMethod.q1st, StatAggMethod.q4th):
+        o = sorted(v for v in agg_values)
+        if method == StatAggMethod.median:
             return frac_index(o, (len(o) - 1) / 2)
-        elif method == StatTimeseriesAggMethod.q1st:
+        elif method == StatAggMethod.q1st:
             return frac_index(o, (len(o) - 1) / 5)
-        elif method == StatTimeseriesAggMethod.q4th:
+        elif method == StatAggMethod.q4th:
             return frac_index(o, (len(o) - 1) * 4 / 5)
-    elif method == StatTimeseriesAggMethod.min:
-        return min(v["value_num"] for v in agg_values)
-    elif method == StatTimeseriesAggMethod.max:
-        return max(v["value_num"] for v in agg_values)
+    elif method == StatAggMethod.min:
+        return min(v for v in agg_values)
+    elif method == StatAggMethod.max:
+        return max(v for v in agg_values)
 
 
-async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
+async def statdata_get_timeseries(credentials, st:StatDef, conn) -> StatData:
     after, before = resolve_time_period(st.timeseriesdef.after, st.timeseriesdef.before, st.timeseriesdef.duration)
 
     total_series = series_intersect.Series()
@@ -991,25 +995,6 @@ async def statdata_get_timeseries(st:StatDef, conn) -> StatData:
     return res
 
 
-async def statdata_get_xy(st:StatDef, conn) -> StatData:
-    # todo 1: ********** statdata_get_xy
-    pass
-
-
-async def statdata_get(credentials, id) -> StatData:
-    async with DatabaseConnection() as conn:
-        async with conn.transaction(isolation='repeatable_read'):
-            st = await stat_list(credentials, id=id, pconn=conn)
-            if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
-            st = st[0]
-            if st.timeseriesdef is not None:
-                return await statdata_get_timeseries(st, conn)
-            elif st.xydef is not None:
-                return await statdata_get_xy(st, conn)
-            return StatData()
-
-
 class StatXYMateFieldType(str, Enum):
     numeric = "numeric"
     category = "category"
@@ -1047,10 +1032,18 @@ class StatXYMeta(I4cBaseModel):
     objects: List[StatXYMetaObject]
 
 
-async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
+class StatXYMozakAxis(str, Enum):
+    x = "x"
+    y = "y"
+    z = "z"
+    b = "b"
+    c = "c"
+
+
+async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None) -> StatXYMeta:
     if after is None:
         after = datetime.utcnow() - timedelta(days=365)
-    async with DatabaseConnection() as conn:
+    async with DatabaseConnection(pconn) as conn:
         mazak_fields = [
             StatXYMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
             StatXYMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
@@ -1061,13 +1054,13 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
             StatXYMetaField(name="workpiece good/bad", displayname="munkadarab jó/hibás",type=StatXYMateFieldType.category),
             StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric)
         ]
-        for axis in ("x","y","z","b","c"):
-            for agg in StatTimeseriesAggMethod:
+        for axis in StatXYMozakAxis:
+            for agg in StatAggMethod:
                 mazak_fields.append(
                     StatXYMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
 
         mazakprogram = StatXYMetaObject(
-            name="mazakprogram",
+            name=StatXYObjectType.mazakprogram,
             displayname="mazakprogram",
             fields=mazak_fields,
             params=[
@@ -1077,7 +1070,7 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
         )
 
         mazaksubprogram = StatXYMetaObject(**dict(mazakprogram))
-        mazaksubprogram.name = "mazaksubprogram"
+        mazaksubprogram.name = StatXYObjectType.mazaksubprogram
         mazaksubprogram.displayname = "mazaksubprogram"
         mazaksubprogram.fields = list(mazak_fields)
         mazaksubprogram.fields.insert(4, StatXYMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category))
@@ -1100,8 +1093,7 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
             join meta m on m.device = l.device and m.data_id = l.data_id
             where 
               l.device = 'gom'
-              and m.system1 = 'deviance'
-              and m.data_id != '*'
+              and m.system1 = 'dev'
               and l.timestamp > $1::timestamp with time zone
             order by 1""")
 
@@ -1109,14 +1101,14 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
             workpiece_fields.append(StatXYMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
 
         workpiece = StatXYMetaObject(
-            name="workpiece",
+            name=StatXYObjectType.workpiece,
             displayname="munkadarab",
             fields=workpiece_fields,
             params=[]
         )
 
         batch = StatXYMetaObject(
-            name="batch",
+            name=StatXYObjectType.batch,
             displayname="batch",
             fields=[
                 StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
@@ -1133,7 +1125,7 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
         )
 
         tool = StatXYMetaObject(
-            name="tool",
+            name=StatXYObjectType.tool,
             displayname="tool",
             fields=[
                 StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
@@ -1146,3 +1138,162 @@ async def get_xymeta(credentials, after: Optional[datetime]) -> StatXYMeta:
 
         res = StatXYMeta(objects=[mazakprogram, mazaksubprogram, workpiece, batch, tool])
         return res
+
+stat_xy_mazakprogram_sql = open("models\\stat_xy_mazakprogram.sql").read()
+stat_xy_mazaksubprogram_sql = open("models\\stat_xy_mazaksubprogram.sql").read()
+stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
+stat_xy_workpiece_sql = open("models\\stat_xy_workpiece.sql").read()
+stat_xy_workpiece_measure_sql = open("models\\stat_xy_workpiece_measure.sql").read()
+stat_xy_batch_sql = open("models\\stat_xy_batch.sql").read()
+stat_xy_tool_sql = open("models\\stat_xy_tool.sql").read()
+
+
+class LoadMeasureItem:
+    def __init__(self, timestamp, value_num):
+        self.timestamp = timestamp
+        self.value_num = value_num
+
+
+async def load_measure_mazak(conn, after, before, mf_device, measure):
+    db_objs = await conn.fetch(stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
+    write_debug_sql(f"stat_xy_mazakprogram_measure__{mf_device}__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
+    return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
+
+
+async def load_measure_workpiece(conn, after, before, measure):
+    db_objs = await conn.fetch(stat_xy_workpiece_measure_sql, before, after, measure)
+    write_debug_sql(f"stat_xy_workpiece_measure__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, measure)
+    return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
+
+
+async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
+    after, before = resolve_time_period(st.xydef.after, st.xydef.before, st.xydef.duration)
+
+    meta = await get_xymeta(credentials, after, pconn=conn)
+
+    res = StatData(stat_def=st, xydata=[])
+    meta = [m for m in meta.objects if m.name == st.xydef.obj.type]
+    if len(meta) != 1:
+        raise HTTPException(status_code=400, detail="Invalid meta data")
+    meta = meta[0]
+    if st.xydef.obj.type == StatXYObjectType.mazakprogram:
+        sql = stat_xy_mazakprogram_sql
+    elif st.xydef.obj.type == StatXYObjectType.mazaksubprogram:
+        sql = stat_xy_mazaksubprogram_sql
+    elif st.xydef.obj.type == StatXYObjectType.workpiece:
+        sql = stat_xy_workpiece_sql
+    elif st.xydef.obj.type == StatXYObjectType.batch:
+        sql = stat_xy_batch_sql
+    elif st.xydef.obj.type == StatXYObjectType.tool:
+        sql = stat_xy_tool_sql
+    else:
+        # todo 1: **********
+        raise Exception("Not implemented")
+    write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
+    db_objs = await conn.fetch(sql, before, after)
+    agg_measures = {}
+
+    async def get_field_value(dbo, field_name:str):
+        res = StatXYFieldValue(field_name=field_name)
+        meta_field = [m for m in meta.fields if m.name == field_name]
+        if len(meta_field) != 1:
+            raise HTTPException(status_code=400, detail="Invalid field name: "+field_name)
+        meta_field = meta_field[0]
+
+        if "mf_"+field_name in dbo:
+            if meta_field.type == StatXYMateFieldType.numeric:
+                res.value_num = dbo["mf_" + field_name]
+            else:
+                res.value_text = dbo["mf_" + field_name]
+        else:
+            if st.xydef.obj.type in (StatXYObjectType.mazakprogram, StatXYObjectType.mazaksubprogram):
+                res.value_num = await get_detail_field_mazak(dbo, field_name)
+            elif st.xydef.obj.type == StatXYObjectType.workpiece:
+                res.value_num = await get_detail_field_workpiece(dbo, field_name)
+            else:
+                # todo 1: **********
+                raise Exception("Invalid field name: " + field_name)
+        return res
+
+    async def get_detail_field_mazak(dbo, field_name):
+        regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
+        match = re.fullmatch(regex, field_name)
+        if not match:
+            raise Exception("Invalid field name: " + field_name)
+        try:
+            agg = StatAggMethod[match.group("agg")]
+            axis = StatXYMozakAxis[match.group("axis")]
+        except KeyError:
+            raise Exception("Invalid field name: " + field_name)
+        mf_device = dbo["mf_device"]
+        mf_start = dbo["mf_start"]
+        mf_end = dbo["mf_end"]
+        key = (mf_device, axis)
+        if key not in agg_measures:
+            measure = axis + 'l' if axis != StatXYMozakAxis.b else 'al'
+            prods_measure = await load_measure_mazak(conn, after, before, mf_device, measure)
+            agg_measures[key] = prods_measure
+        prods_measure = agg_measures[key]
+        age_min = [x.value for x in st.xydef.obj.params if x.key == "age_min"]
+        age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
+        age_max = [x.value for x in st.xydef.obj.params if x.key == "age_max"]
+        age_max = timedelta(seconds=float(age_max[0])) if age_max else None
+        prod_measure = [x.value_num for x in prods_measure
+                        if (mf_start + age_min <= x.timestamp < mf_end
+                            and x.timestamp < mf_start + age_max if age_max is not None else True)]
+        return calc_aggregate(agg, prod_measure, from_record=False)
+
+    async def get_detail_field_workpiece(dbo, field_name):
+        regex = r"gom (?P<measure>.+) deviance"
+        match = re.fullmatch(regex, field_name)
+        if not match:
+            raise Exception("Invalid field name: " + field_name)
+        measure = match.group("measure")
+
+        if measure == "max":
+            return max(filter(lambda x: x is not None,
+                              [await get_detail_field_workpiece(dbo, m.name) for m in meta.fields
+                               if re.fullmatch(regex, m.name) and (m.name != field_name)]),
+                       default=None)
+
+        mf_start = dbo["mf_start"]
+        mf_end = dbo["mf_end"]
+        key = measure
+        if key not in agg_measures:
+            workpieces_measure = await load_measure_workpiece(conn, after, before, measure)
+            agg_measures[key] = workpieces_measure
+        workpieces_measure = agg_measures[key]
+        workpiece_measure = [x for x in workpieces_measure if mf_start <= x.timestamp < mf_end]
+        if not workpiece_measure:
+            return None
+        return max(workpiece_measure, key=lambda x:x.timestamp).value_num
+
+
+    for dbo in db_objs:
+        cox = await get_field_value(dbo, st.xydef.x)
+        co = StatXYData(x=cox, others=[])
+        if st.xydef.y:
+            co.y = await get_field_value(dbo, st.xydef.y)
+        if st.xydef.shape:
+            co.shape = await get_field_value(dbo, st.xydef.shape)
+        if st.xydef.color:
+            co.color = await get_field_value(dbo, st.xydef.color)
+        for o in st.xydef.other:
+            co.others.append(await get_field_value(dbo, o))
+        res.xydata.append(co)
+
+    return res
+
+
+async def statdata_get(credentials, id) -> StatData:
+    async with DatabaseConnection() as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            st = await stat_list(credentials, id=id, pconn=conn)
+            if len(st) == 0:
+                raise HTTPException(status_code=404, detail="No record found")
+            st = st[0]
+            if st.timeseriesdef is not None:
+                return await statdata_get_timeseries(credentials, st, conn)
+            elif st.xydef is not None:
+                return await statdata_get_xy(credentials, st, conn)
+            return StatData()

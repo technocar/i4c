@@ -1,3 +1,4 @@
+import os
 import json
 import urllib.request
 import urllib.error
@@ -17,13 +18,27 @@ class Param:
 class Action:
     title: str
     description: str
-    authentication: str  # none, basic, unknown
+    authentication: str  # noauth, basic, unknown
     response_type: str
     response_class: str
     params: Dict[str, Param]
     body_required: bool
     body_class: str
+
+    path: str
+    method: str
     raw: dict
+
+    def help():
+        s = []
+        if title:
+            s.append(title)
+        if description:
+            s.append(description)
+        if not s:
+            return nice_name()
+        s.append(f"Calls {method} {path}.")
+        return s.join("\n")
 
 
 class Obj:
@@ -133,13 +148,61 @@ ACTION PROPERTIES:
 """
 
 
+def _proc_auth(a):
+    """
+    'a' is the required OpenAPI 'Security Scheme Object' items.
+    Return the classification for the entire requirement.
+    """
+    # this is rudimentary. optimally we could support other auth schemes,
+    # but we only use this one, so whatever
+    if not a:
+        return "noauth"
+    if len(a) == 1 and a[0] == {"type": "http", "scheme": "basic"}:
+        return "basic"
+    else:
+        return "unknown"
+
+
+def _proc_sch(sch): # TODO try remove self
+    title = sch.get("title", None)
+    # TODO not very good this is
+    # $ref can appear at various points, array items, top level
+    # title can be in inherited parts, but apparently top is stronger
+    # we might need some deep auto-follow and merge non-override
+    # keep the "object" type to indicate a documentation link
+    # but embed the enumeration types
+
+    return title, False, "unknown", None
+
+
+def preproc_def(apidef):
+    # TODO bring singulare allOf to parent level
+    # TODO embed $ref
+
+    def descend(level):
+        if "$ref" in level:
+            refd = level["$ref"]
+            if refd.startswith("#/components/schemas/"):
+                refd = refd[21:]
+            refd = apidef["components"]["schemas"][refd]
+            for (k, v) in refd.items():
+                if k not in level:
+                    level[k] = v
+        for (k, v) in level.items():
+            if isinstance(v, dict):
+                descend(v)
+
+    descend(apidef)
+
+
 class I4CDef:
     content = None
-    objects: Dict[str, Obj]
-    schema: Dict[str, Schema]
+    objects: Dict[str, Obj] = {}
+    schema: Dict[str, Schema] = {}
 
     def __init__(self, *, base_url=None, def_file=None):
         if def_file:
+            def_file = os.path.expanduser(def_file)
             with open(def_file, "r") as f:
                 self.content = json.load(f)
         elif base_url:
@@ -151,6 +214,10 @@ class I4CDef:
                 self.content = json.load(u)
         else:
             raise Exception("Either base url or definition file required.")
+
+        preproc_def(self.content)
+
+        # TODO collect schema objects
 
         for (path, methods) in self.content["paths"].items():
             for (method, info) in methods.items():
@@ -166,13 +233,43 @@ class I4CDef:
                     self.objects[obj_name] = obj
 
                 action = Action()
+
                 action.path = path
                 action.method = method
                 action.raw = info
-                # TODO fill in params, body, response, etc
-                obj.actions[action_name] = action
 
-        # TODO collect schema objects
+                action.summary = info.get("summary", None)
+                action.description = info.get("description", None)
+
+                sec = info.get("security", [])
+                sec = [[self.content["components"]["securitySchemes"][k] for k in s.keys()] for s in sec]
+                sec = [_proc_auth(a) for a in sec]
+                if "noauth" in sec:
+                    action.security = 'noauth'
+                elif "basic" in sec:
+                    action.security = 'basic'
+                else:
+                    action.security = 'unknown'
+
+                action.params = {}
+                for p in info.get("parameters", []):
+                    par = Param()
+                    par.name = p["name"]
+                    par.location = p["in"]
+                    par.description = p.get("description", None)
+                    par.required = p.get("required", False)
+                    sch = p.get("schema", None)
+                    if sch:
+                        (par.title, par.is_array, par.type, par.sch_obj) = _proc_sch(p)
+                    else:
+                        par.title = None
+                        par.is_array = False
+                        par.type = "unknown"
+                        par.sch_obj = None
+
+                # TODO fill in body, response
+
+                obj.actions[action_name] = action
 
     def assemble_url(self, obj, action=None, **params):
         obj = self.objects[obj]

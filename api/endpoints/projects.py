@@ -10,7 +10,7 @@ from models import ProjectStatusEnum
 router = I4cApiRouter(include_path="/projects")
 
 
-@router.get("", response_model=List[models.projects.Project], x_properties=dict(object="projects", action="list"))
+@router.get("", response_model=List[models.projects.Project], x_properties=dict(object="project", action="list"))
 async def list_projects(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects")),
     name: Optional[str] = Query(None),
@@ -22,7 +22,7 @@ async def list_projects(
     return await models.projects.get_projects(credentials, name, name_mask, status, file)
 
 
-@router.get("/{name}", response_model=models.projects.Project, x_properties=dict(object="projects", action="get"))
+@router.get("/{name}", response_model=models.projects.Project, x_properties=dict(object="project", action="get"))
 async def get_project(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}")),
     name: str = Path(...),
@@ -33,7 +33,7 @@ async def get_project(
     raise HTTPException(status_code=404, detail="No record found")
 
 
-@router.post("", response_model=models.projects.Project, x_properties=dict(object="projects", action="post"))
+@router.post("", response_model=models.projects.Project, x_properties=dict(object="project", action="new"))
 async def new_project(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects")),
     project: models.projects.ProjectIn = Body(...),
@@ -41,7 +41,7 @@ async def new_project(
     return await models.projects.new_project(credentials, project)
 
 
-@router.patch("/{name}", response_model=models.common.PatchResponse, x_properties=dict(object="projects", action="patch"))
+@router.patch("/{name}", response_model=models.common.PatchResponse, x_properties=dict(object="project", action="patch"))
 async def patch_project(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}")),
     name: str = Path(...),
@@ -50,7 +50,7 @@ async def patch_project(
     return await models.projects.patch_project(credentials, name, patch)
 
 
-@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, x_properties=dict(object="projects ver", action="get"))
+@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, x_properties=dict(object="projectver", action="get"))
 async def list_projects_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
     name: str = Path(...),
@@ -60,7 +60,7 @@ async def list_projects_version(
     return res
 
 
-@router.post("/{name}/v", response_model=models.projects.ProjectVersion, x_properties=dict(object="projects ver", action="post"))
+@router.post("/{name}/v", response_model=models.projects.ProjectVersion, x_properties=dict(object="projectver", action="new"))
 async def post_projects_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects/{name}/v")),
     name: str = Path(...),
@@ -70,7 +70,7 @@ async def post_projects_version(
     return await models.projects.post_projects_version(credentials, name, ver, files)
 
 
-@router.patch("/{name}/v/{ver}", response_model=models.common.PatchResponse, x_properties=dict(object="projects ver", action="patch"))
+@router.patch("/{name}/v/{ver}", response_model=models.common.PatchResponse, x_properties=dict(object="projectver", action="patch"))
 async def patch_project_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}/v/{ver}")),
     name: str = Path(...),
