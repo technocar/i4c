@@ -198,12 +198,12 @@ with
       
       case when coalesce("mf_good wpc count",0) + coalesce("mf_bad wpc count",0) > 0 
                 then "mf_bad wpc count" / (coalesce("mf_good wpc count",0) + coalesce("mf_bad wpc count",0)) 
-           else null end as "bad percent",
+           else null end as "mf_bad percent",
            
-      extract ('EPOCH' from max_end - min_start) as "time range total",
-      extract ('EPOCH' from max_end - min_start)/"mf_total wpc count" as "time per wpc",
+      extract ('EPOCH' from max_end - min_start) as "mf_time range total",
+      extract ('EPOCH' from max_end - min_start)/"mf_total wpc count" as "mf_time per wpc",
       
-      case when coalesce("mf_good wpc count",0) > 0 then extract ('EPOCH' from max_end - min_start)/"mf_total wpc count" else null end as "time per good"
+      case when coalesce("mf_good wpc count",0) > 0 then extract ('EPOCH' from max_end - min_start)/"mf_total wpc count" else null end as "mf_time per good"
     from pre_res
   )
 select * 
