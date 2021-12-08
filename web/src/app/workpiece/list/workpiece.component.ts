@@ -111,13 +111,15 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
 
   getWorkPieces() {
-    var date = Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day, 0, 0, 0, 0);
+    var startDate = Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day, 0, 0, 0, 0);
+    var endDate = Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day + 1, 0, 0, 0, -1);
     this.fetchingList$.next(true);
     this.selected = [];
     this.apiService.getWorkPieces({
       with_deleted: false,
       with_details: false,
-      after: new Date(date),
+      after: new Date(startDate),
+      before: new Date(endDate),
       id: (this.filterId ?? "") === "" ? undefined : this.filterId,
       project: !this.filterProjectCtrl.mask ? this.filterProject : undefined,
       project_mask: this.filterProjectCtrl.mask ? this.filterProject : undefined,
