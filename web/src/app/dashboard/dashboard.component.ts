@@ -53,7 +53,7 @@ export class DashboardComponent implements OnInit {
   private _activeSnapshotRequest: Subscription;
   private _activeListRequest: Subscription;
 
-  isAutoMode: boolean = false;
+  isAutoMode: boolean = true;
   snapshot: Snapshot;
   private _device: DeviceType;
   public get device(): DeviceType {
@@ -295,7 +295,8 @@ export class DashboardComponent implements OnInit {
       relation: model.relation,
       value: (model.value ?? "").toString().split('|'),
       name: model.metricId,
-      extra: model.extra
+      extra: model.extra,
+      timestamp: new Date(this.timestamp)
     };
 
     if (!req.afterCount && !req.beforeCount) {
@@ -353,5 +354,10 @@ export class DashboardComponent implements OnInit {
 
   ngOnDestroy() {
     this.stopUpdateInterval();
+  }
+
+  changeDevice(device: DeviceType) {
+    this.device = device;
+    this.isAutoMode = false;
   }
 }
