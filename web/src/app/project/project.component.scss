@@ -12,18 +12,24 @@
   box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px;
 }
 
+td {
+  span.badge {
+    color: white;
+  }
+}
+
 .done {
-  color: $color-green;
+  background-color: $color-green;
 }
 
 .fail {
-  color: $color-madder_lake;
+  background-color: $color-madder_lake;
 }
 
 .working {
-  color: $color-carolina_blue;
+  background-color: $color-carolina_blue;
 }
 
 .todo {
-  color: $color-charcoal;
+  background-color: $color-harvest_gold;
 }

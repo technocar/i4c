@@ -77,6 +77,7 @@ export enum ConditionSeverity { Warning = "warning", Fault = "fault" }
 export interface Condition {
   severity: ConditionSeverity,
   data_id: string,
+  name: string,
   message: string,
   since: number
 }

@@ -47,12 +47,12 @@
   <div class="row mb-2 devices">
     <div class="col-2">
       <div class="custom-control custom-switch">
-        <input type="checkbox" class="custom-control-input" id="device_auto_mode" (checked)="isAutoMode" (change)="isAutoMode = !isAutoMode">
+        <input type="checkbox" class="custom-control-input" id="device_auto_mode" [checked]="isAutoMode" (change)="isAutoMode = !isAutoMode">
         <label class="custom-control-label" for="device_auto_mode">Automatikus követés</label>
       </div>
     </div>
     <div class="col">
-      <ul ngbNav #devices="ngbNav" [(activeId)]="device" class="nav nav-pills nav-fill">
+      <ul ngbNav #devices="ngbNav" [activeId]="device" (activeIdChange)="changeDevice($event)" class="nav nav-pills nav-fill">
         <li ngbNavItem="mill">
           <a ngbNavLink>Maró</a>
         </li>

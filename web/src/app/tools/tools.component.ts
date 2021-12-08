@@ -3,9 +3,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NgbDateStruct, NgbModal, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import { FiltersService } from '../services/filters.service';
 import { Device, Tool, ToolUsage } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
 import { ToolDetailsComponent } from './tool-details/tool-details.component';
+
+interface ToolsFilters {
+  fdt: string,
+  fd: string
+}
 
 @Component({
   selector: 'app-tools',
@@ -32,10 +38,14 @@ export class ToolsComponent implements OnInit {
     private apiService: ApiService,
     private router: Router,
     private route: ActivatedRoute,
-    private modalService: NgbModal)
+    private modalService: NgbModal,
+    private filtersService: FiltersService
+  )
   {
-    this.filterDate = route.snapshot.queryParamMap.get("fdt");
-    this.filterDevice = route.snapshot.queryParamMap.get("fd");
+    var filters: ToolsFilters = { fdt: undefined, fd: undefined };
+    filtersService.read("tools", filters);
+    this.filterDate = filters.fdt;
+    this.filterDevice = filters.fd;
   }
 
   ngOnInit(): void {
@@ -73,14 +83,11 @@ export class ToolsComponent implements OnInit {
   }
 
   filter() {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
+    var filters: ToolsFilters = {
         fdt: this.filterDate ? this.filterDate : undefined,
         fd: (this.filterDevice ?? "") === "" ? undefined : this.filterDevice
-      },
-      queryParamsHandling: 'merge'
-    });
+     };
+    this.filtersService.save("tools", filters);
     this.getTools();
   }
 
