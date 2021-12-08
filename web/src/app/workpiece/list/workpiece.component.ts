@@ -7,9 +7,19 @@ import { ApiService } from '../../services/api.service';
 import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPieceStatus } from '../../services/models/api';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FilterControlComponent } from 'src/app/commons/filter/filter.component';
+import { FiltersService } from 'src/app/services/filters.service';
 
 interface WorkPieceItem extends WorkPiece {
   selected: boolean
+}
+
+interface WorkPieceFilters {
+  fd: string,
+  fid: string,
+  fp: string,
+  fb: string,
+  fs: string,
+  fwob: boolean
 }
 
 @Component({
@@ -78,22 +88,34 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     private modalService: NgbModal,
     private route: ActivatedRoute,
     private router: Router,
-    private cd: ChangeDetectorRef) {
+    private cd: ChangeDetectorRef,
+    private filtersService: FiltersService) {
     var date = new Date();
-    var pDate = route.snapshot.queryParamMap.get("fd");
-    if (pDate) {
+    var filters: WorkPieceFilters = {
+      fd: undefined,
+      fb: undefined,
+      fid: undefined,
+      fp: undefined,
+      fs: undefined,
+      fwob: undefined
+    };
+    filtersService.read("workpiece", filters)
+    if (filters.fd) {
       try
       {
-        date = new Date(pDate)
+        date = new Date(filters.fd)
       }
       catch
       {
-        console.error(`Invalid Date value of \"pd\" query param ${pDate}`);
+        console.error(`Invalid Date value of \"pd\" query param ${filters.fd}`);
       }
     }
     this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
-    this.filterId = route.snapshot.queryParamMap.get("fid") ?? undefined;
-    this.filterStatus = route.snapshot.queryParamMap.get("fs") ?? undefined;
+    this.filterId = filters.fid ?? undefined;
+    this.filterStatus = filters.fs ?? undefined;
+    this._filterWOBatch = filters.fwob ?? undefined;
+    this._filterProject = filters.fp ?? undefined;
+    this._filterBatch = filters.fb ?? undefined;
   }
 
   ngOnInit(): void {
@@ -102,9 +124,9 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.filterProjectCtrl.queryParam = this.route.snapshot.queryParamMap.get("fp") ?? undefined;
+    this.filterProjectCtrl.queryParam = this._filterProject;
     this._filterProject = this.filterProjectCtrl.value;
-    this.filterBatchCtrl.queryParam = this.route.snapshot.queryParamMap.get("fb") ?? undefined;
+    this.filterBatchCtrl.queryParam = this._filterBatch;
     this._filterBatch = this.filterBatchCtrl.value;
     this.getWorkPieces();
     this.cd.detectChanges();
@@ -193,18 +215,15 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
 
   filter() {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}`,
-        fid: (this.filterId ?? "") === "" ? undefined : this.filterId,
-        fp: this.filterProjectCtrl.queryParam,
-        fb: this.filterBatchCtrl.queryParam,
-        fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus,
-        fwob: this.filterWOBatch
-      },
-      queryParamsHandling: 'merge'
-    });
+    var filters: WorkPieceFilters = {
+      fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}`,
+      fid: (this.filterId ?? "") === "" ? undefined : this.filterId,
+      fp: this.filterProjectCtrl.queryParam,
+      fb: this.filterBatchCtrl.queryParam,
+      fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus,
+      fwob: this.filterWOBatch ?? undefined
+    };
+    this.filtersService.save("workpiece", filters);
     this.getWorkPieces();
   }
 

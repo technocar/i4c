@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { NgbAlertModule, NgbButtonsModule, NgbDropdownModule, NgbPopoverModule, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 import { MetaFilterComponent } from './meta-filter/meta-filter.component';
 import { MetaSelectorComponent } from './meta-selector/meta-selector.component';
+import { GridToolsComponent } from './grid-tools/grid-tools.component';
 
 
 
@@ -15,7 +16,8 @@ import { MetaSelectorComponent } from './meta-selector/meta-selector.component';
     AppHeaderComponent,
     FilterControlComponent,
     MetaFilterComponent,
-    MetaSelectorComponent
+    MetaSelectorComponent,
+    GridToolsComponent
   ],
   imports: [
     CommonModule,
@@ -31,7 +33,8 @@ import { MetaSelectorComponent } from './meta-selector/meta-selector.component';
     AppHeaderComponent,
     FilterControlComponent,
     MetaFilterComponent,
-    MetaSelectorComponent
+    MetaSelectorComponent,
+    GridToolsComponent
   ]
 })
 export class CommonsModule { }
