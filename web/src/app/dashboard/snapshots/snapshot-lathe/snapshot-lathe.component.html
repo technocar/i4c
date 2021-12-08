@@ -58,7 +58,7 @@
       <div [class]="'condition col ' + condition.severity | lowercase">
         <div class="row align-items-center border-bottom">
           <label class="col-auto icon">●</label>
-          <label class="col name pl-0">{{condition.data_id}}
+          <label class="col name pl-0">{{condition.name}}
             <small class="since">{{condition.since === null ? "∞" :  condition.since | number:'1.0-0'}}</small>
           </label>
           <label class="col message">{{condition.message}}</label>

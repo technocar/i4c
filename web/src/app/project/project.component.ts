@@ -3,9 +3,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NgbDate, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from '../services/api.service';
+import { FiltersService } from '../services/filters.service';
 import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus } from '../services/models/api';
 import { NotificationService } from '../services/notification.service';
 
+interface ProjectFilters {
+  fds?: string,
+  fde?: string,
+  fp?: string,
+  fv?: string,
+  fs?: string
+}
 @Component({
   selector: 'app-project',
   templateUrl: './project.component.html',
@@ -44,22 +52,24 @@ export class ProjectComponent implements OnInit {
     private apiService: ApiService,
     private notifService: NotificationService,
     private route: ActivatedRoute,
-    private router: Router) {
+    private router: Router,
+    private filtersService: FiltersService
+  ) {
     let now = new Date();
     this._filterFromDate = { year: now.getFullYear(), month: now.getMonth() + 1, day: 1 };
     now = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     this._filterToDate = { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
 
-    let qpds = route.snapshot.queryParamMap.get("fds");
-    let qpde = route.snapshot.queryParamMap.get("fde");
-    if (qpds || qpde) {
-      this._filterFromDate = this.convertFromDate(qpds);
-      this._filterToDate = this.convertFromDate(qpde);
+    var filters: ProjectFilters = {};
+    filtersService.read("project", filters);
+    if (filters.fds || filters.fde) {
+      this._filterFromDate = this.convertFromDate(filters.fds);
+      this._filterToDate = this.convertFromDate(filters.fde);
     }
-    this.filterProject = route.snapshot.queryParamMap.get("fp");
-    this.filterVersion = parseInt(route.snapshot.queryParamMap.get("fv"));
+    this.filterProject = filters.fp;
+    this.filterVersion = parseInt(filters.fv);
     this.filterVersion = isNaN(this.filterVersion) ? undefined : this.filterVersion;
-    this.filterStatus = route.snapshot.queryParamMap.get("fs");
+    this.filterStatus = filters.fs;
   }
 
   ngOnInit(): void {
@@ -129,17 +139,14 @@ export class ProjectComponent implements OnInit {
   }
 
   filter() {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        fds: this.filterFromDate ? `${this.filterFromDate.year}-${this.filterFromDate.month}-${this.filterFromDate.day}` : undefined,
-        fde: this.filterToDate ? `${this.filterToDate.year}-${this.filterToDate.month}-${this.filterToDate.day}` : undefined,
-        fp: (this.filterProject ?? "") === "" ? undefined : this.filterProject,
-        fv: (this.filterVersion ?? "") === "" ? undefined : this.filterVersion,
-        fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus
-      },
-      queryParamsHandling: 'merge'
-    });
+    var filters: ProjectFilters = {
+      fds: this.filterFromDate ? `${this.filterFromDate.year}-${this.filterFromDate.month}-${this.filterFromDate.day}` : undefined,
+      fde: this.filterToDate ? `${this.filterToDate.year}-${this.filterToDate.month}-${this.filterToDate.day}` : undefined,
+      fp: (this.filterProject ?? "") === "" ? undefined : this.filterProject,
+      fv: (this.filterVersion ?? "") === "" ? undefined : this.filterVersion.toString(),
+      fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus
+    }
+    this.filtersService.save("project", filters);
     this.getInstalledProjects();
   }
 

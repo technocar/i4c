@@ -23,6 +23,7 @@
   </div>
 </div>
 <div id="list" class="row">
+ <app-grid-tools class="col-12 p-0" (reload)="filter()"></app-grid-tools>
   <table class="table table-striped">
     <thead>
       <tr>
@@ -74,12 +75,14 @@
           <td>{{item.ts | date:"yyyy.MM.dd HH:mm"}}</td>
           <td>{{item.project}}</td>
           <td>{{item.real_version}} ({{item.invoked_version}})</td>
-          <td class="{{item.status}}">
-            <i *ngIf="item.status === 'todo'" class="bi bi-hourglass-split"></i>
-            <i *ngIf="item.status === 'working'" class="bi bi-cpu-fill"></i>
-            <i *ngIf="item.status === 'done'" class="bi bi-check2"></i>
-            <i *ngIf="item.status === 'fail'" class="bi bi-x-lg"></i>
-            {{getStatusDesc(item.status)}}
+          <td>
+            <span class="badge {{item.status}}">
+              <i *ngIf="item.status === 'todo'" class="bi bi-hourglass-split"></i>
+              <i *ngIf="item.status === 'working'" class="bi bi-cpu-fill"></i>
+              <i *ngIf="item.status === 'done'" class="bi bi-check2"></i>
+              <i *ngIf="item.status === 'fail'" class="bi bi-x-lg"></i>
+              {{getStatusDesc(item.status)}}
+            </span>
           </td>
         </tr>
       </ng-template>
