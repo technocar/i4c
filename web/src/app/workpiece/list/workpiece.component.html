@@ -76,7 +76,7 @@
           <td class="text-center">{{item.end_timestamp | date:"yyyy.MM.dd HH:mm"}}</td>
           <td class="text-center">{{item.project}}</td>
           <td class="text-center"><span class="badge {{item.status}}">{{getStatusDesc(item.status)}}</span></td>
-          <td class="text-center batch" [ngbPopover]="batch_list" [placement]="'bottom-left'" [container]="'body'" [popoverClass]="'menu-context'">{{item.batch}}</td>
+          <td class="text-center batch" [ngbPopover]="batch_list" [placement]="'bottom-left'" [container]="'body'" [popoverClass]="'menu-context'" (shown)="currentSelectedItem = item">{{item.batch}}</td>
           <td class="text-center"><a href="#" [routerLink]="['/workpiece/detail/' + item.id]">részletek</a></td>
         </tr>
       </ng-template>
@@ -86,7 +86,7 @@
 
 <ng-template #batch_list>
   <div class="dropdown-menu">
-    <button class="dropdown-item" *ngFor="let item of batches$ | async" (click)="confirmBatchUpdate(confirm_set_batch, item)">{{item.batch}}</button>
+    <button class="dropdown-item" *ngFor="let item of batches$ | async" (click)="confirmBatchUpdate(confirm_set_batch, item, currentSelectedItem)">{{item.batch}}</button>
   </div>
 </ng-template>
 

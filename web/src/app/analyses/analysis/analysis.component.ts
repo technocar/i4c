@@ -12,6 +12,7 @@ import { AuthenticationService } from 'src/app/services/auth.service';
 import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
+import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
 
 Chart.register(...registerables);
 
@@ -51,6 +52,7 @@ export class AnalysisComponent implements OnInit {
   chartErrorMsg: string = "";
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
+  @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
   @ViewChild('new_dialog') newDialog;
   @ViewChild('chart', {static: false}) chart: ElementRef;
 
@@ -104,6 +106,9 @@ export class AnalysisComponent implements OnInit {
     switch (this.analysisType) {
       case AnalysisType.TimeSeries:
         this.def.timeseriesdef = this.timeseriesDef.getDef() as StatTimeSeriesDef;
+        break;
+      case AnalysisType.XY:
+        this.def.xydef = this.xyDef.getDef();
         break;
     }
   }
@@ -176,7 +181,7 @@ export class AnalysisComponent implements OnInit {
                   y: value
                 }
               }),
-              backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 0.3).toString(),
+              backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
               borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
               borderWidth: 2,
               fill: false

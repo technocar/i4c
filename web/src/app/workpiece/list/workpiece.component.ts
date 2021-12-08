@@ -32,6 +32,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   batches$: BehaviorSubject<WorkPieceBatch[]> = new BehaviorSubject([]);
   fetchingList$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   confirmBatchDelete: boolean = false;
+  currentSelectedItem: WorkPieceItem;
 
   queryParamProject: string;
   queryParamBatch: string;
@@ -171,7 +172,13 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
       i.selected = this.isAllSelected;
   }
 
-  select(item: WorkPieceItem) {
+  select(item: WorkPieceItem, onlySelect: boolean = false, onlyDeselect: boolean = false) {
+    if (onlySelect && item.selected)
+      return;
+
+    if (onlyDeselect && !item.selected)
+      return;
+
     item.selected = !item.selected;
     let selectedItems = this.workPieces$.value.filter((value: WorkPieceItem) => { return value.selected === true });
     let allSelected = selectedItems.length === this.workPieces$.value.length;
@@ -203,8 +210,9 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     return this.workPieces$.value.filter((value: WorkPieceItem) => { return value.selected }).length;
   }
 
-  selectBatch(batch: WorkPieceBatch, isNew: boolean = false) {
-    let ids: string[] = this.workPieces$.value.filter((item) => { return item.selected === true }).map((item) => { return item.id });
+  selectBatch(batch: WorkPieceBatch, isNew: boolean = false, item: WorkPieceItem) {
+    let ids: string[] = item ? [item.id] :
+      this.workPieces$.value.filter((item) => { return item.selected === true }).map((item) => { return item.id });
     this.setBatchForWorkPieces(ids,
       batch.itemType === WorkPieceBatchItemType.Delete ? undefined : batch.batch,
       batch.itemType === WorkPieceBatchItemType.Delete)
@@ -216,7 +224,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
 
   addNewBacth(name: string) {
     var batch: WorkPieceBatch = { batch: name, last: (new Date()).toISOString(), itemType: WorkPieceBatchItemType.Batch };
-    this.selectBatch(batch, true);
+    this.selectBatch(batch, true, null);
   }
 
   showDialog(dialog) {
@@ -227,11 +235,11 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     return this.workPieces$.value.filter((value: WorkPieceItem) => { return value.selected === true }).length > 0;
   }
 
-  confirmBatchUpdate(dialog, batch: WorkPieceBatch) {
+  confirmBatchUpdate(dialog, batch: WorkPieceBatch, item: WorkPieceItem = null) {
     this.confirmBatchDelete = batch.itemType === WorkPieceBatchItemType.Delete;
     this.modalService.open(dialog).result.then(result => {
       if (result === "ok") {
-        this.selectBatch(batch);
+        this.selectBatch(batch, false, item);
       }
     });
   }

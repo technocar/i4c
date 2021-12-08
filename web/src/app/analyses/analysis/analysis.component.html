@@ -5,9 +5,13 @@
         <i class="bi bi-save2"></i>
         Mentés másként...
       </button>
-      <div class="custom-control custom-checkbox col-auto" *ngIf="isOwn()">
-        <input type="checkbox" class="custom-control-input" id="shared" [(ngModel)]="def.shared" (change)="shareChanged()" />
-        <label class="custom-control-label" for="shared">megosztott</label>
+      <div class="btn-group btn-group-toggle col-auto pr-0" ngbRadioGroup name="radioBasic" [(ngModel)]="def.shared" *ngIf="isOwn()">
+        <label ngbButtonLabel class="{{!def.shared ? 'btn-outline-success' : 'btn-success'}}" title="{{def.shared ? 'megosztva' : 'megosztás'}}">
+          <input ngbButton type="radio" [value]="true" (change)="shareChanged()"><i class="bi bi-people"></i>
+        </label>
+        <label ngbButtonLabel class="{{def.shared ? 'btn-outline-warning' : 'btn-warning'}}" title="{{def.shared ? 'ne legyen megosztva' : 'nincs megosztva'}}">
+          <input ngbButton type="radio" [value]="false" (change)="shareChanged()"><i class="bi bi-person"></i>
+        </label>
       </div>
     </div>
   </div>
@@ -16,12 +20,13 @@
       <ngb-panel title="Beállítások" cardClass="settings" id="analysis-settings">
         <ng-template ngbPanelContent>
           <app-analysis-timeseries-def #timeseries_def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>
+          <app-analysis-xy-def #xy_def *ngIf="analysisType === '1'" [def]="def.xydef"></app-analysis-xy-def>
         </ng-template>
       </ngb-panel>
     </ngb-accordion>
   </div>
   <div class="col-12 mt-4 mb-4 text-center">
-    <button class="btn btn-outline-primary" (click)="getChart()">Adatok lekérdezése</button>
+    <button class="btn btn-outline-success" (click)="getChart()">Adatok lekérdezése</button>
   </div>
   <div id="chart-container" class="col-12">
     <div *ngIf="chartError" class="alert alert-danger text-center" role="alert">

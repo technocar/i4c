@@ -296,7 +296,7 @@ export class ApiService {
   getTools(parameters: ToolListParams): Observable<Tool[]> {
     var params = new RequestParams();
     params.addFromObject(parameters);
-    return this.http.get<Tool[]>(`${this._apiUrl}/tools/list`, { params: params.getAll() });
+    return this.http.get<Tool[]>(`${this._apiUrl}/tools`, { params: params.getAll() });
   }
 
   getToolUsageList(): Observable<ToolUsage[]> {
@@ -361,16 +361,20 @@ export class ApiService {
     return this.http.get<StatXYMeta>(`${this._apiUrl}/stat/xymeta`, { params: params.getAll() });
   }
 
+  //This method for resolver of analsysis module to download data for selected analysis
   getAnalysisData(id: string): Observable<[StatDef, Meta[]]> {
     return new Observable<[StatDef, Meta[]]>((observer) => {
       var result: [StatDef, Meta[]] = [undefined, undefined];
+      //Get analysis definition...
       this.getStatDef(id).subscribe(def => {
         result[0] = def;
         if (!def) {
+          //If there is no definition then we are done.
           observer.next(result);
           observer.complete();
         } else {
           if (def.timeseriesdef)
+            //If it's timeseries then gets meta list...
             this.getMeta().subscribe(meta => {
               result[1] = meta;
               observer.next(result);
@@ -378,6 +382,7 @@ export class ApiService {
             },
             (err) => { observer.error(err); observer.complete(); });
           else {
+            //If it's not timeseries we are done.
             observer.next(result);
             observer.complete();
           }

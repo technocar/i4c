@@ -38,14 +38,14 @@
           </div>
         </th>
         <th>
-          <select class="form-control" (change)="filter()">
+          <select class="form-control" (change)="filter()" [(ngModel)]="filterProject">
             <option [value]="''"> - </option>
             <option *ngFor="let project of projects$ | async" [value]="project">{{project}}</option>
           </select>
         </th>
         <th><input type="number" class="form-control" (change)="filter()" (keyup.enter)="filter()" [(ngModel)]="filterVersion" /></th>
         <th>
-          <select class="form-control" (change)="filter()">
+          <select class="form-control" (change)="filter()" [(ngModel)]="filterStatus">
             <option *ngFor="let status of statuses" [value]="status[0]">{{status[1]}}</option>
           </select>
         </th>

@@ -12,7 +12,7 @@
     <ol class="breadcrumb" >
       <li class="breadcrumb-item" *ngFor="let breadcrumb of (breadcrumbs$ | async); last as isLast" [ngClass]="{ 'active': isLast }">
         <a *ngIf="!isLast" href="#" [routerLink]="[breadcrumb.url]">{{ breadcrumb.label }}</a>
-        <ng-template [ngIf]="isLast">{{breadcrumb.label}}</ng-template>
+        <ng-template [ngIf]="isLast"><span class="last">{{breadcrumb.label}}</span></ng-template>
       </li>
     </ol>
   </nav>

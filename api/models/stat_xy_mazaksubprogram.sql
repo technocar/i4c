@@ -106,10 +106,12 @@ with
           rank() over (order by w.timestamp desc, w.sequence desc) r
         from p_begin as w
         where
-          w.timestamp < wb.timestamp
-          or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
+          w.device = wb.device
+          and ( w.timestamp < wb.timestamp
+                or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
+               )
       ) a
-      where a.r = 1) w_exec_begin on w_exec_begin.device = wb.device
+      where a.r = 1) w_exec_begin on True
     left join lateral (
       select * from (
         select 
@@ -117,10 +119,12 @@ with
           rank() over (order by w.timestamp asc, w.sequence asc) r
         from p_spgm as w
         where
-          w.timestamp > wb.timestamp
-          or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
+          w.device = wb.device
+          and ( w.timestamp > wb.timestamp
+                or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
+               )
       ) a
-      where a.r = 1) spgm_next on spgm_next.device = wb.device    
+      where a.r = 1) spgm_next on True
     left join lateral (
       select * from (
         select 
@@ -128,10 +132,12 @@ with
           rank() over (order by w.timestamp asc, w.sequence asc) r
         from p_end as w
         where
-          w.timestamp > wb.timestamp
-          or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
+          w.device = wb.device
+          and ( w.timestamp > wb.timestamp
+                or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
+               )
       ) a
-      where a.r = 1) we on we.device = wb.device
+      where a.r = 1) we on True
     left join lateral (
       select * from (
         select 
@@ -139,10 +145,12 @@ with
           rank() over (order by w.timestamp desc, w.sequence desc) r
         from p_pgm as w
         where
-          w.timestamp < wb.timestamp
-          or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
+          w.device = wb.device
+          and ( w.timestamp < wb.timestamp
+                or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
+               )
       ) a
-      where a.r = 1) w_pgm on w_pgm.device = wb.device
+      where a.r = 1) w_pgm on True
     left join lateral (
       select * from (
         select 
@@ -153,7 +161,7 @@ with
           w.timestamp < wb.timestamp
           or (w.timestamp = wb.timestamp and w.sequence <= wb.sequence)    
       ) a
-      where a.r = 1) w_project on 0=0
+      where a.r = 1) w_project on True
     left join lateral (
       select * from (
         select 
@@ -182,7 +190,7 @@ with
             or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
           )
       ) a
-      where a.r = 1) w_gb on 0 = 0
+      where a.r = 1) w_gb on True
   ),
   res as (
     select 

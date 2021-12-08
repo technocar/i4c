@@ -2,7 +2,7 @@ import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { BehaviorSubject, forkJoin, Observable, of } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { Device, Tool, ToolUsage } from 'src/app/services/models/api';
+import { Device, Tool, ToolDataId, ToolUsage } from 'src/app/services/models/api';
 import { DeviceType } from 'src/app/services/models/constants';
 import { __createBinding } from 'tslib';
 
@@ -71,7 +71,8 @@ export class ToolDetailsComponent implements OnInit {
     this._origTool = {
       device: this.devices$.value[0].id,
       timestamp: (new Date()).toISOString(),
-      sequence: 1
+      sequence: 0,
+      data_id: ToolDataId.Install
     };
     this._currTool = Object.assign({}, this._origTool);
   }
@@ -128,5 +129,13 @@ export class ToolDetailsComponent implements OnInit {
     }
     });
     return result;
+  }
+
+  getEventCaption(code: string): string {
+    var event = this.events.find((e) => e[0] === code);
+    if (event)
+      return event[1];
+    else
+      return code;
   }
 }
