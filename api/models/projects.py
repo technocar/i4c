@@ -232,7 +232,7 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
                   p.extra
                 from projects p
                 left join pv on pv.project = p.name
-                left join pl on pv.project = p.name
+                left join pl on pl.project = p.name
                 ),
             rf as (
                 select pv.project, pf.savepath
