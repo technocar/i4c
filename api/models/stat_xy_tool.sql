@@ -1,8 +1,8 @@
 with
   p as (select
-          /* coalesce($1::timestamp with time zone,'2199-01-01'::timestamp with time zone) -- */ '2022-10-24 07:56:00.957133+02'::timestamp with time zone
+          coalesce($1::timestamp with time zone,'2199-01-01'::timestamp with time zone) -- */ '2022-10-24 07:56:00.957133+02'::timestamp with time zone
               as before,
-          /* coalesce($2::timestamp with time zone,'1899-01-01'::timestamp with time zone) -- */ '2021-10-24 07:56:00.957133+02'::timestamp with time zone
+          coalesce($2::timestamp with time zone,'1899-01-01'::timestamp with time zone) -- */ '2021-10-24 07:56:00.957133+02'::timestamp with time zone
               as after
   ),
   p_tid as (
@@ -30,7 +30,7 @@ with
       and l.timestamp <= p.before  
       and l.data_id = 'install_tool'
   ),
-  tool_usage as (
+  tool as (
     select 
       p_tid.*,
       last_installed."tool_id",
@@ -53,7 +53,7 @@ with
     ) last_installed
   ),
   p_active as (
-    select l.device, l.timestamp, l.sequence
+    select l.device, l.timestamp, l.sequence, l.value_text
     from log l
     cross join p
     where
@@ -64,32 +64,39 @@ with
   ),
   p_begin as (
     select l.device, l.timestamp, l.sequence
-    from p_active
+    from p_active l
     where
       l.value_text = 'ACTIVE'
   ), 
   p_end as (
     select l.device, l.timestamp, l.sequence
-    from p_active
+    from p_active l
     where
       l.value_text != 'ACTIVE'
   ),
-  tool_usage_ts as (
+  tool_selected as (
     select 
       tu.*,
-      greatest(wp_begin.timestamp, tu.timestamp) as start_timestamp,
+      tu.timestamp as start_timestamp,
       coalesce(tu_next.timestamp, least(coalesce(p.before, now()), now())) as end_timestamp
-    from tool_usage tu
+    from tool tu
     cross join p
-    left join tool_usage tu_next on tu_next.device = tu.device and tu_next.r = tu.r + 1
+    left join tool tu_next on tu_next.device = tu.device and tu_next.r = tu.r + 1
+  ),
+  tool_usage as (
+    select 
+      *,
+      greatest(wp_begin.timestamp, ts.start_timestamp) as usage_start,
+      least(wp_end.timestamp, ts.end_timestamp) as usage_end
+    from tool_selected ts
     join lateral (
         select 
           w.timestamp
         from p_begin as w
         where
-          w.device = tu.device
-          and w.timestamp > tu.timestamp
-          and (w.timestamp < tu_next.timestamp or tu_next.timestamp is null)
+          w.device = ts.device
+          and w.timestamp >= ts.start_timestamp
+          and w.timestamp <= ts.end_timestamp
 
         union all
 
@@ -100,8 +107,8 @@ with
             rank() over (order by w.timestamp desc, w.sequence desc) r
           from p_end as w
           where
-            w.device = tu.device
-            and w.timestamp <= tu.timestamp
+            w.device = ts.device
+            and w.timestamp < ts.start_timestamp
         ) a
         where a.r = 1      
       ) wp_begin on True
@@ -113,22 +120,23 @@ with
           rank() over (order by w.timestamp asc, w.sequence asc) r
         from p_end as w
         where
-          w.device = tu.device
-          and w.timestamp > tu.timestamp
-          and (w.timestamp < tu_next.timestamp or tu_next.timestamp is null)
-          and ( w.timestamp > wp_begin.timestamp
-                or (w.timestamp = wp_begin.timestamp and w.sequence >= wp_begin.sequence)
-               )
+          w.device = ts.device
+          and w.timestamp > wp_begin.timestamp
+          and w.timestamp <= ts.end_timestamp
       ) a
       where a.r = 1) wp_end on True
+      
+    where 
+      wp_end.timestamp is null 
+      or (wp_end.timestamp >= ts.start_timestamp)
   ),
   res as (
     select
-      t.tool_id as "mf_tool_id",
+      t.tool_id as "mf_id",
       min(t."type") as "mf_type",
       count(*) "mf_count used",
-      sum(extract ('EPOCH' from t.end_timestamp - t.start_timestamp)) as "mf_accumulated cutting time"
-    from tool_usage_ts t
+      sum(extract ('EPOCH' from t.usage_end - t.usage_start)) as "mf_accumulated cutting time"
+    from tool_usage t
     group by t.tool_id
   )
 select * 
