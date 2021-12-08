@@ -54,6 +54,7 @@ export class DashboardComponent implements OnInit {
   private _activeListRequest: Subscription;
 
   isAutoMode: boolean = true;
+  noData: boolean = false;
   snapshot: Snapshot;
   private _device: DeviceType;
   public get device(): DeviceType {
@@ -153,7 +154,7 @@ export class DashboardComponent implements OnInit {
 
     this._activeSnapshotRequest = this.apiService.getSnapShot(this.isAutoMode ? "auto" : this.device, new Date(this.timestamp))
       .subscribe(r => {
-        if (!this.isAutoMode)
+        if (!this.isAutoMode && this.device)
           this.snapshot = r[this.device];
         else {
           for (let d in r)
@@ -164,6 +165,13 @@ export class DashboardComponent implements OnInit {
             }
         }
         this.events$.next(this.snapshot?.event_log ?? []);
+        this.noData = !this.snapshot || !this.snapshot.status;
+        if (this.noData) {
+          if (!this.isAutoMode)
+            this.isAutoMode = true;
+          else
+            this.device = undefined;
+        }
         this.isDataLoaded = true;
       });
   }
@@ -359,5 +367,11 @@ export class DashboardComponent implements OnInit {
   changeDevice(device: DeviceType) {
     this.device = device;
     this.isAutoMode = false;
+  }
+
+  autoModeChange() {
+    this.isAutoMode = !this.isAutoMode;
+    if (!this.isAutoMode && !this.device)
+      this.device = DeviceType.Mill;
   }
 }

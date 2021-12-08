@@ -47,7 +47,7 @@
   <div class="row mb-2 devices">
     <div class="col-2">
       <div class="custom-control custom-switch">
-        <input type="checkbox" class="custom-control-input" id="device_auto_mode" [checked]="isAutoMode" (change)="isAutoMode = !isAutoMode">
+        <input type="checkbox" class="custom-control-input" id="device_auto_mode" [checked]="isAutoMode" (change)="autoModeChange()">
         <label class="custom-control-label" for="device_auto_mode">Automatikus követés</label>
       </div>
     </div>
@@ -68,7 +68,7 @@
       </ul>
     </div>
   </div>
-  <div class="row" *ngIf="!isListMode">
+  <div class="row" *ngIf="!isListMode && !noData">
     <div class="col">
       <app-snapshot-mill *ngIf="device === 'mill'" [snapshot]="snapshot"></app-snapshot-mill>
       <app-snapshot-lathe *ngIf="device === 'lathe'" [snapshot]="snapshot"></app-snapshot-lathe>
@@ -76,7 +76,7 @@
       <app-snapshot-gom *ngIf="device === 'gom'" [snapshot]="snapshot"></app-snapshot-gom>
     </div>
   </div>
-  <div id="events" class="row text-monospace small" *ngIf="!isListMode">
+  <div id="events" class="row text-monospace small" *ngIf="!isListMode && !noData">
     <div class="col">
       <div class="event row" *ngFor="let event of events$ | async">
         <div class="col-auto text-monospace">{{event.timestamp | date:"yyyy-MM-dd HH:mm:ss.SSS"}}</div>
@@ -84,6 +84,11 @@
         <div class="col">{{event.name}}</div>
         <div class="col">{{event.value}}</div>
       </div>
+    </div>
+  </div>
+  <div class="row" *ngIf="!isListMode && noData">
+    <div class="col m-2 alert alert-danger text-center font-weight-bold" role="alert">
+      Nincs adat!
     </div>
   </div>
   <div id="list" class="row" *ngIf="isListMode">
