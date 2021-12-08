@@ -17,18 +17,18 @@
             <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" ></app-meta-selector>
           </td>
           <td>
-            <select class="form-control mr-2" [ngModel]="filter.rel">
+            <select class="form-control mr-2" [(ngModel)]="filter.rel">
               <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [ngModel]="filter.value" />
+            <input class="form-control mr-2" [(ngModel)]="filter.value" />
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [ngModel]="filter.age_min" />
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" />
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [ngModel]="filter.age_max" />
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" />
           </td>
           <td>
             <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)">

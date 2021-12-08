@@ -9,7 +9,7 @@ const routes: Routes = [
     { path: '', component: ToolsComponent, canActivate: [AuthGuard] },
     { path: 'detail/:device/:ts/:seq', component: ToolDetailsComponent, canActivate: [AuthGuard] }
   ],
-  data: { breadcrumb: "Eszközök" }}
+  data: { breadcrumb: "Szerszámok" }}
 ];
 
 @NgModule({

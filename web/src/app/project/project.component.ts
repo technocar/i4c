@@ -82,7 +82,7 @@ export class ProjectComponent implements OnInit {
 
   getInstalledProjects() {
     let params: ProjectInstallParams = {
-      project_name: this.selectedProject === '' ? undefined : this.selectedProject,
+      project_name: (this.filterProject ?? "") === "" ? undefined : this.filterProject,
       after: this.convertToDate(this.filterFromDate),
       before: this.convertToDate(this.filterToDate),
       ver: (this.filterVersion ?? "") === "" ? undefined : this.filterVersion,

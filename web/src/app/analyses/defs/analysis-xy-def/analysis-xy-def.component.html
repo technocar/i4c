@@ -1,7 +1,7 @@
 <app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
-<div class="row form-group">
+<div id="analysing_data" class="row form-group m-0 mb-4 align-items-center">
   <label class="col">Elemezendő adat</label>
-  <select class="col form-control" [(ngModel)]="def.obj.type" (change)="objectChanged()">
+  <select class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(def.obj.type)">
     <option *ngFor="let obj of objects$ | async" [value]="obj.name">{{obj.displayname}}</option>
   </select>
 </div>
@@ -12,17 +12,20 @@
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
           <td>
-            <select class="form-control" [ngModel]="filter.field.field_name" (change)="updateFilterField(filter)">
+            <select class="form-control" [(ngModel)]="filter.field.field_name" (change)="updateFilterField(filter)">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
             </select>
           </td>
           <td>
-            <select class="form-control mr-2" [ngModel]="filter.rel">
+            <select class="form-control mr-2" [(ngModel)]="filter.rel">
               <option *ngFor="let op of operators" value="{{op}}">{{op}}</option>
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [ngModel]="filter.value" *ngIf="" />
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.field.values.length === 0" />
+            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.field.values.length > 0">
+              <option *ngFor="let value of filter.field.values" [value]="value">{{value}}</option>
+            </select>
           </td>
           <td>
             <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)">

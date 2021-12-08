@@ -101,7 +101,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
   newFilter() {
     var filters = this.filters$.value;
     filters.push({
-      id: Math.max(...filters.map(f => f.id)) + 1,
+      id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f.id))) + 1,
       device: undefined,
       data_id: undefined,
       rel: undefined,

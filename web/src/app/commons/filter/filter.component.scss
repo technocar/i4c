@@ -1,9 +1,14 @@
-$color-background: rgb(255, 230, 177);
+@import '../../../base';
 
 .hint {
-  background: $color-background;
+  border: 2px solid $color-harvest_gold;
+  background-color: lighten($color:$color-harvest_gold, $amount: 35);
+
+  .arrow::before {
+    border-bottom-color: $color-harvest_gold !important;
+  }
 
   .arrow::after {
-    border-top-color: $color-background;
+    border-bottom-color: lighten($color:$color-harvest_gold, $amount: 35);
   }
 }

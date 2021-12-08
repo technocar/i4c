@@ -1,0 +1,6 @@
+Robot:
+  SourcePath: sources\robot
+  ArchivePath: archive\robot
+GOM:
+  SourcePath: sources\gom
+  ArchivePath: archive\gom

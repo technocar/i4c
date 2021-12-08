@@ -1,0 +1,14 @@
+@import '/src/base';
+
+.form-group {
+  > label {
+    margin-bottom: 0;
+  }
+}
+
+#analysing_data {
+  background-color: $color-light-blue;
+  padding: 0.5rem;
+  border: 1px solid $color-light-blue;
+  border-radius: 5px;
+}
