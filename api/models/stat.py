@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
-from typing import Optional, List
+from typing import Optional, List, Union
 from fastapi import HTTPException
 from isodate import ISO8601Error
 from pydantic import root_validator, validator, Field
@@ -379,12 +379,6 @@ class StatXYObjectParam(I4cBaseModel):
 class StatXYObject(I4cBaseModel):
     type: StatXYObjectType
     params: List[StatXYObjectParam]
-
-
-class StatXYFieldValue(I4cBaseModel):
-    field_name: str
-    value_num: Optional[float]
-    value_text: Optional[str]
 
 
 class StatXYOther(I4cBaseModel):
@@ -832,11 +826,11 @@ class StatTimeseriesDataSeries(I4cBaseModel):
 
 
 class StatXYData(I4cBaseModel):
-    x: StatXYFieldValue
-    y: Optional[StatXYFieldValue]
-    shape: Optional[StatXYFieldValue]
-    color: Optional[StatXYFieldValue]
-    others: List[StatXYFieldValue]
+    x: Union[float, str, None]
+    y: Optional[Union[float, str, None]]
+    shape: Optional[Union[float, str, None]]
+    color: Optional[Union[float, str, None]]
+    others: List[Union[float, str, None]]
 
 
 class StatData(I4cBaseModel):
@@ -1194,26 +1188,16 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     agg_measures = {}
 
     async def get_field_value(dbo, field_name:str):
-        res = StatXYFieldValue(field_name=field_name)
-        meta_field = [m for m in meta.fields if m.name == field_name]
-        if len(meta_field) != 1:
-            raise HTTPException(status_code=400, detail="Invalid field name: "+field_name)
-        meta_field = meta_field[0]
-
         if "mf_"+field_name in dbo:
-            if meta_field.type == StatXYMateFieldType.numeric:
-                res.value_num = dbo["mf_" + field_name]
-            else:
-                res.value_text = dbo["mf_" + field_name]
+            return dbo["mf_" + field_name]
         else:
             if st.xydef.obj.type in (StatXYObjectType.mazakprogram, StatXYObjectType.mazaksubprogram):
-                res.value_num = await get_detail_field_mazak(dbo, field_name)
+                return await get_detail_field_mazak(dbo, field_name)
             elif st.xydef.obj.type == StatXYObjectType.workpiece:
-                res.value_num = await get_detail_field_workpiece(dbo, field_name)
+                return await get_detail_field_workpiece(dbo, field_name)
             else:
                 # todo 1: **********
                 raise Exception("Invalid field name: " + field_name)
-        return res
 
     async def get_detail_field_mazak(dbo, field_name):
         regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
