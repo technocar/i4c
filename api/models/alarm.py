@@ -779,7 +779,8 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                                 if agg_time_len >= row_cond["aggregate_period"]:
                                     aggregated_value = calc_aggregate(row_cond["aggregate_method"], agg_values, AlarmCondSampleAggSlopeKind.time)
                                 agg_values.append(r_series_prev)
-                                while (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() > row_cond["aggregate_period"]:
+                                while len(agg_values) > 0 \
+                                        and (r_series["timestamp"] - agg_values[0]["timestamp"]).total_seconds() > row_cond["aggregate_period"]:
                                     del agg_values[0]
                             if row_cond["aggregate_count"]:
                                 if len(agg_values) == row_cond["aggregate_count"]:
