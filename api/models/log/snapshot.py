@@ -178,10 +178,6 @@ async def get_snapshot(credentials, ts, device: DeviceAuto, *, pconn=None):
             for r in rs:
                 active_device_order.append((r['timestamp'], r['sequence'], r['device']))
 
-            rs = await conn.fetch(view_snapshot_auto_sql, ts)
-            for r in rs:
-                active_device_order.append((r['timestamp'], r['sequence'], r['device']))
-
             if len(active_device_order) > 0:
                 allowed_devices.add(min(active_device_order, key=lambda x: x[:2])[2])
         else:
