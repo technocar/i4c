@@ -15,7 +15,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id='program_start'           /* workpiece_begin, todo: use proper data */
+      and l.data_id = 'spotted'           /* workpiece_begin, todo: use proper data */
   ), 
   workpiece_end as (
     select l.timestamp, l.sequence
@@ -25,7 +25,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id='program_end'           /* workpiece_end, todo: use proper data */
+      and l.data_id in ('place_good_out', 'place_bad_out')           /* workpiece_end, todo: use proper data */
   ),
   workpiece_id as (
     select l.value_text as "id", l.timestamp, l.sequence

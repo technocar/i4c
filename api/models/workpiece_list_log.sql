@@ -13,7 +13,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id = 'pgm'           /* workpiece_begin, todo: use proper data */
+      and l.data_id = 'spotted'           /* workpiece_begin, todo: use proper data */
   ), 
   workpiece_end as (
     select l.timestamp, l.sequence
