@@ -170,7 +170,7 @@ export class DashboardComponent implements OnInit {
           if (!this.isAutoMode)
             this.isAutoMode = true;
           else
-            this.device = undefined;
+            this._device = null;
         }
         this.isDataLoaded = true;
       });
@@ -216,6 +216,8 @@ export class DashboardComponent implements OnInit {
 
   back() {
     this.setTimestamp(this.timestamp - this.backwardTime * 1000);
+    if (this._stopped)
+      this.getData();
   }
 
   selectNavButton(node: HTMLElement) {
@@ -243,10 +245,14 @@ export class DashboardComponent implements OnInit {
 
   forward() {
     this.setTimestamp(this.timestamp + this.forwardTime * 1000);
+    if (this._stopped)
+      this.getData();
   }
 
   now() {
     this.setTimestamp(this.getCurrentDate());
+    if (this._stopped)
+      this.getData();
   }
 
   getMeta(item: ListItem): Meta {
