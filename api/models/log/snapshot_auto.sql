@@ -8,7 +8,7 @@ with
     select * from (
       select
         l.device, l.timestamp, l."sequence"
-      from public.log l
+      from log l
       cross join params p
       where 
          l.timestamp <= p.ts
@@ -24,15 +24,11 @@ with
     select * from (
       select
         l.device, l.timestamp, l."sequence"
-      from public.meta m
+      from log l 
       cross join params p
-      join public.log l 
-          on l.device = m.device
-             and l.data_id = m.data_id
       where 
         l.timestamp <= p.ts
         and l.device in ('robot', 'gom')
-        and m.category = 'EVENT'
       order by l.timestamp desc, l."sequence" desc
       limit 1
     )a
@@ -42,7 +38,7 @@ with
     select * from (
       select
         'gom' as device, l.timestamp, l."sequence"
-      from public.log l
+      from log l
       cross join params p
       where 
          l.timestamp <= p.ts
