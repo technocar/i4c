@@ -56,7 +56,6 @@ class ProjectIn(I4cBaseModel):
 
 
 class GitFile(I4cBaseModel):
-    # todo: see c:\Users\gygyor\PycharmProjects\_TutorialFun\git_test\main.py
     repo: str
     name: str
     commit: str

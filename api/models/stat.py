@@ -1243,7 +1243,6 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     elif st.xydef.obj.type == StatXYObjectType.tool:
         sql = stat_xy_tool_sql
     else:
-        # todo 1: **********
         raise Exception("Not implemented")
     write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
     db_objs = await conn.fetch(sql, before, after)
@@ -1258,7 +1257,6 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
             elif st.xydef.obj.type == StatXYObjectType.workpiece:
                 return await get_detail_field_workpiece(dbo, field_name)
             else:
-                # todo 1: **********
                 raise Exception("Invalid field name: " + field_name)
 
     async def get_detail_field_mazak(dbo, field_name):
