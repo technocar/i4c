@@ -2,7 +2,7 @@ with
   p as (select 
           $1::varchar(200) -- */ 'A7080'::varchar(200)
               as project, 
-          coalesce($2::varchar(200)) -- */ 'active'::varchar(200)
+          coalesce($2::varchar(200)[]) -- */ array['active', 'closed']::varchar(200)[]
               as "status"
   ),
   workpiece_id as (
@@ -42,5 +42,7 @@ select
   b.status,
   bm.last
 from batch b
+cross join p
 left join batch_max bm on bm.id = b.id
+where p."status" is null or (b."status" = any(p."status"))
 order by bm.last desc

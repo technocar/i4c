@@ -13,7 +13,7 @@ router = I4cApiRouter(include_path="/batch")
 async def batch_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/batch")),
         project: Optional[str] = Query(None),
-        status: Optional[models.batch.BatchStatus] = Query(None)):
+        status: Optional[List[models.batch.BatchStatus]] = Query(None)):
     return await models.batch.batch_list(credentials, project, status)
 
 
