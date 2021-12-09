@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Query
+from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.batch
@@ -13,5 +13,15 @@ router = I4cApiRouter(include_path="/batch")
 async def batch_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/batch")),
         project: Optional[str] = Query(None),
-        after: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z")):
-    return await models.batch.batch_list(credentials, project, after)
+        status: Optional[models.batch.BatchStatus] = Query(None)):
+    return await models.batch.batch_list(credentials, project, status)
+
+
+@router.put("/{id}", response_model=models.batch.Batch, x_properties=dict(object="alarm", action="set"))
+async def alarmdef_put(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("put/batch/{id}")),
+    id: str = Path(...),
+    batch: models.batch.BatchIn = Body(...),
+):
+    """Create or update batch definition."""
+    return await models.batch.batch_put(credentials, id, batch)

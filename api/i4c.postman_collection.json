@@ -227,6 +227,36 @@
 					"response": []
 				},
 				{
+					"name": "log snapshot 2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/log/snapshot?ts=2021-08-24T09:56:00.957Z&device=lathe",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"snapshot"
+							],
+							"query": [
+								{
+									"key": "ts",
+									"value": "2021-08-24T09:56:00.957Z"
+								},
+								{
+									"key": "device",
+									"value": "lathe"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "log snapshot auto",
 					"request": {
 						"method": "GET",
@@ -556,7 +586,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:5000/installations/15/file1",
+							"raw": "http://127.0.0.1:5000/installations/8/robot/A7080",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -567,8 +597,9 @@
 							"port": "5000",
 							"path": [
 								"installations",
-								"15",
-								"file1"
+								"8",
+								"robot",
+								"A7080"
 							]
 						}
 					},
@@ -1131,6 +1162,34 @@
 									"value": "proj1",
 									"disabled": true
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "batch put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"batch\": \"test\",\r\n    \"client\": null,\r\n    \"project\": \"A7080\",\r\n    \"target_count\": null,\r\n    \"status\": \"active\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/batch/b2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"batch",
+								"b2"
 							]
 						}
 					},
@@ -1700,7 +1759,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": {\r\n            \"obj\": {\r\n                \"type\": \"mazaksubprogram\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"x\": \"avg_x_load\",\r\n            \"y\": \"avg_y_load\",\r\n            \"shape\": null,\r\n            \"color\": null,\r\n            \"other\": [\"avg_y_load\"],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n            }\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": {\r\n            \"obj\": {\r\n                \"type\": \"tool\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"x\": \"id\",\r\n            \"y\": \"count used\",\r\n            \"shape\": null,\r\n            \"color\": null,\r\n            \"other\": [\"accumulated cutting time\"],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n            }\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

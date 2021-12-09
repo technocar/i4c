@@ -39,6 +39,7 @@ insert into role_grant values ('aaa', 'delete/tools', array[]::varchar[]);
 insert into role_grant values ('aaa', 'patch/tools/{tool_id}', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/batch', array[]::varchar[]);
+insert into role_grant values ('aaa', 'put/batch/{id}', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/alarm/defs/{name}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'put/alarm/defs/{name}', array[]::varchar[]);

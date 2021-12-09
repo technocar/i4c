@@ -1,20 +1,48 @@
 from datetime import datetime
+from textwrap import dedent
+from typing import Optional
+
 from common import I4cBaseModel, DatabaseConnection
+from enum import Enum
 
 
-class ListItem(I4cBaseModel):
+class BatchStatus(str, Enum):
+    planned = "planned"
+    active = "active"
+    closed = "closed"
+    deleted = "deleted"
+
+
+class BatchIn(I4cBaseModel):
+    client: Optional[str]
+    project: str
+    target_count: Optional[int]
+    status: BatchStatus
+
+
+class Batch(BatchIn):
     batch: str
-    last: datetime
+
+
+class ListItem(Batch):
+    last: Optional[datetime]
 
 
 batch_list_sql = open("models\\batch_list.sql").read()
-batch_list_noproject_sql = open("models\\batch_list_noproject.sql").read()
 
 
-async def batch_list(credentials, project, after, *, pconn=None):
+async def batch_list(credentials, project, status, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
-        if project is None:
-            res = await conn.fetch(batch_list_noproject_sql, after)
-        else:
-            res = await conn.fetch(batch_list_sql, project, after)
-        return res
+        return await conn.fetch(batch_list_sql, project, status)
+
+
+async def batch_put(credentials, id, batch, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            batch_exists = await conn.fetchrow("select from batch where id = $1", id)
+            if batch_exists is None:
+                sql = "insert into batch (id, client, project, target_count, \"status\") values ($1, $2, $3, $4, $5)"
+            else:
+                sql = "update batch set client = $2, project = $3, target_count = $4, \"status\" = $5 where id = $1"
+            await conn.execute(sql, id, batch.client, batch.project, batch.target_count, batch.status)
+            return Batch(batch=id, **batch.__dict__)
