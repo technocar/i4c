@@ -11,8 +11,8 @@ with
     cross join p
     where
       l.timestamp >= p.after
-      and l.device = 'lathe'
-      and l.data_id='cf'           /* workpiece_begin, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id = 'spotted'           /* workpiece_begin, todo: use proper data */  
   ), 
   workpiece_end as (
     select l.timestamp, l.sequence
@@ -20,8 +20,8 @@ with
     cross join p
     where
       l.timestamp >= p.after
-      and l.device = 'lathe'
-      and l.data_id='ct'           /* workpiece_end, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id in ('place_good_out', 'place_bad_out')   /* workpiece_end, todo: use proper data */  
   ),
   workpiece_id as (
     select l.value_text as "id", wp.batch, l.timestamp, l.sequence
@@ -30,8 +30,8 @@ with
     join workpiece wp on wp.id = l.value_text
     where
       l.timestamp >= p.after
-      and l.device = 'lathe'
-      and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id = 'wkpcid'           /* workpiece_id, todo: use proper data */  
       and wp.batch is not null
   ),
   workpiece_project as (
