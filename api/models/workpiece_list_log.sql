@@ -45,16 +45,36 @@ with
       and l.device = 'gom'
       and l.data_id='eval'           /* workpiece_status, todo: use proper data */
   ),
-  workpiece_project as (
-    select l.value_text as "project", l.timestamp, l.sequence
+  map_project_version as (
+    select
+      f.savepath,
+      i.timestamp, 
+      i.project, 
+      i.real_version as version
+    from installation_file f
+    join installation i on i.id = f.installation  
+  ),
+  robot_program as (
+    select l.value_text as "program", l.timestamp, l.sequence
     from log l
     cross join p
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'robot'
-      and l.data_id='program_start'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
-                                                 itt a robot programjanak a nevebol kell majd kikeresni, hogy az melyik project-nek a resze  */
+      and l.device='robot'
+      and l.data_id='pgm'
+  ),
+  workpiece_project as (
+    select mpv."project", mpv.version, r.timestamp, r.sequence
+    from robot_program r
+    join lateral (select 
+                    m.*,
+                    rank() over (order by m.timestamp desc) r
+                  from map_project_version m
+                  where 
+                    m.timestamp <= r.timestamp
+                 ) mpv on mpv.savepath = 'robot/'||r."program"   /* todo: use proper path */
+                          and mpv.r = 1
   ),
   discover_log as (
     select 

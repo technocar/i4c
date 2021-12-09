@@ -34,16 +34,6 @@ with
       and l.data_id = 'wkpcid'           /* workpiece_id, todo: use proper data */  
       and wp.batch is not null
   ),
-  workpiece_project as (
-    select l.value_text as "project", l.timestamp, l.sequence
-    from log l
-    cross join p
-    where
-      l.timestamp >= p.after
-      and l.device = 'lathe'
-      and l.data_id='spgm'           /* workpiece_project , todo: use proper data, de ez bonyolultabb lesz:
-                                        itt a robot programjának a nevébõl kell majd kikeresni, hogy az melyik project-nek a része */
-  ),
   discover_log as (
     select
       case when we.timestamp is null or we.timestamp>wid.timestamp or (we.timestamp=wid.timestamp and we.sequence>wid.sequence) then wid.id end as id,
@@ -74,18 +64,6 @@ with
           or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
       ) a
       where a.r = 1) we on True
-    left join lateral (
-      select * from (
-        select 
-          w.*,
-          rank() over (order by w.timestamp desc, w.sequence desc) r
-        from workpiece_project as w
-        where 
-          we.timestamp is null
-          or w.timestamp < we.timestamp
-          or (w.timestamp = we.timestamp and w.sequence <= we.sequence)    
-      ) a
-      where a.r = 1) wpr on p.project is null or wpr.project = p.project
   ),
   res as (
     select 
