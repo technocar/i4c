@@ -7,12 +7,14 @@ from typing import List, Dict
 
 
 class Param:
-    name: str
     title: str
     description: str
     location: str # path | query
     is_array: bool
     required: bool
+    type: str
+    type_extra
+    sch_obj: str
 
 
 class Action:
@@ -165,14 +167,17 @@ def _proc_auth(a):
 
 def _proc_sch(sch): # TODO try remove self
     title = sch.get("title", None)
-    # TODO not very good this is
-    # $ref can appear at various points, array items, top level
-    # title can be in inherited parts, but apparently top is stronger
-    # we might need some deep auto-follow and merge non-override
-    # keep the "object" type to indicate a documentation link
-    # but embed the enumeration types
+    datatype = sch.get("type", "unknown")
+    isarray = datatype == "array"
+    if isarray:
+        typeroot = sch.get("items", {})
+        datatype = typeroot.get("type", "unknown")
+    else:
+        typeroot = sch
+    typename = typeroot.get("$ref", None)
+    typeextra = typeroot.get("format", None) or typeroot.get("enum", None)
 
-    return title, False, "unknown", None
+    return title, isarray, datatype, typeextra, typename
 
 
 def preproc_def(apidef):
@@ -254,18 +259,20 @@ class I4CDef:
                 action.params = {}
                 for p in info.get("parameters", []):
                     par = Param()
-                    par.name = p["name"]
                     par.location = p["in"]
                     par.description = p.get("description", None)
                     par.required = p.get("required", False)
                     sch = p.get("schema", None)
                     if sch:
-                        (par.title, par.is_array, par.type, par.sch_obj) = _proc_sch(p)
+                        (par.title, par.is_array, par.type, par.type_extra, par.sch_obj) = _proc_sch(sch)
                     else:
                         par.title = None
                         par.is_array = False
                         par.type = "unknown"
+                        par.type_extra = None
                         par.sch_obj = None
+                    action.params[p["name"]] = par
+                    # TODO fix bug: datapoint.list reports no type for parameter device
 
                 # TODO fill in body, response
 
