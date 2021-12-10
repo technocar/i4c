@@ -13,27 +13,8 @@ import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/mod
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
-import { Labels } from 'src/app/services/models/constants';
 
 Chart.register(...registerables);
-
-class HSLAColor {
-  hue: number;
-  saturation: number;
-  lightness: number;
-  alpha: number;
-
-  constructor(hue: number, saturation: number, lightess: number, alpha: number) {
-    this.hue = hue;
-    this.saturation = saturation;
-    this.lightness = lightess;
-    this.alpha = alpha;
-  }
-
-  public toString(): string {
-    return `hsla(${Math.round(this.hue)}, ${Math.round(this.saturation * 100)}%, ${Math.round(this.lightness * 100) }%, ${this.alpha})`;
-  }
-}
 
 @Component({
   selector: 'app-analysis',
@@ -157,192 +138,34 @@ export class AnalysisComponent implements OnInit {
       return;
     }
 
-    if (result.timeseriesdata)
-      this.buildTimeSeriesChart(result);
-    else
-      this.buildXYChart(result);
-  }
-
-  buildXYChart(result: StatData) {
-    var ctx = this.chart.nativeElement.getContext('2d');
-
-    if (!result?.xydata || result.xydata.length === 0) {
-      this.showChartError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
-      return;
-    }
-
-    var shapes = ['circle', 'triangle', 'rect', 'star', 'cross'];
-    var shapeFieldValues = this.xyDef.getFieldValues(result.stat_def.xydef.shape);
-    var colors = ['#CC2936', '#3B8E83', '#273E47', '#BD632F', '#00A3FF', '#08415C', '#273E47', '#D8973C', '#388697'];
-    var colorFieldValues = this.xyDef.getFieldValues(result.stat_def.xydef.color);
-    var series: string[][] = [];
-    result.xydata.map((v) => {
-      var color = (v.color ?? "").toString();
-      var shape = (v.shape ?? "").toString()
-      if (!series.find((s) => s[0] === color && s[1] === shape))
-        series.push([color, shape]);
-    });
-
     try {
-      var options: ChartConfiguration = {
-        type: 'bubble',
-        data: {
-          datasets: series.map((series, seriesIndex) => {
-            console.log(seriesIndex);
-            return {
-              label: series.join(' '),
-              data: result.xydata.filter((d) => series[0] === (d.color ?? "").toString() && series[1] === (d.shape ?? "").toString())
-                .map((d) => {
-                return {
-                  x: d.x,
-                  y: d.y,
-                  r: 10
-                }
-              }),
-              pointStyle: shapes[shapes.length % (shapeFieldValues.indexOf(series[1]) + 1)],
-              backgroundColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)] + "80",
-              borderColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)]
-          }})
-        },
-        options: {
-          plugins: {
-            title: this.setChartTitle(this.def.xydef.visualsettings?.title),
-            subtitle: this.setChartTitle(this.def.xydef.visualsettings?.subtitle),
-            legend: {
-              display:  true,
-              align: this.def.xydef.visualsettings?.legend?.align ?? 'center',
-              position: this.def.xydef.visualsettings?.legend?.position ?? 'top',
-              labels: {
-                usePointStyle: true
-              }
-            }
-          },
-          scales: {
-            y: {
-              title: this.setChartTitle(this.def.xydef.visualsettings?.yaxis?.caption)
-            },
-            x: {
-              title: this.setChartTitle(this.def.xydef.visualsettings?.xaxis?.caption)
-            }
-          }
-        }
-      };
+      let ctx = this.chart.nativeElement.getContext('2d');
+      let options: ChartConfiguration;
+      if (result.timeseriesdata)
+        options = this.buildTimeSeriesChart(result);
+      else
+        options = this.buildXYChart(result);
+
+      this._chartInstance = new Chart(ctx, options);
     }
     catch(err) {
       this.showChartError(err);
     }
-
-    this._chartInstance = new Chart(ctx, options);
-  }
-  buildTimeSeriesChart(result: StatData) {
-    var ctx = this.chart.nativeElement.getContext('2d');
-
-    if (!result?.timeseriesdata
-      || result.timeseriesdata.length === 0) {
-      this.showChartError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
-      return;
-    }
-
-    var startColor: HSLAColor = new HSLAColor(240, 0.17, 0.76, 1);
-    var endColor: HSLAColor = new HSLAColor(240, 0.82, 0.11 , 1);
-    var datePipe = new DatePipe('en-US');
-    var relativeChart = result.timeseriesdata.length > 1;
-    var xaxisPropName = "x_" + (!relativeChart ? "timestamp" : "relative");
-    var xyChart = !(this.def.timeseriesdef.xaxis === 'sequence');
-
-    try {
-      var options: ChartConfiguration = {
-        type: 'line',
-        data: {
-          datasets: result.timeseriesdata.map((series, seriesIndex, seriesList) => {
-            console.log(seriesIndex);
-            return  {
-              label: seriesList.length === 1 ? "" : series.name,
-              data: series.y.map((value, i) => {
-                let xValue = series[xaxisPropName];
-                return {
-                  x: (xValue ?? null) === null ? i.toString() : (relativeChart ? xValue[i] * 1000.00 : xValue[i]),
-                  y: value
-                }
-              }),
-              backgroundColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
-              borderColor: this.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
-              borderWidth: 2,
-              fill: false
-          }})
-        },
-        options: {
-          elements: {
-            point: {
-              radius: 0
-            }
-          },
-          plugins: {
-            title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.title),
-            subtitle: this.setChartTitle(this.def.timeseriesdef.visualsettings?.subtitle),
-            legend: {
-              display:  result.timeseriesdata.length > 1,
-              align: this.def.timeseriesdef.visualsettings?.legend?.align ?? 'center',
-              position: this.def.timeseriesdef.visualsettings?.legend?.position ?? 'right'
-            }
-          },
-          scales: {
-            y: {
-              title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.yaxis?.caption)
-            },
-            x: {
-              type: xyChart ? 'time' : 'linear',
-              title: this.setChartTitle(this.def.timeseriesdef.visualsettings?.xaxis?.caption),
-              time: {
-                displayFormats: {
-                    hour: 'H:mm',
-                    millisecond: 's.SSS',
-                    second: 's.SSS',
-                    minute: 'm:ss',
-                    day: relativeChart ? 'd' : 'MMM d'
-                },
-                tooltipFormat: relativeChart ? 's.SSS' : 'yyyy.MM.dd HH:mm:ss',
-                minUnit: 'millisecond'
-              },
-              grid: {
-                display: xyChart
-              },
-              ticks: {
-                display: xyChart,
-                font: (ctx, options) => {
-                  var font: FontSpec = {
-                    family: undefined,
-                    lineHeight: undefined,
-                    size: undefined,
-                    style: undefined,
-                    weight: undefined
-                  };
-                  if (ctx.tick?.major)
-                    font.weight = 'bold';
-                  return font;
-                },
-                major: {
-                  enabled: true
-                }
-              },
-              bounds: 'ticks'
-            }
-          }
-        }
-      };
-    }
-    catch(err) {
-      this.showChartError(err);
-    }
-
-    this._chartInstance = new Chart(ctx, options);
   }
 
-  setChartTitle(title: string): _DeepPartialObject<TitleOptions> {
-    return {
-      display: (title ?? "") !== "",
-      text: title
-    };
+  buildXYChart(result: StatData): ChartConfiguration {
+
+    if (!result?.xydata || result.xydata.length === 0)
+      throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+
+    return this.xyDef.getChartConfiguration(result);
+
+  }
+  buildTimeSeriesChart(result: StatData): ChartConfiguration {
+    if (!result?.timeseriesdata || result.timeseriesdata.length === 0)
+      throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+
+    return this.timeseriesDef.getChartConfiguration(result);
   }
 
   save(): Observable<boolean> {
@@ -390,22 +213,6 @@ export class AnalysisComponent implements OnInit {
         alert(this.apiService.getErrorMsg(err));
       }
     );
-  }
-
-  getChartSeriesColor(index: number, count: number, firstColor: HSLAColor, lastColor: HSLAColor, alpha: number): HSLAColor {
-    var hsl2hsv = (h,s,l,v=s*Math.min(l,1-l)+l) => [h, v?2-2*l/v:0, v];
-    let hsv2hsl = (h,s,v,l=v-v*s/2, m=Math.min(l,1-l)) => [h,m?(v-l)/m:0,l];
-    var hsvA = hsl2hsv(firstColor.hue, firstColor.saturation, firstColor.lightness);
-    var hsvB = hsl2hsv(lastColor.hue, lastColor.saturation, lastColor.lightness);
-    var hsvColor = [
-      hsvA[0] * (count - (index + 1)) / count + hsvB[0] * (index + 1) / count,
-      hsvA[1] * (count - (index + 1)) / count + hsvB[1] * (index + 1) / count,
-      hsvA[2] * (count - (index + 1)) / count + hsvB[2] * (index + 1) / count
-    ];
-    var hslColor = hsv2hsl(hsvColor[0], hsvColor[1], hsvColor[2]);
-    var color = new HSLAColor(hslColor[0], hslColor[1], hslColor[2], alpha);
-    console.log(color.toString());
-    return color;
   }
 
   showChartError(message: string) {

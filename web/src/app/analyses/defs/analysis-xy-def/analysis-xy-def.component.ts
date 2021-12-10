@@ -1,9 +1,11 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
+import { StatData, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
-import { AanalysisDef } from '../../analyses.component';
+import { AnalysisChart, AnalysisDef } from '../../analyses.component';
+import { AnalysisHelpers } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
 interface Filter extends StatXYFilter {
@@ -15,7 +17,7 @@ interface Filter extends StatXYFilter {
   templateUrl: './analysis-xy-def.component.html',
   styleUrls: ['./analysis-xy-def.component.scss']
 })
-export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
+export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChart {
 
   @Input("def") def: StatXYDef;
   @Input("xymeta") xymeta: StatXYMeta;
@@ -161,5 +163,63 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
       return field.value_list ?? [];
     else
       return [];
+  }
+
+  getChartConfiguration(data: StatData): ChartConfiguration {
+    var shapes = ['circle', 'triangle', 'rect', 'star', 'cross'];
+    var shapeFieldValues = this.getFieldValues(data.stat_def.xydef.shape);
+    var colors = ['#CC2936', '#3B8E83', '#273E47', '#BD632F', '#00A3FF', '#08415C', '#273E47', '#D8973C', '#388697'];
+    var colorFieldValues = this.getFieldValues(data.stat_def.xydef.color);
+    var series: string[][] = [];
+    data.xydata.map((v) => {
+      var color = (v.color ?? "").toString();
+      var shape = (v.shape ?? "").toString()
+      if (!series.find((s) => s[0] === color && s[1] === shape))
+        series.push([color, shape]);
+    });
+
+    return {
+      type: 'bubble',
+      data: {
+        datasets: series.map((series, seriesIndex) => {
+          console.log(seriesIndex);
+          return {
+            label: series.join(' '),
+            data: data.xydata.filter((d) => series[0] === (d.color ?? "").toString() && series[1] === (d.shape ?? "").toString())
+              .map((d) => {
+              return {
+                x: d.x,
+                y: d.y,
+                r: 10
+              }
+            }),
+            pointStyle: shapes[shapes.length % (shapeFieldValues.indexOf(series[1]) + 1)],
+            backgroundColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)] + "80",
+            borderColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)]
+        }})
+      },
+      options: {
+        plugins: {
+          title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.title),
+          subtitle: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.subtitle),
+          legend: {
+            display:  true,
+            align: data.stat_def.xydef.visualsettings?.legend?.align ?? 'center',
+            position: data.stat_def.xydef.visualsettings?.legend?.position ?? 'top',
+            labels: {
+              usePointStyle: true
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.yaxis?.caption)
+          },
+          x: {
+            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.xaxis?.caption)
+          }
+        }
+      }
+    };
   }
 }

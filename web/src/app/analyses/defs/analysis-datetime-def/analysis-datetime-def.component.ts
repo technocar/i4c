@@ -1,13 +1,13 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { StatDateTimeDef } from 'src/app/services/models/api';
-import { AanalysisDef } from '../../analyses.component';
+import { AnalysisDef } from '../../analyses.component';
 
 @Component({
   selector: 'app-analysis-datetime-def',
   templateUrl: './analysis-datetime-def.component.html',
   styleUrls: ['./analysis-datetime-def.component.scss']
 })
-export class AnalysisDatetimeDefComponent implements OnInit, AanalysisDef {
+export class AnalysisDatetimeDefComponent implements OnInit, AnalysisDef {
 
   private _timestamp: string;
 
