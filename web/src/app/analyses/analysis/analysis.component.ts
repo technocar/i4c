@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { Chart, ChartConfiguration, FontSpec, registerables, TitleOptions  } from 'chart.js';
+import { Chart, ChartConfiguration, FontSpec, Legend, registerables, TitleOptions  } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { _DeepPartialObject } from 'chart.js/types/utils';
 import { BehaviorSubject, Observable, of } from 'rxjs';
@@ -13,6 +13,7 @@ import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/mod
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
+import { Labels } from 'src/app/services/models/constants';
 
 Chart.register(...registerables);
 
@@ -151,6 +152,89 @@ export class AnalysisComponent implements OnInit {
   }
 
   buildChart(result: StatData) {
+    if (!result) {
+      this.showChartError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+      return;
+    }
+
+    if (result.timeseriesdata)
+      this.buildTimeSeriesChart(result);
+    else
+      this.buildXYChart(result);
+  }
+
+  buildXYChart(result: StatData) {
+    var ctx = this.chart.nativeElement.getContext('2d');
+
+    if (!result?.xydata || result.xydata.length === 0) {
+      this.showChartError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+      return;
+    }
+
+    var shapes = ['circle', 'triangle', 'rect', 'star', 'cross'];
+    var shapeFieldValues = this.xyDef.getFieldValues(result.stat_def.xydef.shape);
+    var colors = ['#CC2936', '#3B8E83', '#273E47', '#BD632F', '#00A3FF', '#08415C', '#273E47', '#D8973C', '#388697'];
+    var colorFieldValues = this.xyDef.getFieldValues(result.stat_def.xydef.color);
+    var series: string[][] = [];
+    result.xydata.map((v) => {
+      var color = (v.color ?? "").toString();
+      var shape = (v.shape ?? "").toString()
+      if (!series.find((s) => s[0] === color && s[1] === shape))
+        series.push([color, shape]);
+    });
+
+    try {
+      var options: ChartConfiguration = {
+        type: 'bubble',
+        data: {
+          datasets: series.map((series, seriesIndex) => {
+            console.log(seriesIndex);
+            return {
+              label: series.join(' '),
+              data: result.xydata.filter((d) => series[0] === (d.color ?? "").toString() && series[1] === (d.shape ?? "").toString())
+                .map((d) => {
+                return {
+                  x: d.x,
+                  y: d.y,
+                  r: 10
+                }
+              }),
+              pointStyle: shapes[shapes.length % (shapeFieldValues.indexOf(series[1]) + 1)],
+              backgroundColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)] + "80",
+              borderColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)]
+          }})
+        },
+        options: {
+          plugins: {
+            title: this.setChartTitle(this.def.xydef.visualsettings?.title),
+            subtitle: this.setChartTitle(this.def.xydef.visualsettings?.subtitle),
+            legend: {
+              display:  true,
+              align: this.def.xydef.visualsettings?.legend?.align ?? 'center',
+              position: this.def.xydef.visualsettings?.legend?.position ?? 'top',
+              labels: {
+                usePointStyle: true
+              }
+            }
+          },
+          scales: {
+            y: {
+              title: this.setChartTitle(this.def.xydef.visualsettings?.yaxis?.caption)
+            },
+            x: {
+              title: this.setChartTitle(this.def.xydef.visualsettings?.xaxis?.caption)
+            }
+          }
+        }
+      };
+    }
+    catch(err) {
+      this.showChartError(err);
+    }
+
+    this._chartInstance = new Chart(ctx, options);
+  }
+  buildTimeSeriesChart(result: StatData) {
     var ctx = this.chart.nativeElement.getContext('2d');
 
     if (!result?.timeseriesdata
@@ -198,8 +282,8 @@ export class AnalysisComponent implements OnInit {
             subtitle: this.setChartTitle(this.def.timeseriesdef.visualsettings?.subtitle),
             legend: {
               display:  result.timeseriesdata.length > 1,
-              align: this.def.timeseriesdef.visualsettings?.legend?.align,
-              position: this.def.timeseriesdef.visualsettings?.legend?.position
+              align: this.def.timeseriesdef.visualsettings?.legend?.align ?? 'center',
+              position: this.def.timeseriesdef.visualsettings?.legend?.position ?? 'right'
             }
           },
           scales: {
