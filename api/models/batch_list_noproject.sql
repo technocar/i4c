@@ -10,8 +10,8 @@ with
     join workpiece wp on wp.id = l.value_text
     where
       l.timestamp >= p.after
-      and l.device = 'lathe'
-      and l.data_id='coolhealth'           /* workpiece_id, todo: use proper data */  
+      and l.device = 'robot'
+      and l.data_id='wkpcid'           /* workpiece_id, todo: use proper data */  
       and wp.batch is not null
   )
 select 
