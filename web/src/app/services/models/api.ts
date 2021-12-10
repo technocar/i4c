@@ -383,8 +383,8 @@ export interface StatDataTimeSeries {
 }
 
 export interface StatDataXY {
-  x: number,
-  y: number,
+  x: number | string,
+  y: number | string,
   shape: string | number,
   color: string | number,
   others: any[]

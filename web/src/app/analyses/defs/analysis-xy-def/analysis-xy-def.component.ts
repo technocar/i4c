@@ -178,6 +178,15 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
         series.push([color, shape]);
     });
 
+    var xIsCategory = data.xydata.find((v) => typeof v.x === "string") ? true : false;
+    var yIsCategory = data.xydata.find((v) => typeof v.y === "string") ? true : false;
+    var xLabels = [];
+    var yLabels = [];
+    if (xIsCategory)
+      xLabels = data.xydata.map((v) => v.x).filter((v, index, self) => self.indexOf(v) === index);
+    if (yIsCategory)
+      yLabels = data.xydata.map((v) => v.y).filter((v, index, self) => self.indexOf(v) === index);
+
     return {
       type: 'bubble',
       data: {
@@ -188,8 +197,8 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
             data: data.xydata.filter((d) => series[0] === (d.color ?? "").toString() && series[1] === (d.shape ?? "").toString())
               .map((d) => {
               return {
-                x: d.x,
-                y: d.y,
+                x: xIsCategory ? xLabels.indexOf(d.x) : <number>d.x,
+                y: yIsCategory ? yLabels.indexOf(d.y) : <number>d.y,
                 r: 10
               }
             }),
@@ -213,10 +222,20 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
         },
         scales: {
           y: {
-            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.yaxis?.caption)
+            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.yaxis?.caption),
+            ticks: {
+              callback: function(value, index, values) {
+                  return yIsCategory ? yLabels[value] : value;
+              }
+            }
           },
           x: {
-            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.xaxis?.caption)
+            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.xaxis?.caption),
+            ticks: {
+              callback: function(value, index, values) {
+                  return xIsCategory ? xLabels[value] : value;
+              }
+            }
           }
         }
       }
