@@ -10,6 +10,7 @@ from pydantic import Field
 from datetime import datetime
 from models import ProjectVersionStatusEnum, InstallationStatusEnum, ProjectStatusEnum
 from models.common import PatchResponse
+from models.intfiles import get_internal_file_name
 
 
 class Installation(I4cBaseModel):
@@ -220,29 +221,75 @@ async def patch_installation(credentials, id, patch: InstallationPatchBody):
             return PatchResponse(changed=True)
 
 
+def get_git_file_content(repo, name, commit):
+    def clone_repo(source_repo, target_folder, refspec, *, fetch_original=True):
+        """
+        :param source_repo: path to a bare or normal repo or url
+        :param target_folder: empty folder to clone whole repo
+        :param refspec: commit, branch, or tag
+        :param fetch_original: if we should fetch on the source repo
+        :return: None
+        """
+        if fetch_original:
+            repo = git.Repo(source_repo)
+            for origin in repo.remotes:
+                origin.fetch(refspec)
+
+        cloned_repo = git.Repo.clone_from(source_repo, target_folder, no_checkout=True)
+        cloned_repo.git.checkout(refspec)
+
+    import tempfile
+    import git
+    import os
+    # todo 5: this clones the whole repo for each file, then deletes it. Maybe repos can be stored for longer.
+    with tempfile.TemporaryDirectory() as t:  # creates a temp dir and deletes it afterward
+        fetch_original = not repo.startswith("ssh://")
+        clone_repo(repo, t, commit, fetch_original=fetch_original)
+        with open(os.sep.join([t, name]), mode='rb') as file:
+            return io.BytesIO(file.read())
+
+
 async def installation_get_file(credentials, id, savepath, *, pconn=None):
     sql = dedent("""\
-            select pf.* 
+            select 
+              pf.file_git,
+              pf.file_unc,
+              pf.file_int,
+              
+              git.repo git_repo,
+              git."name" git_name,
+              git.commit git_commit,
+              
+              unc."name" unc_name,
+              
+              int."name" int_name,
+              int.ver int_ver,
+              int.content_hash int_content_hash                          
             from installation i
             join installation_file f on f.installation = i.id
             join project_version pv on pv.project = i.project and pv.ver = i.real_version
             join project_file pf on pf.project_ver = pv.id and pf.savepath = f.savepath
+            left join file_git git on git.id = pf.file_git
+            left join file_unc unc on unc.id = pf.file_unc
+            left join file_int int on int.id = pf.file_int
             where 
               i.id = $1 -- */ 8
               and f.savepath = $2 -- */ 'file1'
           """)
     async with DatabaseConnection(pconn) as conn:
-        pf = await conn.fetch(sql, id, savepath)
-        if len(pf) == 0:
+        pf = await conn.fetchrow(sql, id, savepath)
+        if not pf:
             raise HTTPException(status_code=400, detail="Installation file not found")
-        pf = pf[0]
-
-        # todo: get real file data
-        #        FileResponse
-        #        StreamingResponse
-
-        x = 'sfjkgsdkf'
-        return StreamingResponse(io.BytesIO(str.encode(x)), media_type="application/octet-stream",
-                                 headers={"content-disposition": 'attachment; filename="aaa.txt"'})
-
-        # return FileResponse("api.py", media_type="application/octet-stream", filename='aaa.txt')
+        if pf["file_unc"] is not None:
+            return FileResponse(pf["unc_name"],
+                                filename=savepath,
+                                media_type="application/octet-stream")
+        if pf["file_int"] is not None:
+            return FileResponse(get_internal_file_name(pf["int_content_hash"]),
+                                filename=savepath,
+                                media_type="application/octet-stream")
+        if pf["file_git"] is not None:
+            return StreamingResponse(get_git_file_content(pf["git_repo"], pf["git_name"], pf["git_commit"]),
+                              media_type="application/octet-stream",
+                              headers={"content-disposition": f'attachment; filename="{savepath}"'})
+        raise HTTPException(status_code=404, detail="No file found")

@@ -79,6 +79,7 @@ class Snapshot(I4cBaseModel):
 
 
 view_snapshot_sql = open("models\\log\\snapshot.sql").read()
+view_snapshot_fitered_events_sql = open("models\\log\\snapshot_fitered_events.sql").read()
 view_snapshot_events_sql = open("models\\log\\snapshot_events.sql").read()
 view_snapshot_auto_sql = open("models\\log\\snapshot_auto.sql").read()
 
@@ -91,7 +92,7 @@ async def get_mazak_snapshot(credentials, ts, device, *, pconn=None):
     try:
         async with DatabaseConnection(pconn) as conn:
             rs = await conn.fetch(view_snapshot_sql, device, ts)
-            rse = await conn.fetch(view_snapshot_events_sql, device, ts)
+            rse = await conn.fetch(view_snapshot_fitered_events_sql, device, ts)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")
@@ -173,10 +174,6 @@ async def get_snapshot(credentials, ts, device: DeviceAuto, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         if device == 'auto':
             active_device_order = []
-
-            rs = await conn.fetch(view_snapshot_auto_sql, ts)
-            for r in rs:
-                active_device_order.append((r['timestamp'], r['sequence'], r['device']))
 
             rs = await conn.fetch(view_snapshot_auto_sql, ts)
             for r in rs:

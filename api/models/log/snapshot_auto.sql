@@ -1,58 +1,55 @@
-with params as (
-  select 
-    $1::timestamp with time zone -- */ '2021-08-24 07:56:00.957133+02'::timestamp with time zone
-      as ts  
-)
+with 
+  params as (
+    select 
+      $1::timestamp with time zone -- */ '2021-08-26 05:40:33.212000+00:00'::timestamp with time zone
+        as ts  
+  ),
+  actv as (
+    select * from (
+      select
+        l.device, l.timestamp, l."sequence"
+      from log l
+      cross join params p
+      where 
+         l.timestamp <= p.ts
+         and l.data_id = 'exec'
+         and l.value_text = 'ACTIVE' 
+         and l.device in ('mill', 'lathe')
+      order by l.timestamp desc, l."sequence" desc
+      limit 1
+    )a
 
-select
-  m.device, l.timestamp, l."sequence"
-from public.meta m
-left join lateral (select * 
-       from public.log lf
-       where 
-         lf.timestamp <= (select ts from params)
-         and lf.device = m.device
-         and lf.data_id = m.data_id
-       order by lf.timestamp desc, lf."sequence" desc
-       limit 1
-      ) l on true
-where 
-  m.data_id = 'exec'
-  and l.value_text = 'ACTIVE'
-  and l.device in ('mill', 'lathe')
+    union all
 
-union all
+    select * from (
+      select
+        l.device, l.timestamp, l."sequence"
+      from log l 
+      cross join params p
+      where 
+        l.timestamp <= p.ts
+        and l.device in ('robot', 'gom')
+      order by l.timestamp desc, l."sequence" desc
+      limit 1
+    )a
 
-select * from (
-  select
-    l.device, l.timestamp, l."sequence"
-  from public.meta m
-  join public.log l 
-      on l.device = m.device
-         and l.data_id = m.data_id
-  where 
-    l.timestamp <= (select ts from params)
-    and l.device in ('robot', 'gom')
-    and m.category = 'EVENT'
-  order by l.timestamp desc, l."sequence" desc
-  limit 1
-)a
+    union all
 
-union all
-
-select
-  'gom' as device, l.timestamp, l."sequence"
-from public.meta m
-left join lateral (select * 
-       from public.log lf
-       where 
-         lf.timestamp <= (select ts from params)
-         and lf.device = m.device
-         and lf.data_id = m.data_id
-       order by lf.timestamp desc, lf."sequence" desc
-       limit 1
-      ) l on true
-where 
-  m.data_id = 'gom'
-  and l.value_text = 'STARTED'
-  and l.device in ('robot')
+    select * from (
+      select
+        'gom' as device, l.timestamp, l."sequence"
+      from log l
+      cross join params p
+      where 
+         l.timestamp <= p.ts
+         and l.data_id = 'gom'
+         and l.value_text = 'STARTED' 
+         and l.device = 'robot'
+      order by l.timestamp desc, l."sequence" desc
+      limit 1
+    )a
+  )
+select *
+from actv
+order by actv.timestamp desc, actv."sequence" desc
+limit 1
