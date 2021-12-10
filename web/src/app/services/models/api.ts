@@ -382,9 +382,18 @@ export interface StatDataTimeSeries {
   y: number[]
 }
 
+export interface StatDataXY {
+  x: number,
+  y: number,
+  shape: string | number,
+  color: string | number,
+  others: any[]
+}
+
 export interface StatData {
   stat_def: StatDef,
-  timeseriesdata: StatDataTimeSeries[]
+  timeseriesdata: StatDataTimeSeries[],
+  xydata: StatDataXY[]
 }
 
 export interface StatXYMeta {
@@ -404,34 +413,35 @@ export interface StatXYMetaObjectField {
   name: string,
   displayname: string,
   type: StatXYMetaObjectField,
-  value_list: string[]
+  value_list: string[],
+  unit: StatXYMetaObjectFieldUnit
 }
+
+export enum StatXYMetaObjectFieldUnit { Percent = 'percent', Second = 'second' }
+
+export enum StatXYMetaObjectParamType { Integer = 'int', Float = 'float', String = 'str', Datetime = 'datetime' }
 
 export interface StatXYMetaObjectParam {
   name: string,
-  type: number,
+  type: StatXYMetaObjectParamType,
   label: string
 }
 
 export interface StatXYDef extends StatDateTimeDef {
   obj: StatXYObject,
-  x: StatXYField,
-  y: StatXYField,
-  shape: StatXYField,
-  color: StatXYField,
+  x: string,
+  y: string,
+  shape: string,
+  color: string,
   other: StatXYOther[],
   filter: StatXYFilter[],
   visualsettings: StatVisualSettings
 }
 
-export enum StatXYObjectType { Workpiece = 'workpiece', MazakProgram = 'mazakprogram', Batch = 'batch', Tool = 'tool' }
+export enum StatXYObjectType { Workpiece = 'workpiece', MazakProgram = 'mazakprogram', MazakSubProgram = 'mazaksubprogram', Batch = 'batch', Tool = 'tool' }
 export interface StatXYObject {
   type: StatXYObjectType ,
   params: StatXYParam[]
-}
-
-export interface StatXYField {
-  field_name: string
 }
 
 export interface StatXYOther {
@@ -441,7 +451,7 @@ export interface StatXYOther {
 
 export interface StatXYFilter {
   id: number,
-  field: StatXYField
+  field: string
   rel: StatXYFilterRel,
   value: string
 }
