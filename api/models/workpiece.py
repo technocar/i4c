@@ -27,7 +27,7 @@ class Log(I4cBaseModel):
     ts: datetime
     seq: int
     data: str
-    text: str
+    text: Optional[str]
 
 
 class File(I4cBaseModel):
