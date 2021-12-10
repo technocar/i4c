@@ -37,15 +37,16 @@ async def get_meta(credentials, *, pconn=None):
 
         l = {}
         for row in rs_event_values:
-            if row["data_id"] in l.keys():
-                l[row["data_id"]].append(row["value"])
+            key = (row["device"], row["data_id"])
+            if key in l.keys():
+                l[key].append(row["value"])
             else:
-                l[row["data_id"]] = [row["value"]]
+                l[key] = [row["value"]]
 
         res = [dict(row) for row in rs]
 
         for r in res:
-            r["value_list"] = l[r["data_id"]] if r["data_id"] in l.keys() else None
+            r["value_list"] = l[(r["device"], r["data_id"])] if (r["device"], r["data_id"]) in l.keys() else None
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail=f"Sql error: {e}")

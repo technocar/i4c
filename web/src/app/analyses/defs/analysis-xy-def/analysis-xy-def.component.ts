@@ -1,16 +1,13 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatDefBase, StatXYDef, StatXYField, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYParam } from 'src/app/services/models/api';
+import { StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
+import { Labels } from 'src/app/services/models/constants';
 import { AanalysisDef } from '../../analyses.component';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
-interface FilterField extends StatXYField {
-  values: string[]
-}
-
 interface Filter extends StatXYFilter {
-  field: FilterField
+  values: string[]
 }
 
 @Component({
@@ -36,13 +33,20 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
     StatXYFilterRel.GreaterEqual
   ];
 
+  labels = Labels.analysis;
+
   constructor(
     private apiService: ApiService
   )
   { }
 
   getDef(): StatXYDef {
-    this.def.filter = this.filters$.value;
+    var pDef = this.period.getDef();
+    console.log(pDef);
+    this.def.after = pDef.after;
+    this.def.before = pDef.before;
+    this.def.duration = pDef.duration;
+    this.def.filter = this.filters$.value.slice(0);
     return this.def;
   }
 
@@ -53,17 +57,40 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
         after: undefined,
         duration: undefined,
         filter: [],
-        color: { field_name: '' },
+        color: undefined,
         obj: undefined,
         other: [],
-        shape: { field_name: '' },
-        x: { field_name: '' },
-        y: { field_name: '' },
+        shape: undefined,
+        x: undefined,
+        y: undefined,
         visualsettings: undefined
       };
-    else {
-    }
+
+    this.setDefualtVisualSettings();
+
     this.getMeta();
+  }
+
+  setDefualtVisualSettings() {
+    var defaults = {
+      title: "",
+      subtitle: "",
+      legend: {
+        align: StatVisualSettingsLegendAlign.Center,
+        position: StatVisualSettingsLegendPosition.Top
+      },
+      xaxis: {
+        caption: ""
+      },
+      yaxis: {
+        caption: ""
+      }
+    };
+
+    if (!this.def.visualsettings)
+      this.def.visualsettings = defaults;
+    else
+      this.def.visualsettings = Object.assign(defaults, this.def.visualsettings);
   }
 
   getMeta() {
@@ -74,10 +101,8 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
           id: f.id,
           rel: f.rel,
           value: f.value,
-          field: {
-            field_name: f.field.field_name,
-            values: this.getFieldValues(f.field.field_name)
-          }
+          field: f.field,
+          values: this.getFieldValues(f.field)
         }
         return result;
       });
@@ -115,17 +140,18 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
     var filters = this.filters$.value;
     filters.push({
       id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f.id))) + 1,
-      field: { field_name: "", values: [] },
+      field: undefined,
       rel: StatXYFilterRel.Equal,
-      value: ''
+      value: '',
+      values: []
     });
     this.filters$.next(filters);
   }
 
   updateFilterField(filter: Filter) {
-    var metaField = this.fields$.value.find((f) => f.name === filter.field.field_name);
+    var metaField = this.fields$.value.find((f) => f.name === filter.field);
     if (metaField) {
-      filter.field.values = metaField.value_list;
+      filter.values = metaField.value_list;
     }
   }
 
