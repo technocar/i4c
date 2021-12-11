@@ -66,6 +66,23 @@
         <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
       </select>
     </div>
+    <fieldset class="row p-4">
+      <legend>egyéb adatok</legend>
+      <div class="col-12" *ngFor="let other of others$ | async">
+        <div class="row mb-2">
+          <select class="col form-control mr-2" [(ngModel)]="other.field_name">
+            <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+          </select>
+          <button class="btn btn-outline-danger" title="törlés" (click)="deleteOther(other.id)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary mt-2" (click)="newOther()">
+        <i class="bi bi-plus"></i>
+        hozzadás
+      </button>
+    </fieldset>
   </fieldset>
   <fieldset class="chart-settings col p-4 mt-4 ml-2">
     <legend>grafikon beállítás</legend>

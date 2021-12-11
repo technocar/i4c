@@ -2,14 +2,20 @@ import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatData, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
+import { StatData, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
 interface Filter extends StatXYFilter {
+  _id: number,
   values: string[]
+}
+
+interface Other {
+  id: number,
+  field_name: string
 }
 
 @Component({
@@ -26,6 +32,7 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
   objects$: BehaviorSubject<StatXYMetaObject[]> = new BehaviorSubject([]);
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
   filters$: BehaviorSubject<Filter[]> = new BehaviorSubject([]);
+  others$: BehaviorSubject<Other[]> = new BehaviorSubject([]);
   operators: StatXYFilterRel[] = [
     StatXYFilterRel.Equal,
     StatXYFilterRel.NotEqual,
@@ -49,6 +56,7 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     this.def.before = pDef.before;
     this.def.duration = pDef.duration;
     this.def.filter = this.filters$.value.slice(0);
+    this.def.other = this.others$.value.filter((o) => (o.field_name ?? '') !== '').map((o) => { return o.field_name });
     return this.def;
   }
 
@@ -69,7 +77,12 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
       };
 
     this.setDefualtVisualSettings();
-
+    this.others$.next(this.def.other.map((o, i) => {
+      return <Other>{
+        id: i,
+        field_name: o
+      }
+    }));
     this.getMeta();
   }
 
@@ -98,8 +111,9 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
   getMeta() {
     this.apiService.getStatXYMeta(undefined).subscribe(meta => {
       this.objects$.next(meta.objects);
-      var filters = (this.def.filter ?? []).map((f) => {
+      var filters = (this.def.filter ?? []).map((f, i) => {
         var result: Filter = {
+          _id: i,
           id: f.id,
           rel: f.rel,
           value: f.value,
@@ -129,9 +143,9 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     this.fields$.next(obj.length > 0 ? obj[0].fields : []);
   }
 
-  deleteFilter(filter: StatXYFilter) {
+  deleteFilter(filter: Filter) {
     var filters = this.filters$.value;
-    var idx = filters.findIndex((f) => f.id === filter.id);
+    var idx = filters.findIndex((f) => f._id === filter._id);
     if (idx > -1)
       filters.splice(idx, 1);
 
@@ -141,7 +155,8 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
   newFilter() {
     var filters = this.filters$.value;
     filters.push({
-      id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f.id))) + 1,
+      _id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f._id))) + 1,
+      id: null,
       field: undefined,
       rel: StatXYFilterRel.Equal,
       value: '',
@@ -157,12 +172,30 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     }
   }
 
-  getFieldValues(id: string): string[] {
-    var field = this.fields$.value.find((f) => f.name === id);
+  getFieldValues(name: string): string[] {
+    var field = this.fields$.value.find((f) => f.name === name);
     if (field)
       return field.value_list ?? [];
     else
       return [];
+  }
+
+  deleteOther(id: number) {
+    var others = this.others$.value;
+    var idx = others.findIndex((o) => o.id === id);
+    if (idx > -1)
+      others.splice(idx, 1);
+
+    this.others$.next(others);
+  }
+
+  newOther() {
+    var others = this.others$.value;
+    others.push({
+      id: ((others ?? []).length === 0 ? 0 : Math.max(...others.map(f => f.id))) + 1,
+      field_name: undefined
+    });
+    this.others$.next(others);
   }
 
   getChartConfiguration(data: StatData): ChartConfiguration {

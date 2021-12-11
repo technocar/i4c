@@ -433,7 +433,7 @@ export interface StatXYDef extends StatDateTimeDef {
   y: string,
   shape: string,
   color: string,
-  other: StatXYOther[],
+  other: string[],
   filter: StatXYFilter[],
   visualsettings: StatVisualSettings
 }
