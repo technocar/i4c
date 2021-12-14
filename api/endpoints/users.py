@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import Query, Depends, Path, HTTPException
+from fastapi import Query, Depends, Path, HTTPException, Body
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasicCredentials
 import models.users
@@ -27,6 +27,16 @@ async def get_user(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/users/{id}")),
     id: str = Path(...)
 ):
-    return await models.users.get_user(user_id=id)
+    res = await models.users.get_user(user_id=id)
+    if res is None:
+        raise HTTPException(status_code=400, detail="User record not found")
+    return res
 
 
+@router.put("/{id}", response_model=models.users.User, x_properties=dict(object="users", action="set"))
+async def user_put(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("put/users/{id}")),
+    id: str = Path(...),
+    user: models.users.UserIn = Body(...),
+):
+    return await models.users.user_put(credentials, id, user)
