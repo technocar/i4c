@@ -40,7 +40,7 @@ async def stat_post(
     return await models.stat.stat_post(credentials, stat)
 
 
-@router.delete("/def/{id}", status_code=200, x_properties=dict(object="statdef", action="delete"))
+@router.delete("/def/{id}", status_code=200, x_properties=dict(object="statdef", action="delete"), features=['delete any'])
 async def stat_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/stat/def/{id}", ask_features=['delete any'])),
     id: int = Path(...)
@@ -48,7 +48,7 @@ async def stat_delete(
     return await models.stat.stat_delete(credentials, id)
 
 
-@router.patch("/def/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="statdef", action="patch"))
+@router.patch("/def/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="statdef", action="patch"), features=['patch any'])
 async def stat_patch(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/stat/def/{id}", ask_features=['patch any'])),
     id: int = Path(...),

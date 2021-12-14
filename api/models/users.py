@@ -1,12 +1,13 @@
 from textwrap import dedent
-
 from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
 from pydantic import Field
 from typing import Optional, List
 
+import common
 from common import I4cBaseModel, DatabaseConnection
 from models import UserStatusEnum
+from starlette import status
 
 
 class UserData(I4cBaseModel):
@@ -15,7 +16,8 @@ class UserData(I4cBaseModel):
     roles: List[str] = Field(..., title="Assigned roles")
     status: UserStatusEnum = Field(...)
     login_name: str = Field(..., title="Login name")
-    pub_key: Optional[str] = Field(None, nullable=True, title="Public key for signed requests")
+    public_key: Optional[str] = Field(None, nullable=True, title="Public key for signed requests")
+    customer: Optional[str] = Field(None, nullable=True)
 
 
 class User(UserData):
@@ -37,6 +39,7 @@ class UserListResponse(I4cBaseModel):
 def user_from_row(row):
     d = dict(row)
     d.pop("password_verifier", None)
+    d.pop("pwd_reset_token", None)
     return d
 
 
@@ -88,3 +91,31 @@ async def login(credentials: HTTPBasicCredentials, *, pconn=None):
         res["roles_eff"] = res_roles_eff
 
         return {"user": res}
+
+
+async def resetpwd(loginname, token, password, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            sql = dedent("""\
+                select *
+                from "user"
+                where 
+                  login_name = $1
+                  and pwd_reset_token = $2
+                """)
+            db_user = await conn.fetchrow(sql, loginname, token)
+            if not db_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Authentication failed")
+
+            sql_update = dedent("""\
+                update "user"
+                set 
+                  password_verifier = $2,
+                  pwd_reset_token = null                            
+                where 
+                  login_name = $1
+                """)
+            new_password_verifier = common.create_password(password)
+            await conn.execute(sql_update, loginname, new_password_verifier)

@@ -18,6 +18,16 @@ async def login(
     return await models.users.login(credentials)
 
 
+@router.put("/resetpwd", response_model=models.users.UserResponse, tags=["user"], x_properties=dict(object="user", action="resetpwd"))
+async def resetpwd(
+        loginname: str,
+        token: str,
+        password: str
+        ):
+    "Reset user password"
+    return await models.users.resetpwd(loginname, token, password)
+
+
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],
             x_properties=dict(object="files", action="list") )
 async def files(

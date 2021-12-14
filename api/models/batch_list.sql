@@ -36,7 +36,7 @@ with
   )
 select
   b.id as batch,
-  b.client,
+  b.customer,
   b.project,
   b.target_count,
   b.status,

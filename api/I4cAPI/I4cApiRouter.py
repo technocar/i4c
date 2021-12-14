@@ -1,7 +1,7 @@
 import functools
 import json
 from datetime import datetime
-
+from typing import List
 from fastapi import APIRouter
 from fastapi.types import DecoratedCallable
 from common import log
@@ -9,11 +9,21 @@ from common.tools import deepdict
 from models.log import put_log_write, DataPoint
 
 
+class I4cApiRouterPath:
+    path: str
+    features: List[str]
+
+    def __init__(self, path, features):
+        self.path = path
+        self.features = features
+
+
 class I4cApiRouter(APIRouter):
     def __init__(self, *args, **kwargs):
         self.openapi_extra = []
         self.router_included = False
         self.include_path = kwargs.get("include_path", "")
+        self.path_list = []
         if "include_path" in kwargs:
             del kwargs["include_path"]
         super().__init__(*args, **kwargs)
@@ -60,6 +70,10 @@ class I4cApiRouter(APIRouter):
         allow_log = True
         if "allow_log" in kwargs:
             allow_log = kwargs.pop("allow_log")
+        features = []
+        if "features" in kwargs:
+            features = kwargs.pop("features")
+        self.path_list.append(I4cApiRouterPath(method + self.calc_full_path(path), features))
         return allow_log, kwargs
 
 

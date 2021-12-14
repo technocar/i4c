@@ -7,6 +7,12 @@ create table "user" (
     public_key character varying (200) null
 );
 
+alter table "user"
+add column pwd_reset_token VARCHAR(200) null;
+
+alter table "user"
+add column customer VARCHAR(200) null;
+
 create table "role" (
     name character varying (200) not null primary key,
     status character varying (200) not null

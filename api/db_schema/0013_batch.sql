@@ -4,7 +4,7 @@ drop table "batch";
 
 create table "batch" (
     id character varying (200) not null primary key,
-    client character varying (200) null,
+    customer character varying (200) null,
     project character varying (200) not null constraint fk_project references "projects",
     target_count int null,
     status character varying (200) not null
