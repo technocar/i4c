@@ -28,7 +28,7 @@ async def get_role(
 
 
 @router.put("/{name}", response_model=models.roles.Role, x_properties=dict(object="roles", action="set"))
-async def alarmdef_put(
+async def role_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/roles/{name}")),
     name: str = Path(...),
     role: models.roles.RoleIn = Body(...),

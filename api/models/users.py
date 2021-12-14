@@ -31,11 +31,6 @@ class UserResponse(I4cBaseModel):
     user: User
 
 
-class UserListResponse(I4cBaseModel):
-    """Multi user response"""
-    users: List[User]
-
-
 def user_from_row(row):
     d = dict(row)
     d.pop("password_verifier", None)
@@ -43,11 +38,12 @@ def user_from_row(row):
     return d
 
 
-async def login(credentials: HTTPBasicCredentials, *, pconn=None):
+async def get_user(*, user_id=None, login_name=None, pconn=None):
     sql_user = dedent("""\
             select *
-            from "user"
-            where "user".login_name = $1
+            from "user" u
+            where True
+            <filter>
           """)
 
     sql_roles = dedent("""\
@@ -73,9 +69,20 @@ async def login(credentials: HTTPBasicCredentials, *, pconn=None):
             where user_role."user" = $1
           """)
     async with DatabaseConnection(pconn) as conn:
-        db_user = await conn.fetchrow(sql_user, credentials.username)
+        params = []
+        filters = ""
+        if user_id is not None:
+            params.append(user_id)
+            filters += f"and u.id = ${len(params)}"
+        if login_name is not None:
+            params.append(login_name)
+            filters += f"and u.login_name = ${len(params)}"
+        if len(params) == 0:
+            raise HTTPException(status_code=400, detail="user_id or login_name should be supplied")
+        sql_user = sql_user.replace("<filter>", filters)
+        db_user = await conn.fetchrow(sql_user, *params)
         if not db_user:
-            raise HTTPException(status_code=500, detail="User record not found")
+            raise HTTPException(status_code=400, detail="User record not found")
         res = user_from_row(db_user)
 
         res_roles = []
@@ -90,7 +97,13 @@ async def login(credentials: HTTPBasicCredentials, *, pconn=None):
             res_roles_eff.append(r)
         res["roles_eff"] = res_roles_eff
 
-        return {"user": res}
+        return res
+
+
+async def login(credentials: HTTPBasicCredentials, *, pconn=None):
+    res = await get_user(login_name=credentials.username)
+    # todo 5: this should be just: return res
+    return {"user": res}
 
 
 async def resetpwd(loginname, token, password, *, pconn=None):
@@ -119,3 +132,26 @@ async def resetpwd(loginname, token, password, *, pconn=None):
                 """)
             new_password_verifier = common.create_password(password)
             await conn.execute(sql_update, loginname, new_password_verifier)
+
+
+async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        sql = dedent("""\
+                select 
+                  u.id
+                from "user" u
+                where True 
+                  <filter>
+                """)
+        params = []
+        filters = ""
+        if active_only:
+            filters += """and u."status" = 'active'"""
+        if login_name is not None:
+            filters += "and u.login_name = $1"
+            params.append(login_name)
+        sql = sql.replace("<filter>", filters)
+        d = await conn.fetch(sql, *params)
+        res = [await get_user(user_id=r[0]) for r in d]
+        return res
+

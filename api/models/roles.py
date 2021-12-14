@@ -49,8 +49,8 @@ async def get_roles(credentials, name=None, *, active_only=True, pconn=None):
         if active_only:
             filters += """and r."status" = 'active'"""
         if name is not None:
-            filters += "and r.name = $1"
             params.append(name)
+            filters += f"and r.name = ${len(params)}"
         sql = sql.replace("<filter>", filters)
         d = await conn.fetch(sql, *params)
         current_role = None

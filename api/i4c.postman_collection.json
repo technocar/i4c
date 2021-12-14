@@ -390,6 +390,24 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "users list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/users",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -402,13 +420,19 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/roles",
+							"raw": "localhost:5000/roles?active_only=false",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"roles"
+							],
+							"query": [
+								{
+									"key": "active_only",
+									"value": "false"
+								}
 							]
 						}
 					},
@@ -428,6 +452,34 @@
 							"path": [
 								"roles",
 								"aaa"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roles put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subroles\": [],\r\n    \"privs\": [\r\n        {\r\n            \"endpoint\": \"get/log/snapshot\",\r\n            \"features\": [\"adc\", \"def\"]\r\n        },\r\n        {\r\n            \"endpoint\": \"get/roles/{name}\",\r\n            \"features\": [\"aaa\"]\r\n        }\r\n    ],\r\n    \"status\": \"inactive\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/roles/bbb",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"roles",
+								"bbb"
 							]
 						}
 					},
