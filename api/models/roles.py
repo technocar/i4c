@@ -2,6 +2,8 @@
 from typing import List
 from common import I4cBaseModel
 
+path_list = []
+
 
 class Priv(I4cBaseModel):
     endpoint: str
@@ -14,7 +16,10 @@ class Role(I4cBaseModel):
     privs: List[Priv]
 
 
-async def get_roles(credentials, path_list):
-    res = [Role(name="aaa", subroles=[], privs=[Priv(endpoint=p.path, features=p.features) for p in path_list])]
+async def get_roles(credentials):
     # todo 1: *****
-    return res
+    pass
+
+
+async def get_priv(credentials):
+    return [Priv(endpoint=p.path, features=p.features) for p in path_list]

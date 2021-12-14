@@ -7,6 +7,7 @@ from common.exceptions import I4cInputValidationError
 from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools, batch, alarm, stat, roles
 import uvicorn
 import common
+import models.roles
 
 app = I4cApi()
 routers = ((root, None),
@@ -20,8 +21,7 @@ for r in routers:
     else:
         app.include_router(r[0].router, prefix=f"/{r[1]}", tags=[r[1]])
 
-roles.path_list = [x for r in routers for x in r[0].router.path_list]
-
+models.roles.path_list = [x for r in routers for x in r[0].router.path_list]
 
 
 # todo: exception-ök kezelése. Kellene valami saját exception és azt kellene eldobálni. Majd erre kellene írni egy

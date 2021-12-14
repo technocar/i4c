@@ -394,6 +394,47 @@
 			]
 		},
 		{
+			"name": "roles",
+			"item": [
+				{
+					"name": "roles list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/roles",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"roles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "priv list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/privs",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"privs"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "projects",
 			"item": [
 				{
@@ -1143,7 +1184,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/batch",
+							"raw": "localhost:5000/batch?status=active&status=closed",
 							"host": [
 								"localhost"
 							],
@@ -1161,6 +1202,14 @@
 									"key": "project",
 									"value": "proj1",
 									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active"
+								},
+								{
+									"key": "status",
+									"value": "closed"
 								}
 							]
 						}

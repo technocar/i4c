@@ -5,6 +5,7 @@ from fastapi.security import HTTPBasicCredentials
 import common
 import models.projects
 import models.users
+import models.roles
 from I4cAPI import I4cApiRouter
 from models import FileProtocolEnum
 
@@ -26,6 +27,13 @@ async def resetpwd(
         ):
     "Reset user password"
     return await models.users.resetpwd(loginname, token, password)
+
+
+@router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], x_properties=dict(object="roles", action="privs"))
+async def privs(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/privs"))):
+    "Get priv info"
+    return await models.roles.get_priv(credentials)
 
 
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],

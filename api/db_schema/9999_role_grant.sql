@@ -65,4 +65,4 @@ insert into role_grant values ('aaa', 'get/stat/data/{id}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/stat/xymeta', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/roles', array[]::varchar[]);
-
+insert into role_grant values ('aaa', 'get/privs', array[]::varchar[]);
