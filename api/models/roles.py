@@ -11,13 +11,16 @@ class Priv(I4cBaseModel):
     features: List[str]
 
 
-class Role(I4cBaseModel):
-    name: str
+class RoleIn(I4cBaseModel):
     subroles: List[str]
     privs: List[Priv]
 
 
-async def get_roles(credentials):
+class Role(RoleIn):
+    name: str
+
+
+async def get_roles(credentials, name=None):
     async with DatabaseConnection() as conn:
         res = []
         sql = dedent("""\
@@ -33,10 +36,18 @@ async def get_roles(credentials):
                       group by rs.role
                      ) rs on rs.role = r.name
                 left join role_grant rg on rg.role = r.name
-                where r."status" = 'active'
+                where 
+                  r."status" = 'active'
+                  <filter>
                 order by r.name
             """)
-        d = await conn.fetch(sql)
+        params = []
+        filters = ""
+        if name is not None:
+            filters = "and r.name = $1"
+            params.append(name)
+        sql = sql.replace("<filter>", filters)
+        d = await conn.fetch(sql, *params)
         current_role = None
         for r in d:
             if current_role is None or (r[0] != current_role.name):

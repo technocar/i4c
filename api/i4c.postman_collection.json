@@ -415,6 +415,25 @@
 					"response": []
 				},
 				{
+					"name": "roles get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/roles/aaa",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"roles",
+								"aaa"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "priv list",
 					"request": {
 						"method": "GET",
