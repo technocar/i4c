@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from starlette.responses import JSONResponse
-from I4cAPI import I4cApi, I4cApiRouter
+from I4cAPI import I4cApi
 from fastapi import Request
 from common import apicfg
 from common.exceptions import I4cInputValidationError
