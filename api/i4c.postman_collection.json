@@ -408,6 +408,25 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "users get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/users/aaa",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"aaa"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
