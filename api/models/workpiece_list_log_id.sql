@@ -141,9 +141,11 @@ with
       discover_log.*,
       wp.batch,
       wp.manual_status,
-      coalesce(wp.manual_status,discover_log.auto_status) as "status"
+      coalesce(wp.manual_status,discover_log.auto_status) as "status",
+      wpb.customer
     from discover_log
     left join workpiece wp on wp.id = discover_log.id
+    left join batch wpb on wpb.id = wp.batch
   )
 select * 
 from res
