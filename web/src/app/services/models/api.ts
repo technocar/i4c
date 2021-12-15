@@ -357,12 +357,17 @@ export interface StatVisualSettingsLegend {
   align: StatVisualSettingsLegendAlign
 }
 
+export interface StatVisualSettingsTooltip {
+  html: string
+}
+
 export interface StatVisualSettings {
   title: string,
   subtitle: string,
   xaxis: StatVisualSettingsAxis,
   yaxis: StatVisualSettingsAxis,
-  legend: StatVisualSettingsLegend
+  legend: StatVisualSettingsLegend,
+  tooltip: StatVisualSettingsTooltip
 }
 
 export interface StatDefUpdateConditions {

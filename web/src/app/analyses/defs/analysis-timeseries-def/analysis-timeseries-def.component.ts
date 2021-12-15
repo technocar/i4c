@@ -2,7 +2,7 @@ import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint, FontSpec } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatData } from 'src/app/services/models/api';
+import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatData, StatVisualSettings } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers, HSLAColor } from '../../helpers';
@@ -68,7 +68,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
   }
 
   setDefualtVisualSettings() {
-    var defaults = {
+    var defaults: StatVisualSettings = {
       title: "",
       subtitle: "",
       legend: {
@@ -80,6 +80,9 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
       },
       yaxis: {
         caption: ""
+      },
+      tooltip: {
+        html: ""
       }
     };
 

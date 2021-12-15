@@ -10,7 +10,7 @@ import { AnalysisDatetimeDefComponent } from './defs/analysis-datetime-def/analy
 import { AnalysisTimeseriesDefComponent } from './defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisComponent } from './analysis/analysis.component';
 import { AnalysisXyDefComponent } from './defs/analysis-xy-def/analysis-xy-def.component';
-
+import { QuillModule } from 'ngx-quill';
 
 @NgModule({
   declarations: [
@@ -27,7 +27,8 @@ import { AnalysisXyDefComponent } from './defs/analysis-xy-def/analysis-xy-def.c
     FormsModule,
     NgbButtonsModule,
     NgbAccordionModule,
-    NgbModalModule
+    NgbModalModule,
+    QuillModule
   ]
 })
 export class AnalysesModule { }

@@ -14,6 +14,7 @@ import { LoginComponent } from './login/login.component';
 import { CommonModule } from '@angular/common';
 import { CommonsModule } from './commons/commons.module';
 import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
+import { QuillModule } from 'ngx-quill';
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootst
     CommonsModule,
     NgbProgressbarModule,
     NgbDropdownModule,
+    QuillModule.forRoot(),
     RouterModule.forRoot([
       { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard] },
       { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard] },

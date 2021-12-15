@@ -1,12 +1,17 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { Chart, ChartConfiguration } from 'chart.js';
+import { AfterViewInit, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { QuillEditorComponent } from 'ngx-quill';
+import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatData, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
+import { StatData, StatVisualSettings, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
+import QuillGraphData from './quill-graph-data';
+
+Quill.register('modules/graphdata', QuillGraphData);
 
 interface Filter extends StatXYFilter {
   _id: number,
@@ -23,11 +28,12 @@ interface Other {
   templateUrl: './analysis-xy-def.component.html',
   styleUrls: ['./analysis-xy-def.component.scss']
 })
-export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChart {
+export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDef, AnalysisChart {
 
   @Input("def") def: StatXYDef;
   @Input("xymeta") xymeta: StatXYMeta;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
+  @ViewChild(QuillEditorComponent) quill: QuillEditorComponent;
 
   objects$: BehaviorSubject<StatXYMetaObject[]> = new BehaviorSubject([]);
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
@@ -43,6 +49,7 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
   ];
 
   labels = Labels.analysis;
+  _defaultTooltip = '<p>X: <span class="graphdata" contenteditable="false" spellcheck="false" id="1">{{X}}</span>  </p><p>Y: <span class="graphdata" contenteditable="false" spellcheck="false" id="2">{{Y}}</span></p>';
 
   constructor(
     private apiService: ApiService
@@ -86,8 +93,11 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     this.getMeta();
   }
 
+  ngAfterViewInit() {
+  }
+
   setDefualtVisualSettings() {
-    var defaults = {
+    var defaults: StatVisualSettings = {
       title: "",
       subtitle: "",
       legend: {
@@ -99,6 +109,9 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
       },
       yaxis: {
         caption: ""
+      },
+      tooltip: {
+        html: this._defaultTooltip
       }
     };
 
@@ -198,6 +211,10 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     this.others$.next(others);
   }
 
+  editorGraphDataChanged(value) {
+    console.log(value);
+  }
+
   getChartConfiguration(data: StatData): ChartConfiguration {
     var shapes = ['circle', 'triangle', 'rect', 'star', 'cross'];
     var shapeFieldValues = this.getFieldValues(data.stat_def.xydef.shape);
@@ -206,7 +223,7 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     var series: string[][] = [];
     data.xydata.map((v) => {
       var color = (v.color ?? "").toString();
-      var shape = (v.shape ?? "").toString()
+      var shape = (v.shape ?? "").toString();
       if (!series.find((s) => s[0] === color && s[1] === shape))
         series.push([color, shape]);
     });
@@ -220,6 +237,8 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
     if (yIsCategory)
       yLabels = data.xydata.map((v) => v.y).filter((v, index, self) => self.indexOf(v) === index);
 
+    var othersByDataPointIndex: number[][] = [];
+
     return {
       type: 'bubble',
       data: {
@@ -229,6 +248,7 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
             label: series.join(' '),
             data: data.xydata.filter((d) => series[0] === (d.color ?? "").toString() && series[1] === (d.shape ?? "").toString())
               .map((d) => {
+              othersByDataPointIndex.push(d.others);
               return {
                 x: xIsCategory ? xLabels.indexOf(d.x) : <number>d.x,
                 y: yIsCategory ? yLabels.indexOf(d.y) : <number>d.y,
@@ -245,7 +265,7 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
           tooltip: {
             enabled: false,
 
-              external: function(context) {
+              external: (context) => {
 
                 function getOrCreateTooltip(chart) {
                   let tooltipEl = chart.canvas.parentNode.querySelector('div');
@@ -302,33 +322,47 @@ export class AnalysisXyDefComponent implements OnInit, AnalysisDef, AnalysisChar
                   });
 
                   const tableBody = document.createElement('tbody');
-                  bodyLines.forEach((body, i) => {
-                    const colors = tooltip.labelColors[i];
-                    console.log(body);
+                  const colors = tooltip.labelColors[0];
 
-                    const span = document.createElement('span') as HTMLSpanElement;
-                    span.style.background = colors.backgroundColor.toString();
-                    span.style.borderColor = colors.borderColor.toString();
-                    span.style.borderWidth = '2px';
-                    span.style.marginRight = '10px';
-                    span.style.height = '10px';
-                    span.style.width = '10px';
-                    span.style.display = 'inline-block';
+                  const span = document.createElement('span') as HTMLSpanElement;
+                  span.style.background = colors.backgroundColor.toString();
+                  span.style.borderColor = colors.borderColor.toString();
+                  span.style.borderWidth = '2px';
+                  span.style.marginRight = '10px';
+                  span.style.height = '10px';
+                  span.style.width = '10px';
+                  span.style.display = 'inline-block';
 
-                    const tr = document.createElement('tr');
-                    tr.style.backgroundColor = 'inherit';
-                    tr.style.borderWidth = '0';
+                  const tr = document.createElement('tr');
+                  tr.style.backgroundColor = 'inherit';
+                  tr.style.borderWidth = '0';
 
-                    const td = document.createElement('td');
-                    td.style.borderWidth = '0';
+                  const td = document.createElement('td');
+                  td.style.borderWidth = '0';
 
-                    const text = document.createTextNode(body.join('\n'));
-
-                    td.appendChild(span);
-                    td.appendChild(text);
-                    tr.appendChild(td);
-                    tableBody.appendChild(tr);
-                  });
+                  let dataPointIndex = context.tooltip.dataPoints[0].dataIndex;
+                  let seriesIndex = context.tooltip.dataPoints[0].datasetIndex;
+                  let html =  this.def.visualsettings.tooltip.html;
+                  html = html.replace(/{{X}}/gi, context.tooltip?.x?.toFixed(2));
+                  html = html.replace(/{{Y}}/gi, context.tooltip?.y?.toFixed(2));
+                  let shapeValue = undefined;
+                  let colorValue = undefined;
+                  if (context.tooltip.dataPoints?.length > 0) {
+                    shapeValue = series[seriesIndex][1];
+                    colorValue = series[seriesIndex][0];
+                  }
+                  html = html.replace(/{{SHAPE}}/gi, shapeValue);
+                  html = html.replace(/{{COLOR}}/gi, colorValue);
+                  if (othersByDataPointIndex.length > dataPointIndex)
+                    this.def.other.forEach((o, i) => {
+                      html = html.replace(new RegExp(`{{${o}}}`, 'gi'), data.xydata[dataPointIndex].others[i]);
+                    });
+                  const text = document.createElement('span');
+                  text.innerHTML = html;
+                  td.appendChild(span);
+                  td.appendChild(text);
+                  tr.appendChild(td);
+                  tableBody.appendChild(tr);
 
                   const tableRoot = tooltipEl.querySelector('table');
 

@@ -1,4 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
+@import '../node_modules/quill/dist/quill.core.css'
+@import '../node_modules/quill/dist/quill.bubble.css'
+@import '../node_modules/quill/dist/quill.snow.css'
 @import 'base'
 
 .menu-context
@@ -90,3 +93,12 @@ fieldset
 .table-hover tbody tr:hover
   background-color: $light
   color: $primary
+
+.quill-custom-select .ql-picker-item:before
+  content: attr(data-label)
+
+.quill-custom-select .ql-picker-label
+  padding-right: 20px
+
+.add-graphs-data
+  line-height: 1
