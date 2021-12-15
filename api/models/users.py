@@ -2,11 +2,12 @@ from textwrap import dedent
 from asyncpg import ForeignKeyViolationError
 from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
-from pydantic import Field
+from pydantic import Field, root_validator
 from typing import Optional, List
 import common
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.cmp_list import cmp_list
+import common.tools
 from models import UserStatusEnum
 from models.common import PatchResponse
 from models.roles import Priv
@@ -47,6 +48,12 @@ class UserPatchChange(I4cBaseModel):
     del_password: Optional[bool]
     public_key: Optional[str]
     del_public_key: Optional[bool]
+
+    @root_validator
+    def check_exclusive(cls, values):
+        common.tools.check_exclusive(values, ['password', 'del_password'])
+        common.tools.check_exclusive(values, ['public_key', 'del_public_key'])
+        return values
 
     def is_empty(self):
         return ( self.password is None

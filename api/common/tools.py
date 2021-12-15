@@ -3,6 +3,7 @@ import math
 from enum import Enum
 from fractions import Fraction
 from typing import List
+from common.exceptions import I4cInputValidationError
 
 
 def deepdict(o, json_compat=False, hide_bytes=False):
@@ -69,10 +70,11 @@ def optimize_timestamp_label(l: List[datetime.datetime]) -> List[str]:
     return ["".join(i[:keep_cols+1])[:-1] for i in ld]
 
 
-def test_optimize_timestamp_label():
-    return [datetime.datetime(year=2021, month=11, day=25, hour=12, minute=34, second=11),
-            datetime.datetime(year=2021, month=11, day=25, hour=12, minute=36, second=13),
-            datetime.datetime(year=2021, month=11, day=25, hour=12, minute=36, second=13),
-            datetime.datetime(year=2021, month=11, day=25, hour=12, minute=40, second=12),
-            datetime.datetime(year=2021, month=11, day=26, hour=13, minute=34, second=11),
-            ]
+def check_set(values, prop_names: List[str]):
+    return [pn for pn in prop_names if values.get(pn) is not None]
+
+
+def check_exclusive(values, prop_names: List[str]):
+    c = check_set(values, prop_names)
+    if len(c) > 1:
+        raise I4cInputValidationError(', '.join(c[:-1]) + ' and ' + c[-1] + ' are exclusive')
