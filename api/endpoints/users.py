@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import Query, Depends, Path, HTTPException, Body
+from fastapi import Query, Depends, Path, Body
 from fastapi.responses import PlainTextResponse
 from fastapi.security import HTTPBasicCredentials
 import models.users
@@ -7,6 +7,7 @@ from I4cAPI import I4cApiRouter
 import common
 import models.common
 from common import CredentialsAndFeatures
+from common.exceptions import I4cClientNotFound
 
 router = I4cApiRouter(include_path="/users")
 
@@ -31,7 +32,7 @@ async def get_user(
 ):
     res = await models.users.get_user(user_id=id)
     if res is None:
-        raise HTTPException(status_code=400, detail="User record not found")
+        raise I4cClientNotFound("User record not found")
     return res
 
 

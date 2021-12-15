@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Query, Path, HTTPException, Body
+from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.stat
 import models.common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
+from common.exceptions import I4cClientNotFound
 
 router = I4cApiRouter(include_path="/stat")
 
@@ -29,7 +30,7 @@ async def stat_get(
 ):
     res = await models.stat.stat_list(credentials, id=id)
     if len(res) == 0:
-        raise HTTPException(status_code=404, detail="No record found")
+        raise I4cClientNotFound("No record found")
     return res[0]
 
 

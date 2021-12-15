@@ -1,10 +1,11 @@
 from typing import Optional, List
-from fastapi import Depends, Query, Path, HTTPException, Body
+from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import models.projects
 import models.common
 import common
 from I4cAPI import I4cApiRouter
+from common.exceptions import I4cClientNotFound
 from models import ProjectStatusEnum
 
 router = I4cApiRouter(include_path="/projects")
@@ -32,7 +33,7 @@ async def get_project(
     res = await models.projects.get_projects(credentials, name)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.post("", response_model=models.projects.Project, x_properties=dict(object="project", action="new"))

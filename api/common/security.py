@@ -1,8 +1,8 @@
 from typing import Set
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from starlette import status
 from .auth import authenticate
+from .exceptions import I4cClientError
 
 basic_security = HTTPBasic()
 
@@ -41,10 +41,6 @@ class security_checker:
         uid, info_features = await authenticate(credentials.username, credentials.password,
                                                 self.endpoint, self.need_features, self.ask_features)
         if not uid:
-            raise HTTPException(
-                # when we return HTTP_401_UNAUTHORIZED then blowser pops up login dialog
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Authentication failed",
-                headers={"WWW-Authenticate": "Basic"})
+            raise I4cClientError("Authentication failed")
 
         return CredentialsAndFeatures(user_id=uid, username=credentials.username, password=credentials.password, info_features=info_features)

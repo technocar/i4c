@@ -1,12 +1,10 @@
 from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional
-
-from fastapi import HTTPException
 from pydantic import root_validator
-
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, CredentialsAndFeatures
 from common.db_tools import get_user_customer
+from common.exceptions import I4cClientError
 from models import WorkpieceStatusEnum
 from models.common import PatchResponse
 import common.db_helpers
@@ -205,7 +203,7 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             workpiece = await list_workpiece(credentials, id=id, pconn=conn, with_details=False)
             if len(workpiece) == 0:
-                raise HTTPException(status_code=400, detail="Workpiece not found")
+                raise I4cClientError("Workpiece not found")
             workpiece = workpiece[0]
 
             match = True

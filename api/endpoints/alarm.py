@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Body, Path, HTTPException, Query
+from fastapi import Depends, Body, Path, Query
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.alarm
 import models.common
 from I4cAPI import I4cApiRouter
+from common.exceptions import I4cClientNotFound
 from models import CommonStatusEnum
 import pytz
 
@@ -30,7 +31,7 @@ async def alarmdef_get(
     """Retrieve definition of alarm."""
     res = await models.alarm.alarmdef_get(credentials, name)
     if res is None:
-        raise HTTPException(status_code=404, detail="No record found")
+        raise I4cClientNotFound("No record found")
     return res
 
 
@@ -85,7 +86,7 @@ async def alarmsub_get(
     res = await models.alarm.alarmsub_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.post("/subs", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarm", action="subscribe"))
@@ -146,7 +147,7 @@ async def alarmevent_get(
     res = await models.alarm.alarmevent_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.get("/recips", response_model=List[models.alarm.AlarmRecip], x_properties=dict(object="alarm", action="reciplist"))
@@ -176,7 +177,7 @@ async def alarmrecips_get(
     res = await models.alarm.alarmrecips_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.patch("/recips/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="alarm", action="recipchange"))

@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
 from typing import Optional, List, Union
-from fastapi import HTTPException
 from isodate import ISO8601Error
 from pydantic import root_validator, validator, Field
 import common.db_helpers
@@ -12,6 +11,7 @@ from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, ser
 import isodate
 from common.cmp_list import cmp_list
 from common.db_tools import get_user_customer
+from common.exceptions import I4cServerError, I4cClientError, I4cClientNotFound
 from common.tools import frac_index, optimize_timestamp_label
 from models import AlarmCondEventRel, alarm
 from models.alarm import prev_iterator
@@ -316,7 +316,7 @@ class StatTimeseriesDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatTimeseriesFilter")
+                raise I4cServerError("Missing id from StatTimeseriesFilter")
             await conn.execute("delete from stat_timeseries_filter where id = $1", d.id)
 
         await new_state.visualsettings.insert_or_update_db(stat_id, conn)
@@ -540,7 +540,7 @@ class StatXYDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYObjectParam")
+                raise I4cServerError("Missing id from StatXYObjectParam")
             await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
 
         new_other = [StatXYOther(field_name=o) for o in new_state.other]
@@ -549,7 +549,7 @@ class StatXYDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYOther")
+                raise I4cServerError("Missing id from StatXYOther")
             await conn.execute("delete from stat_xy_other where id = $1", d.id)
 
         insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
@@ -557,7 +557,7 @@ class StatXYDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYFilter")
+                raise I4cServerError("Missing id from StatXYFilter")
             await conn.execute("delete from stat_xy_filter where id = $1", d.id)
 
         await new_state.visualsettings.insert_or_update_db(stat_id, conn)
@@ -732,7 +732,7 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
             sql = "select * from stat where name = $1 and \"user\" = $2"
             old_db = await conn.fetch(sql, stat.name, credentials.user_id)
             if old_db:
-                raise HTTPException(status_code=400, detail="Name already in use")
+                raise I4cClientError("Name already in use")
 
             sql_insert = dedent("""\
                 insert into stat (name, "user", shared, modified) values ($1, $2, $3, now())
@@ -762,12 +762,12 @@ async def stat_delete(credentials, id):
         async with conn.transaction(isolation='repeatable_read'):
             st = await stat_list(credentials, id=id, pconn=conn)
             if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             st = st[0]
 
             if st.user != credentials.user_id:
                 if 'delete any' not in credentials.info_features:
-                    raise HTTPException(status_code=400, detail="Unable to delete other's statistics")
+                    raise I4cClientError("Unable to delete other's statistics")
 
             sql = "delete from stat where id = $1"
             await conn.execute(sql, id)
@@ -778,12 +778,12 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             st = await stat_list(credentials, id=id, pconn=conn)
             if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             st = st[0]
 
             if st.user != credentials.user_id:
                 if 'patch any' not in credentials.info_features:
-                    raise HTTPException(status_code=400, detail="Unable to modify other's statistics")
+                    raise I4cClientError("Unable to modify other's statistics")
 
             match = True
             for cond in patch.conditions:
@@ -1235,7 +1235,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     res = StatData(stat_def=st, xydata=[])
     meta = [m for m in meta.objects if m.name == st.xydef.obj.type]
     if len(meta) != 1:
-        raise HTTPException(status_code=400, detail="Invalid meta data")
+        raise I4cClientError("Invalid meta data")
     meta = meta[0]
     if st.xydef.obj.type == StatXYObjectType.mazakprogram:
         sql = stat_xy_mazakprogram_sql
@@ -1339,7 +1339,7 @@ async def statdata_get(credentials, id) -> StatData:
         async with conn.transaction(isolation='repeatable_read'):
             st = await stat_list(credentials, id=id, pconn=conn)
             if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             st = st[0]
             if st.timeseriesdef is not None:
                 return await statdata_get_timeseries(credentials, st, conn)

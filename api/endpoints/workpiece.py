@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Query, Path, Body, HTTPException
+from fastapi import Depends, Query, Path, Body
 import models.workpiece
 import models.common
 import common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
+from common.exceptions import I4cClientNotFound
 from models import WorkpieceStatusEnum
 
 router = I4cApiRouter(include_path="/workpiece")
@@ -20,7 +21,7 @@ async def get_workpiece(
     res = await models.workpiece.list_workpiece(credentials, id=id, with_deleted=with_deleted)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.get("", response_model=List[models.workpiece.Workpiece], x_properties=dict(object="workpiece", action="list"))

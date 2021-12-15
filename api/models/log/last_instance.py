@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from common import I4cBaseModel, DatabaseConnection
 
 view_last_instance_sql = open("models\\log\\last_instance.sql").read()
@@ -10,9 +9,5 @@ class LastInstance(I4cBaseModel):
 
 
 async def get_last_instance(credentials, device, *, pconn=None):
-    try:
-        async with DatabaseConnection(pconn) as conn:
-            return await conn.fetchrow(view_last_instance_sql, device)
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+    async with DatabaseConnection(pconn) as conn:
+        return await conn.fetchrow(view_last_instance_sql, device)

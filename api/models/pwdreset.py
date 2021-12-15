@@ -2,11 +2,10 @@
 import base64
 import secrets
 from textwrap import dedent
-from fastapi import HTTPException
-from starlette import status
 import common
 import models.users
 from common import I4cBaseModel, DatabaseConnection
+from common.exceptions import I4cClientError
 
 
 async def init(loginname):
@@ -14,9 +13,9 @@ async def init(loginname):
         sql_check = """select * from "user" where login_name = $1"""
         cdb = await conn.fetchrow(sql_check, loginname)
         if not cdb:
-            raise HTTPException(status_code=400, detail="Unknown login name")
+            raise I4cClientError("Unknown login name")
         if cdb["email"] is None:
-            raise HTTPException(status_code=400, detail="No registered email address for login name")
+            raise I4cClientError("No registered email address for login name")
 
         token = secrets.token_bytes(18)
         token = base64.b64encode(token).decode('ascii')
@@ -51,9 +50,7 @@ async def setpass(loginname, token, password, *, pconn=None):
                 """)
             db_user = await conn.fetchrow(sql, loginname, token)
             if not db_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Authentication failed")
+                raise I4cClientError("Authentication failed")
 
             sql_update = dedent("""\
                 update "user"

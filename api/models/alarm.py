@@ -3,11 +3,10 @@ from datetime import datetime, timedelta
 from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
-from fastapi import HTTPException
 from pydantic import Field, root_validator
 import common.db_helpers
 from common.debug_helpers import debug_print
-from common.exceptions import I4cInputValidationError
+from common.exceptions import I4cInputValidationError, I4cClientNotFound
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
 from common.tools import frac_index
 from models import CommonStatusEnum, AlarmCondEventRel
@@ -595,7 +594,7 @@ async def patch_alarmsub(credentials, id, patch: AlarmSubPatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             al = await alarmsub_list(credentials, id=id, pconn=conn)
             if len(al) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             al = al[0]
 
             match = True
@@ -965,7 +964,7 @@ async def patch_alarmrecips(credentials, id, patch: AlarmRecipPatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             recip = await alarmrecips_list(credentials, id=id, pconn=conn)
             if len(recip) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             recip = recip[0]
 
             match = True

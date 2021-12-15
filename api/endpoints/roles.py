@@ -1,9 +1,10 @@
 from typing import List, Optional
-from fastapi import Query, Depends, Path, HTTPException, Body
+from fastapi import Query, Depends, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import models.roles
 from I4cAPI import I4cApiRouter
 import common
+from common.exceptions import I4cClientNotFound
 
 router = I4cApiRouter(include_path="/roles")
 
@@ -23,7 +24,7 @@ async def get_role(
 ):
     res = await models.roles.get_roles(credentials, name, active_only=False)
     if res is None:
-        raise HTTPException(status_code=404, detail="No record found")
+        raise I4cClientNotFound("No record found")
     return res[0]
 
 

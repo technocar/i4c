@@ -1,7 +1,7 @@
 from typing import List
-from fastapi import HTTPException
 from textwrap import dedent
 from common import DatabaseConnection
+from common.exceptions import I4cClientError
 from models.log import DataPoint
 
 
@@ -15,7 +15,7 @@ async def check_data_id(conn, device, timestamp, sequence, data_id):
         """)
     r = await conn.fetchrow(sql, device, timestamp, sequence)
     if r and r[0] != data_id:
-        raise HTTPException(status_code=400, detail="data_id update is not allowed")
+        raise I4cClientError("data_id update is not allowed")
 
 
 async def put_log_write(credentials, datapoints: List[DataPoint], *, override=False, pconn=None):
@@ -50,11 +50,7 @@ async def put_log_write(credentials, datapoints: List[DataPoint], *, override=Fa
                 if override:
                     await check_data_id(conn, d.device, d.timestamp,
                                    d.sequence, d.data_id)
-                try:
-                    await conn.execute(sql,
-                                   d.device, d.instance, d.timestamp,
-                                   d.sequence, d.data_id, d.value_num,
-                                   d.value_text, d.value_extra, d.value_add)
-                except Exception as e:
-                    print(e)
-                    raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+                await conn.execute(sql,
+                               d.device, d.instance, d.timestamp,
+                               d.sequence, d.data_id, d.value_num,
+                               d.value_text, d.value_extra, d.value_add)

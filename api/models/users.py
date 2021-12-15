@@ -1,6 +1,5 @@
 from textwrap import dedent
 from asyncpg import ForeignKeyViolationError
-from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
 from pydantic import Field, root_validator
 from typing import Optional, List
@@ -8,6 +7,7 @@ import common
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.cmp_list import cmp_list
 import common.tools
+from common.exceptions import I4cClientError
 from models import UserStatusEnum
 from models.common import PatchResponse
 from models.roles import Priv
@@ -90,7 +90,7 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, wit
             params.append(login_name)
             filters += f"and u.login_name = ${len(params)}"
         if len(params) == 0:
-            raise HTTPException(status_code=400, detail="user_id or login_name should be supplied")
+            raise I4cClientError("user_id or login_name should be supplied")
         sql_user = sql_user.replace("<filter>", filters)
         del filters
         db_user = await conn.fetchrow(sql_user, *params)
@@ -213,7 +213,7 @@ async def user_put(credentials, id, user: UserIn, *, pconn=None):
                     sql_ins = """insert into user_role ("user", role) values ($1, $2)"""
                     await conn.execute(sql_ins, id, c)
                 except ForeignKeyViolationError:
-                    raise HTTPException(status_code=400, detail=f"invalid role={c}")
+                    raise I4cClientError(f"invalid role={c}")
 
             return await get_user(user_id=id, pconn=conn)
 
@@ -221,7 +221,7 @@ async def user_put(credentials, id, user: UserIn, *, pconn=None):
 async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBody, *, pconn=None):
     if id != credentials.user_id:
         if 'modify others' not in credentials.info_features:
-            raise HTTPException(status_code=400, detail="Unable to modify other user's data")
+            raise I4cClientError("Unable to modify other user's data")
 
     if patch.change.is_empty():
         return PatchResponse(changed=True)

@@ -1,11 +1,11 @@
 import os
 from hashlib import sha384
 from textwrap import dedent
-from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
 import common
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection
+from common.exceptions import I4cClientError
 
 
 class FileDetail(I4cBaseModel):
@@ -90,7 +90,7 @@ async def intfiles_check_usage(ver: int, name: str, *, pconn=None):
             """)
             dc = await conn.fetch(sql_check_usage, id)
             if dc:
-                raise HTTPException(status_code=400, detail="Internal file used in non-edit project")
+                raise I4cClientError("Internal file used in non-edit project")
         return id
 
 
