@@ -150,7 +150,7 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, wit
 
 
 async def login(credentials: HTTPBasicCredentials, *, pconn=None):
-    res = await get_user(login_name=credentials.username, with_privs=True)
+    res = await get_user(login_name=credentials.username, with_privs=True, pconn=pconn)
     return {"user": res}
 
 

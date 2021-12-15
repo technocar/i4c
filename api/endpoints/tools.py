@@ -6,6 +6,7 @@ from fastapi.security import HTTPBasicCredentials
 import common
 import models.log
 import models.tools
+import models.common
 from I4cAPI import I4cApiRouter
 from models import Device
 

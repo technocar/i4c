@@ -4,6 +4,7 @@ from fastapi.security import HTTPBasicCredentials
 import models.pwdreset
 from I4cAPI import I4cApiRouter
 import common
+import models.users
 
 router = I4cApiRouter(include_path="/pwdreset")
 

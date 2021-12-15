@@ -1,5 +1,4 @@
 import os
-from base64 import b64encode
 from hashlib import sha384
 from textwrap import dedent
 from fastapi import HTTPException

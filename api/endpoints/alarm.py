@@ -4,6 +4,7 @@ from fastapi import Depends, Body, Path, HTTPException, Query
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.alarm
+import models.common
 from I4cAPI import I4cApiRouter
 from models import CommonStatusEnum
 import pytz

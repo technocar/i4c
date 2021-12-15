@@ -86,7 +86,7 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
             def next_eof(it):
                 try:
                     return False, next(it)
-                except StopIteration as err:
+                except StopIteration:
                     return True, None
 
             i1 = iter(iterable1)

@@ -4,6 +4,8 @@ from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import models.installations
 import common
+import models.common
+import models.projects
 from I4cAPI import I4cApiRouter
 from models import ProjectVersionStatusEnum, InstallationStatusEnum
 

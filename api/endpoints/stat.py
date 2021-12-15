@@ -4,6 +4,7 @@ from fastapi import Depends, Query, Path, HTTPException, Body
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.stat
+import models.common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
 

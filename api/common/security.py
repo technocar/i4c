@@ -1,5 +1,4 @@
-from typing import List, Set
-
+from typing import Set
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from starlette import status

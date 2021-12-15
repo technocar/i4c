@@ -5,6 +5,7 @@ from fastapi.security import HTTPBasicCredentials
 import models.users
 from I4cAPI import I4cApiRouter
 import common
+import models.common
 from common import CredentialsAndFeatures
 
 router = I4cApiRouter(include_path="/users")
