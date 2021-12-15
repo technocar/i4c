@@ -4,7 +4,7 @@ import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatData, StatVisualSettings, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
+import { StatData, StatVisualSettings, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
@@ -39,13 +39,13 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
   filters$: BehaviorSubject<Filter[]> = new BehaviorSubject([]);
   others$: BehaviorSubject<Other[]> = new BehaviorSubject([]);
-  operators: StatXYFilterRel[] = [
-    StatXYFilterRel.Equal,
-    StatXYFilterRel.NotEqual,
-    StatXYFilterRel.Lesser,
-    StatXYFilterRel.LesserEqual,
-    StatXYFilterRel.Greater,
-    StatXYFilterRel.GreaterEqual
+  operators: NumberRelation[] = [
+    NumberRelation.Equal,
+    NumberRelation.NotEqual,
+    NumberRelation.Lesser,
+    NumberRelation.LesserEqual,
+    NumberRelation.Greater,
+    NumberRelation.GreaterEqual
   ];
 
   labels = Labels.analysis;
@@ -171,7 +171,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       _id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f._id))) + 1,
       id: null,
       field: undefined,
-      rel: StatXYFilterRel.Equal,
+      rel: NumberRelation.Equal,
       value: '',
       values: []
     });

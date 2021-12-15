@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -395,5 +395,15 @@ export class ApiService {
         }
       };
     });
+  }
+
+  getAlarms(parameters: AlarmRequestParams): Observable<Alarm[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+    return this.http.get<Alarm[]>(`${this._apiUrl}/alarm/defs`, { params: params.getAll() });
+  }
+
+  getAlarm(name: string): Observable<Alarm> {
+    return this.http.get<Alarm>(`${this._apiUrl}/alarm/defs/${name}`);
   }
 }

@@ -457,14 +457,81 @@ export interface StatXYOther {
 export interface StatXYFilter {
   id: number,
   field: string
-  rel: StatXYFilterRel,
+  rel: NumberRelation,
   value: string
 }
 
-export enum StatXYFilterRel { Equal = '=', NotEqual = '!=', Lesser = '<', LesserEqual = '<=', Greater = '>', GreaterEqual = '>=' }
+export enum NumberRelation { Equal = '=', NotEqual = '!=', Lesser = '<', LesserEqual = '<=', Greater = '>', GreaterEqual = '>=' }
+export enum StringRelation { Equal = '=', NotEqual = '!=', Contains = '*', NotContains = '!*' }
 
 export interface StatXYParam {
   id: number,
   key: string,
   value: string
+}
+
+export interface Alarm {
+  conditions: AlarmRule[],
+  max_freq: number,
+  subsgroup: string,
+  id: number,
+  name: string,
+  last_check: string,
+  last_report: string,
+  subs: AlarmSubscription[]
+}
+
+export interface AlarmRule {
+  sample: AlarmRuleSample,
+  event: AlarmRuleEvent,
+  condition: AlarmRuleCondition
+}
+
+export interface AlarmRuleBase {
+  device: DeviceType,
+  data_id: string
+}
+
+export enum AlarmRuleSampleAggMethod { Avg = 'avg', Median = 'median', Q1th = 'q1th', Q4th = 'q4th', Slope = 'slope' }
+export interface AlarmRuleSample extends AlarmRuleBase {
+  aggregate_period: number,
+  aggregate_count: number,
+  aggregate_method: AlarmRuleSampleAggMethod,
+  rel: NumberRelation,
+  value: number
+}
+
+export interface AlarmRuleEvent extends AlarmRuleBase {
+  rel: StringRelation,
+  value: string,
+  age_min: number,
+  age_max: number
+}
+
+export interface AlarmRuleCondition extends AlarmRuleBase {
+  value: string,
+  age_min: number
+}
+
+export enum AlarmNotificationType { Email = 'email', Push = 'push', None = 'none' }
+export enum StatusType { Active = 'active', Inactive = 'inactive' }
+export interface AlarmSubscription {
+  groups: string[],
+  user: string,
+  method: AlarmNotificationType,
+  address: string,
+  status: StatusType,
+  id: number,
+  user_name: string
+}
+
+export interface AlarmRequestParams {
+  name_mask?: string,
+  report_after?: Date,
+  subs_status?: StatusType,
+  subs_method?: AlarmNotificationType,
+  subs_address?: string,
+  subs_address_mask?: string,
+  subs_user?: string,
+  subs_user_mask?: string
 }
