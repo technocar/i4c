@@ -5,6 +5,7 @@ from fastapi.security import HTTPBasicCredentials
 import models.users
 from I4cAPI import I4cApiRouter
 import common
+from common import CredentialsAndFeatures
 
 router = I4cApiRouter(include_path="/users")
 
@@ -40,3 +41,13 @@ async def user_put(
     user: models.users.UserIn = Body(...),
 ):
     return await models.users.user_put(credentials, id, user)
+
+
+@router.patch("/{id}", response_model=models.common.PatchResponse,
+              x_properties=dict(object="users", action="patch"), features=['modify others'])
+async def user_patch(
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("patch/users/{id}", ask_features=['modify others'])),
+    id: str = Path(...),
+    patch: models.users.UserPatchBody = Body(...),
+):
+    return await models.users.user_patch(credentials, id, patch)

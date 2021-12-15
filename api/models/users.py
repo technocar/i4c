@@ -7,10 +7,12 @@ from pydantic import Field
 from typing import Optional, List
 
 import common
-from common import I4cBaseModel, DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.cmp_list import cmp_list
 from models import UserStatusEnum
 from starlette import status
+
+from models.common import PatchResponse
 
 
 class UserData(I4cBaseModel):
@@ -37,6 +39,24 @@ class User(UserData):
 class UserResponse(I4cBaseModel):
     """Single user response"""
     user: User
+
+
+
+class UserPatchChange(I4cBaseModel):
+    password: Optional[str]
+    del_password: Optional[bool]
+    public_key: Optional[str]
+    del_public_key: Optional[bool]
+
+    def is_empty(self):
+        return ( self.password is None
+                 and (self.del_password is None or not self.del_password)
+                 and self.public_key is None
+                 and (self.del_public_key is None or not self.del_public_key))
+
+
+class UserPatchBody(I4cBaseModel):
+    change: UserPatchChange
 
 
 def user_from_row(row):
@@ -183,3 +203,35 @@ async def user_put(credentials, id, user: UserIn, *, pconn=None):
                     raise HTTPException(status_code=400, detail=f"invalid role={c}")
 
             return await get_user(user_id=id, pconn=conn)
+
+
+async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBody, *, pconn=None):
+    if id != credentials.user_id:
+        if 'modify others' not in credentials.info_features:
+            raise HTTPException(status_code=400, detail="Unable to modify other user's data")
+
+    if patch.change.is_empty():
+        return PatchResponse(changed=True)
+
+    async with DatabaseConnection(pconn) as conn:
+        sql = dedent("""\
+                  update "user"
+                  set
+                    <fields>                        
+                  where id = $1
+                  """)
+        fields = []
+        params = [id]
+        if patch.change.password is not None:
+            params.append(common.create_password(patch.change.password))
+            fields.append(f"password_verifier = ${len(params)}")
+        if patch.change.del_password:
+            fields.append(f"password_verifier = null")
+        if patch.change.public_key is not None:
+            params.append(patch.change.public_key)
+            fields.append(f"public_key = ${len(params)}")
+        if patch.change.del_public_key:
+            fields.append(f"public_key = null")
+        sql = sql.replace("<fields>", ',\n'.join(fields))
+        await conn.execute(sql, *params)
+        return PatchResponse(changed=True)
