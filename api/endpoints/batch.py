@@ -16,8 +16,8 @@ async def batch_list(
     return await models.batch.batch_list(credentials, project, status)
 
 
-@router.put("/{id}", response_model=models.batch.Batch, x_properties=dict(object="alarm", action="set"))
-async def alarmdef_put(
+@router.put("/{id}", response_model=models.batch.Batch, x_properties=dict(object="batch", action="set"))
+async def batch_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/batch/{id}")),
     id: str = Path(...),
     batch: models.batch.BatchIn = Body(...),
