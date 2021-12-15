@@ -10,6 +10,9 @@ create table "settings" (
 GRANT ALL ON TABLE public."settings" TO aaa;
 GRANT ALL ON TABLE public."settings" TO postgres;
 
+alter table "settings"
+add column "public" boolean NOT NULL default false;
+
 /*
 truncate table "settings" cascade;
 insert into "settings" values ('push_priv_key', null);

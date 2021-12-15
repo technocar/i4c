@@ -1,18 +1,20 @@
 from typing import Optional
-from common import I4cBaseModel, DatabaseConnection
-from common.exceptions import I4cClientNotFound
+from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
+from common.exceptions import I4cClientNotFound, I4cClientError
 
 
 class ValueIn(I4cBaseModel):
     value: Optional[str]
 
 
-async def settings_get(credentials, key, *, pconn=None):
+async def settings_get(credentials: CredentialsAndFeatures, key, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
-        sql = """select "value" from settings where "key" = $1"""
+        sql = """select "value", "public" from settings where "key" = $1"""
         res = await conn.fetchrow(sql, key)
         if res:
-            return res[0]
+            if not res["public"] and ('access private' not in credentials.info_features):
+                raise I4cClientError("No access right was given.")
+            return res["value"]
         raise I4cClientNotFound("Key not found")
 
 

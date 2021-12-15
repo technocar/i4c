@@ -4,13 +4,14 @@ from fastapi.security import HTTPBasicCredentials
 import common
 import models.settings
 from I4cAPI import I4cApiRouter
+from common import CredentialsAndFeatures
 
 router = I4cApiRouter(include_path="/settings")
 
 
-@router.get("/{key}", response_model=str, x_properties=dict(object="settings", action="get"))
+@router.get("/{key}", response_model=str, x_properties=dict(object="settings", action="get"), features=['access private'])
 async def settings_get(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/settings/{key}")),
+        credentials: CredentialsAndFeatures = Depends(common.security_checker("get/settings/{key}", ask_features=['access private'])),
         key: str = Path(...)):
     return await models.settings.settings_get(credentials, key)
 
