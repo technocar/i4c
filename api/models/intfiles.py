@@ -2,10 +2,12 @@ import os
 from hashlib import sha384
 from textwrap import dedent
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import FileResponse
+
 import common
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection
-from common.exceptions import I4cClientError
+from common.exceptions import I4cClientError, I4cClientNotFound
 
 
 class FileDetail(I4cBaseModel):
@@ -69,7 +71,12 @@ async def intfiles_get(credentials, ver, name, *, pconn=None):
         """)
         res = await conn.fetchrow(sql, name, ver)
         if res:
-            return get_internal_file_name(res[0])
+            path = get_internal_file_name(res[0])
+            if os.path.isfile(path):
+                return FileResponse(path,
+                                    filename=os.path.basename(name),
+                                    media_type="application/octet-stream")
+            raise I4cClientNotFound("No file found")
 
 
 async def intfiles_check_usage(ver: int, name: str, *, pconn=None):

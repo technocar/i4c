@@ -1,4 +1,5 @@
 import io
+import os
 from textwrap import dedent
 from typing import List, Optional
 from starlette.responses import StreamingResponse, FileResponse
@@ -244,8 +245,11 @@ def get_git_file_content(repo, name, commit):
     with tempfile.TemporaryDirectory() as t:  # creates a temp dir and deletes it afterward
         fetch_original = not repo.startswith("ssh://")
         clone_repo(repo, t, commit, fetch_original=fetch_original)
-        with open(os.sep.join([t, name]), mode='rb') as file:
-            return io.BytesIO(file.read())
+        file_path = os.sep.join([t, name])
+        if os.path.isfile(file_path):
+            with open(file_path, mode='rb') as file:
+                return io.BytesIO(file.read())
+        raise I4cClientNotFound("No file found")
 
 
 async def installation_get_file(credentials, id, savepath, *, pconn=None):
@@ -276,17 +280,20 @@ async def installation_get_file(credentials, id, savepath, *, pconn=None):
               and f.savepath = $2 -- */ 'file1'
           """)
     async with DatabaseConnection(pconn) as conn:
+        def get_checked_reponse(path, file_name):
+            if os.path.isfile(path):
+                return FileResponse(path,
+                                    filename=file_name,
+                                    media_type="application/octet-stream")
+            raise I4cClientNotFound("No file found")
+
         pf = await conn.fetchrow(sql, id, savepath)
         if not pf:
             raise I4cClientError("Installation file not found")
         if pf["file_unc"] is not None:
-            return FileResponse(pf["unc_name"],
-                                filename=savepath,
-                                media_type="application/octet-stream")
+            return get_checked_reponse(pf["unc_name"],savepath)
         if pf["file_int"] is not None:
-            return FileResponse(get_internal_file_name(pf["int_content_hash"]),
-                                filename=savepath,
-                                media_type="application/octet-stream")
+            return get_checked_reponse(get_internal_file_name(pf["int_content_hash"]),savepath)
         if pf["file_git"] is not None:
             return StreamingResponse(get_git_file_content(pf["git_repo"], pf["git_name"], pf["git_commit"]),
                               media_type="application/octet-stream",
