@@ -227,6 +227,36 @@
 					"response": []
 				},
 				{
+					"name": "log snapshot 2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/log/snapshot?ts=2021-08-24T09:56:00.957Z&device=lathe",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"log",
+								"snapshot"
+							],
+							"query": [
+								{
+									"key": "ts",
+									"value": "2021-08-24T09:56:00.957Z"
+								},
+								{
+									"key": "device",
+									"value": "lathe"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "log snapshot auto",
 					"request": {
 						"method": "GET",
@@ -334,6 +364,116 @@
 			"name": "users",
 			"item": [
 				{
+					"name": "pwdreset",
+					"item": [
+						{
+							"name": "pwdreset init",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"loginname\": \"t2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:5000/pwdreset/init",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset",
+										"init"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pwdreset sent",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"loginname\": \"t2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:5000/pwdreset/sent",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset",
+										"sent"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pwdreset setpass",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"loginname\": \"t2\",\r\n    \"token\": \"N3XQOET2qkXzqU1MoIa+kutJ\",\r\n    \"password\": \"bbb\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:5000/pwdreset/setpass",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset",
+										"setpass"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pwdreset list",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:5000/pwdreset",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "users create_password",
 					"request": {
 						"auth": {
@@ -356,6 +496,193 @@
 									"key": "password",
 									"value": "1234"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "users list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/users",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "users get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/users/2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "users put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"teszt user\",\r\n    \"roles\": [\r\n        \"aaa\", \"bbb\"\r\n    ],\r\n    \"status\": \"inactive\",\r\n    \"login_name\": \"t2\",\r\n    \"public_key\": null,\r\n    \"customer\": null,\r\n    \"password\": \"hello\",\r\n    \"email\": \"hello@hello.hu\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/users/2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "user patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"change\": {\r\n        \"password\": \"1234\",\r\n        \"del_public_key\": true\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/users/1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "roles",
+			"item": [
+				{
+					"name": "roles list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/roles?active_only=false",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"roles"
+							],
+							"query": [
+								{
+									"key": "active_only",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roles get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/roles/aaa",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"roles",
+								"aaa"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roles put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"subroles\": [],\r\n    \"privs\": [\r\n        {\r\n            \"endpoint\": \"get/log/snapshot\",\r\n            \"features\": [\"adc\", \"def\"]\r\n        },\r\n        {\r\n            \"endpoint\": \"get/roles/{name}\",\r\n            \"features\": [\"aaa\"]\r\n        }\r\n    ],\r\n    \"status\": \"inactive\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/roles/bbb",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"roles",
+								"bbb"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "priv list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/privs",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"privs"
 							]
 						}
 					},
@@ -556,7 +883,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://127.0.0.1:5000/installations/15/file1",
+							"raw": "http://127.0.0.1:5000/installations/8/robot/A7080",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -567,8 +894,9 @@
 							"port": "5000",
 							"path": [
 								"installations",
-								"15",
-								"file1"
+								"8",
+								"robot",
+								"A7080"
 							]
 						}
 					},
@@ -875,7 +1203,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece?before=2021-10-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z&with_details=false",
+							"raw": "localhost:5000/workpiece?before=2021-12-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z&with_details=false",
 							"host": [
 								"localhost"
 							],
@@ -886,7 +1214,7 @@
 							"query": [
 								{
 									"key": "before",
-									"value": "2021-10-15T15:53:11.123456Z"
+									"value": "2021-12-15T15:53:11.123456Z"
 								},
 								{
 									"key": "after",
@@ -1112,7 +1440,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/batch",
+							"raw": "localhost:5000/batch?status=active&status=closed",
 							"host": [
 								"localhost"
 							],
@@ -1130,7 +1458,43 @@
 									"key": "project",
 									"value": "proj1",
 									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active"
+								},
+								{
+									"key": "status",
+									"value": "closed"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "batch put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"batch\": \"test\",\r\n    \"client\": null,\r\n    \"project\": \"A7080\",\r\n    \"target_count\": null,\r\n    \"status\": \"active\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/batch/b2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"batch",
+								"b2"
 							]
 						}
 					},
@@ -1700,7 +2064,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": {\r\n            \"obj\": {\r\n                \"type\": \"mazaksubprogram\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"x\": \"avg_x_load\",\r\n            \"y\": \"avg_y_load\",\r\n            \"shape\": null,\r\n            \"color\": null,\r\n            \"other\": [\"avg_y_load\"],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n            }\r\n        }\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": {\r\n            \"obj\": {\r\n                \"type\": \"tool\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"x\": \"id\",\r\n            \"y\": \"count used\",\r\n            \"shape\": null,\r\n            \"color\": null,\r\n            \"other\": [\"accumulated cutting time\"],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n            }\r\n        }\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1743,6 +2107,58 @@
 									"value": "2021-08-15T15:53:11.123456Z",
 									"disabled": true
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "settings",
+			"item": [
+				{
+					"name": "settings get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/settings/push_priv_key",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"settings",
+								"push_priv_key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "settings put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"value\": \"1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/settings/push_priv_key",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"settings",
+								"push_priv_key"
 							]
 						}
 					},

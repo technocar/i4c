@@ -1,12 +1,22 @@
 import functools
 import json
 from datetime import datetime
-
+from typing import List
 from fastapi import APIRouter
 from fastapi.types import DecoratedCallable
 from common import log
+from common.exceptions import I4cClientError
 from common.tools import deepdict
 from models.log import put_log_write, DataPoint
+
+
+class I4cApiRouterPath:
+    path: str
+    features: List[str]
+
+    def __init__(self, path, features):
+        self.path = path
+        self.features = features
 
 
 class I4cApiRouter(APIRouter):
@@ -14,6 +24,7 @@ class I4cApiRouter(APIRouter):
         self.openapi_extra = []
         self.router_included = False
         self.include_path = kwargs.get("include_path", "")
+        self.path_list = []
         if "include_path" in kwargs:
             del kwargs["include_path"]
         super().__init__(*args, **kwargs)
@@ -25,23 +36,30 @@ class I4cApiRouter(APIRouter):
             @functools.wraps(f)
             async def log_result(*a, **b):
                 if allow_log:
-                    try:
-                        params = ', '.join((str(x) for x in a))
-                        bmasked = deepdict(b, json_compat=True, hide_bytes=True)
-                        user = ""
-                        if "credentials" in bmasked:
-                            bmasked["credentials"]["password"] = "****"
-                            user = bmasked["credentials"]["username"]
-                        kwparams = ', '.join((f"{x}= \"{y}\"" for x,y in bmasked.items()))
-                        log_str = f"{rest_method} - {path}{' - '+params if params else ''} - {kwparams}"
-                        log.info(log_str)
+                    params = ', '.join((str(x) for x in a))
+                    bmasked = deepdict(b, json_compat=True, hide_bytes=True)
+                    user = ""
+                    noaudit = ("noaudit" in bmasked) and bmasked["noaudit"]
+                    noaudit_priv = False
+                    if "credentials" in bmasked:
+                        bmasked["credentials"]["password"] = "****"
+                        user = bmasked["credentials"]["username"]
+                        if "info_features" in bmasked["credentials"]:
+                            noaudit_priv = "noaudit" in bmasked["credentials"]["info_features"]
+                    if noaudit and not noaudit_priv:
+                        raise I4cClientError("""Missing "noaudit" privilege.""")
+                    if not noaudit:
+                        try:
+                            kwparams = ', '.join((f"{x}= \"{y}\"" for x,y in bmasked.items()))
+                            log_str = f"{rest_method} - {path}{' - '+params if params else ''} - {kwparams}"
+                            log.info(log_str)
 
-                        d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit', data_id=f"{rest_method}{path}",
-                                      value_text=user,
-                                      value_add=json.dumps({k:v for (k, v) in bmasked.items() if k != "credentials"}))
-                        await put_log_write(None, [d])
-                    except Exception as e:
-                        raise Exception(f"Error while logging: {e}")
+                            d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit', data_id=f"{rest_method}{path}",
+                                          value_text=user,
+                                          value_add=json.dumps({k:v for (k, v) in bmasked.items() if k != "credentials"}))
+                            await put_log_write(None, [d])
+                        except Exception as e:
+                            raise I4cClientError(f"Error while logging: {e}")
                 return await f(*a, **b)
             return func(log_result)
         return log_decorator
@@ -60,6 +78,10 @@ class I4cApiRouter(APIRouter):
         allow_log = True
         if "allow_log" in kwargs:
             allow_log = kwargs.pop("allow_log")
+        features = []
+        if "features" in kwargs:
+            features = kwargs.pop("features")
+        self.path_list.append(I4cApiRouterPath(method + self.calc_full_path(path), features))
         return allow_log, kwargs
 
 

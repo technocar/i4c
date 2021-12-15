@@ -1,13 +1,13 @@
 import io
+import os
 from textwrap import dedent
 from typing import List, Optional
-
-from fastapi import HTTPException
 from starlette.responses import StreamingResponse, FileResponse
-
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql
 from pydantic import Field
 from datetime import datetime
+
+from common.exceptions import I4cClientError, I4cClientNotFound
 from models import ProjectVersionStatusEnum, InstallationStatusEnum, ProjectStatusEnum
 from models.common import PatchResponse
 from models.intfiles import get_internal_file_name
@@ -87,7 +87,7 @@ async def new_installation(credentials, project, version,
             if db_proj:
                 i = dict(project=project, invoked_version=version)
                 if db_proj["status"] != ProjectStatusEnum.active:
-                    raise HTTPException(status_code=400, detail="Not active project")
+                    raise I4cClientError("Not active project")
                 try:
                     i["real_version"] = int(version)
                 except ValueError:
@@ -95,14 +95,14 @@ async def new_installation(credentials, project, version,
                     if db_project_version:
                         i["real_version"] = db_project_version[0]
                     else:
-                        raise HTTPException(status_code=400, detail="No matching project label found")
+                        raise I4cClientError("No matching project label found")
 
                 db_project_version = await conn.fetchrow(sql_project_version, project, i["real_version"])
                 if db_project_version:
                     if db_project_version["status"] not in statuses:
-                        raise HTTPException(status_code=400, detail="Not matching project version status")
+                        raise I4cClientError("Not matching project version status")
                 else:
-                    raise HTTPException(status_code=400, detail="No project version found")
+                    raise I4cClientError("No project version found")
 
                 db_project_files = await conn.fetch(sql_project_files, project, i["real_version"])
 
@@ -135,7 +135,7 @@ async def new_installation(credentials, project, version,
 
                 return i
             else:
-                raise HTTPException(status_code=400, detail="No project found")
+                raise I4cClientError("No project found")
 
 
 async def get_installations(credentials, id=None, status=None, after=None, before=None, project_name=None, ver=None, *, pconn=None):
@@ -191,7 +191,7 @@ async def patch_installation(credentials, id, patch: InstallationPatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             installation = await get_installations(credentials, id, pconn=conn)
             if len(installation) == 0:
-                raise HTTPException(status_code=400, detail="Installation not found")
+                raise I4cClientError("Installation not found")
             installation = Installation(**installation[0])
 
             match = True
@@ -245,8 +245,11 @@ def get_git_file_content(repo, name, commit):
     with tempfile.TemporaryDirectory() as t:  # creates a temp dir and deletes it afterward
         fetch_original = not repo.startswith("ssh://")
         clone_repo(repo, t, commit, fetch_original=fetch_original)
-        with open(os.sep.join([t, name]), mode='rb') as file:
-            return io.BytesIO(file.read())
+        file_path = os.sep.join([t, name])
+        if os.path.isfile(file_path):
+            with open(file_path, mode='rb') as file:
+                return io.BytesIO(file.read())
+        raise I4cClientNotFound("No file found")
 
 
 async def installation_get_file(credentials, id, savepath, *, pconn=None):
@@ -277,19 +280,22 @@ async def installation_get_file(credentials, id, savepath, *, pconn=None):
               and f.savepath = $2 -- */ 'file1'
           """)
     async with DatabaseConnection(pconn) as conn:
+        def get_checked_reponse(path, file_name):
+            if os.path.isfile(path):
+                return FileResponse(path,
+                                    filename=file_name,
+                                    media_type="application/octet-stream")
+            raise I4cClientNotFound("No file found")
+
         pf = await conn.fetchrow(sql, id, savepath)
         if not pf:
-            raise HTTPException(status_code=400, detail="Installation file not found")
+            raise I4cClientError("Installation file not found")
         if pf["file_unc"] is not None:
-            return FileResponse(pf["unc_name"],
-                                filename=savepath,
-                                media_type="application/octet-stream")
+            return get_checked_reponse(pf["unc_name"],savepath)
         if pf["file_int"] is not None:
-            return FileResponse(get_internal_file_name(pf["int_content_hash"]),
-                                filename=savepath,
-                                media_type="application/octet-stream")
+            return get_checked_reponse(get_internal_file_name(pf["int_content_hash"]),savepath)
         if pf["file_git"] is not None:
             return StreamingResponse(get_git_file_content(pf["git_repo"], pf["git_name"], pf["git_commit"]),
                               media_type="application/octet-stream",
                               headers={"content-disposition": f'attachment; filename="{savepath}"'})
-        raise HTTPException(status_code=404, detail="No file found")
+        raise I4cClientNotFound("No file found")

@@ -17,6 +17,9 @@ create table "stat" (
     modified timestamp with time zone not NULL
 ); 
 
+alter table "stat"
+add column customer VARCHAR(200) null;
+
 CREATE UNIQUE INDEX idx_name_user ON "stat" (name, "user");
 
 GRANT ALL ON TABLE public."stat" TO aaa;
@@ -36,6 +39,9 @@ create table "stat_visual_setting" (
     legend_position character varying (200) null,
     legend_align character varying (200) null
 ); 
+
+alter table "stat_visual_setting"
+add column tooltip_html text null;
 
 
 GRANT ALL ON TABLE public."stat_visual_setting" TO aaa;

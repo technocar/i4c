@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Query, Path, HTTPException, Body
+from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.stat
+import models.common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
+from common.exceptions import I4cClientNotFound
 
 router = I4cApiRouter(include_path="/stat")
 
@@ -23,24 +25,24 @@ async def stat_list(
 
 @router.get("/def/{id}", response_model=models.stat.StatDef, x_properties=dict(object="statdef", action="get"))
 async def stat_get(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/def/{id}")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def/{id}")),
     id: int = Path(...),
 ):
     res = await models.stat.stat_list(credentials, id=id)
     if len(res) == 0:
-        raise HTTPException(status_code=404, detail="No record found")
+        raise I4cClientNotFound("No record found")
     return res[0]
 
 
 @router.post("/def", response_model=models.stat.StatDef, x_properties=dict(object="statdef", action="post"))
 async def stat_post(
-    credentials: CredentialsAndFeatures = Depends(common.security_checker("put/stat/def")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("post/stat/def")),
     stat: models.stat.StatDefIn = Body(...),
 ):
     return await models.stat.stat_post(credentials, stat)
 
 
-@router.delete("/def/{id}", status_code=200, x_properties=dict(object="statdef", action="delete"))
+@router.delete("/def/{id}", status_code=200, x_properties=dict(object="statdef", action="delete"), features=['delete any'])
 async def stat_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/stat/def/{id}", ask_features=['delete any'])),
     id: int = Path(...)
@@ -48,7 +50,7 @@ async def stat_delete(
     return await models.stat.stat_delete(credentials, id)
 
 
-@router.patch("/def/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="statdef", action="patch"))
+@router.patch("/def/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="statdef", action="patch"), features=['patch any'])
 async def stat_patch(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/stat/def/{id}", ask_features=['patch any'])),
     id: int = Path(...),
@@ -71,4 +73,3 @@ async def get_xymeta(
     after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z, default 1 year"),
 ):
     return await models.stat.get_xymeta(credentials, after)
-

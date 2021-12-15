@@ -5,17 +5,25 @@ from fastapi.security import HTTPBasicCredentials
 import common
 import models.projects
 import models.users
+import models.roles
 from I4cAPI import I4cApiRouter
 from models import FileProtocolEnum
 
 router = I4cApiRouter()
 
 
-@router.get("/login", response_model=models.users.UserResponse, tags=["user"], x_properties=dict(object="user", action="login"))
+@router.get("/login", response_model=models.users.LoginUserResponse, tags=["user"], x_properties=dict(object="user", action="login"))
 async def login(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/login"))):
     "Get user info based on login name"
     return await models.users.login(credentials)
+
+
+@router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], x_properties=dict(object="roles", action="privs"))
+async def privs(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/privs"))):
+    "Get priv info"
+    return await models.roles.get_priv(credentials)
 
 
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],
@@ -36,7 +44,6 @@ async def files(
         filever: Optional[int] = Query(None),
 ):
     save_path = models.projects.ProjFile.check_savepath(save_path)
-    save_path_mask = save_path_mask.replace('\\', '/')
+    save_path_mask = [s.replace('\\', '/') for s in save_path_mask]
     return await models.projects.files_list(credentials, proj_name, projver, save_path, save_path_mask,
                                             protocol, name, name_mask, repo, repo_mask, commit, commit_mask, filever)
-

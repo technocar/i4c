@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional, List
-
-from fastapi import Depends, Query, Body, HTTPException
+from fastapi import Depends, Query, Body
 from fastapi.security import HTTPBasicCredentials
 import models.log
 import common
 from I4cAPI import I4cApiRouter
+from common.exceptions import I4cClientNotFound
 from models import Device, DeviceAuto
 
 router = I4cApiRouter(include_path="/log")
@@ -20,7 +20,7 @@ async def snapshot(
     return await models.log.get_snapshot(credentials, ts, device)
 
 
-@router.get("/find", response_model=List[models.log.DataPoint], x_properties=dict(object="datapoint", action="list"))
+@router.get("/find", response_model=List[models.log.DataPoint], x_properties=dict(object="datapoint", action="list"), allow_log=False)
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/find")),
         device: Device = Query(..., title="device"),
@@ -36,7 +36,7 @@ async def find(
 ):
     rs = await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
     if rs is None:
-        raise HTTPException(status_code=404, detail="No log record found")
+        raise I4cClientNotFound("No log record found")
     return rs
 
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import HTTPException
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
+from common.exceptions import I4cClientError
 
 view_find_sql = open("models\\log\\find.sql").read()
 
@@ -35,7 +35,7 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
     if rel is None:
         rel = '='
     if rel not in ('=','<','>','<=','>=','!=','*=','*!='):
-        raise HTTPException(status_code=400, detail=f"Invalid rel parameter")
+        raise I4cClientError(f"Invalid rel parameter")
     if rel == '*=':
         srel = 'like \'%\'||<val>||\'%\''
     elif rel == '*!=':
@@ -123,20 +123,14 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 async def get_find(credentials, device, timestamp=None, sequence=None, before_count=None, after_count=None, categ=None,
                    name=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
     if sequence is not None and timestamp is None:
-        raise HTTPException(status_code=400, detail="sequence allowed only when timestamp is not empty")
+        raise I4cClientError("sequence allowed only when timestamp is not empty")
 
     params = [device]
-
     sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
-
     write_debug_sql('get_find.sql', sql, *params)
 
-    try:
-        async with DatabaseConnection(pconn) as conn:
-            log.debug('before sql run')
-            rs = await conn.fetch(sql,*params)
-            log.debug('after sql run')
-    except Exception as e:
-        log.error(f'error while sql run: {e}')
-        raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+    async with DatabaseConnection(pconn) as conn:
+        log.debug('before sql run')
+        rs = await conn.fetch(sql,*params)
+        log.debug('after sql run')
     return [DataPoint(**dict(r)) for r in rs]

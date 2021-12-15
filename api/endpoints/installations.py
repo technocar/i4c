@@ -4,6 +4,8 @@ from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import models.installations
 import common
+import models.common
+import models.projects
 from I4cAPI import I4cApiRouter
 from models import ProjectVersionStatusEnum, InstallationStatusEnum
 
@@ -23,15 +25,17 @@ async def new_installation(
     return await models.installations.new_installation(credentials, project, version, statuses)
 
 
-@router.get("", response_model=List[models.installations.Installation], x_properties=dict(object="installation", action="list"))
+@router.get("", response_model=List[models.installations.Installation], x_properties=dict(object="installation", action="list"),
+            features=['noaudit'])
 async def list_installation(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations")),
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations", ask_features=['noaudit'])),
     id: Optional[int] = Query(None),
     status: Optional[InstallationStatusEnum] = Query(None),
     after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
     before: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
     project_name: Optional[str] = Query(None),
     ver: Optional[int] = Query(None),
+    noaudit: bool = Query(False)
 ):
     """
     List ongoing or previous installations.

@@ -39,6 +39,7 @@ insert into role_grant values ('aaa', 'delete/tools', array[]::varchar[]);
 insert into role_grant values ('aaa', 'patch/tools/{tool_id}', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/batch', array[]::varchar[]);
+insert into role_grant values ('aaa', 'put/batch/{id}', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/alarm/defs/{name}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'put/alarm/defs/{name}', array[]::varchar[]);
@@ -57,8 +58,24 @@ insert into role_grant values ('aaa', 'patch/alarm/recips/{id}', array[]::varcha
 
 insert into role_grant values ('aaa', 'get/stat/def', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/stat/def/{id}', array[]::varchar[]);
-insert into role_grant values ('aaa', 'put/stat/def', array[]::varchar[]);
+insert into role_grant values ('aaa', 'post/stat/def', array[]::varchar[]);
 insert into role_grant values ('aaa', 'delete/stat/def/{id}', array['delete any']::varchar[]);
 insert into role_grant values ('aaa', 'patch/stat/def/{id}', array['patch any']::varchar[]);
 insert into role_grant values ('aaa', 'get/stat/data/{id}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/stat/xymeta', array[]::varchar[]);
+
+insert into role_grant values ('aaa', 'get/privs', array[]::varchar[]);
+insert into role_grant values ('aaa', 'get/roles', array[]::varchar[]);
+insert into role_grant values ('aaa', 'get/roles/{name}', array[]::varchar[]);
+insert into role_grant values ('aaa', 'put/roles/{name}', array[]::varchar[]);
+
+insert into role_grant values ('aaa', 'get/users', array[]::varchar[]);
+insert into role_grant values ('aaa', 'get/users/{id}', array[]::varchar[]);
+insert into role_grant values ('aaa', 'put/users/{id}', array[]::varchar[]);
+insert into role_grant values ('aaa', 'patch/users/{id}', array[]::varchar[]);
+
+insert into role_grant values ('aaa', 'get/pwdreset', array[]::varchar[]);
+insert into role_grant values ('aaa', 'post/pwdreset/sent', array[]::varchar[]);
+
+insert into role_grant values ('aaa', 'get/settings/{key}', array[]::varchar[]);
+insert into role_grant values ('aaa', 'put/settings/{key}', array[]::varchar[]);

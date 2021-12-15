@@ -1,11 +1,10 @@
 from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional
-
-from fastapi import HTTPException
 from pydantic import root_validator
-
-from common import I4cBaseModel, DatabaseConnection, write_debug_sql
+from common import I4cBaseModel, DatabaseConnection, write_debug_sql, CredentialsAndFeatures
+from common.db_tools import get_user_customer
+from common.exceptions import I4cClientError
 from models import WorkpieceStatusEnum
 from models.common import PatchResponse
 import common.db_helpers
@@ -141,15 +140,20 @@ workpiece_list_log_sql = open("models\\workpiece_list_log.sql").read()
 workpiece_list_log_sql_id = open("models\\workpiece_list_log_id.sql").read()
 
 
-async def list_workpiece(credentials, before=None, after=None, id=None, project=None, project_mask=None,
+async def list_workpiece(credentials: CredentialsAndFeatures,
+                         before=None, after=None, id=None, project=None, project_mask=None,
                          batch=None, batch_mask=None, status=None, note_user=None, note_text=None, note_text_mask=None,
                          note_before=None, note_after=None, with_details=True, with_deleted=False, *, pconn=None):
     sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
+        customer = await get_user_customer(credentials.user_id)
         params = [before, after]
         if id is not None:
             sql = workpiece_list_log_sql_id
             params.append(id)
+        if customer is not None:
+            params.append(customer)
+            sql += f"and res.customer = ${len(params)}\n"
         if project is not None:
             params.append(project)
             sql += f"and res.project = ${len(params)}\n"
@@ -199,7 +203,7 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             workpiece = await list_workpiece(credentials, id=id, pconn=conn, with_details=False)
             if len(workpiece) == 0:
-                raise HTTPException(status_code=400, detail="Workpiece not found")
+                raise I4cClientError("Workpiece not found")
             workpiece = workpiece[0]
 
             match = True

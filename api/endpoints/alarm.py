@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import Optional, List
-from fastapi import Depends, Body, Path, HTTPException, Query
+from fastapi import Depends, Body, Path, Query
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.alarm
+import models.common
 from I4cAPI import I4cApiRouter
+from common.exceptions import I4cClientNotFound
 from models import CommonStatusEnum
 import pytz
 
@@ -29,7 +31,7 @@ async def alarmdef_get(
     """Retrieve definition of alarm."""
     res = await models.alarm.alarmdef_get(credentials, name)
     if res is None:
-        raise HTTPException(status_code=404, detail="No record found")
+        raise I4cClientNotFound("No record found")
     return res
 
 
@@ -84,7 +86,7 @@ async def alarmsub_get(
     res = await models.alarm.alarmsub_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.post("/subs", response_model=models.alarm.AlarmSub, x_properties=dict(object="alarm", action="subscribe"))
@@ -106,11 +108,13 @@ async def patch_alarmsub(
     return await models.alarm.patch_alarmsub(credentials, id, patch)
 
 
-@router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarm", action="check"))
+@router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarm", action="check"),
+             features=['noaudit'])
 async def check_alarmevent(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check")),
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check", ask_features=['noaudit'])),
     alarm: Optional[str] = Query(None),
-    max_count: Optional[int] = Query(None)
+    max_count: Optional[int] = Query(None),
+    noaudit: bool = Query(False)
 ):
     """Check alarms and create events if an alarm state is detected."""
     def hun_tz(dt):
@@ -145,12 +149,13 @@ async def alarmevent_get(
     res = await models.alarm.alarmevent_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
-@router.get("/recips", response_model=List[models.alarm.AlarmRecip], x_properties=dict(object="alarm", action="reciplist"))
+@router.get("/recips", response_model=List[models.alarm.AlarmRecip], x_properties=dict(object="alarm", action="reciplist"),
+            features=['noaudit'])
 async def alarmrecips_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips")),
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips", ask_features=['noaudit'])),
         id: Optional[str] = Query(None),
         alarm: Optional[str] = Query(None),
         alarm_mask: Optional[List[str]] = Query(None),
@@ -161,6 +166,7 @@ async def alarmrecips_list(
         user_status: Optional[CommonStatusEnum] = Query(None),
         method: Optional[models.alarm.AlarmMethod] = Query(None),
         status: Optional[models.alarm.AlarmRecipientStatus] = Query(None),
+        noaudit: bool = Query(False)
 ):
     """List the recipients of an alarm event."""
     return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
@@ -175,7 +181,7 @@ async def alarmrecips_get(
     res = await models.alarm.alarmrecips_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise HTTPException(status_code=404, detail="No record found")
+    raise I4cClientNotFound("No record found")
 
 
 @router.patch("/recips/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="alarm", action="recipchange"))

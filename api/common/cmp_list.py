@@ -40,7 +40,7 @@ def cmp_list(old_list, new_list, key=None):
                 break
             ni += 1
         if match_found:
-            break
+            continue
         oi += 1
     res = Result()
     res.insert = new_list

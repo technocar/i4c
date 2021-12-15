@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from common import I4cBaseModel, DatabaseConnection
-from fastapi import HTTPException
+from common.exceptions import I4cServerError
 from ..enums import DeviceAuto
 
 
@@ -89,13 +89,9 @@ def calc_secs(base, *data_times) -> float:
 
 
 async def get_mazak_snapshot(credentials, ts, device, *, pconn=None):
-    try:
-        async with DatabaseConnection(pconn) as conn:
-            rs = await conn.fetch(view_snapshot_sql, device, ts)
-            rse = await conn.fetch(view_snapshot_fitered_events_sql, device, ts)
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+    async with DatabaseConnection(pconn) as conn:
+        rs = await conn.fetch(view_snapshot_sql, device, ts)
+        rse = await conn.fetch(view_snapshot_fitered_events_sql, device, ts)
 
     try:
         params = {r['data_id']: r for r in rs}
@@ -150,22 +146,18 @@ async def get_mazak_snapshot(credentials, ts, device, *, pconn=None):
 
         return MazakSnapshot(status=s, event_log=e, conditions=c)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Data process error: {e}")
+        raise I4cServerError(f"Data process error: {e}")
 
 
 async def get_simple_snapshot(credentials, ts, device, *, pconn=None):
-    try:
-        async with DatabaseConnection(pconn) as conn:
-            rse = await conn.fetch(view_snapshot_events_sql, device, ts)
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=500, detail=f"Sql error: {e}")
+    async with DatabaseConnection(pconn) as conn:
+        rse = await conn.fetch(view_snapshot_events_sql, device, ts)
 
     try:
         e = [SnapshotEvent(data_id=e['data_id'], name=e['name'], timestamp=e['timestamp'], value=e['value']) for e in rse]
         return SimpleSnapshot(event_log=e)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Data process error: {e}")
+        raise I4cServerError(f"Data process error: {e}")
 
 
 async def get_snapshot(credentials, ts, device: DeviceAuto, *, pconn=None):

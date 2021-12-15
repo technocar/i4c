@@ -4,13 +4,14 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from textwrap import dedent
 from typing import Optional, List, Union
-from fastapi import HTTPException
 from isodate import ISO8601Error
 from pydantic import root_validator, validator, Field
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect, write_debug_sql
 import isodate
 from common.cmp_list import cmp_list
+from common.db_tools import get_user_customer
+from common.exceptions import I4cServerError, I4cClientError, I4cClientNotFound
 from common.tools import frac_index, optimize_timestamp_label
 from models import AlarmCondEventRel, alarm
 from models.alarm import prev_iterator
@@ -164,12 +165,26 @@ class StatVisualSettingsLegend(I4cBaseModel):
                                         align=d["align"])
 
 
+class StatVisualSettingsTooltip(I4cBaseModel):
+    html: Optional[str]
+
+    @classmethod
+    def create_from_dict(cls, d, prefix):
+        if prefix:
+            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+        else:
+            d = dict(d)
+        d = defaultdict(lambda: None, **d)
+        return StatVisualSettingsTooltip(html=d["html"])
+
+
 class StatVisualSettings(I4cBaseModel):
     title: Optional[str]
     subtitle: Optional[str]
     xaxis: Optional[StatVisualSettingsAxis]
     yaxis: Optional[StatVisualSettingsAxis]
     legend: Optional[StatVisualSettingsLegend]
+    tooltip: Optional[StatVisualSettingsTooltip]
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -182,7 +197,8 @@ class StatVisualSettings(I4cBaseModel):
                                   subtitle=d["subtitle"],
                                   xaxis=StatVisualSettingsAxis.create_from_dict(d, "xaxis_"),
                                   yaxis=StatVisualSettingsAxis.create_from_dict(d, "yaxis_"),
-                                  legend=StatVisualSettingsLegend.create_from_dict(d, "legend_"))
+                                  legend=StatVisualSettingsLegend.create_from_dict(d, "legend_"),
+                                  tooltip=StatVisualSettingsTooltip.create_from_dict(d, "tooltip_"))
 
     async def insert_or_update_db(self, ts_id, conn):
         exists = await conn.fetchrow("select id from stat_visual_setting where id = $1", ts_id)
@@ -195,23 +211,25 @@ class StatVisualSettings(I4cBaseModel):
                   xaxis_caption = $4,
                   yaxis_caption = $5,
                   legend_position = $6,
-                  legend_align = $7
+                  legend_align = $7,
+                  tooltip_html = $8
                 where id = $1
                 """)
         else:
             sql = dedent("""\
                 insert into stat_visual_setting (id, title, subtitle,
                                                  xaxis_caption, yaxis_caption, legend_position,
-                                                 legend_align   
+                                                 legend_align, tooltip_html   
                                                 ) values ($1, $2, $3, 
                                                           $4, $5, $6, 
-                                                          $7)
+                                                          $7, $8)
                 """)
         await conn.execute(sql, ts_id, self.title, self.subtitle,
                            self.xaxis.caption if self.xaxis else None,
                            self.yaxis.caption if self.yaxis else None,
                            self.legend.position if self.legend else None,
-                           self.legend.align if self.legend else None)
+                           self.legend.align if self.legend else None,
+                           self.tooltip.html if self.tooltip else None)
 
 
 class StatTimeseriesDef(I4cBaseModel):
@@ -315,7 +333,7 @@ class StatTimeseriesDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatTimeseriesFilter")
+                raise I4cServerError("Missing id from StatTimeseriesFilter")
             await conn.execute("delete from stat_timeseries_filter where id = $1", d.id)
 
         await new_state.visualsettings.insert_or_update_db(stat_id, conn)
@@ -539,7 +557,7 @@ class StatXYDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYObjectParam")
+                raise I4cServerError("Missing id from StatXYObjectParam")
             await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
 
         new_other = [StatXYOther(field_name=o) for o in new_state.other]
@@ -548,7 +566,7 @@ class StatXYDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYOther")
+                raise I4cServerError("Missing id from StatXYOther")
             await conn.execute("delete from stat_xy_other where id = $1", d.id)
 
         insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
@@ -556,7 +574,7 @@ class StatXYDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn)
         for d in delete:
             if d.id is None:
-                raise HTTPException(status_code=500, detail="Missing id from StatXYFilter")
+                raise I4cServerError("Missing id from StatXYFilter")
             await conn.execute("delete from stat_xy_filter where id = $1", d.id)
 
         await new_state.visualsettings.insert_or_update_db(stat_id, conn)
@@ -642,7 +660,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
             with 
                 res as (
                     select 
-                      s.id, s."name", s.shared, s.modified,
+                      s.id, s."name", s.shared, s.modified, s."customer",
                       
                       u."id" as u_id, u."name" as u_name, 
                       
@@ -675,7 +693,8 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                       vs.xaxis_caption as vs_xaxis_caption,
                       vs.yaxis_caption as vs_yaxis_caption,
                       vs.legend_position as vs_legend_position,
-                      vs.legend_align as vs_legend_align                      
+                      vs.legend_align as vs_legend_align,
+                      vs.tooltip_html as vs_tooltip_html                      
                     from stat s
                     join "user" u on u.id = s."user"
                     left join "stat_timeseries" st on st."id" = s."id"
@@ -688,10 +707,14 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction():
             await conn.execute("SET LOCAL intervalstyle = 'iso_8601';")
+            customer = await get_user_customer(credentials.user_id)
             params = [credentials.user_id]
             if id is not None:
                 params.append(id)
                 sql += f"and res.id = ${len(params)}\n"
+            if customer is not None:
+                params.append(customer)
+                sql += f"and res.customer = ${len(params)}\n"
             if user_id is not None:
                 params.append(user_id)
                 sql += f"and res.user = ${len(params)}\n"
@@ -727,7 +750,7 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
             sql = "select * from stat where name = $1 and \"user\" = $2"
             old_db = await conn.fetch(sql, stat.name, credentials.user_id)
             if old_db:
-                raise HTTPException(status_code=400, detail="Name already in use")
+                raise I4cClientError("Name already in use")
 
             sql_insert = dedent("""\
                 insert into stat (name, "user", shared, modified) values ($1, $2, $3, now())
@@ -757,12 +780,12 @@ async def stat_delete(credentials, id):
         async with conn.transaction(isolation='repeatable_read'):
             st = await stat_list(credentials, id=id, pconn=conn)
             if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             st = st[0]
 
             if st.user != credentials.user_id:
                 if 'delete any' not in credentials.info_features:
-                    raise HTTPException(status_code=400, detail="Unable to delete other's statistics")
+                    raise I4cClientError("Unable to delete other's statistics")
 
             sql = "delete from stat where id = $1"
             await conn.execute(sql, id)
@@ -773,12 +796,12 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             st = await stat_list(credentials, id=id, pconn=conn)
             if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             st = st[0]
 
             if st.user != credentials.user_id:
                 if 'patch any' not in credentials.info_features:
-                    raise HTTPException(status_code=400, detail="Unable to modify other's statistics")
+                    raise I4cClientError("Unable to modify other's statistics")
 
             match = True
             for cond in patch.conditions:
@@ -1230,7 +1253,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     res = StatData(stat_def=st, xydata=[])
     meta = [m for m in meta.objects if m.name == st.xydef.obj.type]
     if len(meta) != 1:
-        raise HTTPException(status_code=400, detail="Invalid meta data")
+        raise I4cClientError("Invalid meta data")
     meta = meta[0]
     if st.xydef.obj.type == StatXYObjectType.mazakprogram:
         sql = stat_xy_mazakprogram_sql
@@ -1243,7 +1266,6 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     elif st.xydef.obj.type == StatXYObjectType.tool:
         sql = stat_xy_tool_sql
     else:
-        # todo 1: **********
         raise Exception("Not implemented")
     write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
     db_objs = await conn.fetch(sql, before, after)
@@ -1258,7 +1280,6 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
             elif st.xydef.obj.type == StatXYObjectType.workpiece:
                 return await get_detail_field_workpiece(dbo, field_name)
             else:
-                # todo 1: **********
                 raise Exception("Invalid field name: " + field_name)
 
     async def get_detail_field_mazak(dbo, field_name):
@@ -1336,7 +1357,7 @@ async def statdata_get(credentials, id) -> StatData:
         async with conn.transaction(isolation='repeatable_read'):
             st = await stat_list(credentials, id=id, pconn=conn)
             if len(st) == 0:
-                raise HTTPException(status_code=404, detail="No record found")
+                raise I4cClientNotFound("No record found")
             st = st[0]
             if st.timeseriesdef is not None:
                 return await statdata_get_timeseries(credentials, st, conn)

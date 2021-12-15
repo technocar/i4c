@@ -2,12 +2,9 @@ import os
 from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
-
-from fastapi import HTTPException
 from pydantic import Field, validator
-
 from common import DatabaseConnection, I4cBaseModel, write_debug_sql
-from common.exceptions import I4cInputValidationError
+from common.exceptions import I4cInputValidationError, I4cClientError
 from models import ProjectStatusEnum, ProjectVersionStatusEnum
 from models.common import PatchResponse
 import common.db_helpers
@@ -56,7 +53,6 @@ class ProjectIn(I4cBaseModel):
 
 
 class GitFile(I4cBaseModel):
-    # todo: see c:\Users\gygyor\PycharmProjects\_TutorialFun\git_test\main.py
     repo: str
     name: str
     commit: str
@@ -145,7 +141,7 @@ class ProjFile(I4cBaseModel):
         if self.file_int is not None:
             int_id = await self.file_int.get_intfile_id(conn)
             if int_id is None:
-                raise HTTPException(status_code=400, detail="Internal file is not loaded to db. Load first.")
+                raise I4cClientError("Internal file is not loaded to db. Load first.")
         else:
             int_id = None
 
@@ -264,7 +260,7 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
 
 async def new_project(credentials, project):
     if len(await get_projects(credentials, project.name)) > 0:
-        raise HTTPException(status_code=400, detail="Project name is not unique")
+        raise I4cClientError("Project name is not unique")
 
     sql_insert_project = dedent("""\
          insert into projects 
@@ -283,7 +279,7 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
         async with conn.transaction(isolation='repeatable_read'):
             project = await get_projects(credentials, name, pconn=conn)
             if len(project) == 0:
-                raise HTTPException(status_code=400, detail="Project not found")
+                raise I4cClientError("Project not found")
             project = Project(**project[0])
 
             match = True
@@ -375,7 +371,7 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         res = await conn.fetch(sql, project, ver)
         if len(res) == 0:
-            raise HTTPException(status_code=400, detail="Project version not found")
+            raise I4cClientError("Project version not found")
         res = res[0]
         p = ProjectVersion(ver=res["ver"], labels=res["labels"], status=res["status"], files=[])
         for savepath in res["files"]:
@@ -394,7 +390,7 @@ async def post_projects_version(credentials, project_name, ver, files):
                     ver = max((ver, int(v)+1))
             else:
                 if str(ver) in pv:
-                    raise HTTPException(status_code=400, detail="Project version conflicts")
+                    raise I4cClientError("Project version conflicts")
             sql_insert = dedent("""\
                 insert into project_version (project, ver, status) values ($1, $2, $3)
                 returning id
@@ -494,7 +490,7 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
                         await l.insert_to_db(conn, pv_id)
                     else:
                         if old_proj_file != l:
-                            raise HTTPException(status_code=400, detail="Project file with same savepath and different properties exists")
+                            raise I4cClientError("Project file with same savepath and different properties exists")
 
             return PatchResponse(changed=True)
 
