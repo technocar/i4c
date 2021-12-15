@@ -20,7 +20,7 @@ async def snapshot(
     return await models.log.get_snapshot(credentials, ts, device)
 
 
-@router.get("/find", response_model=List[models.log.DataPoint], x_properties=dict(object="datapoint", action="list"))
+@router.get("/find", response_model=List[models.log.DataPoint], x_properties=dict(object="datapoint", action="list"), allow_log=False)
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/find")),
         device: Device = Query(..., title="device"),

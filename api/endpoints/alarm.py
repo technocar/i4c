@@ -108,11 +108,13 @@ async def patch_alarmsub(
     return await models.alarm.patch_alarmsub(credentials, id, patch)
 
 
-@router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarm", action="check"))
+@router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], x_properties=dict(object="alarm", action="check"),
+             features=['noaudit'])
 async def check_alarmevent(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check")),
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check", ask_features=['noaudit'])),
     alarm: Optional[str] = Query(None),
-    max_count: Optional[int] = Query(None)
+    max_count: Optional[int] = Query(None),
+    noaudit: bool = Query(False)
 ):
     """Check alarms and create events if an alarm state is detected."""
     def hun_tz(dt):
@@ -150,9 +152,10 @@ async def alarmevent_get(
     raise I4cClientNotFound("No record found")
 
 
-@router.get("/recips", response_model=List[models.alarm.AlarmRecip], x_properties=dict(object="alarm", action="reciplist"))
+@router.get("/recips", response_model=List[models.alarm.AlarmRecip], x_properties=dict(object="alarm", action="reciplist"),
+            features=['noaudit'])
 async def alarmrecips_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips")),
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips", ask_features=['noaudit'])),
         id: Optional[str] = Query(None),
         alarm: Optional[str] = Query(None),
         alarm_mask: Optional[List[str]] = Query(None),
@@ -163,6 +166,7 @@ async def alarmrecips_list(
         user_status: Optional[CommonStatusEnum] = Query(None),
         method: Optional[models.alarm.AlarmMethod] = Query(None),
         status: Optional[models.alarm.AlarmRecipientStatus] = Query(None),
+        noaudit: bool = Query(False)
 ):
     """List the recipients of an alarm event."""
     return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
