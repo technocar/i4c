@@ -2115,6 +2115,58 @@
 			]
 		},
 		{
+			"name": "settings",
+			"item": [
+				{
+					"name": "settings get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/settings/push_priv_key",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"settings",
+								"push_priv_key"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "settings put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"value\": \"1234\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/settings/push_priv_key",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"settings",
+								"push_priv_key"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "login",
 			"request": {
 				"method": "GET",
