@@ -165,12 +165,26 @@ class StatVisualSettingsLegend(I4cBaseModel):
                                         align=d["align"])
 
 
+class StatVisualSettingsTooltip(I4cBaseModel):
+    html: Optional[str]
+
+    @classmethod
+    def create_from_dict(cls, d, prefix):
+        if prefix:
+            d = {k[len(prefix):]: v for k, v in d.items() if k.startswith(prefix)}
+        else:
+            d = dict(d)
+        d = defaultdict(lambda: None, **d)
+        return StatVisualSettingsTooltip(html=d["html"])
+
+
 class StatVisualSettings(I4cBaseModel):
     title: Optional[str]
     subtitle: Optional[str]
     xaxis: Optional[StatVisualSettingsAxis]
     yaxis: Optional[StatVisualSettingsAxis]
     legend: Optional[StatVisualSettingsLegend]
+    tooltip: Optional[StatVisualSettingsTooltip]
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -183,7 +197,8 @@ class StatVisualSettings(I4cBaseModel):
                                   subtitle=d["subtitle"],
                                   xaxis=StatVisualSettingsAxis.create_from_dict(d, "xaxis_"),
                                   yaxis=StatVisualSettingsAxis.create_from_dict(d, "yaxis_"),
-                                  legend=StatVisualSettingsLegend.create_from_dict(d, "legend_"))
+                                  legend=StatVisualSettingsLegend.create_from_dict(d, "legend_"),
+                                  tooltip=StatVisualSettingsTooltip.create_from_dict(d, "tooltip_"))
 
     async def insert_or_update_db(self, ts_id, conn):
         exists = await conn.fetchrow("select id from stat_visual_setting where id = $1", ts_id)
@@ -196,23 +211,25 @@ class StatVisualSettings(I4cBaseModel):
                   xaxis_caption = $4,
                   yaxis_caption = $5,
                   legend_position = $6,
-                  legend_align = $7
+                  legend_align = $7,
+                  tooltip_html = $8
                 where id = $1
                 """)
         else:
             sql = dedent("""\
                 insert into stat_visual_setting (id, title, subtitle,
                                                  xaxis_caption, yaxis_caption, legend_position,
-                                                 legend_align   
+                                                 legend_align, tooltip_html   
                                                 ) values ($1, $2, $3, 
                                                           $4, $5, $6, 
-                                                          $7)
+                                                          $7, $8)
                 """)
         await conn.execute(sql, ts_id, self.title, self.subtitle,
                            self.xaxis.caption if self.xaxis else None,
                            self.yaxis.caption if self.yaxis else None,
                            self.legend.position if self.legend else None,
-                           self.legend.align if self.legend else None)
+                           self.legend.align if self.legend else None,
+                           self.tooltip.html if self.tooltip else None)
 
 
 class StatTimeseriesDef(I4cBaseModel):
@@ -676,7 +693,8 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                       vs.xaxis_caption as vs_xaxis_caption,
                       vs.yaxis_caption as vs_yaxis_caption,
                       vs.legend_position as vs_legend_position,
-                      vs.legend_align as vs_legend_align                      
+                      vs.legend_align as vs_legend_align,
+                      vs.tooltip_html as vs_tooltip_html                      
                     from stat s
                     join "user" u on u.id = s."user"
                     left join "stat_timeseries" st on st."id" = s."id"

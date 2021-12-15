@@ -40,6 +40,9 @@ create table "stat_visual_setting" (
     legend_align character varying (200) null
 ); 
 
+alter table "stat_visual_setting"
+add column tooltip_html text null;
+
 
 GRANT ALL ON TABLE public."stat_visual_setting" TO aaa;
 GRANT ALL ON TABLE public."stat_visual_setting" TO postgres;
