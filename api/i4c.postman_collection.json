@@ -364,6 +364,110 @@
 			"name": "users",
 			"item": [
 				{
+					"name": "pwdreset",
+					"item": [
+						{
+							"name": "pwdreset init",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "localhost:5000/pwdreset/init?loginname=t2",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset",
+										"init"
+									],
+									"query": [
+										{
+											"key": "loginname",
+											"value": "t2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pwdreset sent",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "localhost:5000/pwdreset/sent?loginname=t2",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset",
+										"sent"
+									],
+									"query": [
+										{
+											"key": "loginname",
+											"value": "t2"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pwdreset setpass",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"loginname\": \"t2\",\r\n    \"token\": \"N3XQOET2qkXzqU1MoIa+kutJ\",\r\n    \"password\": \"bbb\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:5000/pwdreset/setpass",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset",
+										"setpass"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pwdreset list",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:5000/pwdreset",
+									"host": [
+										"localhost"
+									],
+									"port": "5000",
+									"path": [
+										"pwdreset"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "users create_password",
 					"request": {
 						"auth": {
@@ -415,14 +519,42 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/users/aaa",
+							"raw": "localhost:5000/users/2",
 							"host": [
 								"localhost"
 							],
 							"port": "5000",
 							"path": [
 								"users",
-								"aaa"
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "users put",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"teszt user\",\r\n    \"roles\": [\r\n        \"aaa\", \"bbb\"\r\n    ],\r\n    \"status\": \"inactive\",\r\n    \"login_name\": \"t2\",\r\n    \"public_key\": null,\r\n    \"customer\": null,\r\n    \"password\": \"hello\",\r\n    \"email\": \"hello@hello.hu\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/users/2",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"2"
 							]
 						}
 					},

@@ -11,7 +11,16 @@ alter table "user"
 add column pwd_reset_token VARCHAR(200) null;
 
 alter table "user"
+add column pwd_reset_token_status VARCHAR(200) null;
+
+alter table "user"
+add column pwd_reset_token_created timestamp with time zone NULL;
+
+alter table "user"
 add column customer VARCHAR(200) null;
+
+alter table "user"
+add column email VARCHAR(200) null;
 
 create table "role" (
     name character varying (200) not null primary key,

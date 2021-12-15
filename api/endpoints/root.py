@@ -19,16 +19,6 @@ async def login(
     return await models.users.login(credentials)
 
 
-@router.put("/resetpwd", response_model=models.users.UserResponse, tags=["user"], x_properties=dict(object="user", action="resetpwd"))
-async def resetpwd(
-        loginname: str,
-        token: str,
-        password: str
-        ):
-    "Reset user password"
-    return await models.users.resetpwd(loginname, token, password)
-
-
 @router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], x_properties=dict(object="roles", action="privs"))
 async def privs(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/privs"))):

@@ -21,6 +21,7 @@ class UserData(I4cBaseModel):
     login_name: str = Field(..., title="Login name")
     public_key: Optional[str] = Field(None, nullable=True, title="Public key for signed requests")
     customer: Optional[str] = Field(None, nullable=True)
+    email: Optional[str] = Field(None, nullable=True)
 
 
 class UserIn(UserData):
@@ -124,36 +125,7 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, pco
 
 async def login(credentials: HTTPBasicCredentials, *, pconn=None):
     res = await get_user(login_name=credentials.username)
-    # todo 5: this should be just: return res
     return {"user": res}
-
-
-async def resetpwd(loginname, token, password, *, pconn=None):
-    async with DatabaseConnection(pconn) as conn:
-        async with conn.transaction(isolation='repeatable_read'):
-            sql = dedent("""\
-                select *
-                from "user"
-                where 
-                  login_name = $1
-                  and pwd_reset_token = $2
-                """)
-            db_user = await conn.fetchrow(sql, loginname, token)
-            if not db_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Authentication failed")
-
-            sql_update = dedent("""\
-                update "user"
-                set 
-                  password_verifier = $2,
-                  pwd_reset_token = null                            
-                where 
-                  login_name = $1
-                """)
-            new_password_verifier = common.create_password(password)
-            await conn.execute(sql_update, loginname, new_password_verifier)
 
 
 async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
@@ -184,12 +156,20 @@ async def user_put(credentials, id, user: UserIn, *, pconn=None):
             old = await get_user(user_id=id, active_roles_only=False, pconn=conn)
             if not old:
                 old_roles = []
-                sql = """insert into "user" (id, name, "status", login_name, password_verifier, customer) 
-                                     values ($1, $2, $3,         $4, $5, $6)"""
+                sql = dedent("""\
+                    insert into "user" 
+                        (id, name, "status", login_name, password_verifier, customer, email) 
+                    values 
+                        ($1, $2, $3,         $4, $5, $6,                              $7)""")
             else:
                 old_roles = old.roles
-                sql = """update "user" set name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6 where id = $1"""
-            await conn.fetchrow(sql, id, user.name, user.status, user.login_name, common.create_password(user.password), user.customer)
+                sql = dedent("""\
+                        update "user" 
+                        set 
+                            name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6, email = $7 
+                        where id = $1""")
+            await conn.fetchrow(sql, id, user.name, user.status, user.login_name,
+                                common.create_password(user.password), user.customer, user.email)
 
             sub = cmp_list(old_roles, user.roles)
             for c in sub.delete:

@@ -4,7 +4,7 @@ from I4cAPI import I4cApi
 from fastapi import Request
 from common import apicfg
 from common.exceptions import I4cInputValidationError
-from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools, batch, alarm, stat, roles
+from endpoints import log, users, root, projects, installations, intfiles, workpiece, tools, batch, alarm, stat, roles, pwdreset
 import uvicorn
 import common
 import models.roles
@@ -14,7 +14,7 @@ routers = ((root, None),
            (log, "log"), (users, "users"), (roles, "roles"),
            (projects, "projects"), (installations, "installations"), (intfiles, "intfiles"),
            (workpiece, "workpiece"), (tools, "tools"), (batch, "batch"),
-           (alarm, "alarm"), (stat, "stat"))
+           (alarm, "alarm"), (stat, "stat"), (pwdreset, "pwdreset"))
 for r in routers:
     if r[1] is None:
         app.include_router(r[0].router)
