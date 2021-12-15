@@ -374,8 +374,17 @@
 								},
 								"method": "POST",
 								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"loginname\": \"t2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
-									"raw": "localhost:5000/pwdreset/init?loginname=t2",
+									"raw": "localhost:5000/pwdreset/init",
 									"host": [
 										"localhost"
 									],
@@ -383,12 +392,6 @@
 									"path": [
 										"pwdreset",
 										"init"
-									],
-									"query": [
-										{
-											"key": "loginname",
-											"value": "t2"
-										}
 									]
 								}
 							},
@@ -399,8 +402,17 @@
 							"request": {
 								"method": "POST",
 								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"loginname\": \"t2\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
 								"url": {
-									"raw": "localhost:5000/pwdreset/sent?loginname=t2",
+									"raw": "localhost:5000/pwdreset/sent",
 									"host": [
 										"localhost"
 									],
@@ -408,12 +420,6 @@
 									"path": [
 										"pwdreset",
 										"sent"
-									],
-									"query": [
-										{
-											"key": "loginname",
-											"value": "t2"
-										}
 									]
 								}
 							},
@@ -567,7 +573,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"change\": {\r\n        \"password\": \"1234\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"change\": {\r\n        \"password\": \"1234\",\r\n        \"del_public_key\": true\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

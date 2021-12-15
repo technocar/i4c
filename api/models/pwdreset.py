@@ -8,6 +8,10 @@ from common import I4cBaseModel, DatabaseConnection
 from common.exceptions import I4cClientError
 
 
+class LoginNameModel(I4cBaseModel):
+    loginname: str
+
+
 async def init(loginname):
     async with DatabaseConnection() as conn:
         sql_check = """select * from "user" where login_name = $1"""

@@ -11,10 +11,10 @@ router = I4cApiRouter(include_path="/pwdreset")
 
 @router.post("/init", status_code=201, tags=["user"], x_properties=dict(object="pwdreset", action="init"))
 async def init(
-        loginname: str
+        loginname: models.pwdreset.LoginNameModel = Body(...)
         ):
     "Reset user password"
-    return await models.pwdreset.init(loginname)
+    return await models.pwdreset.init(loginname.loginname)
 
 
 @router.post("/setpass", response_model=models.users.LoginUserResponse, tags=["user"], x_properties=dict(object="pwdreset", action="set"))
@@ -33,6 +33,6 @@ async def get_outbox_list(
 @router.post("/sent", status_code=201, tags=["user"], x_properties=dict(object="pwdreset", action="sent"))
 async def sent(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/pwdreset/sent")),
-        loginname: str = Query(...)
+        loginname: models.pwdreset.LoginNameModel = Body(...)
 ):
-    return await models.pwdreset.sent(credentials, loginname)
+    return await models.pwdreset.sent(credentials, loginname.loginname)
