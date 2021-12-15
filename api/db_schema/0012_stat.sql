@@ -17,6 +17,9 @@ create table "stat" (
     modified timestamp with time zone not NULL
 ); 
 
+alter table "stat"
+add column customer VARCHAR(200) null;
+
 CREATE UNIQUE INDEX idx_name_user ON "stat" (name, "user");
 
 GRANT ALL ON TABLE public."stat" TO aaa;

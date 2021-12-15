@@ -11,6 +11,7 @@ import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures, series_intersect, write_debug_sql
 import isodate
 from common.cmp_list import cmp_list
+from common.db_tools import get_user_customer
 from common.tools import frac_index, optimize_timestamp_label
 from models import AlarmCondEventRel, alarm
 from models.alarm import prev_iterator
@@ -642,7 +643,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
             with 
                 res as (
                     select 
-                      s.id, s."name", s.shared, s.modified,
+                      s.id, s."name", s.shared, s.modified, s."customer",
                       
                       u."id" as u_id, u."name" as u_name, 
                       
@@ -688,10 +689,14 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction():
             await conn.execute("SET LOCAL intervalstyle = 'iso_8601';")
+            customer = await get_user_customer(credentials.user_id)
             params = [credentials.user_id]
             if id is not None:
                 params.append(id)
                 sql += f"and res.id = ${len(params)}\n"
+            if customer is not None:
+                params.append(customer)
+                sql += f"and res.customer = ${len(params)}\n"
             if user_id is not None:
                 params.append(user_id)
                 sql += f"and res.user = ${len(params)}\n"

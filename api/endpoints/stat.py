@@ -23,7 +23,7 @@ async def stat_list(
 
 @router.get("/def/{id}", response_model=models.stat.StatDef, x_properties=dict(object="statdef", action="get"))
 async def stat_get(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/def/{id}")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def/{id}")),
     id: int = Path(...),
 ):
     res = await models.stat.stat_list(credentials, id=id)
@@ -34,7 +34,7 @@ async def stat_get(
 
 @router.post("/def", response_model=models.stat.StatDef, x_properties=dict(object="statdef", action="post"))
 async def stat_post(
-    credentials: CredentialsAndFeatures = Depends(common.security_checker("put/stat/def")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("post/stat/def")),
     stat: models.stat.StatDefIn = Body(...),
 ):
     return await models.stat.stat_post(credentials, stat)
@@ -71,4 +71,3 @@ async def get_xymeta(
     after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z, default 1 year"),
 ):
     return await models.stat.get_xymeta(credentials, after)
-
