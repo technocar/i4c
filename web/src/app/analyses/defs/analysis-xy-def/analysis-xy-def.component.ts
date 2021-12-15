@@ -1,13 +1,26 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { QuillEditorComponent } from 'ngx-quill';
+import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
+import { StatData, StatVisualSettings, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, StatXYFilterRel, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
-import { AanalysisDef } from '../../analyses.component';
+import { AnalysisChart, AnalysisDef } from '../../analyses.component';
+import { AnalysisHelpers } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
+import QuillGraphData from './quill-graph-data';
+
+Quill.register('modules/graphdata', QuillGraphData);
 
 interface Filter extends StatXYFilter {
+  _id: number,
   values: string[]
+}
+
+interface Other {
+  id: number,
+  field_name: string
 }
 
 @Component({
@@ -15,15 +28,17 @@ interface Filter extends StatXYFilter {
   templateUrl: './analysis-xy-def.component.html',
   styleUrls: ['./analysis-xy-def.component.scss']
 })
-export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
+export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDef, AnalysisChart {
 
   @Input("def") def: StatXYDef;
   @Input("xymeta") xymeta: StatXYMeta;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
+  @ViewChild(QuillEditorComponent) quill: QuillEditorComponent;
 
   objects$: BehaviorSubject<StatXYMetaObject[]> = new BehaviorSubject([]);
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
   filters$: BehaviorSubject<Filter[]> = new BehaviorSubject([]);
+  others$: BehaviorSubject<Other[]> = new BehaviorSubject([]);
   operators: StatXYFilterRel[] = [
     StatXYFilterRel.Equal,
     StatXYFilterRel.NotEqual,
@@ -34,6 +49,7 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
   ];
 
   labels = Labels.analysis;
+  _defaultTooltip = '<p>X: <span class="graphdata" contenteditable="false" spellcheck="false" id="1">{{X}}</span>  </p><p>Y: <span class="graphdata" contenteditable="false" spellcheck="false" id="2">{{Y}}</span></p>';
 
   constructor(
     private apiService: ApiService
@@ -47,6 +63,7 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
     this.def.before = pDef.before;
     this.def.duration = pDef.duration;
     this.def.filter = this.filters$.value.slice(0);
+    this.def.other = this.others$.value.filter((o) => (o.field_name ?? '') !== '').map((o) => { return o.field_name });
     return this.def;
   }
 
@@ -67,12 +84,20 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
       };
 
     this.setDefualtVisualSettings();
-
+    this.others$.next(this.def.other.map((o, i) => {
+      return <Other>{
+        id: i,
+        field_name: o
+      }
+    }));
     this.getMeta();
   }
 
+  ngAfterViewInit() {
+  }
+
   setDefualtVisualSettings() {
-    var defaults = {
+    var defaults: StatVisualSettings = {
       title: "",
       subtitle: "",
       legend: {
@@ -84,6 +109,9 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
       },
       yaxis: {
         caption: ""
+      },
+      tooltip: {
+        html: this._defaultTooltip
       }
     };
 
@@ -96,8 +124,9 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
   getMeta() {
     this.apiService.getStatXYMeta(undefined).subscribe(meta => {
       this.objects$.next(meta.objects);
-      var filters = (this.def.filter ?? []).map((f) => {
+      var filters = (this.def.filter ?? []).map((f, i) => {
         var result: Filter = {
+          _id: i,
           id: f.id,
           rel: f.rel,
           value: f.value,
@@ -127,9 +156,9 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
     this.fields$.next(obj.length > 0 ? obj[0].fields : []);
   }
 
-  deleteFilter(filter: StatXYFilter) {
+  deleteFilter(filter: Filter) {
     var filters = this.filters$.value;
-    var idx = filters.findIndex((f) => f.id === filter.id);
+    var idx = filters.findIndex((f) => f._id === filter._id);
     if (idx > -1)
       filters.splice(idx, 1);
 
@@ -139,7 +168,8 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
   newFilter() {
     var filters = this.filters$.value;
     filters.push({
-      id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f.id))) + 1,
+      _id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f._id))) + 1,
+      id: null,
       field: undefined,
       rel: StatXYFilterRel.Equal,
       value: '',
@@ -155,11 +185,237 @@ export class AnalysisXyDefComponent implements OnInit, AanalysisDef {
     }
   }
 
-  getFieldValues(id: string): string[] {
-    var field = this.fields$.value.find((f) => f.name === id);
+  getFieldValues(name: string): string[] {
+    var field = this.fields$.value.find((f) => f.name === name);
     if (field)
       return field.value_list ?? [];
     else
       return [];
+  }
+
+  deleteOther(id: number) {
+    var others = this.others$.value;
+    var idx = others.findIndex((o) => o.id === id);
+    if (idx > -1)
+      others.splice(idx, 1);
+
+    this.others$.next(others);
+  }
+
+  newOther() {
+    var others = this.others$.value;
+    others.push({
+      id: ((others ?? []).length === 0 ? 0 : Math.max(...others.map(f => f.id))) + 1,
+      field_name: undefined
+    });
+    this.others$.next(others);
+  }
+
+  editorGraphDataChanged(value) {
+    console.log(value);
+  }
+
+  getChartConfiguration(data: StatData): ChartConfiguration {
+    var shapes = ['circle', 'triangle', 'rect', 'star', 'cross'];
+    var shapeFieldValues = this.getFieldValues(data.stat_def.xydef.shape);
+    var colors = ['#CC2936', '#3B8E83', '#273E47', '#BD632F', '#00A3FF', '#08415C', '#273E47', '#D8973C', '#388697'];
+    var colorFieldValues = this.getFieldValues(data.stat_def.xydef.color);
+    var series: string[][] = [];
+    data.xydata.map((v) => {
+      var color = (v.color ?? "").toString();
+      var shape = (v.shape ?? "").toString();
+      if (!series.find((s) => s[0] === color && s[1] === shape))
+        series.push([color, shape]);
+    });
+
+    var xIsCategory = data.xydata.find((v) => typeof v.x === "string") ? true : false;
+    var yIsCategory = data.xydata.find((v) => typeof v.y === "string") ? true : false;
+    var xLabels = [];
+    var yLabels = [];
+    if (xIsCategory)
+      xLabels = data.xydata.map((v) => v.x).filter((v, index, self) => self.indexOf(v) === index);
+    if (yIsCategory)
+      yLabels = data.xydata.map((v) => v.y).filter((v, index, self) => self.indexOf(v) === index);
+
+    var othersByDataPointIndex: number[][] = [];
+
+    return {
+      type: 'bubble',
+      data: {
+        datasets: series.map((series, seriesIndex) => {
+          console.log(seriesIndex);
+          return {
+            label: series.join(' '),
+            data: data.xydata.filter((d) => series[0] === (d.color ?? "").toString() && series[1] === (d.shape ?? "").toString())
+              .map((d) => {
+              othersByDataPointIndex.push(d.others);
+              return {
+                x: xIsCategory ? xLabels.indexOf(d.x) : <number>d.x,
+                y: yIsCategory ? yLabels.indexOf(d.y) : <number>d.y,
+                r: 10
+              }
+            }),
+            pointStyle: shapes[shapes.length % (shapeFieldValues.indexOf(series[1]) + 1)],
+            backgroundColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)] + "80",
+            borderColor: colors[colors.length % (colorFieldValues.indexOf(series[0]) + 1)]
+        }})
+      },
+      options: {
+        plugins: {
+          tooltip: {
+            enabled: false,
+
+              external: (context) => {
+
+                function getOrCreateTooltip(chart) {
+                  let tooltipEl = chart.canvas.parentNode.querySelector('div');
+
+                  if (!tooltipEl) {
+                    tooltipEl = document.createElement('div');
+                    tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
+                    tooltipEl.style.borderRadius = '3px';
+                    tooltipEl.style.color = 'white';
+                    tooltipEl.style.opacity = 1;
+                    tooltipEl.style.pointerEvents = 'none';
+                    tooltipEl.style.position = 'absolute';
+                    tooltipEl.style.transform = 'translate(-50%, 0)';
+                    tooltipEl.style.transition = 'all .1s ease';
+
+                    const table = document.createElement('table');
+                    table.style.margin = '0px';
+
+                    tooltipEl.appendChild(table);
+                    chart.canvas.parentNode.appendChild(tooltipEl);
+                  }
+
+                  return tooltipEl;
+                };
+
+                  // Tooltip Element
+                const {chart, tooltip} = context;
+                const tooltipEl = getOrCreateTooltip(chart);
+
+                // Hide if no tooltip
+                if (tooltip.opacity === 0) {
+                  tooltipEl.style.opacity = 0;
+                  return;
+                }
+
+                // Set Text
+                if (tooltip.body) {
+                  const titleLines = tooltip.title || [];
+                  const bodyLines = tooltip.body.map(b => b.lines);
+
+                  const tableHead = document.createElement('thead');
+
+                  titleLines.forEach(title => {
+                    const tr = document.createElement('tr') as HTMLTableRowElement;
+                    tr.style.borderWidth = '0';
+
+                    const th = document.createElement('th') as HTMLTableCellElement;
+                    th.style.borderWidth = '0';
+                    const text = document.createTextNode(title);
+
+                    th.appendChild(text);
+                    tr.appendChild(th);
+                    tableHead.appendChild(tr);
+                  });
+
+                  const tableBody = document.createElement('tbody');
+                  const colors = tooltip.labelColors[0];
+
+                  const span = document.createElement('span') as HTMLSpanElement;
+                  span.style.background = colors.backgroundColor.toString();
+                  span.style.borderColor = colors.borderColor.toString();
+                  span.style.borderWidth = '2px';
+                  span.style.marginRight = '10px';
+                  span.style.height = '10px';
+                  span.style.width = '10px';
+                  span.style.display = 'inline-block';
+
+                  const tr = document.createElement('tr');
+                  tr.style.backgroundColor = 'inherit';
+                  tr.style.borderWidth = '0';
+
+                  const td = document.createElement('td');
+                  td.style.borderWidth = '0';
+
+                  let dataPointIndex = context.tooltip.dataPoints[0].dataIndex;
+                  let seriesIndex = context.tooltip.dataPoints[0].datasetIndex;
+                  let html =  this.def.visualsettings.tooltip.html;
+                  html = html.replace(/{{X}}/gi, context.tooltip?.x?.toFixed(2));
+                  html = html.replace(/{{Y}}/gi, context.tooltip?.y?.toFixed(2));
+                  let shapeValue = undefined;
+                  let colorValue = undefined;
+                  if (context.tooltip.dataPoints?.length > 0) {
+                    shapeValue = series[seriesIndex][1];
+                    colorValue = series[seriesIndex][0];
+                  }
+                  html = html.replace(/{{SHAPE}}/gi, shapeValue);
+                  html = html.replace(/{{COLOR}}/gi, colorValue);
+                  if (othersByDataPointIndex.length > dataPointIndex)
+                    this.def.other.forEach((o, i) => {
+                      html = html.replace(new RegExp(`{{${o}}}`, 'gi'), data.xydata[dataPointIndex].others[i]);
+                    });
+                  const text = document.createElement('span');
+                  text.innerHTML = html;
+                  td.appendChild(span);
+                  td.appendChild(text);
+                  tr.appendChild(td);
+                  tableBody.appendChild(tr);
+
+                  const tableRoot = tooltipEl.querySelector('table');
+
+                  // Remove old children
+                  while (tableRoot.firstChild) {
+                    tableRoot.firstChild.remove();
+                  }
+
+                  // Add new children
+                  tableRoot.appendChild(tableHead);
+                  tableRoot.appendChild(tableBody);
+                }
+
+                const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
+
+                // Display, position, and set styles for font
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+                tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+                tooltipEl.style.font = (tooltip.options.bodyFont as any).string;
+                tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+              }
+          },
+          title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.title),
+          subtitle: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.subtitle),
+          legend: {
+            display:  true,
+            align: data.stat_def.xydef.visualsettings?.legend?.align ?? 'center',
+            position: data.stat_def.xydef.visualsettings?.legend?.position ?? 'top',
+            labels: {
+              usePointStyle: true
+            }
+          }
+        },
+        scales: {
+          y: {
+            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.yaxis?.caption),
+            ticks: {
+              callback: function(value, index, values) {
+                  return yIsCategory ? yLabels[value] : value;
+              }
+            }
+          },
+          x: {
+            title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.xaxis?.caption),
+            ticks: {
+              callback: function(value, index, values) {
+                  return xIsCategory ? xLabels[value] : value;
+              }
+            }
+          },
+        }
+      }
+    };
   }
 }

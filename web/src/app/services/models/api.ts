@@ -357,12 +357,17 @@ export interface StatVisualSettingsLegend {
   align: StatVisualSettingsLegendAlign
 }
 
+export interface StatVisualSettingsTooltip {
+  html: string
+}
+
 export interface StatVisualSettings {
   title: string,
   subtitle: string,
   xaxis: StatVisualSettingsAxis,
   yaxis: StatVisualSettingsAxis,
-  legend: StatVisualSettingsLegend
+  legend: StatVisualSettingsLegend,
+  tooltip: StatVisualSettingsTooltip
 }
 
 export interface StatDefUpdateConditions {
@@ -383,8 +388,8 @@ export interface StatDataTimeSeries {
 }
 
 export interface StatDataXY {
-  x: number,
-  y: number,
+  x: number | string,
+  y: number | string,
   shape: string | number,
   color: string | number,
   others: any[]
@@ -433,7 +438,7 @@ export interface StatXYDef extends StatDateTimeDef {
   y: string,
   shape: string,
   color: string,
-  other: StatXYOther[],
+  other: string[],
   filter: StatXYFilter[],
   visualsettings: StatVisualSettings
 }

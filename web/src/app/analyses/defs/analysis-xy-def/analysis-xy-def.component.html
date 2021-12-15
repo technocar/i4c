@@ -66,6 +66,23 @@
         <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
       </select>
     </div>
+    <fieldset class="row p-4">
+      <legend>egyéb adatok</legend>
+      <div class="col-12" *ngFor="let other of others$ | async">
+        <div class="row mb-2">
+          <select class="col form-control mr-2" [(ngModel)]="other.field_name">
+            <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+          </select>
+          <button class="btn btn-outline-danger" title="törlés" (click)="deleteOther(other.id)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary mt-2" (click)="newOther()">
+        <i class="bi bi-plus"></i>
+        hozzadás
+      </button>
+    </fieldset>
   </fieldset>
   <fieldset class="chart-settings col p-4 mt-4 ml-2">
     <legend>grafikon beállítás</legend>
@@ -102,6 +119,59 @@
           </select>
         </div>
       </div>
+    </fieldset>
+    <fieldset class="row p-4 mt-4 overflow-auto">
+      <legend>tooltip</legend>
+      <quill-editor class="col"
+        [(ngModel)]="def.visualsettings.tooltip.html"
+        [modules]="{
+          graphdata: { container: '#graphs_data' }
+        }"
+      >
+        <div quill-editor-toolbar>
+          <span class="ql-formats">
+            <button class="ql-bold" [title]="'Bold'"></button>
+            <button class="ql-italic" [title]="'Italic'"></button>
+            <button class="ql-underline"></button>
+          <button class="ql-strike"></button>
+          </span>
+          <span class="ql-formats">
+            <select class="ql-align" [title]="'Aligment'">
+              <option selected></option>
+              <option value="center"></option>
+              <option value="right"></option>
+              <option value="justify"></option>
+            </select>
+          </span>
+          <span class="ql-formats">
+            <select class="ql-size">
+              <option value="small"></option>
+              <!-- Note a missing, thus falsy value, is used to reset to default -->
+              <option selected></option>
+              <option value="large"></option>
+              <option value="huge"></option>
+            </select>
+          </span>
+          <span class="ql-formats">
+            <select class="ql-color"></select>
+            <select class="ql-background"></select>
+          </span>
+          <span class="ql-formats">
+            <div id="graphs_data">
+              <select class="quill-custom-select" title="Grafikon adatok">
+                <option value="X">X</option>
+                <option value="Y">Y</option>
+                <option value="SHAPE">forma</option>
+                <option value="COLOR">szín</option>
+                <optgroup label="egyéb mezők">
+                  <option *ngFor="let other of others$ | async" [value]="other.field_name">{{other.field_name}}</option>
+                </optgroup>
+              </select>
+              <button class="add-graphs-data">+</button>
+            </div>
+          </span>
+        </div>
+      </quill-editor>
     </fieldset>
   </fieldset>
 </div>

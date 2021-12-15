@@ -1,13 +1,18 @@
 import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ChartConfiguration } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { FilterControlComponent } from '../commons/filter/filter.component';
 import { ApiService } from '../services/api.service';
 import { AuthenticationService } from '../services/auth.service';
-import { StatDef, StatDefBase } from '../services/models/api';
+import { StatData, StatDef, StatDefBase } from '../services/models/api';
 
-export interface AanalysisDef {
+export interface AnalysisDef {
   getDef(): StatDefBase
+}
+
+export interface AnalysisChart {
+  getChartConfiguration(data: StatData): ChartConfiguration
 }
 
 export enum AnalysisType { TimeSeries = '0', XY = '1' }

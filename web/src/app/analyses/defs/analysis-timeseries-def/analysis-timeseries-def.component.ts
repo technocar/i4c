@@ -1,9 +1,11 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint, FontSpec } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition } from 'src/app/services/models/api';
+import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatData, StatVisualSettings } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
-import { AanalysisDef } from '../../analyses.component';
+import { AnalysisChart, AnalysisDef } from '../../analyses.component';
+import { AnalysisHelpers, HSLAColor } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
 @Component({
@@ -11,7 +13,7 @@ import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-
   templateUrl: './analysis-timeseries-def.component.html',
   styleUrls: ['./analysis-timeseries-def.component.scss']
 })
-export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
+export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, AnalysisChart {
 
   @Input("def") def: StatTimeSeriesDef;
   @Input("metaList") metaList: Meta[];
@@ -66,7 +68,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
   }
 
   setDefualtVisualSettings() {
-    var defaults = {
+    var defaults: StatVisualSettings = {
       title: "",
       subtitle: "",
       legend: {
@@ -78,6 +80,9 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
       },
       yaxis: {
         caption: ""
+      },
+      tooltip: {
+        html: ""
       }
     };
 
@@ -144,5 +149,94 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AanalysisDef {
       data_id: meta.data_id,
       device: meta.device
     };
+  }
+
+  getChartConfiguration(data: StatData): ChartConfiguration {
+    var startColor: HSLAColor = new HSLAColor(240, 0.17, 0.76, 1);
+    var endColor: HSLAColor = new HSLAColor(240, 0.82, 0.11 , 1);
+    var relativeChart = data.timeseriesdata.length > 1;
+    var xaxisPropName = "x_" + (!relativeChart ? "timestamp" : "relative");
+    var xyChart = !(data.stat_def.timeseriesdef.xaxis === 'sequence');
+
+    var options: ChartConfiguration = {
+      type: 'line',
+      data: {
+        datasets: data.timeseriesdata.map((series, seriesIndex, seriesList) => {
+          console.log(seriesIndex);
+          return  {
+            label: seriesList.length === 1 ? "" : series.name,
+            data: series.y.map((value, i) => {
+              let xValue = series[xaxisPropName];
+              return {
+                x: (xValue ?? null) === null ? i.toString() : (relativeChart ? xValue[i] * 1000.00 : xValue[i]),
+                y: value
+              }
+            }),
+            backgroundColor: AnalysisHelpers.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
+            borderColor: AnalysisHelpers.getChartSeriesColor(seriesIndex, seriesList.length, startColor, endColor, 1).toString(),
+            borderWidth: 2,
+            fill: false
+        }})
+      },
+      options: {
+        elements: {
+          point: {
+            radius: 0
+          }
+        },
+        plugins: {
+          title: AnalysisHelpers.setChartTitle(data.stat_def.timeseriesdef.visualsettings?.title),
+          subtitle: AnalysisHelpers.setChartTitle(data.stat_def.timeseriesdef.visualsettings?.subtitle),
+          legend: {
+            display:  data.timeseriesdata.length > 1,
+            align: data.stat_def.timeseriesdef.visualsettings?.legend?.align ?? 'center',
+            position: data.stat_def.timeseriesdef.visualsettings?.legend?.position ?? 'right'
+          }
+        },
+        scales: {
+          y: {
+            title: AnalysisHelpers.setChartTitle(data.stat_def.timeseriesdef.visualsettings?.yaxis?.caption)
+          },
+          x: {
+            type: xyChart ? 'time' : 'linear',
+            title: AnalysisHelpers.setChartTitle(data.stat_def.timeseriesdef.visualsettings?.xaxis?.caption),
+            time: {
+              displayFormats: {
+                  hour: 'H:mm',
+                  millisecond: 's.SSS',
+                  second: 's.SSS',
+                  minute: 'm:ss',
+                  day: relativeChart ? 'd' : 'MMM d'
+              },
+              tooltipFormat: relativeChart ? 's.SSS' : 'yyyy.MM.dd HH:mm:ss',
+              minUnit: 'millisecond'
+            },
+            grid: {
+              display: xyChart
+            },
+            ticks: {
+              display: xyChart,
+              font: (ctx, options) => {
+                var font: FontSpec = {
+                  family: undefined,
+                  lineHeight: undefined,
+                  size: undefined,
+                  style: undefined,
+                  weight: undefined
+                };
+                if (ctx.tick?.major)
+                  font.weight = 'bold';
+                return font;
+              },
+              major: {
+                enabled: true
+              }
+            },
+            bounds: 'ticks'
+          }
+        }
+      }
+    };
+    return options;
   }
 }

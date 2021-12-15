@@ -165,11 +165,9 @@ export class DashboardComponent implements OnInit {
             }
         }
         this.events$.next(this.snapshot?.event_log ?? []);
-        this.noData = !this.snapshot || !this.snapshot.status;
+        this.noData = !this.snapshot || (!this.snapshot.status && this.snapshot.event_log?.length === 0 && this.snapshot.conditions?.length === 0);
         if (this.noData) {
-          if (!this.isAutoMode)
-            this.isAutoMode = true;
-          else
+          if (this.isAutoMode)
             this._device = null;
         }
         this.isDataLoaded = true;
@@ -373,6 +371,7 @@ export class DashboardComponent implements OnInit {
   changeDevice(device: DeviceType) {
     this.device = device;
     this.isAutoMode = false;
+    this.getData();
   }
 
   autoModeChange() {
