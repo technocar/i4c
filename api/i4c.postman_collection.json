@@ -559,6 +559,34 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "user patch",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"change\": {\r\n        \"password\": \"1234\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/users/1",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -1169,7 +1197,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/workpiece?before=2021-10-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z&with_details=false",
+							"raw": "localhost:5000/workpiece?before=2021-12-15T15:53:11.123456Z&after=2021-08-15T15:53:11.123456Z&with_details=false",
 							"host": [
 								"localhost"
 							],
@@ -1180,7 +1208,7 @@
 							"query": [
 								{
 									"key": "before",
-									"value": "2021-10-15T15:53:11.123456Z"
+									"value": "2021-12-15T15:53:11.123456Z"
 								},
 								{
 									"key": "after",

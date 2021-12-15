@@ -1,18 +1,15 @@
 from textwrap import dedent
-
 from asyncpg import ForeignKeyViolationError
 from fastapi import HTTPException
 from fastapi.security import HTTPBasicCredentials
 from pydantic import Field
 from typing import Optional, List
-
 import common
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.cmp_list import cmp_list
 from models import UserStatusEnum
-from starlette import status
-
 from models.common import PatchResponse
+from models.roles import Priv
 
 
 class UserData(I4cBaseModel):
@@ -36,10 +33,13 @@ class User(UserData):
     roles_eff: List[str] = Field(..., title="All roles assigned directly or indirectly")
 
 
-class UserResponse(I4cBaseModel):
-    """Single user response"""
-    user: User
+class UserWithPrivs(User):
+    privs: List[Priv]
 
+
+class LoginUserResponse(I4cBaseModel):
+    """Single user response"""
+    user: UserWithPrivs
 
 
 class UserPatchChange(I4cBaseModel):
@@ -66,41 +66,14 @@ def user_from_row(row):
     return d
 
 
-async def get_user(*, user_id=None, login_name=None, active_roles_only=True, pconn=None):
-    sql_user = dedent("""\
-            select *
-            from "user" u
-            where True
-            <filter>
-          """)
-
-    sql_roles = dedent("""\
-            select ur.role
-            from user_role ur
-            join "role" r on r.name = ur.role 
-            where ur."user" = $1
-            <filter>
-          """)
-
-    sql_roles_eff = dedent("""\
-            with
-              recursive deep_role_r as
-                (select distinct "name" as toprole, "name" as midrole, "name" as subrole from "role"
-                 union
-                 select deep_role_r.toprole, role_subrole.role as midrole, role_subrole.subrole
-                 from deep_role_r 
-                 join role_subrole on deep_role_r."subrole" = role_subrole."role"),
-              deep_role as (select distinct toprole as role, subrole from deep_role_r)
-            select distinct 
-              deep_role.subrole as "role"
-            from user_role 
-            join deep_role on deep_role.role = user_role."role"
-            join role_grant on deep_role.subrole = role_grant."role"
-            join "role" r on r.name = deep_role.subrole
-            where user_role."user" = $1
-            <filter>
-          """)
+async def get_user(*, user_id=None, login_name=None, active_roles_only=True, with_privs=False, pconn=None):
     async with DatabaseConnection(pconn) as conn:
+        sql_user = dedent("""\
+                select *
+                from "user" u
+                where True
+                <filter>
+              """)
         params = []
         filters = ""
         if user_id is not None:
@@ -118,6 +91,13 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, pco
             return None
         res = user_from_row(db_user)
 
+        sql_roles = dedent("""\
+                select ur.role
+                from user_role ur
+                join "role" r on r.name = ur.role 
+                where ur."user" = $1
+                <filter>
+              """)
         res_roles = []
         filters = ""
         if active_roles_only:
@@ -129,7 +109,26 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, pco
             res_roles.append(r[0])
         res["roles"] = res_roles
 
+        sql_roles_eff = dedent("""\
+                with
+                  recursive deep_role_r as
+                    (select distinct "name" as toprole, "name" as midrole, "name" as subrole from "role"
+                     union
+                     select deep_role_r.toprole, role_subrole.role as midrole, role_subrole.subrole
+                     from deep_role_r 
+                     join role_subrole on deep_role_r."subrole" = role_subrole."role"),
+                  deep_role as (select distinct toprole as role, subrole from deep_role_r)
+                select distinct 
+                  deep_role.subrole as "role"
+                from user_role 
+                join deep_role on deep_role.role = user_role."role"
+                join role_grant on deep_role.subrole = role_grant."role"
+                join "role" r on r.name = deep_role.subrole
+                where user_role."user" = $1
+                <filter>
+              """)
         res_roles_eff = []
+        privs = []
         filters = ""
         if active_roles_only:
             filters = """and r."status" = 'active'"""
@@ -138,13 +137,20 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, pco
         db_roles_eff = await conn.fetch(sql_roles_eff, res["id"])
         for r in db_roles_eff:
             res_roles_eff.append(r[0])
+            if with_privs:
+                sql = """select endpoint, features from role_grant where role = $1"""
+                db_privs = await conn.fetch(sql, r[0])
+                privs.extend([Priv(endpoint=r["endpoint"], features=r["features"]) for r in db_privs])
         res["roles_eff"] = res_roles_eff
-
-        return User(**res)
+        if with_privs:
+            res["privs"] = privs
+            return UserWithPrivs(**res)
+        else:
+            return User(**res)
 
 
 async def login(credentials: HTTPBasicCredentials, *, pconn=None):
-    res = await get_user(login_name=credentials.username)
+    res = await get_user(login_name=credentials.username, with_privs=True)
     return {"user": res}
 
 

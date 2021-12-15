@@ -16,7 +16,7 @@ async def init(
     return await models.pwdreset.init(loginname)
 
 
-@router.post("/setpass", response_model=models.users.UserResponse, tags=["user"], x_properties=dict(object="pwdreset", action="set"))
+@router.post("/setpass", response_model=models.users.LoginUserResponse, tags=["user"], x_properties=dict(object="pwdreset", action="set"))
 async def setpass(param: models.pwdreset.SetPassParams = Body(...)):
     "Reset user password"
     return await models.pwdreset.setpass(param.loginname, param.token, param.password)
@@ -29,7 +29,7 @@ async def get_outbox_list(
     return await models.pwdreset.get_outbox_list(credentials)
 
 
-@router.post("/sent", response_model=models.users.UserResponse, tags=["user"], x_properties=dict(object="pwdreset", action="sent"))
+@router.post("/sent", status_code=201, tags=["user"], x_properties=dict(object="pwdreset", action="sent"))
 async def sent(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/pwdreset/sent")),
         loginname: str = Query(...)
