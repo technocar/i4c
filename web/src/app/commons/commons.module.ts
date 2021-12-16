@@ -8,6 +8,7 @@ import { NgbAlertModule, NgbButtonsModule, NgbDropdownModule, NgbPopoverModule, 
 import { MetaFilterComponent } from './meta-filter/meta-filter.component';
 import { MetaSelectorComponent } from './meta-selector/meta-selector.component';
 import { GridToolsComponent } from './grid-tools/grid-tools.component';
+import { AppNotifComponent } from './app-notif/app-notif.component';
 
 
 
@@ -17,7 +18,8 @@ import { GridToolsComponent } from './grid-tools/grid-tools.component';
     FilterControlComponent,
     MetaFilterComponent,
     MetaSelectorComponent,
-    GridToolsComponent
+    GridToolsComponent,
+    AppNotifComponent
   ],
   imports: [
     CommonModule,
@@ -34,7 +36,8 @@ import { GridToolsComponent } from './grid-tools/grid-tools.component';
     FilterControlComponent,
     MetaFilterComponent,
     MetaSelectorComponent,
-    GridToolsComponent
+    GridToolsComponent,
+    AppNotifComponent
   ]
 })
 export class CommonsModule { }

@@ -3,7 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { FilterControlComponent } from '../commons/filter/filter.component';
 import { ApiService } from '../services/api.service';
 import { FiltersService } from '../services/filters.service';
-import { Alarm } from '../services/models/api';
+import { Alarm, AlarmRule } from '../services/models/api';
 import { Labels } from '../services/models/constants';
 import { AlarmHelpers } from './helpers';
 

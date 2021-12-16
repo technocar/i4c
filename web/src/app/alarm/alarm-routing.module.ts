@@ -10,8 +10,8 @@ const routes: Routes = [{
   children: [
     { path: '', component: AlarmComponent, canActivate: [AuthGuard] },
     { path: ':name', component: AlarmDetailComponent, canActivate: [AuthGuard],
-      resolve: { alarm: AlarmDetailResolver },
-      data: { breadcrumb: (data: any) => `${data.alarm ? data.alarm.name : "???"}` }
+      resolve: { data: AlarmDetailResolver },
+      data: { breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].name : "???"}` }
     }
   ],
   data: { breadcrumb: 'Riasztások' }

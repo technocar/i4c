@@ -473,6 +473,7 @@ export interface StatXYParam {
 export interface Alarm {
   conditions: AlarmRule[],
   max_freq: number,
+  window: number,
   subsgroup: string,
   id: number,
   name: string,
@@ -494,23 +495,23 @@ export interface AlarmRuleBase {
 
 export enum AlarmRuleSampleAggMethod { Avg = 'avg', Median = 'median', Q1th = 'q1th', Q4th = 'q4th', Slope = 'slope' }
 export interface AlarmRuleSample extends AlarmRuleBase {
-  aggregate_period: number,
-  aggregate_count: number,
-  aggregate_method: AlarmRuleSampleAggMethod,
+  aggregate_period?: number,
+  aggregate_count?: number,
+  aggregate_method?: AlarmRuleSampleAggMethod,
   rel: NumberRelation,
-  value: number
+  value?: number
 }
 
 export interface AlarmRuleEvent extends AlarmRuleBase {
   rel: StringRelation,
-  value: string,
-  age_min: number,
-  age_max: number
+  value?: string,
+  age_min?: number,
+  age_max?: number
 }
 
 export interface AlarmRuleCondition extends AlarmRuleBase {
-  value: string,
-  age_min: number
+  value?: string,
+  age_min?: number
 }
 
 export enum AlarmNotificationType { Email = 'email', Push = 'push', None = 'none' }

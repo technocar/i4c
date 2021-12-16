@@ -1,7 +1,19 @@
-<div class="row m-0">
+<form class="row m-0" #form="ngForm">
   <div class="col">
+    <div class="row mb-4">
+      <button type="submit" class="col-auto ml-auto btn btn-outline-success" (click)="save(form)">
+        <i class="bi bi-save"></i>
+        mentés
+      </button>
+    </div>
     <div class="row align-items-center mb-4">
-      <input class="col form-control" [(ngModel)]="def.name" />
+      <div class="col form-group p-0 mb-0">
+        <input #name="ngModel" class="form-control" name="name" [(ngModel)]="def.name" placeholder="riasztás neve" pattern="^$|^[A-Za-z0-9]+" required />
+        <div *ngIf="name.invalid" class="invalid-feedback">
+          <div *ngIf="name.errors?.required">név megadása kötelező</div>
+          <div *ngIf="name.errors?.pattern">csak alfanumerikus lehet</div>
+        </div>
+      </div>
       <div class="col-5">
         <div class="row m-0">
           <label class="col m-0">utolsó ellenőrzés</label>
@@ -13,12 +25,67 @@
         </div>
       </div>
     </div>
+    <div class="row mb-4">
+      <fieldset class="col p-4 mr-4">
+        <legend>maximum jelentési frekvencia</legend>
+        <app-period-selector [(seconds)]="def.max_freq"></app-period-selector>
+      </fieldset>
+      <fieldset class="col p-4">
+        <legend>visszatekintés</legend>
+        <app-period-selector [(seconds)]="def.window"></app-period-selector>
+      </fieldset>
+    </div>
     <fieldset class="row p-4">
-      <legend>maximum jelentési frekvencia</legend>
-      <input type="number" min="0" class="col-2 form-control mr-4" [(ngModel)]="period.value" />
-      <select class="col-2 form-control" [(ngModel)]="period.type">
-        <option *ngFor="let p of getPeriods()" [value]="p[0]">{{p[1]}}</option>
-      </select>
+      <legend>feltételek</legend>
+      <div class="col-12">
+        <div class="row mb-2" *ngFor="let rule of rules$ | async; index as ruleIdx">
+          <select class="col-2 form-control" name="rule_device" [(ngModel)]="rule.device">
+            <option *ngFor="let device of devices" [value]="device.id">{{device.name}}</option>
+          </select>
+          <app-meta-selector class="col-2" [selectableTypes]="[]" [metaList]="getMetaForDevice(rule.device)" (change)="selectRuleMeta(rule, $event)" [selectedMetaId]="getSelectedDataId(rule)"></app-meta-selector>
+          <div class="col">
+            <div class="row align-items-center">
+
+              <ng-template [ngIf]="rule.sample">
+                <div class="col-5 mr-2">
+                  <app-period-selector [(seconds)]="rule.sample.aggregate_period" [(unit)]="rule.sample.aggregate_count" [unitOption]="true"></app-period-selector>
+                </div>
+                <select class="col-2 form-control mr-2" name="rule_sample_aggregate_method" [(ngModel)]="rule.sample.aggregate_method">
+                  <option *ngFor="let method of getNumberAggregates()" [value]="method[0]">{{method[1]}}</option>
+                </select>
+                <select class="col-2 form-control mr-2" name="rule_sample_rel" [(ngModel)]="rule.sample.rel">
+                  <option *ngFor="let rel of getNumberRelations()" [value]="rel">{{rel}}</option>
+                </select>
+                <input type="number" class="col form-control" name="rule_sample_value" [(ngModel)]="rule.sample.value" />
+              </ng-template>
+
+              <ng-template [ngIf]="rule.event">
+                <select class="col-2 form-control mr-2" name="rule_event_rel" [(ngModel)]="rule.event.rel">
+                  <option *ngFor="let rel of getStringRelations()" [value]="rel">{{rel}}</option>
+                </select>
+                <input class="col form-control mr-2" name="rule_event_value" [(ngModel)]="rule.event.value" />
+                <input type="number" class="col-2 form-control" name="rule_event_age_min" [(ngModel)]="rule.event.age_min" />
+                <label class="col-auto mr-1 ml-1 mb-0">-</label>
+                <input type="number" class="col-2 form-control" name="rule_event_age_max" [(ngModel)]="rule.event.age_max" />
+              </ng-template>
+
+              <ng-template [ngIf]="rule.condition">
+                <input class="col-4 form-control mr-2" name="rule_condition_value" [(ngModel)]="rule.condition.value" />
+                <input type="number" class="col-2 form-control" name="rule_condition_age_min" [(ngModel)]="rule.condition.age_min" />
+              </ng-template>
+            </div>
+          </div>
+          <div class="col-auto ml-auto pl-2 pr-0">
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteRule(ruleIdx)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <button class="col-auto btn btn-primary mt-2" (click)="newRule()">
+        <i class="bi bi-plus-lg"></i>
+        új feltétel...
+      </button>
     </fieldset>
   </div>
-</div>
+</form>

@@ -1,0 +1,5 @@
+<div class="app-notif">
+  <p *ngFor="let notif of notifs$ | async">
+    <ngb-alert  [type]="notif.type" [dismissible]="true" (closed)="remove(notif)">{{notif.message}}</ngb-alert>
+  </p>
+</div>

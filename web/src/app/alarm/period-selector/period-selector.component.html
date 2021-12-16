@@ -1,0 +1,6 @@
+<div class="row">
+  <input type="number" min="0" class="col-3 form-control" [(ngModel)]="period.value" (change)="periodChange()" />
+  <select class="col form-control" [(ngModel)]="period.type" (change)="periodChange()">
+    <option *ngFor="let p of getPeriods()" [value]="p[0]">{{p[1]}}</option>
+  </select>
+</div>
