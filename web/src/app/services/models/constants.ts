@@ -20,4 +20,12 @@ export class Labels {
     }
   }
 
+  static periods = [
+    ['s', $localize `:@@datetime_second:másodperc`, $localize `:@@datetime_second_short:mp`],
+    ['m', $localize `:@@datetime_minute:perc`, $localize `:@@datetime_minute_short:p`],
+    ['H', $localize `:@@datetime_hour:óra`, $localize `:@@datetime_hour_short:óra`],
+    ['D', $localize `:@@datetime_day:nap`, $localize `:@@datetime_day_short:nap`],
+    ['M', $localize `:@@datetime_month:hónap`, $localize `:@@datetime_month_short:hónap`],
+    ['Y', $localize `:@@datetime_year:év`, $localize `:@@datetime_year_short:év`]
+  ]
 }

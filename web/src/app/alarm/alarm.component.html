@@ -1,0 +1,46 @@
+<div class="row">
+  <app-grid-tools class="col-12 p-0" (reload)="filter()"></app-grid-tools>
+  <table class="table table-striped table-hover text-center col-12 text-center">
+    <thead>
+      <tr>
+        <th><ctrl-filter #filterNameCtrl (valueChange)="filter()"></ctrl-filter></th>
+        <th></th>
+        <th></th>
+        <th><input type="datetime-local" class="form-control" [ngModel]="filters.last_report | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="filter('last_report', $event)" /></th>
+        <th></th>
+        <th></th>
+      </tr>
+      <tr>
+        <th scope="col">megnevezés</th>
+        <th scope="col" title="jelentési frekvencia">jelentési frek.</th>
+        <th scope="col" title="utolsó ellenőrzés">utolsó ell.</th>
+        <th scope="col" title="utolsó hibajelentés">utolsó hibajel.</th>
+        <th scope="col" title="feliratkozások száma">fel. száma</th>
+        <th scope="col">&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-template [ngIf]="listFetching$ | async">
+        <tr class="loading">
+          <td colspan="7">
+            <div class="d-flex justify-content-center">
+              <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template [ngIf]="!(listFetching$ | async)">
+        <tr *ngFor="let alarm of alarms$ | async">
+          <td>{{alarm.name}}</td>
+          <td>{{getMaxFreqDesc(alarm)}}</td>
+          <td>{{alarm.last_check | date:"yyyy.MM.dd HH:mm:ss"}}</td>
+          <td>{{alarm.last_report | date:"yyyy.MM.dd HH:mm:ss"}}</td>
+          <td>{{alarm.subs?.length}}</td>
+          <td><a href="#" [routerLink]="[alarm.name]">részletek</a></td>
+        </tr>
+      </ng-template>
+    </tbody>
+  </table>
+</div>

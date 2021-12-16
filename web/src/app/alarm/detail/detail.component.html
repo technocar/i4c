@@ -1,0 +1,24 @@
+<div class="row m-0">
+  <div class="col">
+    <div class="row align-items-center mb-4">
+      <input class="col form-control" [(ngModel)]="def.name" />
+      <div class="col-5">
+        <div class="row m-0">
+          <label class="col m-0">utolsó ellenőrzés</label>
+          <label class="col m-0 font-weight-bold">{{def.last_check | date:"yyyy.MM.dd HH:mm:ss"}}</label>
+        </div>
+        <div class="row m-0">
+          <label class="col m-0">utolsó hibajelentés</label>
+          <label class="col m-0 font-weight-bold">{{def.last_report | date:"yyyy.MM.dd HH:mm:ss"}}</label>
+        </div>
+      </div>
+    </div>
+    <fieldset class="row p-4">
+      <legend>maximum jelentési frekvencia</legend>
+      <input type="number" min="0" class="col-2 form-control mr-4" [(ngModel)]="period.value" />
+      <select class="col-2 form-control" [(ngModel)]="period.type">
+        <option *ngFor="let p of getPeriods()" [value]="p[0]">{{p[1]}}</option>
+      </select>
+    </fieldset>
+  </div>
+</div>
