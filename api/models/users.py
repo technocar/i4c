@@ -212,6 +212,7 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pco
                 if hasattr(e, 'constraint_name'):
                     if e.constraint_name == 'uq_user_login':
                         raise I4cClientError("Login name must be unique.")
+                raise e
 
             sub = cmp_list(old_roles, user.roles)
             if len(sub.delete) > 0 or len(sub.insert) > 0:
