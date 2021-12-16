@@ -209,6 +209,7 @@ class AlarmSubIn(I4cBaseModel):
     user: Optional[str]
     method: AlarmMethod
     address: Optional[str]
+    address_name: Optional[str]
     status: CommonStatusEnum
 
 
@@ -229,13 +230,17 @@ class AlarmSubPatchCondition(I4cBaseModel):
     flipped: Optional[bool]
     status: Optional[CommonStatusEnum]
     address: Optional[str]
+    address_name: Optional[str]
     empty_address: Optional[bool]
+    empty_address_name: Optional[bool]
     has_group: Optional[str]
 
     def match(self, alarmsub:AlarmSub):
         r = (((self.status is None) or (alarmsub.status == self.status))
              and ((self.address is None) or (self.address == alarmsub.address))
+             and ((self.address_name is None) or (self.address_name == alarmsub.address_name))
              and ((self.empty_address is None) or (bool(alarmsub.address) != self.empty_address))
+             and ((self.empty_address_name is None) or (bool(alarmsub.address_name) != self.empty_address_name))
              and ((self.has_group is None) or (self.has_group in alarmsub.groups))
              )
 
@@ -249,6 +254,8 @@ class AlarmSubPatchChange(I4cBaseModel):
     status: Optional[CommonStatusEnum]
     address: Optional[str]
     clear_address: Optional[bool]
+    address_name: Optional[str]
+    clear_address_name: Optional[bool]
     add_groups: Optional[List[str]]
     set_groups: Optional[List[str]]
     remove_groups: Optional[List[str]]
@@ -256,7 +263,9 @@ class AlarmSubPatchChange(I4cBaseModel):
     def is_empty(self):
         return self.status is None \
                and self.address is None \
+               and self.address_name is None \
                and (self.clear_address is None or not self.clear_address) \
+               and (self.clear_address_name is None or not self.clear_address_name) \
                and self.add_groups is None \
                and self.set_groups is None \
                and self.remove_groups is None
@@ -267,6 +276,9 @@ class AlarmSubPatchChange(I4cBaseModel):
         address, clear_address = values.get('address'), values.get('clear_address')
         if address is not None and clear_address:
             raise ValueError('address and clear_address are exclusive')
+        address_name, clear_address_name = values.get('address_name'), values.get('clear_address_name')
+        if address_name is not None and clear_address_name:
+            raise ValueError('address_name and clear_address_name are exclusive')
 
         add_group, set_groups, remove_group = values.get('add_group'), values.get('set_groups'), values.get('remove_group')
         if add_group is not None and set_groups is not None:
@@ -314,6 +326,7 @@ class AlarmRecip(I4cBaseModel):
     status: AlarmRecipientStatus
     user: AlarmRecipUser
     address: Optional[str]
+    address_name: Optional[str]
 
 
 class AlarmRecipPatchCondition(I4cBaseModel):
@@ -352,6 +365,7 @@ async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=
                       als."user", 
                       als.method,
                       als.address,
+                      als.address_name,
                       als.status,
                       u."name" as user_name
                     from alarm_sub als
@@ -581,10 +595,12 @@ async def subsgroups_list(credentials, *, pconn=None):
 async def post_alarmsub(credentials, alarmsub:AlarmSubIn) -> AlarmSub:
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            sql_mod = "insert into alarm_sub (groups, \"user\", method, address, status)\n" \
-                      "values ($1, $2, $3, $4, $5)" \
+            sql_mod = "insert into alarm_sub (groups, \"user\", method, address, address_name, status)\n" \
+                      "values ($1, $2, $3, $4, $5, $6)" \
                       "returning id"
-            id = (await conn.fetchrow(sql_mod, alarmsub.groups, alarmsub.user, alarmsub.method, alarmsub.address, alarmsub.status))[0]
+            id = (await conn.fetchrow(sql_mod,
+                                      alarmsub.groups, alarmsub.user, alarmsub.method,
+                                      alarmsub.address, alarmsub.address_name, alarmsub.status))[0]
             res = await alarmsub_list(credentials, id=id, pconn=conn)
             return res[0]
 
@@ -619,8 +635,15 @@ async def patch_alarmsub(credentials, id, patch: AlarmSubPatchBody):
                 params.append(patch.change.address)
                 sql += f"{sep}\"address\"=${len(params)}"
                 sep = ",\n"
+            if patch.change.address_name is not None:
+                params.append(patch.change.address_name)
+                sql += f"{sep}\"address_name\"=${len(params)}"
+                sep = ",\n"
             if patch.change.clear_address:
                 sql += f"{sep}\"address\"= null"
+                sep = ",\n"
+            if patch.change.clear_address_name:
+                sql += f"{sep}\"address_name\"= null"
                 sep = ",\n"
             if any(x is not None for x in (patch.change.add_groups, patch.change.set_groups, patch.change.remove_groups)):
                 groups = set(al.groups)
@@ -901,6 +924,7 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                       e.summary as event_summary,
                       e.description as event_description,
                       r."address",
+                      r."address_name",
                       r."user",
                       u.name as user_name,
                       u."status" as user_status
@@ -953,6 +977,7 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                            method=r["method"],
                            status=r["status"],
                            address=r["address"],
+                           address_name=r["address_name"],
                            user=AlarmRecipUser(id=r["user"],
                                                name=r["user_name"],
                                                status=r["user_status"])

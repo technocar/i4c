@@ -49,7 +49,8 @@ create table "alarm_sub" (
     groups character varying (200)[] not null,
     "user" character varying (200) null constraint fk_alarm_sub_user references "user", 
     method character varying (200) not null,
-    address character varying (200) null,
+    address text null,
+    address_name character varying (200) null,
     status character varying (200) not null
 );
 
@@ -78,7 +79,8 @@ create table "alarm_recipient" (
     event integer not null constraint fk_event references "alarm_event",
     "user" character varying (200) null constraint fk_alarm_sub_user references "user", 
     method character varying (200) not null,
-    address character varying (200) null,
+    address text null,
+    address_name character varying (200) null,
     status character varying (200) not null
 );
 
