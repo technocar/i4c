@@ -1,5 +1,5 @@
 from textwrap import dedent
-from asyncpg import ForeignKeyViolationError
+from asyncpg import ForeignKeyViolationError, UniqueViolationError
 from fastapi.security import HTTPBasicCredentials
 from pydantic import Field, root_validator
 from typing import Optional, List
@@ -183,9 +183,13 @@ async def get_users(credentials, login_name=None, *, active_only=True, pconn=Non
         return res
 
 
-async def user_put(credentials, id, user: UserIn, *, pconn=None):
+async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction(isolation='repeatable_read'):
+            if id != credentials.user_id:
+                if 'modify others' not in credentials.info_features:
+                    raise I4cClientError("Unable to modify other user's data")
+
             old = await get_user(user_id=id, active_roles_only=False, pconn=conn)
             if not old:
                 old_roles = []
@@ -201,10 +205,18 @@ async def user_put(credentials, id, user: UserIn, *, pconn=None):
                         set 
                             name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6, email = $7 
                         where id = $1""")
-            await conn.fetchrow(sql, id, user.name, user.status, user.login_name,
-                                common.create_password(user.password), user.customer, user.email)
+            try:
+                await conn.fetchrow(sql, id, user.name, user.status, user.login_name,
+                                    common.create_password(user.password), user.customer, user.email)
+            except UniqueViolationError as e:
+                if hasattr(e, 'constraint_name'):
+                    if e.constraint_name == 'uq_user_login':
+                        raise I4cClientError("Login name must be unique.")
 
             sub = cmp_list(old_roles, user.roles)
+            if len(sub.delete) > 0 or len(sub.insert) > 0:
+                if 'modify role' not in credentials.info_features:
+                    raise I4cClientError("Unable to modify role")
             for c in sub.delete:
                 sql_del = """delete from user_role where "user" = $1 and role = $2"""
                 await conn.execute(sql_del, id, c)
