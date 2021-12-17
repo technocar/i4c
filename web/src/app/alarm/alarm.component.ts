@@ -66,7 +66,7 @@ export class AlarmComponent implements OnInit, AfterViewInit {
     switch (name) {
       case "last_check":
       case "last_report":
-        this.filters[name] = (new Date(value)).toISOString();
+        this.filters[name] = (value ?? "") === "" ? undefined : (new Date(value)).toISOString();
         break;
       default:
         this.filters.name = this.filterNameCtrl.queryParam;
