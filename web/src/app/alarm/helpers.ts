@@ -30,18 +30,19 @@ export class AlarmHelpers {
     if ((seconds ?? undefined) === undefined)
       return p;
 
-    Labels.periods.slice(0).reverse().forEach((period) => {
+    Labels.periods.slice(0).reverse().every((period) => {
       var interval: number = this.getPeriodInterval(period[0]);
       var value = 0;
       value = seconds / interval;
-      if (value > 0) {
+      if (value > 1) {
         p = {
           display: `${value.toFixed(0)}${period[2]}`,
           type: period[0],
           value: value
         }
-        return;
+        return false;
       }
+      return true;
     });
     return p;
   }
