@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { Alarm, AlarmRule, AlarmRuleSampleAggMethod, Device, Meta, NumberRelation, StringRelation } from 'src/app/services/models/api';
@@ -26,6 +26,7 @@ export class AlarmDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private apiService: ApiService,
     private notifService: NotificationService
   ) { }
@@ -129,6 +130,10 @@ export class AlarmDetailComponent implements OnInit {
     }
   }
 
+  trackByRuleIdx(index: number, rule: Rule) {
+    return index;
+  }
+
   newRule() {
     var rules = this.rules$.value;
     rules.push({
@@ -152,6 +157,7 @@ export class AlarmDetailComponent implements OnInit {
 
     this.apiService.setAlarm(this.origDef.name, this.def)
       .subscribe(r => {
+        this.router.navigate([r.name], { relativeTo: this.route.parent, replaceUrl: true });
         this.notifService.sendAppNotif(AppNotifType.Success, $localize `:@@save_success:Sikeres mentés!`);
       }, err => {
         this.notifService.sendAppNotif(AppNotifType.Error, this.apiService.getErrorMsg(err).toString());
