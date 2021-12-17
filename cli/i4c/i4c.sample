@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-env mincmd-base-url="http://127.0.0.1:5000" mincmd-program-name=i4c mincmd-loglevel="DEBUG" python3.7 mincmd.py "$@"
