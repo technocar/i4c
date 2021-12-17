@@ -132,7 +132,7 @@ def callback(ctx, **args):
     body = args.get("body", None)
     body = resolve_file(body)
     if isinstance(body, dict):
-        body = json.dumps(body).encode("utf-8")
+        body = jsonify(body).encode("utf-8")
     if isinstance(body, str):
         body = body.encode("utf-8")
 

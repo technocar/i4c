@@ -1,6 +1,4 @@
 import os
-from http.client import HTTPException
-
 import yaml
 import json
 import base64
@@ -9,6 +7,7 @@ import urllib.request
 import nacl.signing
 import nacl.encoding
 from .apidef import I4CDef
+from .tools import jsonify
 
 
 def public_key(private_key):
@@ -112,18 +111,25 @@ class I4CConnection:
         self.password = password
         self.private_key = private_key
 
-    def invoke_url(self, url, method=None, data=None):
+    def invoke_url(self, url, method=None, data=None, bindata=None, jsondata=None, data_content_type=None):
         """
         Call the specified sub-url. Base url is prepended, and authentication is taken care of.
 
         :param url: relative url including path and query. Initial / can be included or omitted.
         :param method: GET | PUT | POST | PATCH | DEL. If omitted, defaults to GET if no data, POST if there is data.
-        :param data: request body. If dict, application/json will be submitted. If bytes, application/octet-stream.
+        :param data: request body. Content type and transformations are heuristic. For more control, consider using
+                     jsondata or bindata instead, and/or specify data_content_type.
+                     Dict or list will be converted to json, submitted as application/json.
+                     Bytes will be submitted verbatim as application/octet-stream.
+                     Str will be submitted as plain/text.
+        :param bindata: will be passed as request body. Content-Type will be application/octet-stream
+        :param jsondata: will be converted to json, and passed as request body. Content type will be application/json.
+        :param data_content_type: if given, it will override the automatic Content-Type for the body.
         :return: Dict for json payloads, None for 204, otherwise the HTTPResponse.
         """
 
         if not method:
-            if data is None:
+            if data is None and jsondata is None and bindata is None:
                 method = "GET"
             else:
                 method = "POST"
@@ -142,17 +148,32 @@ class I4CConnection:
             token = base64.b64encode(token).decode()
             headers["Authorization"] = f"Basic {token}"
 
-        if any(isinstance(data, t) for t in (dict, list, str, int, float, bool)):
-            data = json.dumps(data).encode()
+        if jsondata is not None:
+            body = jsonify(jsondata).encode()
+            headers["Content-Type"] = "application/json"
+        elif bindata is not None:
+            body = bindata
+            headers["Content-Type"] = "application/octet-stream"
+        elif isinstance(data, dict) or isinstance(data, list):
+            body = jsonify(data).encode()
             headers["Content-Type"] = "application/json"
         elif isinstance(data, bytes):
             headers["Content-Type"] = "application/octet-stream"
+            body = data
+        elif isinstance(data, str):
+            headers["Content-Type"] = "text/plain"
+            body = data
+        else:
+            body = data
+
+        if data_content_type is not None:
+            headers["Content-Type"] = data_content_type
 
         if not url.startswith("/"):
             url = "/" + url
         url = self.base_url + url
 
-        req = urllib.request.Request(url, data=data, method=method, headers=headers)
+        req = urllib.request.Request(url, data=body, method=method, headers=headers)
         conn = urllib.request.urlopen(req)
 
         if conn.getcode() == 204:
@@ -169,17 +190,17 @@ class I4CConnection:
             self._api_def = I4CDef(base_url=self.base_url, def_file=self.api_def_file)
         return self._api_def
 
-
     def invoke(self, obj, action=None, **params):
         """
-        Invokes a logical function, as defined by the interface. If the interface does not define logical objects,
-        they will be automatically generated from paths. Get information about the available logical functions with
+        Invokes a logical function, as defined by the interface. Logical functions and objects are defined in the api
+        as x-properties (x-object and x-action). If the interface does not define logical objects, they will be
+        automatically generated from paths. Get information about the available logical functions with
         .api_def().objects()
 
         :param obj: logical object, as defined by the interface.
         :param action: logical action, as defined by the interface.
-        :param params: path and query parameters.
-        :param data: request body. If dict, application/json will be submitted. If bytes, application/octet-stream.
+        :param body: request body.
+        :param params: all other named parameters represent path and query parameters, and the body.
         :return: Dict for json payloads, None for 204, otherwise the HTTPResponse.
         """
 
@@ -189,5 +210,6 @@ class I4CConnection:
             body = None
 
         method, url = self.api_def().assemble_url(obj, action, **params)
+        body, content_type = self.api_def().prepare_body(obj, action, body)
 
-        return self.invoke_url(url, method, body)
+        return self.invoke_url(url, method, bindata=body, data_content_type=content_type)

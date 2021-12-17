@@ -3,7 +3,8 @@ import json
 import urllib.request
 import urllib.error
 import urllib.parse
-from typing import List, Dict
+from typing import List, Dict, Any
+from .tools import jsonify
 
 
 class Param:
@@ -13,7 +14,7 @@ class Param:
     is_array: bool
     required: bool
     type: str
-    type_extra
+    type_fmt: Any
     sch_obj: str
 
 
@@ -181,8 +182,7 @@ def _proc_sch(sch): # TODO try remove self
 
 
 def preproc_def(apidef):
-    # TODO bring singulare allOf to parent level
-    # TODO embed $ref
+    # TODO bring singular allOf to parent level
 
     def descend(level):
         if "$ref" in level:
@@ -226,8 +226,8 @@ class I4CDef:
 
         for (path, methods) in self.content["paths"].items():
             for (method, info) in methods.items():
-                action_name = info.get("x-mincl-action", None) or info.get("x-action", None) or method
-                obj_name = info.get("x-mincl-object", None) or info.get("x-object", None) or \
+                action_name = info.get("x-i4c-action", None) or info.get("x-action", None) or method
+                obj_name = info.get("x-i4c-object", None) or info.get("x-object", None) or \
                     path[1:].replace("/", "_").replace("{", "by").replace("}", "")
 
                 if obj_name in self.objects:
@@ -317,3 +317,27 @@ class I4CDef:
             url = url + "?" + "&".join(queries)
 
         return method, url
+
+    def prepare_body(self, obj, action, body):
+        obj = self.objects[obj]
+
+        if action is None and len(obj) == 1:
+            action = list(obj.values())[0]
+        else:
+            action = obj.actions[action]
+
+        content_type = action.body_content_type
+
+        if content_type == "application/json":
+            if any(isinstance(body, t) for t in (dict, list, str, int, float, bool)):
+                body = jsonify(body).encode()
+        elif content_type == "application/octet-stream":
+            if any(isinstance(body, t) for t in (dict, list, int, float, bool)):
+                body = jsonify(body).encode()
+            elif isinstance(body, str):
+                body = body.encode()
+        elif content_type == "text/plain":
+            if isinstance(body, str):
+                body = body.encode()
+
+        return body, content_type
