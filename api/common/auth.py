@@ -38,6 +38,31 @@ def create_password(password):
     return verifier
 
 
+def check_signature(s, pubkey):
+    try:
+        timestr, signature = s[0:14], s[14:]
+        tm = datetime.strptime(timestr, "%Y%m%d%H%M%S")
+        tm = tm.replace(tzinfo=timezone.utc)
+        now = datetime.now().astimezone(timezone.utc)
+    except:
+        return False, f"auth fail, timestamp fmt bad"
+
+    if not (-60 < (now - tm).total_seconds() < 60):
+        return False, f"auth fail, timestamp old"
+
+    try:
+        verify = nacl.signing.VerifyKey(pubkey, encoder=nacl.encoding.Base64Encoder)
+        signature = base64.b64decode(signature)
+        timestr = timestr.encode()
+        verify.verify(timestr, signature)
+    except nacl.exceptions.BadSignatureError:
+        return False, f"auth fail, signature bad"
+    except Exception as e:
+        return False, f"auth fail, signature verify for user {login} throws {e}"
+
+    return True, f"auth signature ok"
+
+
 async def authenticate(login, password=None, endpoint=None, need_features=None, ask_features=None):
     """ Authenticate and/or authorize user/endpoint
 
@@ -107,33 +132,11 @@ async def authenticate(login, password=None, endpoint=None, need_features=None, 
         return None, set()
 
     # check authentication
-
     if password is not None:
         if pubkey:
-            try:
-                timestr, signature = password[0:14], password[14:]
-                tm = datetime.strptime(timestr, "%Y%m%d%H%M%S")
-                tm = tm.replace(tzinfo=timezone.utc)
-                now = datetime.now().astimezone(timezone.utc)
-            except:
-                log.debug(f"auth fail, timestamp fmt bad")
-                return None, set()
-
-            if not (-60 < (now - tm).total_seconds() < 60):
-                log.debug(f"auth fail, timestamp old")
-                return None, set()
-
-            try:
-                verify = nacl.signing.VerifyKey(pubkey, encoder=nacl.encoding.Base64Encoder)
-                signature = base64.b64decode(signature)
-                timestr = timestr.encode()
-                verify.verify(timestr, signature)
-                log.debug(f"auth signature ok")
-            except nacl.exceptions.BadSignatureError:
-                log.debug(f"auth fail, signature bad")
-                return None
-            except Exception as e:
-                log.error(f"auth fail, signature verify for user {login} throws {e}")
+            ok, msg = check_signature(password, pubkey)
+            log.debug(msg)
+            if not ok:
                 return None, set()
 
         elif verifier:

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 import common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
+from common.auth import check_signature
 
 router = I4cApiRouter(include_path="/ping")
 
@@ -16,14 +17,14 @@ class Pong(BaseModel):
 @router.get("/noop", response_model=Pong, x_properties=dict(object="ping", action="noop"))
 async def noop_get(
         data: Optional[str] = Query(None, title="Will be given back in the response")):
-    """This endpoint can be used to test API availability"""
+    """Test API availability."""
     return {"data": data}
 
 
 @router.post("/noop", response_model=Dict[Any, Any], x_properties=dict(object="ping", action="post"))
 async def noop_post(
         data: Optional[Dict[Any, Any]] = Body(None, title="Will be given back as the response")):
-    """This endpoint can be used to test POST method and json transport"""
+    """Test POST method and json transport."""
     if data is None:
         data = {}
     return data
@@ -33,18 +34,34 @@ async def noop_post(
 async def pwd_get(
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
-    """This endpoint tests password authentication. User "goodname" with password "goodpass" will be accepted."""
+    """Test password authentication. User "goodname" with password "goodpass" will be accepted."""
     if credentials.username != "goodname" or credentials.password != "goodpass":
         raise HTTPException(403)
     return {"data": data}
 
 
-# TODO implement /signature
+@router.get("/sign", response_model=Pong, x_properties=dict(object="ping", action="sign"))
+async def sign_get(
+        credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
+        data: Optional[str] = Query(None, title="Will be given back in the response")):
+    """
+    Test signature authentication. User "goodname" with private key "Jzjk5ifxGQm8JkTiM8mv54hj2U8C6LGp547KdOMLv64=" will
+    be accepted.
+    """
+
+    if credentials.username != "goodname":
+        raise HTTPException(403)
+
+    ok, msg = check_signature(credentials.password, "1mTHEDm5OnMpCx9wfU/pRZiFWwBrW9sN4bY3nYL3/u8=")
+    if not ok:
+        raise HTTPException(403, detail={"error": msg})
+
+    return {"data": data}
 
 
 @router.get("/db", response_model=Pong, x_properties=dict(object="ping", action="db"))
 async def db_get(
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/ping/db")),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
-    """This endpoint can be used to test proper authentication and backend database access."""
+    """Test real authentication and backend database access."""
     return {"data": data}
