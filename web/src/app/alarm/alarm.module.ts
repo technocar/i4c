@@ -7,6 +7,7 @@ import { CommonsModule } from '../commons/commons.module';
 import { FormsModule } from '@angular/forms';
 import { AlarmDetailComponent } from './detail/detail.component';
 import { PeriodSelectorComponent } from './period-selector/period-selector.component';
+import { NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import { PeriodSelectorComponent } from './period-selector/period-selector.compo
     CommonModule,
     AlarmRoutingModule,
     CommonsModule,
-    FormsModule
+    FormsModule,
+    NgbTypeaheadModule
   ]
 })
 export class AlarmModule { }

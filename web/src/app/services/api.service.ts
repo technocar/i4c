@@ -187,7 +187,7 @@ export class ApiService {
 
   getEventOperations(): string[][] {
     return [
-      ['*', $localize `:@@event_operation_*:tartalmaz`],
+      ['*=', $localize `:@@event_operation_*=:tartalmaz`],
       ['*!=', $localize `:@@event_operation_*!=:nem tartalmaz`],
       ['=', $localize `:@@event_operation_=:teljes egyezés`],
       ['!=', $localize `:@@event_operation_!=:nem egyezik`]

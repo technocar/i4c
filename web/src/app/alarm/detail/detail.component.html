@@ -63,7 +63,8 @@
                 <select class="col-2 form-control mr-2" name="rule_event_rel" [(ngModel)]="rule.event.rel">
                   <option *ngFor="let rel of getStringRelations()" [value]="rel">{{rel}}</option>
                 </select>
-                <input class="col form-control mr-2" name="rule_event_value" [(ngModel)]="rule.event.value" />
+                <autocomplete-input [values]="rule.value_list" [(value)]="rule.event.value" class="col mr-2"></autocomplete-input>
+
                 <input type="number" class="col-2 form-control" name="rule_event_age_min" [(ngModel)]="rule.event.age_min" />
                 <label class="col-auto mr-1 ml-1 mb-0">-</label>
                 <input type="number" class="col-2 form-control" name="rule_event_age_max" [(ngModel)]="rule.event.age_max" />

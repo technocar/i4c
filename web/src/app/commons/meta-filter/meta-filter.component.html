@@ -9,29 +9,7 @@
     <form #searchForm="ngForm" id="dialog"(ngSubmit)="filter(searchForm, modal)" novalidate (change)="searchDataChanged($event)">
       <div class="form-group">
         <label for="search_metrics" class="mr-2">Mérőszám</label>
-        <div #tree ngbDropdown class="d-inline-block">
-          <button type="button" class="btn btn-outline-primary" id="search_metrics" ngbDropdownToggle [disabled]="disableMetricSelection">{{searchModel.metricName ? searchModel.metricName : 'Select metric...'}}</button>
-          <div ngbDropdownMenu aria-labelledby="search_metrics" (click)="toggleMetricNode($event)">
-            <ul>
-              <ng-container
-                *ngTemplateOutlet="metricListTmpl; context:{ list: metricTree }"
-              ></ng-container>
-            </ul>
-            <ng-template #metricListTmpl let-list="list">
-              <li *ngFor="let item of list" id="{{item.id}}" class="closed {{item.children.length === 0 ? 'leaf' : '' }}" data-type="{{item.type}}">
-                <i class="bi bi-plus-square"></i>
-                <i class="bi bi-dash-square"></i>
-                <span class="pl-2 pr-2">{{ item.name }}</span>
-                <button *ngIf="item.level === 'category' && item.name === 'CONDITION'" type="button" class="category btn btn-sm btn-outline-primary">kiválaszt</button>
-                <ul *ngIf="item.children.length > 0">
-                  <ng-container
-                    *ngTemplateOutlet="metricListTmpl; context:{ list: item.children }"
-                  ></ng-container>
-                </ul>
-              </li>
-            </ng-template>
-         </div>
-        </div>
+        <app-meta-selector [selectableTypes]="[]" [metaList]="metaList" (change)="selectMeta($event)"></app-meta-selector>
       </div>
       <div *ngIf="!onlySelector" class="form-group">
         <label for="search_value" class="mr-2">Érrék</label>
@@ -50,12 +28,7 @@
           <select name="search_rel" [(ngModel)]="searchModel.relation" class="form-control mr-2 col" >
             <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
           </select>
-          <input type="text" name="search_value" [(ngModel)]="searchModel.value" class="form-control col-8"
-            [ngbTypeahead]="searchForEventValues"
-            (focus)="focus$.next($any($event).target.value)"
-            (click)="click$.next($any($event).target.value)"
-            #eventValuesSelector="ngbTypeahead"
-         />
+          <autocomplete-input [values]="selectedEventValues" [(value)]="searchModel.value" class="col-8"></autocomplete-input>
         </div>
         <div *ngIf="searchModel.metricType == 'CONDITION'" class="form-group row">
           <div id="search_condition_types" class="btn-group btn-group-toggle mr-2 col" ngbRadioGroup name="search_value" [(ngModel)]="searchModel.value">

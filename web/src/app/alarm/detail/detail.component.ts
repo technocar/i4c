@@ -8,7 +8,8 @@ import { DeviceType, Labels } from 'src/app/services/models/constants';
 import { AppNotifType, NotificationService } from 'src/app/services/notification.service';
 
 interface Rule extends AlarmRule {
-  device: DeviceType
+  device: DeviceType,
+  value_list: string[]
 }
 
 @Component({
@@ -40,7 +41,7 @@ export class AlarmDetailComponent implements OnInit {
       this.metaList = r.data[1] as Meta[];
       this.rules$.next(this.def.conditions.map(r => {
         var device = (r.condition ?? r.event ?? r.sample).device;
-        var rule = Object.assign({ device: device }, r);
+        var rule = Object.assign({ device: device, value_list: [] }, r);
         return rule;
       }));
     });
@@ -91,6 +92,7 @@ export class AlarmDetailComponent implements OnInit {
   selectRuleMeta(rule: Rule, meta: Meta) {
     switch (meta.category) {
       case "EVENT":
+        rule.value_list = meta.value_list ?? [];
         rule.condition = undefined;
         rule.sample = undefined;
         if (!rule.event)
@@ -138,6 +140,7 @@ export class AlarmDetailComponent implements OnInit {
     var rules = this.rules$.value;
     rules.push({
       device: DeviceType.Lathe,
+      value_list: [],
       condition: undefined,
       event: undefined,
       sample: undefined

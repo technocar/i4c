@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Meta } from 'src/app/services/models/api';
+import { Condition } from 'selenium-webdriver';
+import { Category, Meta } from 'src/app/services/models/api';
 
 interface Metric {
   id: string,
@@ -130,7 +131,7 @@ export class MetaSelectorComponent implements OnInit {
       this.selectedMetric = { id: undefined, device: undefined, name: undefined, level: undefined, type: undefined, children: [] }
       this.selectedMetric.type = node.getAttribute("type");
       if (isCategorySelection) {
-        this.selectedMetric.id = undefined;
+        this.selectedMetric.id = node.id;
         this.selectedMetric.name = node.querySelector('span').innerText;
       } else {
         this.selectedMetric.id = node.id;
@@ -138,11 +139,23 @@ export class MetaSelectorComponent implements OnInit {
       }
       node.closest(".dropdown-menu").classList.toggle("show");
       let dropdown = node.closest(".dropdown") as HTMLElement;
-      dropdown.classList.toggle("show");
-      let button = dropdown.querySelector(".dropdown-toggle") as HTMLButtonElement;
-      button.setAttribute("aria-expanded", "false");
+      if (dropdown) {
+        dropdown.classList.toggle("show");
+        let button = dropdown.querySelector(".dropdown-toggle") as HTMLButtonElement;
+        button.setAttribute("aria-expanded", "false");
+      }
       this._selectedMetaId = this.selectedMetric.id;
-      this.change.emit(this.getMeta(this.selectedMetric.id));
+      let meta: Meta;
+      if (isCategorySelection)
+        meta = {
+          data_id: this.selectedMetric.id,
+          device: undefined,
+          category: this.selectedMetric.id as Category,
+          name: this.selectedMetric.name
+        }
+      else
+        meta = this.getMeta(this.selectedMetric.id);
+      this.change.emit(meta);
     } else {
       if (node.classList.contains("closed"))
       {
