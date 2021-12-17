@@ -11,7 +11,7 @@ import urllib.request
 import xml.etree.ElementTree as xmlet
 from typing import List
 from db_row import condition_db_row, sample_db_row, event_db_row, db_row
-import cli
+import i4c as i4c
 from pydantic.schema import datetime
 
 
@@ -25,7 +25,7 @@ if "://" not in host:
     host = f"http://{host}"
 poll = "--poll" in sys.argv
 sleeptime = float(next(args, "1"))
-i4c = cli.I4CConnection()
+i4c_conn = i4c.I4CConnection()
 
 
 def mtsample(start, count, inst=None):
@@ -84,8 +84,8 @@ def update_connect_state(old, new):
     if old == new:
         return old
 
-    i4c.invoke_url("log",
-                   data=[dict(device=dev,
+    i4c_conn.invoke_url("log",
+                        data=[dict(device=dev,
                               timestamp=datetime.now(),
                               sequence=0,
                               data_id='connect',
@@ -104,11 +104,11 @@ def main():
             if first_run:
                 first_run = False
 
-                last_instance_res = i4c.invoke_url(f"log/last_instance?device={urllib.parse.quote(dev)}")
+                last_instance_res = i4c_conn.invoke_url(f"log/last_instance?device={urllib.parse.quote(dev)}")
                 if last_instance_res:
                     old_inst = last_instance_res["instance"]
 
-                find_res = i4c.invoke_url(f"log/find?device={urllib.parse.quote(dev)}&before_count=1&name=connect")
+                find_res = i4c_conn.invoke_url(f"log/find?device={urllib.parse.quote(dev)}&before_count=1&name=connect")
                 if find_res:
                     connect_state = find_res[0]["value_text"]
 
@@ -142,7 +142,7 @@ def main():
         inst = stats["inst"]
 
         dx = [d.AsDict() for d in data]
-        i4c.invoke_url("log", data=dx)
+        i4c_conn.invoke_url("log", jsondata=dx)
 
         data_line = [f"{d.sequence}\t{d.timestamp}\t{d.data_id}\t{value_esc(d.value_text)}\t{str(d.value_num)}" 
                      f"\t{value_esc(d.value_extra)}\t{value_esc(d.value_add)}\n" for d in data]
