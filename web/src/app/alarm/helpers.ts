@@ -46,7 +46,7 @@ export class AlarmHelpers {
     return p;
   }
 
-  public static getMaxFreqValue(period: AlarmPeriod): number {
+  public static getPeriodSeconds(period: AlarmPeriod): number {
     if (!period)
       return 0;
 

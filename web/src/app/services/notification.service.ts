@@ -1,14 +1,24 @@
-import { Injectable } from '@angular/core';
+import { EventEmitter, Injectable } from '@angular/core';
+
+export enum AppNotifType { Info = "info", Success = "success", Warning = "warning", Error = "danger"  }
+export interface AppNotif {
+  type: AppNotifType,
+  message: string,
+  autoClose: boolean,
+  id: number
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
 
+  receiveAppNotif: EventEmitter<AppNotif> = new EventEmitter();
+
   private _desktopModeEnabled: boolean = false;
 
   constructor() {
-    this.initDesktopMode();
+    //this.initDesktopMode();
   }
 
   private initDesktopMode() {
@@ -46,5 +56,14 @@ export class NotificationService {
       return;
 
     new Notification(title, { body: message, timestamp: Date.now() });
+  }
+
+  public sendAppNotif(type: AppNotifType, message: string) {
+    this.receiveAppNotif.emit({
+      type: type,
+      message: message,
+      autoClose: type === AppNotifType.Success,
+      id: -1
+    });
   }
 }

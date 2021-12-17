@@ -36,9 +36,10 @@ async def get_user(
     return res
 
 
-@router.put("/{id}", response_model=models.users.User, x_properties=dict(object="users", action="set"))
+@router.put("/{id}", response_model=models.users.User, x_properties=dict(object="users", action="set"),
+            features=['modify others', 'modify role'])
 async def user_put(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("put/users/{id}")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("put/users/{id}", ask_features=['modify others', 'modify role'])),
     id: str = Path(...),
     user: models.users.UserIn = Body(...),
 ):

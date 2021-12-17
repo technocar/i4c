@@ -826,7 +826,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/installations?id=15",
+							"raw": "localhost:5000/installations?id=15&noaudit=true",
 							"host": [
 								"localhost"
 							],
@@ -843,6 +843,10 @@
 									"key": "status",
 									"value": "todo",
 									"disabled": true
+								},
+								{
+									"key": "noaudit",
+									"value": "true"
 								}
 							]
 						}
@@ -1562,7 +1566,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"condition\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"ct\",\r\n        \"value\": \"Normal\",\r\n        \"age_min\": 9\r\n      }\r\n    },\r\n    {\r\n      \"event\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"exec\",\r\n        \"rel\": \"=\",\r\n        \"value\": \"READY\",\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    },\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"cf\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0,\r\n  \"subsgroup\": \"grp1\"\r\n}",
+							"raw": "{\r\n  \"conditions\": [\r\n    {\r\n      \"condition\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"ct\",\r\n        \"value\": \"Normal\",\r\n        \"age_min\": 9\r\n      }\r\n    },\r\n    {\r\n      \"event\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"exec\",\r\n        \"rel\": \"=\",\r\n        \"value\": \"READY\",\r\n        \"age_min\": 0,\r\n        \"age_max\": 0\r\n      }\r\n    },\r\n    {\r\n      \"sample\": {\r\n        \"device\": \"lathe\",\r\n        \"data_id\": \"cf\",\r\n        \"aggregate_period\": 201,\r\n        \"aggregate_method\": \"avg\",\r\n        \"rel\": \"=\",\r\n        \"value\": 0\r\n      }\r\n    }\r\n  ],\r\n  \"max_freq\": 0,\r\n  \"subsgroup\": \"grp1\",\r\n  \"window\": 15\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1672,7 +1676,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"active\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"active\",\r\n        \"add_groups\": [\"grp3\"]\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": \"active\"\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"active\",\r\n        \"add_groups\": [\"grp3\"],\r\n        \"clear_address_name\": true\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1950,7 +1954,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"stat112\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": {\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"filter\": [\r\n            {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"pgm\",\r\n                \"rel\": \"*\",\r\n                \"value\": \"a\",\r\n                \"age_min\": null,\r\n                \"age_max\": null\r\n            }\r\n        ],\r\n        \"metric\": {\r\n            \"device\": \"lathe\",\r\n            \"data_id\": \"sl\"\r\n        },\r\n        \"agg_func\": null,\r\n        \"agg_sep\": null,\r\n        \"series_sep\": null,\r\n        \"xaxis\": \"timestamp\",\r\n        \"visualsettings\": {\r\n            \"title\": null,\r\n            \"subtitle\": null,\r\n            \"xaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"yaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"legend\": {\r\n                \"position\": null,\r\n                \"align\": null\r\n            }\r\n        }\r\n\r\n    },\r\n    \"xydef\": null\r\n}",
+							"raw": "{\r\n    \"name\": \"stat112\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": {\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"filter\": [\r\n            {\r\n                \"device\": \"lathe\",\r\n                \"data_id\": \"pgm\",\r\n                \"rel\": \"*\",\r\n                \"value\": \"a\",\r\n                \"age_min\": null,\r\n                \"age_max\": null\r\n            }\r\n        ],\r\n        \"metric\": {\r\n            \"device\": \"lathe\",\r\n            \"data_id\": \"sl\"\r\n        },\r\n        \"agg_func\": null,\r\n        \"agg_sep\": null,\r\n        \"series_sep\": null,\r\n        \"xaxis\": \"timestamp\",\r\n        \"visualsettings\": {\r\n            \"title\": null,\r\n            \"subtitle\": null,\r\n            \"xaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"yaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"legend\": {\r\n                \"position\": null,\r\n                \"align\": null\r\n            },\r\n            \"tooltip\": {\r\n                \"html\": \"<html></html>\"\r\n            }\r\n        }\r\n\r\n    },\r\n    \"xydef\": null\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

@@ -6,12 +6,14 @@ import { AlarmComponent } from './alarm.component';
 import { CommonsModule } from '../commons/commons.module';
 import { FormsModule } from '@angular/forms';
 import { AlarmDetailComponent } from './detail/detail.component';
+import { PeriodSelectorComponent } from './period-selector/period-selector.component';
 
 
 @NgModule({
   declarations: [
     AlarmComponent,
-    AlarmDetailComponent
+    AlarmDetailComponent,
+    PeriodSelectorComponent
   ],
   imports: [
     CommonModule,

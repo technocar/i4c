@@ -406,4 +406,8 @@ export class ApiService {
   getAlarm(name: string): Observable<Alarm> {
     return this.http.get<Alarm>(`${this._apiUrl}/alarm/defs/${name}`);
   }
+
+  setAlarm(name: string, alarm: Alarm): Observable<Alarm> {
+    return this.http.put<Alarm>(`${this._apiUrl}/alarm/defs/${name}`, alarm);
+  }
 }
