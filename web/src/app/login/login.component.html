@@ -2,10 +2,10 @@
   <div class="card shadow-sm">
     <h4 class="card-header">Bejelentkezés</h4>
     <div class="card-body">
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
         <div class="form-group">
           <label for="username">Felhasználó</label>
-          <input type="text" formControlName="username" class="form-control" [ngClass]="{ 'is-invalid': submitted && f.username.errors }" autocorrect="off" autocapitalize="none" />
+          <input type="text" formControlName="username" class="form-control" [ngClass]="{ 'ng-invalid': false, 'is-invalid': submitted && f.username.errors }" autocorrect="off" autocapitalize="none" />
           <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
             <div *ngIf="f.username.errors.required">Felhasználó megadása kötekező</div>
           </div>

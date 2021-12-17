@@ -1,7 +1,7 @@
-<form class="row m-0" #form="ngForm">
+<form class="row m-0" #form="ngForm" [noValidate]="false">
   <div class="col">
     <div class="row mb-4">
-      <button type="submit" class="col-auto ml-auto btn btn-outline-success" (click)="save(form)">
+      <button type="submit" class="col-auto ml-auto btn btn-outline-success" (click)="save(form)" [disabled]="form.invalid">
         <i class="bi bi-save"></i>
         mentés
       </button>
@@ -38,7 +38,7 @@
     <fieldset class="row p-4">
       <legend>feltételek</legend>
       <div class="col-12">
-        <div class="row mb-2" *ngFor="let rule of rules$ | async; index as ruleIdx">
+        <div class="row mb-2" *ngFor="let rule of rules$ | async; index as ruleIdx; trackBy: trackByRuleIdx">
           <select class="col-2 form-control" name="rule_device" [(ngModel)]="rule.device">
             <option *ngFor="let device of devices" [value]="device.id">{{device.name}}</option>
           </select>
