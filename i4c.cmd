@@ -1,0 +1,1 @@
+@python -m i4c %*

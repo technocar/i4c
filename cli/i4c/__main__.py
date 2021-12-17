@@ -1,8 +1,8 @@
 import sys
 from functools import wraps
 import click.globals
-from apidef import I4CDef
-import conn
+from .apidef import I4CDef
+from .conn import I4CConnection
 from outputproc import print_table, process_json
 from inputproc import assemble_body
 
@@ -132,7 +132,7 @@ def callback(ctx, **args):
     body = args.get("body", None)
     body = resolve_file(body)
     if isinstance(body, dict):
-        body = json.dumps(body).encode("utf-8")
+        body = jsonify(body).encode("utf-8")
     if isinstance(body, str):
         body = body.encode("utf-8")
 
@@ -651,7 +651,7 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
 
 try:
     read_log_cfg()
-    connection = conn.I4CConnection()
+    connection = I4CConnection()
     make_commands(connection.api_def())
     top_grp(obj={}, prog_name="i4c")
 except click.ClickException as e:

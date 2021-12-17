@@ -76,7 +76,7 @@ def process_json(response, outexpr, outfile, template):
             item_str = template.render(itemdict)
         else:
             if isinstance(item, dict):
-                item_str = json.dumps(item, indent=2)
+                item_str = jsonify(item, indent=2)
             else:
                 item_str = str(item)
 

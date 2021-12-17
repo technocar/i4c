@@ -5,7 +5,7 @@ from fastapi import Request
 from common import apicfg
 from common.exceptions import I4cInputValidationError, I4cClientError, I4cClientNotFound, I4cServerError
 from endpoints import log, users, root, projects, installations, intfiles, \
-    workpiece, tools, batch, alarm, stat, roles, pwdreset, settings
+    workpiece, tools, batch, alarm, stat, roles, pwdreset, settings, ping
 import uvicorn
 import common
 import models.roles
@@ -16,7 +16,7 @@ routers = ((root, None),
            (projects, "projects"), (installations, "installations"), (intfiles, "intfiles"),
            (workpiece, "workpiece"), (tools, "tools"), (batch, "batch"),
            (alarm, "alarm"), (stat, "stat"), (pwdreset, "pwdreset"),
-           (settings, "settings"))
+           (settings, "settings"), (ping, "ping"))
 for r in routers:
     if r[1] is None:
         app.include_router(r[0].router)

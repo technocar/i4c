@@ -1,15 +1,17 @@
+# sample>
+#   http://karatnetsrv:5012/sample
+# replay start>
+#   curl "karatnetsrv:5012/script?id=recorded" -d "0 .spawn recorded"
+
 import sys
 import datetime
 import time
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as xmlet
-import requests
-import yaml
 from typing import List
-from requests.auth import HTTPBasicAuth
-import pytz
 from db_row import condition_db_row, sample_db_row, event_db_row, db_row
-import json
+import i4c as i4c
 from pydantic.schema import datetime
 
 
@@ -23,15 +25,7 @@ if "://" not in host:
     host = f"http://{host}"
 poll = "--poll" in sys.argv
 sleeptime = float(next(args, "1"))
-
-with open("apiconfig.yaml") as f:
-    apicfg = yaml.load(f, Loader=yaml.FullLoader)
-
-
-def json_serial(obj):
-    if isinstance(obj, datetime):
-        return obj.astimezone(pytz.utc).replace(tzinfo=None).isoformat(timespec='milliseconds')+'Z'
-    raise TypeError("Type %s not serializable" % type(obj))
+i4c_conn = i4c.I4CConnection()
 
 
 def mtsample(start, count, inst=None):
@@ -90,15 +84,12 @@ def update_connect_state(old, new):
     if old == new:
         return old
 
-    response = requests.post(f"{apicfg['url']}/log/",
-                            data=json.dumps([dict(device=dev,
-                                                  timestamp=datetime.now(),
-                                                  sequence=0,
-                                                  data_id='connect',
-                                                  value_text=new),], default=json_serial),
-                            headers={"Content-Type": "application/json"},
-                            auth=HTTPBasicAuth(apicfg['user'], apicfg['password']))
-    response.raise_for_status()
+    i4c_conn.invoke_url("log",
+                        data=[dict(device=dev,
+                              timestamp=datetime.now(),
+                              sequence=0,
+                              data_id='connect',
+                              value_text=new)])
     return new
 
 
@@ -113,19 +104,11 @@ def main():
             if first_run:
                 first_run = False
 
-                response = requests.get(f"{apicfg['url']}/log/last_instance",
-                                        dict(device=dev),
-                                        auth=HTTPBasicAuth(apicfg['user'], apicfg['password']) )
-                response.raise_for_status()
-                last_instance_res = response.json()
+                last_instance_res = i4c_conn.invoke_url(f"log/last_instance?device={urllib.parse.quote(dev)}")
                 if last_instance_res:
                     old_inst = last_instance_res["instance"]
 
-                response = requests.get(f"{apicfg['url']}/log/find",
-                                        dict(device=dev, before_count=1, name="connect"),
-                                        auth=HTTPBasicAuth(apicfg['user'], apicfg['password']) )
-                response.raise_for_status()
-                find_res = response.json()
+                find_res = i4c_conn.invoke_url(f"log/find?device={urllib.parse.quote(dev)}&before_count=1&name=connect")
                 if find_res:
                     connect_state = find_res[0]["value_text"]
 
@@ -159,11 +142,7 @@ def main():
         inst = stats["inst"]
 
         dx = [d.AsDict() for d in data]
-        response = requests.post(f"{apicfg['url']}/log/",
-                                 data=json.dumps(dx, default=json_serial),
-                                 headers={"Content-Type": "application/json"},
-                                 auth=HTTPBasicAuth(apicfg['user'], apicfg['password']))
-        response.raise_for_status()
+        i4c_conn.invoke_url("log", jsondata=dx)
 
         data_line = [f"{d.sequence}\t{d.timestamp}\t{d.data_id}\t{value_esc(d.value_text)}\t{str(d.value_num)}" 
                      f"\t{value_esc(d.value_extra)}\t{value_esc(d.value_add)}\n" for d in data]
