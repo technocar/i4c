@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -17,6 +18,11 @@ class Param:
     type_fmt: Any
     sch_obj: str
 
+    def __repr__(self):
+        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
+        flds = ", ".join(flds)
+        return f"Param({flds})"
+
 
 class Action:
     title: str
@@ -26,11 +32,16 @@ class Action:
     response_class: str
     params: Dict[str, Param]
     body_required: bool
+    body_content_type: str
     body_class: str
-
     path: str
     method: str
     raw: dict
+
+    def __repr__(self):
+        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items() if f != "raw")
+        flds = ", ".join(flds)
+        return f"Action({flds})"
 
     def help():
         s = []
@@ -167,6 +178,9 @@ def _proc_auth(a):
 
 
 def _proc_sch(sch): # TODO try remove self
+    if sch is None:
+        return None, False, "unknown", None, None, None
+
     title = sch.get("title", None)
     datatype = sch.get("type", "unknown")
     isarray = datatype == "array"
@@ -176,9 +190,10 @@ def _proc_sch(sch): # TODO try remove self
     else:
         typeroot = sch
     typename = typeroot.get("$ref", None)
-    typeextra = typeroot.get("format", None) or typeroot.get("enum", None)
+    typefmt = typeroot.get("format", None)
+    typeenum = typeroot.get("enum", None)
 
-    return title, isarray, datatype, typeextra, typename
+    return title, isarray, datatype, typefmt, typeenum, typename
 
 
 def preproc_def(apidef):
@@ -226,9 +241,8 @@ class I4CDef:
 
         for (path, methods) in self.content["paths"].items():
             for (method, info) in methods.items():
-                action_name = info.get("x-i4c-action", None) or info.get("x-action", None) or method
-                obj_name = info.get("x-i4c-object", None) or info.get("x-object", None) or \
-                    path[1:].replace("/", "_").replace("{", "by").replace("}", "")
+                obj_name, _, action_name = info["operationId"].partition("_")
+                action_name = action_name.replace("_", "-")
 
                 if obj_name in self.objects:
                     obj = self.objects[obj_name]
@@ -264,17 +278,36 @@ class I4CDef:
                     par.required = p.get("required", False)
                     sch = p.get("schema", None)
                     if sch:
-                        (par.title, par.is_array, par.type, par.type_extra, par.sch_obj) = _proc_sch(sch)
+                        (par.title, par.is_array, par.type, par.type_fmt, par.type_enum, par.sch_obj) = _proc_sch(sch)
                     else:
                         par.title = None
                         par.is_array = False
                         par.type = "unknown"
-                        par.type_extra = None
+                        par.type_fmt = None
+                        par.type_enum = None
                         par.sch_obj = None
                     action.params[p["name"]] = par
                     # TODO fix bug: datapoint.list reports no type for parameter device
 
-                # TODO fill in body, response
+                body = info.get("requestBody", None)
+                if body is not None:
+                    action.body_required = body.get("required", False)
+                    ct = body.get("content", {})
+                    ct, sch = next(iter(ct.items()), (None, None))
+                    sch = sch.get("schema", None)
+                    action.body_content_type = ct
+                    (action.body_title, action.body_is_array, action.body_type, action.body_type_fmt, action.body_type_enum, action.body_sch_obj) = _proc_sch(sch)
+                else:
+                    action.body_required = False
+                    action.body_content_type = None
+                    action.body_title = None
+                    action.body_is_array = False
+                    action.body_type = 'unknown'
+                    action.body_type_fmt = None
+                    action.body_type_enum = None
+                    action.body_sch_obj = None
+
+                # TODO fill in response
 
                 obj.actions[action_name] = action
 
@@ -289,9 +322,8 @@ class I4CDef:
         method = action.method.upper()
         url = action.path
 
-        for p in action.params:
-            if p["in"] == "path":
-                pn = p["name"]
+        for pn, p in action.params.items():
+            if p.location == "path":
                 if pn not in params:
                     raise Exception(f"Missing argument: {pn}")
                 value = params[pn]
@@ -301,15 +333,20 @@ class I4CDef:
                 url = url.replace("{" + pn + "}", value)
 
         queries = []
-        for p in ep.get("parameters", []):
-            if p["in"] == "query":
-                pn = p["name"]
+        for pn, p in action.params.items():
+            if p.location == "query":
                 val = params.get(pn, None)
                 if val:
                     if not isinstance(val, list) and not isinstance(val, tuple):
                         val = [val]
                     for i in val:
-                        if not isinstance(i, str) and not isinstance(i, bytes):
+                        if isinstance(i, datetime.datetime):
+                            i = i.isoformat()
+                        elif not isinstance(i, str) and not isinstance(i, bytes):
+
+                            # TODO there should be a whole lot more conversions
+                            # datetime
+                            # period
                             i = str(i)
                         i = urllib.parse.quote(i)
                         queries.append(pn + "=" + i)
