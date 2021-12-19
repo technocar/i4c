@@ -1,6 +1,6 @@
 from common import I4cBaseModel, DatabaseConnection
 
-view_last_instance_sql = open("models\\log\\last_instance.sql").read()
+view_last_instance_sql = open("models/log/last_instance.sql").read()
 
 
 class LastInstance(I4cBaseModel):

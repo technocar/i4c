@@ -93,11 +93,11 @@ class WorkpiecePatchBody(I4cBaseModel):
 async def get_workpiece_notes(id, with_deleted=False, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\
-                select 
-                  wn.*, 
+                select
+                  wn.*,
                   u.name as user_name
                 from workpiece_note wn
-                join "user" u on u.id = wn."user" 
+                join "user" u on u.id = wn."user"
                 where wn.workpiece = $1""")
         if not with_deleted:
             sql += "and wn.deleted = false"
@@ -110,7 +110,7 @@ async def get_workpiece_notes(id, with_deleted=False, *, pconn=None):
         return res
 
 
-workpiece_list_log_detail = open("models\\workpiece_list_log_detail.sql").read()
+workpiece_list_log_detail = open("models/workpiece_list_log_detail.sql").read()
 
 
 async def get_workpiece_log(begin_timestamp, begin_sequence, end_timestamp, end_sequence, *, pconn=None):
@@ -123,7 +123,7 @@ async def get_workpiece_log(begin_timestamp, begin_sequence, end_timestamp, end_
         return res
 
 
-workpiece_list_log_files = open("models\\workpiece_list_log_files.sql").read()
+workpiece_list_log_files = open("models/workpiece_list_log_files.sql").read()
 
 
 async def get_workpiece_files(begin_timestamp, begin_sequence, end_timestamp, end_sequence, *, pconn=None):
@@ -136,8 +136,8 @@ async def get_workpiece_files(begin_timestamp, begin_sequence, end_timestamp, en
         return res
 
 
-workpiece_list_log_sql = open("models\\workpiece_list_log.sql").read()
-workpiece_list_log_sql_id = open("models\\workpiece_list_log_id.sql").read()
+workpiece_list_log_sql = open("models/workpiece_list_log.sql").read()
+workpiece_list_log_sql_id = open("models/workpiece_list_log_id.sql").read()
 
 
 async def list_workpiece(credentials: CredentialsAndFeatures,

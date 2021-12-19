@@ -2,8 +2,8 @@ import datetime
 from typing import Optional, List
 from common import I4cBaseModel, DatabaseConnection
 
-view_meta_sql = open("models\\log\\meta.sql").read()
-view_meta_event_values_sql = open("models\\log\\meta_event_values.sql").read()
+view_meta_sql = open("models/log/meta.sql").read()
+view_meta_event_values_sql = open("models/log/meta_event_values.sql").read()
 
 
 class Meta(I4cBaseModel):

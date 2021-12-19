@@ -27,7 +27,7 @@ class ListItem(Batch):
     last: Optional[datetime]
 
 
-batch_list_sql = open("models\\batch_list.sql").read()
+batch_list_sql = open("models/batch_list.sql").read()
 
 
 async def batch_list(credentials, project, status, *, pconn=None):

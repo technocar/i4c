@@ -71,8 +71,8 @@ class AlarmCondSample(I4cBaseModel):
 
     async def insert_to_db(self, alarm_id, conn):
         sql_insert = dedent("""\
-            insert into alarm_cond (alarm, log_row_category, device, 
-                                    data_id, aggregate_period, aggregate_count, 
+            insert into alarm_cond (alarm, log_row_category, device,
+                                    data_id, aggregate_period, aggregate_count,
                                     aggregate_method, rel, value_num
                                    ) values ($1, $2, $3,
                                              $4, $5, $6,
@@ -116,8 +116,8 @@ class AlarmCondEvent(I4cBaseModel):
 
     async def insert_to_db(self, alarm_id, conn):
         sql_insert = dedent("""\
-            insert into alarm_cond (alarm, log_row_category, device, 
-                                    data_id, rel, value_text, 
+            insert into alarm_cond (alarm, log_row_category, device,
+                                    data_id, rel, value_text,
                                     age_min, age_max
                                    ) values ($1, $2, $3,
                                              $4, $5, $6,
@@ -145,7 +145,7 @@ class AlarmCondCondition(I4cBaseModel):
 
     async def insert_to_db(self, alarm_id, conn):
         sql_insert = dedent("""\
-            insert into alarm_cond (alarm, log_row_category, device, 
+            insert into alarm_cond (alarm, log_row_category, device,
                                     data_id, value_text, age_min
                                    ) values ($1, $2, $3,
                                              $4, $5, $6)
@@ -358,12 +358,12 @@ async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
     sql = dedent("""\
-            with 
+            with
                 res as (
                     select
                       als.id,
                       als.groups,
-                      als."user", 
+                      als."user",
                       als.method,
                       als.address,
                       als.address_name,
@@ -375,7 +375,7 @@ async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=
                 al as (
                     select "name", subsgroup
                     from alarm
-                    )                
+                    )
             select * from res
             where True
           """)
@@ -419,7 +419,7 @@ async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=
 async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
-                           select 
+                           select
                              "id", "name", max_freq, last_check, last_report, "subsgroup", "window"
                            from "alarm"
                            where "name" = $1
@@ -429,11 +429,11 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
             return None
 
         sql_alarm_cond = dedent("""\
-                                    select 
+                                    select
                                         id,
                                         alarm,
                                         log_row_category,
-                                       
+
                                         device,
                                         data_id,
                                         aggregate_period,
@@ -543,8 +543,8 @@ async def alarmdef_list(credentials, name_mask, report_after,
                 select als.*, u."name" as user_name
                 from alarm_sub als
                 left join "user" u on u.id = als."user")
-            select name 
-            from "alarm" res 
+            select name
+            from "alarm" res
             where True
             """)
     async with DatabaseConnection(pconn) as conn:
@@ -666,7 +666,7 @@ async def patch_alarmsub(credentials, id, patch: AlarmSubPatchBody):
 
             return PatchResponse(changed=True)
 
-alarm_check_load_sql = open("models\\alarm_check_load.sql").read()
+alarm_check_load_sql = open("models/alarm_check_load.sql").read()
 
 
 def prev_iterator(iterable, *, include_first=True):
@@ -836,7 +836,7 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                 if total_series is not None and len(total_series) > 0:
                     res.append(AlarmEventCheckResult(alarm=row_alarm["name"], alarmevent_count=len(total_series)))
                     sql_insert = dedent("""\
-                        insert into alarm_event (alarm, created, summary, description) 
+                        insert into alarm_event (alarm, created, summary, description)
                         values ($1, now(), $2, $3)
                         returning id
                         """)
@@ -860,12 +860,12 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
 async def alarmevent_list(credentials, id=None, alarm=None, alarm_mask=None,
                           user=None, user_name=None, user_name_mask=None, before=None, after=None, *, pconn=None) -> List[AlarmEvent]:
     sql = dedent("""\
-            with 
+            with
                 res as (
                     select
                       ae.id,
                       al."name" as alarm,
-                      ae.created, 
+                      ae.created,
                       ae.summary,
                       ae.description
                     from alarm_event ae
@@ -873,7 +873,7 @@ async def alarmevent_list(credentials, id=None, alarm=None, alarm_mask=None,
                     ),
                 rec as (
                     select
-                      ar.event, 
+                      ar.event,
                       ar."user",
                       u."name" as "user_name"
                     from alarm_recipient ar
@@ -915,10 +915,10 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                            user=None, user_name=None, user_name_mask=None, user_status=None,
                            method=None, status=None, *, pconn=None) -> List[AlarmRecip]:
     sql = dedent("""\
-            with 
+            with
                 res as (
                     select
-                      r.id, 
+                      r.id,
                       a.name as alarm,
                       r.method,
                       r."status",

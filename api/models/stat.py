@@ -55,9 +55,9 @@ class StatTimeseriesFilter(I4cBaseModel):
         sql_insert = dedent("""\
             insert into stat_timeseries_filter (timeseries,
                                                 device,data_id,rel,
-                                                value,age_min,age_max    
-                                   ) values ($1, 
-                                             $2, $3, $4, 
+                                                value,age_min,age_max
+                                   ) values ($1,
+                                             $2, $3, $4,
                                              $5, $6, $7)
             returning id
             """)
@@ -204,8 +204,8 @@ class StatVisualSettings(I4cBaseModel):
         exists = await conn.fetchrow("select id from stat_visual_setting where id = $1", ts_id)
         if exists:
             sql = dedent("""\
-                update stat_visual_setting 
-                set 
+                update stat_visual_setting
+                set
                   title = $2,
                   subtitle = $3,
                   xaxis_caption = $4,
@@ -219,9 +219,9 @@ class StatVisualSettings(I4cBaseModel):
             sql = dedent("""\
                 insert into stat_visual_setting (id, title, subtitle,
                                                  xaxis_caption, yaxis_caption, legend_position,
-                                                 legend_align, tooltip_html   
-                                                ) values ($1, $2, $3, 
-                                                          $4, $5, $6, 
+                                                 legend_align, tooltip_html
+                                                ) values ($1, $2, $3,
+                                                          $4, $5, $6,
                                                           $7, $8)
                 """)
         await conn.execute(sql, ts_id, self.title, self.subtitle,
@@ -273,10 +273,10 @@ class StatTimeseriesDef(I4cBaseModel):
                                          metric_device, metric_data_id, agg_func,
                                          agg_sep_device, agg_sep_data_id, series_name,
                                          series_sep_device, series_sep_data_id, xaxis)
-            select $1, 
-                   $2, $3, $4::varchar(200)::interval, 
-                   $5, $6, $7, 
-                   $8, $9, $10, 
+            select $1,
+                   $2, $3, $4::varchar(200)::interval,
+                   $5, $6, $7,
+                   $8, $9, $10,
                    $11, $12, $13
             """)
         await conn.execute(sql_insert, stat_id, *self.get_sql_params())
@@ -312,15 +312,15 @@ class StatTimeseriesDef(I4cBaseModel):
               after=$2,
               before=$3,
               duration=$4::varchar(200)::interval,
-              
+
               metric_device=$5,
               metric_data_id=$6,
               agg_func=$7,
-              
+
               agg_sep_device=$8,
               agg_sep_data_id=$9,
               series_name=$10,
-              
+
               series_sep_device=$11,
               series_sep_data_id=$12,
               xaxis=$13
@@ -381,7 +381,7 @@ class StatXYObjectParam(I4cBaseModel):
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
-            insert into stat_xy_object_params (xy, key, value) 
+            insert into stat_xy_object_params (xy, key, value)
                 values ($1, $2, $3)
             returning id
             """)
@@ -413,7 +413,7 @@ class StatXYOther(I4cBaseModel):
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
-            insert into stat_xy_other (xy, field_name) 
+            insert into stat_xy_other (xy, field_name)
                 values ($1, $2)
             returning id
             """)
@@ -451,7 +451,7 @@ class StatXYFilter(I4cBaseModel):
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
-            insert into stat_xy_filter (xy, field_name, rel, value) 
+            insert into stat_xy_filter (xy, field_name, rel, value)
                 values ($1, $2, $3, $4)
             returning id
             """)
@@ -500,12 +500,12 @@ class StatXYDef(I4cBaseModel):
     async def insert_to_db(self, stat_id, conn):
         sql_insert = dedent("""\
             insert into stat_xy (id,
-                                 object_name, after, before, 
-                                 duration, x_field, y_field, 
+                                 object_name, after, before,
+                                 duration, x_field, y_field,
                                  shape, color)
-            select $1, 
+            select $1,
                    $2, $3, $4,
-                   $5::varchar(200)::interval, $6, $7, 
+                   $5::varchar(200)::interval, $6, $7,
                    $8, $9
             """)
         await conn.execute(sql_insert, stat_id, *self.get_sql_params())
@@ -538,15 +538,15 @@ class StatXYDef(I4cBaseModel):
         sql_update = dedent("""\
             update stat_xy
             set
-              object_name=$2, 
-              after=$3, 
-              before=$4, 
-                                 
-              duration=$5::varchar(200)::interval, 
-              x_field=$6, 
-              y_field=$7, 
-                                 
-              shape=$8, 
+              object_name=$2,
+              after=$3,
+              before=$4,
+
+              duration=$5::varchar(200)::interval,
+              x_field=$6,
+              y_field=$7,
+
+              shape=$8,
               color=$9
             where id = $1
             """)
@@ -657,14 +657,14 @@ class StatPatchBody(I4cBaseModel):
 async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, name=None, name_mask=None,
                     type:Optional[StatTimeseriesType] = None, *, pconn=None) -> List[StatDef]:
     sql = dedent("""\
-            with 
+            with
                 res as (
-                    select 
+                    select
                       s.id, s."name", s.shared, s.modified, s."customer",
-                      
-                      u."id" as u_id, u."name" as u_name, 
-                      
-                      st.id as st_id, 
+
+                      u."id" as u_id, u."name" as u_name,
+
+                      st.id as st_id,
                       st.after as st_after,
                       st.before as st_before,
                       st.duration::varchar(200) as st_duration,
@@ -677,7 +677,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                       st.series_sep_device as st_series_sep_device,
                       st.series_sep_data_id as st_series_sep_data_id,
                       st.xaxis as st_xaxis,
-                      
+
                       sx.id as sx_id,
                       sx.object_name as sx_object_name,
                       sx.after as sx_after,
@@ -687,22 +687,22 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                       sx.y_field as sx_y_field,
                       sx.shape as sx_shape,
                       sx.color as sx_color,
-                      
+
                       vs.title as vs_title,
                       vs.subtitle as vs_subtitle,
                       vs.xaxis_caption as vs_xaxis_caption,
                       vs.yaxis_caption as vs_yaxis_caption,
                       vs.legend_position as vs_legend_position,
                       vs.legend_align as vs_legend_align,
-                      vs.tooltip_html as vs_tooltip_html                      
+                      vs.tooltip_html as vs_tooltip_html
                     from stat s
                     join "user" u on u.id = s."user"
                     left join "stat_timeseries" st on st."id" = s."id"
                     left join "stat_xy" sx on sx."id" = s."id"
                     left join "stat_visual_setting" vs on vs."id" = s."id"
-                    )                
+                    )
             select * from res
-            where (res.shared or res.u_id = $1) 
+            where (res.shared or res.u_id = $1)
           """)
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction():
@@ -1063,8 +1063,8 @@ class StatXYMozakAxis(str, Enum):
     c = "c"
 
 
-stat_xy_mazak_project_verison_sql = open("models\\stat_xy_mazak_project_verison.sql").read()
-stat_xy_workpiece_batch_sql = open("models\\stat_xy_workpiece_batch.sql").read()
+stat_xy_mazak_project_verison_sql = open("models/stat_xy_mazak_project_verison.sql").read()
+stat_xy_workpiece_batch_sql = open("models/stat_xy_workpiece_batch.sql").read()
 
 
 async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> StatXYMeta:
@@ -1162,10 +1162,10 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
         ]
 
         sql = dedent("""\
-            select distinct m.data_id 
+            select distinct m.data_id
             from log l
             join meta m on m.device = l.device and m.data_id = l.data_id
-            where 
+            where
               l.device = 'gom'
               and m.system1 = 'dev'
               and l.timestamp > $1::timestamp with time zone
@@ -1218,13 +1218,13 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
         res = StatXYMeta(objects=[mazakprogram, mazaksubprogram, workpiece, batch, tool])
         return res
 
-stat_xy_mazakprogram_sql = open("models\\stat_xy_mazakprogram.sql").read()
-stat_xy_mazaksubprogram_sql = open("models\\stat_xy_mazaksubprogram.sql").read()
-stat_xy_mazakprogram_measure_sql = open("models\\stat_xy_mazakprogram_measure.sql").read()
-stat_xy_workpiece_sql = open("models\\stat_xy_workpiece.sql").read()
-stat_xy_workpiece_measure_sql = open("models\\stat_xy_workpiece_measure.sql").read()
-stat_xy_batch_sql = open("models\\stat_xy_batch.sql").read()
-stat_xy_tool_sql = open("models\\stat_xy_tool.sql").read()
+stat_xy_mazakprogram_sql = open("models/stat_xy_mazakprogram.sql").read()
+stat_xy_mazaksubprogram_sql = open("models/stat_xy_mazaksubprogram.sql").read()
+stat_xy_mazakprogram_measure_sql = open("models/stat_xy_mazakprogram_measure.sql").read()
+stat_xy_workpiece_sql = open("models/stat_xy_workpiece.sql").read()
+stat_xy_workpiece_measure_sql = open("models/stat_xy_workpiece_measure.sql").read()
+stat_xy_batch_sql = open("models/stat_xy_batch.sql").read()
+stat_xy_tool_sql = open("models/stat_xy_tool.sql").read()
 
 
 class LoadMeasureItem:

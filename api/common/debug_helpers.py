@@ -63,7 +63,7 @@ def write_debug_sql(file_name, sql, *params):
     if not debug_mode:
         return
 
-    file_name = debug_dir + '\\' + file_name
+    file_name = debug_dir + '/' + file_name
     with open(file_name, "w") as f:
         f.write(
             f'-- replaced\n'

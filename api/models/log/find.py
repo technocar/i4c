@@ -3,7 +3,7 @@ from typing import Optional, List
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 from common.exceptions import I4cClientError
 
-view_find_sql = open("models\\log\\find.sql").read()
+view_find_sql = open("models/log/find.sql").read()
 
 
 class DataPointKey(I4cBaseModel):

@@ -78,10 +78,10 @@ class Snapshot(I4cBaseModel):
     robot: Optional[SimpleSnapshot]
 
 
-view_snapshot_sql = open("models\\log\\snapshot.sql").read()
-view_snapshot_fitered_events_sql = open("models\\log\\snapshot_fitered_events.sql").read()
-view_snapshot_events_sql = open("models\\log\\snapshot_events.sql").read()
-view_snapshot_auto_sql = open("models\\log\\snapshot_auto.sql").read()
+view_snapshot_sql = open("models/log/snapshot.sql").read()
+view_snapshot_fitered_events_sql = open("models/log/snapshot_fitered_events.sql").read()
+view_snapshot_events_sql = open("models/log/snapshot_events.sql").read()
+view_snapshot_auto_sql = open("models/log/snapshot_auto.sql").read()
 
 
 def calc_secs(base, *data_times) -> float:
