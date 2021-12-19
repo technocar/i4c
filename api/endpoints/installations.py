@@ -12,7 +12,7 @@ from models import ProjectVersionStatusEnum, InstallationStatusEnum
 router = I4cApiRouter(include_path="/installations")
 
 
-@router.post("/{project}/{version}", response_model=models.installations.Installation, x_properties=dict(object="installation", action="new"))
+@router.post("/{project}/{version}", response_model=models.installations.Installation, operation_id="installation_start")
 async def new_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/installations/{project}/{version}")),
     project: str = Path(...),
@@ -25,7 +25,7 @@ async def new_installation(
     return await models.installations.new_installation(credentials, project, version, statuses)
 
 
-@router.get("", response_model=List[models.installations.Installation], x_properties=dict(object="installation", action="list"),
+@router.get("", response_model=List[models.installations.Installation], operation_id="installation_list",
             features=['noaudit'])
 async def list_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations", ask_features=['noaudit'])),
@@ -43,7 +43,7 @@ async def list_installation(
     return await models.installations.get_installations(credentials, id, status, after, before, project_name, ver)
 
 
-@router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="installation", action="patch"))
+@router.patch("/{id}", response_model=models.common.PatchResponse, operation_id="installation_update")
 async def patch_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/installations/{id}")),
     id: int = Path(...),
@@ -55,7 +55,7 @@ async def patch_installation(
     return await models.installations.patch_installation(credentials, id, patch)
 
 
-@router.get("/{id}/{savepath:path}", x_properties=dict(object="installation", action="file"))
+@router.get("/{id}/{savepath:path}", operation_id="installation_file")
 async def installation_get_file(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations/{id}/{savepath:path}")),
     id: int = Path(...),

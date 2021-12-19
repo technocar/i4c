@@ -12,19 +12,20 @@ from models import WorkpieceStatusEnum
 router = I4cApiRouter(include_path="/workpiece")
 
 
-@router.get("/{id}", response_model=models.workpiece.Workpiece, x_properties=dict(object="workpiece", action="get"))
+@router.get("/{id}", response_model=models.workpiece.Workpiece, operation_id="workpiece_get")
 async def get_workpiece(
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece/{id}")),
     id: str = Path(...),
     with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
 ):
+    """Get a workpiece."""
     res = await models.workpiece.list_workpiece(credentials, id=id, with_deleted=with_deleted)
     if len(res) > 0:
         return res[0]
     raise I4cClientNotFound("No record found")
 
 
-@router.get("", response_model=List[models.workpiece.Workpiece], x_properties=dict(object="workpiece", action="list"))
+@router.get("", response_model=List[models.workpiece.Workpiece], operation_id="workpiece_list")
 async def list_workpiece(
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece")),
     before: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
@@ -44,15 +45,17 @@ async def list_workpiece(
     with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
     # todo log???
 ):
+    """List workpieces."""
     return await models.workpiece.list_workpiece(credentials, before, after, id, project, project_mask, batch,
                                                  batch_mask, status, note_user, note_text, note_text_mask, note_before,
                                                  note_after, with_details, with_deleted)
 
 
-@router.patch("/{id}", response_model=models.common.PatchResponse, x_properties=dict(object="workpiece", action="patch"))
+@router.patch("/{id}", response_model=models.common.PatchResponse, operation_id="workpiece_patch")
 async def patch_workpiece(
     credentials: CredentialsAndFeatures = Depends(common.security_checker("patch/workpiece/{id}")),
     id: str = Path(...),
     patch: models.workpiece.WorkpiecePatchBody = Body(...),
 ):
+    """Update a workpiece."""
     return await models.workpiece.patch_workpiece(credentials, id, patch)

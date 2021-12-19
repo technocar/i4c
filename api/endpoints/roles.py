@@ -9,29 +9,32 @@ from common.exceptions import I4cClientNotFound
 router = I4cApiRouter(include_path="/roles")
 
 
-@router.get("", response_model=List[models.roles.Role], x_properties=dict(object="roles", action="list"))
+@router.get("", response_model=List[models.roles.Role], operation_id="role_list")
 async def get_roles(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/roles")),
     active_only: Optional[bool] = Query(True)
 ):
+    """List roles."""
     return await models.roles.get_roles(credentials, active_only=active_only)
 
 
-@router.get("/{name}", response_model=models.roles.Role, x_properties=dict(object="roles", action="get"))
+@router.get("/{name}", response_model=models.roles.Role, operation_id="role_get")
 async def get_role(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/roles/{name}")),
     name: str = Path(...)
 ):
+    """Get a role."""
     res = await models.roles.get_roles(credentials, name, active_only=False)
     if res is None:
         raise I4cClientNotFound("No record found")
     return res[0]
 
 
-@router.put("/{name}", response_model=models.roles.Role, x_properties=dict(object="roles", action="set"))
+@router.put("/{name}", response_model=models.roles.Role, operation_id="role_set")
 async def role_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/roles/{name}")),
     name: str = Path(...),
     role: models.roles.RoleIn = Body(...),
 ):
+    """Create or update a role."""
     return await models.roles.role_put(credentials, name, role)

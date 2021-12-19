@@ -12,22 +12,22 @@ from models import FileProtocolEnum
 router = I4cApiRouter()
 
 
-@router.get("/login", response_model=models.users.LoginUserResponse, tags=["user"], x_properties=dict(object="user", action="login"))
+@router.get("/login", response_model=models.users.LoginUserResponse, tags=["user"], operation_id="user_login")
 async def login(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/login"))):
-    "Get user info based on login name"
+    "Get user info based on login name."
     return await models.users.login(credentials)
 
 
-@router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], x_properties=dict(object="roles", action="privs"))
+@router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], operation_id="priv_list")
 async def privs(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/privs"))):
-    "Get priv info"
+    "List available privileges."
     return await models.roles.get_priv(credentials)
 
 
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],
-            x_properties=dict(object="files", action="list") )
+            operation_id="file_search")
 async def files(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/files")),
         proj_name: Optional[str] = Query(None),
@@ -43,6 +43,7 @@ async def files(
         commit_mask: Optional[List[str]] = Query(None),
         filever: Optional[int] = Query(None),
 ):
+    """Search for a file in any projects."""
     save_path = models.projects.ProjFile.check_savepath(save_path)
     save_path_mask = [s.replace('\\', '/') for s in save_path_mask]
     return await models.projects.files_list(credentials, proj_name, projver, save_path, save_path_mask,
