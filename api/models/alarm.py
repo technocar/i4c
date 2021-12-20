@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import List, Optional
 from pydantic import Field, root_validator
 import common.db_helpers
+from common.exceptions import I4cClientError
 from common.debug_helpers import debug_print
 from common.exceptions import I4cInputValidationError, I4cClientNotFound
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
@@ -292,6 +293,11 @@ class AlarmSubPatchChange(I4cBaseModel):
 class AlarmSubPatchBody(I4cBaseModel):
     conditions: List[AlarmSubPatchCondition]
     change: AlarmSubPatchChange
+
+
+class SubsGroupsItem(I4cBaseModel):
+    user: str
+    groups: List[str] = Field([])
 
 
 class AlarmEventCheckResult(I4cBaseModel):
@@ -583,16 +589,19 @@ async def alarmdef_list(credentials, name_mask, report_after,
         return res
 
 
-async def subsgroups_list(credentials, *, pconn=None):
+async def subsgroups_list(credentials, user, *, pconn=None):
+    if credentials.user_id != user and "any user" not in credentials.info_features:
+        raise I4cClientError("Unauthorized to access other users' subscriptions.")
+
     sql = dedent("""\
-            select distinct b.unnest subsgroup
-            from alarm_sub
-            cross join lateral (select unnest(alarm_sub.groups)) as b
-            order by 1
+            select "user", array_agg("group") as groups
+            from alarm_subsgroup where "user" = $1 or $1 is null
+            group by "user" 
             """)
     async with DatabaseConnection(pconn) as conn:
-        res = await conn.fetch(sql)
-        return [r[0] for r in res]
+        res = await conn.fetch(sql, user)
+        res = [{"user":r["user"], "groups":r["groups"]} for r in res]
+        return res
 
 
 async def post_alarmsub(credentials, alarmsub:AlarmSubIn) -> AlarmSub:

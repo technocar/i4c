@@ -52,11 +52,12 @@ async def alarmdef_list(
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
-@router.get("/subsgroups", response_model=List[str], operation_id="alarm_subsgroups")
+@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups")
 async def subsgroups_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups"))):
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups", ask_features=["any user"])),
+        user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):
     """List subscription groups."""
-    return await models.alarm.subsgroups_list(credentials)
+    return await models.alarm.subsgroups_list(credentials, user)
 
 
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers")
