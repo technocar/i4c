@@ -8,20 +8,32 @@ from typing import List, Dict, Any
 from .tools import jsonify
 
 
-class Param:
+class Schema:
     title: str
     description: str
-    location: str # path | query
     is_array: bool
     required: bool
     type: str
-    type_fmt: Any
+    type_fmt: str
+    type_enum: List[str]
     sch_obj: str
 
     def __repr__(self):
         flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
         flds = ", ".join(flds)
-        return f"Param({flds})"
+        return f"{self.__class__.__name__}({flds})"
+
+
+class Body(Schema):
+    content_type: str
+
+
+class Param(Schema):
+    location: str # path | query
+
+
+def nice_name(s):
+    return " ".join(word.capitalize() for word in s.split("_"))
 
 
 class Action:
@@ -31,9 +43,7 @@ class Action:
     response_type: str
     response_class: str
     params: Dict[str, Param]
-    body_required: bool
-    body_content_type: str
-    body_class: str
+    body: Body
     path: str
     method: str
     raw: dict
@@ -43,123 +53,30 @@ class Action:
         flds = ", ".join(flds)
         return f"Action({flds})"
 
-    def help():
+    def help(self):
         s = []
-        if title:
-            s.append(title)
-        if description:
-            s.append(description)
+        if self.summary:
+            s.append(self.summary)
+            s.append("")
+        if self.description:
+            s.append(self.description)
         if not s:
-            return nice_name()
-        s.append(f"Calls {method} {path}.")
-        return s.join("\n")
+            return nice_name(self.raw["operationId"])
+        s.append(f"Calls {self.method.upper()} {self.path}")
+        return "\n".join(s)
 
 
 class Obj:
     actions: Dict[str, Action]
 
+    def __repr__(self):
+        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
+        flds = ", ".join(flds)
+        return f"Obj({flds})"
+
 
 class Schema:
     pass # TODO
-
-
-def follow_ref(apidef, ref):
-    path_items = ref.split("/")
-    if path_items[0] == "#":
-        sch = apidef
-        for path_item in path_items[1:]:
-            sch = sch[path_item]
-        return sch
-    else:
-        return None
-
-
-def get_data_type(apidef, param, *, all_fields=True):
-    """
-    Take an openapi def and a parameter definition, and extracts data type information. Returns a dict with the
-    extracted information.
-
-    :param apidef: openapi dict
-    :param param: parameter, body property, schema, or object reference
-    :param all_fields: fill in all the fields, even if not found in the definition
-    :return: a dict with the following members: required, title, default, is_array, data_type, value_list
-    """
-
-    if all_fields:
-        res = dict(required=False, title=None, default=None, is_array=False, data_type=None, value_list=None)
-    else:
-        res = {}
-
-    if "allOf" in param:
-        for i in param["allOf"]:
-            temp = get_data_type(apidef, i, all_fields=False)
-            res.update(temp)
-
-    if "$ref" in param:
-        ref = param["$ref"]
-        sch = follow_ref(apidef, ref)
-        if sch:
-            temp = get_data_type(apidef, sch, all_fields=False)
-            res.update(temp)
-        else:
-            log.warning("param $ref to external doc, not following")
-            # TODO we need fallback
-
-    if "schema" in param:
-        temp = get_data_type(apidef, param["schema"], all_fields=False)
-        res.update(temp)
-
-    if "type" in param:
-        param_type = param["type"]
-
-        if param_type == "array":
-            res["is_array"] = True
-            if "items" in param:
-                temp = get_data_type(apidef, param["items"], all_fields=False)
-                res.update(temp)
-        else:
-            res["data_type"] = param_type
-
-        if "enum" in param:
-            res["value_list"] = param["enum"]
-
-    if "description" in param:
-        res["description"] = param["description"]
-    if "title" in param:
-        res["title"] = param["title"]
-    if "default" in param:
-        res["default"] = param["default"]
-    if "required" in param:
-        res["required"] = param["required"]
-
-    return res
-
-
-def dig(d, path):
-    enum = (i for i in path)
-    while d is not None:
-        fld = next(enum, None)
-        if fld is None:
-            return d
-        d = d.get(fld, None)
-    return None
-
-"""
-ACTION PROPERTIES:
-
-            title = info.get("title", None)
-
-            desc = info.get("description", None)
-            resp = dig(info, ["responses", "200", "content", "application/json", "schema"])
-            if resp:
-                if "$ref" in resp:
-                    _, _, cls = resp["$ref"].rpartition("/")
-                else:
-                    cls = act.capitalize() + obj.capitalize() + "Response" # TODO doc command does not understand this
-                desc = f"{desc} Returns a {cls} object. Use the `doc {cls}` command to get details."
-
-            help = "\n\n".join(filter(None, [title, desc, f"Calls {method.upper()} {path}"]))
-"""
 
 
 def _proc_auth(a):
@@ -177,23 +94,26 @@ def _proc_auth(a):
         return "unknown"
 
 
-def _proc_sch(sch): # TODO try remove self
+def _proc_sch(sch, target):
     if sch is None:
-        return None, False, "unknown", None, None, None
+        target.title = None
+        target.is_array = False
+        target.type = "unknown"
+        target.type_fmt = None
+        target.type_enum = None
+        target.sch_obj = None
 
-    title = sch.get("title", None)
-    datatype = sch.get("type", "unknown")
-    isarray = datatype == "array"
-    if isarray:
+    target.title = sch.get("title", None)
+    target.type = sch.get("type", "unknown")
+    target.is_array = target.type == "array"
+    if target.is_array:
         typeroot = sch.get("items", {})
-        datatype = typeroot.get("type", "unknown")
+        target.type = typeroot.get("type", "unknown")
     else:
         typeroot = sch
-    typename = typeroot.get("$ref", None)
-    typefmt = typeroot.get("format", None)
-    typeenum = typeroot.get("enum", None)
-
-    return title, isarray, datatype, typefmt, typeenum, typename
+    target.sch_obj = typeroot.get("$ref", None)
+    target.type_fmt = typeroot.get("format", None)
+    target.type_enum = typeroot.get("enum", None)
 
 
 def preproc_def(apidef):
@@ -277,35 +197,20 @@ class I4CDef:
                     par.description = p.get("description", None)
                     par.required = p.get("required", False)
                     sch = p.get("schema", None)
-                    if sch:
-                        (par.title, par.is_array, par.type, par.type_fmt, par.type_enum, par.sch_obj) = _proc_sch(sch)
-                    else:
-                        par.title = None
-                        par.is_array = False
-                        par.type = "unknown"
-                        par.type_fmt = None
-                        par.type_enum = None
-                        par.sch_obj = None
+                    _proc_sch(sch, par)
                     action.params[p["name"]] = par
-                    # TODO fix bug: datapoint.list reports no type for parameter device
 
                 body = info.get("requestBody", None)
                 if body is not None:
-                    action.body_required = body.get("required", False)
                     ct = body.get("content", {})
                     ct, sch = next(iter(ct.items()), (None, None))
                     sch = sch.get("schema", None)
-                    action.body_content_type = ct
-                    (action.body_title, action.body_is_array, action.body_type, action.body_type_fmt, action.body_type_enum, action.body_sch_obj) = _proc_sch(sch)
+                    action.body = Body()
+                    action.body.required = body.get("required", False)
+                    action.body.content_type = ct
+                    _proc_sch(sch, action.body)
                 else:
-                    action.body_required = False
-                    action.body_content_type = None
-                    action.body_title = None
-                    action.body_is_array = False
-                    action.body_type = 'unknown'
-                    action.body_type_fmt = None
-                    action.body_type_enum = None
-                    action.body_sch_obj = None
+                    action.body = None
 
                 # TODO fill in response
 
