@@ -60,6 +60,10 @@ async def subsgroups_list(
     return await models.alarm.subsgroups_list(credentials, user)
 
 
+# TODO GET /alarm/subsgroups/{grp}  --> {name, users:[]}
+# PUT /alarm/subsgroups/{grp}     <-- {name, users:[]}
+
+
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers")
 async def alarmsub_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
@@ -75,6 +79,7 @@ async def alarmsub_list(
         address_mask: Optional[List[str]] = Query(None),
         alarm: Optional[str] = Query(None)):
     """Get the list of subscribers"""
+    # TODO feature to list subs of other users
     return await models.alarm.alarmsub_list(credentials, id, group, group_mask, user, user_name, user_name_mask,
                                             method, status, address, address_mask, alarm)
 
@@ -84,6 +89,7 @@ async def alarmsub_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{id}")),
         id: int = Path(...)):
     """Retrieve an alarm subscriber."""
+    # TODO feature to list subs of other users
     res = await models.alarm.alarmsub_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
@@ -96,6 +102,7 @@ async def post_alarmsub(
     alarmsub: models.alarm.AlarmSubIn = Body(...),
 ):
     """Create a subscriber that can receive alarm notifications."""
+    # TODO feature to list subs of other users
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
@@ -106,6 +113,7 @@ async def patch_alarmsub(
     patch: models.alarm.AlarmSubPatchBody = Body(...),
 ):
     """Change a subscriber if conditions are met."""
+    # TODO feature to list subs of other users
     return await models.alarm.patch_alarmsub(credentials, id, patch)
 
 
