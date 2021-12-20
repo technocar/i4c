@@ -139,7 +139,13 @@ export interface User {
   pub_key?: string,
   roles?: string[],
   status?: string,
-  roles_eff?: string[]
+  roles_eff?: string[],
+  privs?: UserPrivilige[]
+}
+
+export interface UserPrivilige {
+  endpoint: string,
+  features: string[]
 }
 
 export interface Extra {
