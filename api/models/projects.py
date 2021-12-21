@@ -325,8 +325,8 @@ async def get_proj_file(project_ver, savepath, *, pconn=None):
               file_int.ver as int_ver
             from project_file pf
             left join file_git on file_git.id = pf.file_git
-            left join file_unc on file_git.id = pf.file_unc
-            left join file_int on file_git.id = pf.file_int
+            left join file_unc on file_unc.id = pf.file_unc
+            left join file_int on file_int.id = pf.file_int
             where pf.project_ver = $1 and pf.savepath = $2
           """)
     async with DatabaseConnection(pconn) as conn:
