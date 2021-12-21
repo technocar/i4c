@@ -3,11 +3,39 @@ import yaml
 import json
 import base64
 import datetime
+from typing import Any
 import urllib.request
 import nacl.signing
 import nacl.encoding
-from .apidef import I4CDef
+from .apidef import I4CDef, Obj, Action
 from .tools import jsonify
+
+
+class I4CAction:
+    action: Action
+    host: Any
+
+    def __call__(self, **kwargs):
+        return self.host.invoke(self.action, **kwargs)
+
+    def invoke(self, **kwargs):
+        return self.host.invoke(self.action, **kwargs)
+
+
+class I4CObj:
+    obj: Obj
+
+    def __getitem__(self, item):
+        action = I4CAction()
+        action.action = self.obj[item]
+        action.host = self.host
+        return action
+
+    def __getattr__(self, item):
+        action = I4CAction()
+        action.action = self.obj.__getattr__(item)
+        action.host = self.host
+        return action
 
 
 def public_key(private_key):
@@ -71,25 +99,25 @@ class I4CConnection:
     profile_file: str
     base_url: str
     profile: str
-    user: str
+    user_name: str
     password: str
     private_key: str
 
-    def __init__(self, *, profile_file=None, api_def=None, base_url=None, api_def_file=None, profile=None, user=None, password=None, private_key=None):
+    def __init__(self, *, profile_file=None, api_def=None, base_url=None, api_def_file=None, profile=None, user_name=None, password=None, private_key=None):
         if not profile_file:
             profile_file = os.environ.get("i4c-profile", None)
         if not profile_file:
             profile_file = os.path.expanduser("~") + "/.i4c/profiles"
 
-        if not user or not (password or private_key) or not base_url or not profile:
+        if not user_name or not (password or private_key) or not base_url or not profile:
             p = _load_profile(profile_file, require_exist=True)
             if not profile:
                 profile = p.get("default", None)
             if not profile:
                 raise Exception("Authentication is incomplete, and no profile is given")
             p = p.get(profile, {})
-            if not user:
-                user = p.get("user", profile)
+            if not user_name:
+                user_name = p.get("user", profile)
             if not password:
                 password = p.get("password", None)
             if not private_key:
@@ -107,9 +135,21 @@ class I4CConnection:
         self.api_def_file = api_def_file
         self.base_url = base_url
         self.profile = profile
-        self.user = user
+        self.user_name = user_name
         self.password = password
         self.private_key = private_key
+
+    def __getitem__(self, item):
+        obj = I4CObj()
+        obj.obj = self.api_def()[item]
+        obj.host = self
+        return obj
+
+    def __getattr__(self, item):
+        obj = I4CObj()
+        obj.obj = self.api_def().__getattr__(item)
+        obj.host = self
+        return obj
 
     def invoke_url(self, url, method=None, data=None, bindata=None, jsondata=None, data_content_type=None):
         """
@@ -138,12 +178,12 @@ class I4CConnection:
         if self.private_key:
             timestamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
             signature = sign(self.private_key, timestamp)
-            token = f"{self.user}:{timestamp}{signature}"
+            token = f"{self.user_name}:{timestamp}{signature}"
             token = token.encode()
             token = base64.b64encode(token).decode()
             headers["Authorization"] = f"Basic {token}"
         elif self.password:
-            token = f"{self.user}:{self.password}"
+            token = f"{self.user_name}:{self.password}"
             token = token.encode()
             token = base64.b64encode(token).decode()
             headers["Authorization"] = f"Basic {token}"
@@ -190,26 +230,36 @@ class I4CConnection:
             self._api_def = I4CDef(base_url=self.base_url, def_file=self.api_def_file)
         return self._api_def
 
-    def invoke(self, obj, action=None, **params):
+    def invoke(self, *args, **params):
         """
-        Invokes a logical function, as defined by the interface. Logical functions and objects are defined in the api
-        as x-properties (x-object and x-action). If the interface does not define logical objects, they will be
-        automatically generated from paths. Get information about the available logical functions with
-        .api_def().objects()
+        Invokes an API endpoint. You can pass either an object name and an action name, or an action object
+        that was acquired using `connection[<object>][<action>]` or `connection.object.action`. It is assumed that
+        the first word of the operationId is the object name, and the rest is the action. Typically you wouldn't call
+        this method, instead, call the invoke method of the action object, e.g.: `connection.user.list(...)`
 
-        :param obj: logical object, as defined by the interface.
-        :param action: logical action, as defined by the interface.
-        :param body: request body.
-        :param params: all other named parameters represent path and query parameters, and the body.
+        :param obj_name: object name, as defined by the interface.
+        :param action_name: action name, as defined by the interface.
+        :param action: an action object of type I4CAction.
+        :param body: request body. Must be a keyword argument.
+        :param params: all other path and query parameters. Must be keyword arguments.
         :return: Dict for json payloads, None for 204, otherwise the HTTPResponse.
         """
+
+        if len(args) == 1:
+            (action,) = args
+        elif len(args) == 2:
+            obj, action = args
+            action = self.api_def()[obj][action]
+        else:
+            raise TypeError("Either obj_name/action_name or action object is required as positional parameters.")
+
+        method, url = action.assemble_url(**params)
 
         if "body" in params:
             body = params.pop("body")
         else:
             body = None
 
-        method, url = self.api_def().assemble_url(obj, action, **params)
-        body, content_type = self.api_def().prepare_body(obj, action, body)
+        body, content_type = action.prepare_body(body)
 
         return self.invoke_url(url, method, bindata=body, data_content_type=content_type)

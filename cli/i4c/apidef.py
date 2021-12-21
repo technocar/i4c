@@ -65,6 +65,62 @@ class Action:
         s.append(f"Calls {self.method.upper()} {self.path}")
         return "\n".join(s)
 
+    def assemble_url(self, **kwargs):
+        method = self.method.upper()
+        url = self.path
+
+        for pn, p in self.params.items():
+            if p.location == "path":
+                if pn not in kwargs:
+                    raise Exception(f"Missing argument: {pn}")
+                value = kwargs[pn]
+                if not isinstance(value, str) and not isinstance(value, bytes):
+                    value = str(value)
+                value = urllib.parse.quote(value)
+                url = url.replace("{" + pn + "}", value)
+
+        queries = []
+        for pn, p in self.params.items():
+            if p.location == "query":
+                val = kwargs.get(pn, None)
+                if val:
+                    if not isinstance(val, list) and not isinstance(val, tuple):
+                        val = [val]
+                    for i in val:
+                        if isinstance(i, datetime.datetime):
+                            i = i.isoformat()
+                        elif not isinstance(i, str) and not isinstance(i, bytes):
+                            # TODO there should be a whole lot more conversions
+                            # datetime
+                            # period
+                            i = str(i)
+                        i = urllib.parse.quote(i)
+                        queries.append(pn + "=" + i)
+        if queries:
+            url = url + "?" + "&".join(queries)
+
+        return method, url
+
+    def prepare_body(self, body):
+        if self.body is None:
+            return None, None
+        
+        content_type = self.body.content_type
+
+        if content_type == "application/json":
+            if any(isinstance(body, t) for t in (dict, list, str, int, float, bool)):
+                body = jsonify(body).encode()
+        elif content_type == "application/octet-stream":
+            if any(isinstance(body, t) for t in (dict, list, int, float, bool)):
+                body = jsonify(body).encode()
+            elif isinstance(body, str):
+                body = body.encode()
+        elif content_type == "text/plain":
+            if isinstance(body, str):
+                body = body.encode()
+
+        return body, content_type
+
 
 class Obj:
     actions: Dict[str, Action]
@@ -73,6 +129,17 @@ class Obj:
         flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
         flds = ", ".join(flds)
         return f"Obj({flds})"
+
+    def __getitem__(self, item):
+        return self.actions[item]
+
+    def __getattr__(self, item):
+        acts = (o for (k, o) in self.actions.items() if k.replace("_", "-") == item.replace("_", "-"))
+        act = next(acts, None)
+        act2 = next(acts, None)
+        if act is None or act2 is not None:
+            raise KeyError()
+        return act
 
 
 class Schema:
@@ -216,49 +283,26 @@ class I4CDef:
 
                 obj.actions[action_name] = action
 
-    def assemble_url(self, obj, action=None, **params):
+    def __getitem__(self, item):
+        return self.objects[item]
+
+    def __getattr__(self, item):
+        objs = (o for (k, o) in self.objects.items() if k.replace("_", "-") == item.replace("_", "-"))
+        obj = next(objs, None)
+        obj2 = next(objs, None)
+        if obj is None or obj2 is not None:
+            raise KeyError()
+        return obj
+
+    def assemble_url(self, obj, action=None, **kwargs):
         obj = self.objects[obj]
 
-        if action is None and len(obj) == 1:
-            action = list(obj.values())[0]
+        if action is None and len(obj.actions) == 1:
+            action = list(obj.actions.values())[0]
         else:
             action = obj.actions[action]
 
-        method = action.method.upper()
-        url = action.path
-
-        for pn, p in action.params.items():
-            if p.location == "path":
-                if pn not in params:
-                    raise Exception(f"Missing argument: {pn}")
-                value = params[pn]
-                if not isinstance(value, str) and not isinstance(value, bytes):
-                    value = str(value)
-                value = urllib.parse.quote(value)
-                url = url.replace("{" + pn + "}", value)
-
-        queries = []
-        for pn, p in action.params.items():
-            if p.location == "query":
-                val = params.get(pn, None)
-                if val:
-                    if not isinstance(val, list) and not isinstance(val, tuple):
-                        val = [val]
-                    for i in val:
-                        if isinstance(i, datetime.datetime):
-                            i = i.isoformat()
-                        elif not isinstance(i, str) and not isinstance(i, bytes):
-
-                            # TODO there should be a whole lot more conversions
-                            # datetime
-                            # period
-                            i = str(i)
-                        i = urllib.parse.quote(i)
-                        queries.append(pn + "=" + i)
-        if queries:
-            url = url + "?" + "&".join(queries)
-
-        return method, url
+        return action.assemble_url(**kwargs)
 
     def prepare_body(self, obj, action, body):
         obj = self.objects[obj]
@@ -268,18 +312,4 @@ class I4CDef:
         else:
             action = obj.actions[action]
 
-        content_type = action.body_content_type
-
-        if content_type == "application/json":
-            if any(isinstance(body, t) for t in (dict, list, str, int, float, bool)):
-                body = jsonify(body).encode()
-        elif content_type == "application/octet-stream":
-            if any(isinstance(body, t) for t in (dict, list, int, float, bool)):
-                body = jsonify(body).encode()
-            elif isinstance(body, str):
-                body = body.encode()
-        elif content_type == "text/plain":
-            if isinstance(body, str):
-                body = body.encode()
-
-        return body, content_type
+        return action.prepare_body(body)

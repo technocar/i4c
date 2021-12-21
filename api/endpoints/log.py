@@ -15,7 +15,7 @@ router = I4cApiRouter(include_path="/log")
 async def snapshot(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/snapshot")),
     ts: datetime = Query(..., title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
-    device: DeviceAuto = Query(..., title="Name of the devide", description="mill|lathe|gom|robot|auto")
+    device: DeviceAuto = Query("auto", title="Name of the devide", description="mill|lathe|gom|robot|auto")
 ):
     """Log snapshot at a given time"""
     return await models.log.get_snapshot(credentials, ts, device)
