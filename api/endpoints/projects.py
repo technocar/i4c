@@ -71,7 +71,7 @@ async def post_projects_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects/{name}/v")),
     name: str = Path(...),
     ver: Optional[int] = Query(None, title="A version number. Must not exist. If omitted, the next number is allocated."),
-    files: List[models.projects.ProjFile] = Body(...),
+    files: List[models.projects.ProjFile] = Body([]),
 ):
     """Create a new project version"""
     return await models.projects.post_projects_version(credentials, name, ver, files)

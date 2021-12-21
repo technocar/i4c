@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from textwrap import dedent
-from typing import List
+from typing import List, Optional
+from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 from common.cmp_list import cmp_list
 from models import CommonStatusEnum
@@ -14,9 +15,9 @@ class Priv(I4cBaseModel):
 
 
 class RoleIn(I4cBaseModel):
-    subroles: List[str]
-    privs: List[Priv]
-    status: CommonStatusEnum
+    subroles: Optional[List[str]] = Field([])
+    privs: Optional[List[Priv]] = Field([])
+    status: CommonStatusEnum = Field("active")
 
 
 class Role(RoleIn):

@@ -41,13 +41,13 @@ class ProjectPatchChange(I4cBaseModel):
 
 
 class ProjectPatchBody(I4cBaseModel):
-    conditions: List[ProjectPatchCondition]
+    conditions: Optional[List[ProjectPatchCondition]] = Field([])
     change: ProjectPatchChange
 
 
 class ProjectIn(I4cBaseModel):
     name: str
-    status: ProjectStatusEnum
+    status: ProjectStatusEnum = Field("active")
     # todo 5: This should be Optional[Dict[str,str]] insted of json data.
     extra: Optional[str]
 
@@ -196,7 +196,7 @@ class ProjectVersionPatchChange(I4cBaseModel):
 
 
 class ProjectVersionPatchBody(I4cBaseModel):
-    conditions: List[ProjectVersionPatchCondition]
+    conditions: List[ProjectVersionPatchCondition] = Field([])
     change: ProjectVersionPatchChange
 
 

@@ -45,6 +45,6 @@ async def files(
 ):
     """Search for a file in any projects."""
     save_path = models.projects.ProjFile.check_savepath(save_path)
-    save_path_mask = [s.replace('\\', '/') for s in save_path_mask]
+    save_path_mask = save_path_mask and [s.replace('\\', '/') for s in save_path_mask]
     return await models.projects.files_list(credentials, proj_name, projver, save_path, save_path_mask,
                                             protocol, name, name_mask, repo, repo_mask, commit, commit_mask, filever)
