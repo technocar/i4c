@@ -12,7 +12,7 @@ from models import FileProtocolEnum
 router = I4cApiRouter()
 
 
-@router.get("/login", response_model=models.users.LoginUserResponse, tags=["user"], operation_id="user_login")
+@router.get("/login", response_model=models.users.UserWithPrivs, tags=["user"], operation_id="user_login")
 async def login(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/login"))):
     "Get user info based on login name."

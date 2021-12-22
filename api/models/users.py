@@ -48,6 +48,7 @@ class UserPatchChange(I4cBaseModel):
     del_password: Optional[bool]
     public_key: Optional[str]
     del_public_key: Optional[bool]
+    status: Optional[bool] # TODO implement this
 
     @root_validator
     def check_exclusive(cls, values):
@@ -158,7 +159,7 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, wit
 
 async def login(credentials: HTTPBasicCredentials, *, pconn=None):
     res = await get_user(login_name=credentials.username, with_privs=True, pconn=pconn)
-    return {"user": res}
+    return res
 
 
 async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
@@ -218,7 +219,7 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pco
             sub = cmp_list(old_roles, user.roles)
             if len(sub.delete) > 0 or len(sub.insert) > 0:
                 if 'modify role' not in credentials.info_features:
-                    raise I4cClientError("Unable to modify role")
+                    raise I4cClientError("You are not allowed to modify users' roles")
             for c in sub.delete:
                 sql_del = """delete from user_role where "user" = $1 and role = $2"""
                 await conn.execute(sql_del, id, c)

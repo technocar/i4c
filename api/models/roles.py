@@ -11,7 +11,7 @@ path_list = []
 
 class Priv(I4cBaseModel):
     endpoint: str
-    features: List[str]
+    features: Optional[List[str]] = Field([])
 
 
 class RoleIn(I4cBaseModel):

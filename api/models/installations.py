@@ -25,7 +25,7 @@ class Installation(I4cBaseModel):
 
 
 class InstallationPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
+    flipped: Optional[bool] = Field(False, title="Negate the condition")
     status: Optional[List[InstallationStatusEnum]]
 
     def match(self, ins:Installation):

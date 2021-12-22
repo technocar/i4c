@@ -1,7 +1,8 @@
 import os
+import json
 from enum import Enum
 from textwrap import dedent
-from typing import List, Optional
+from typing import List, Dict, Optional
 from pydantic import Field, validator
 from common import DatabaseConnection, I4cBaseModel, write_debug_sql
 from common.exceptions import I4cInputValidationError, I4cClientError
@@ -14,18 +15,19 @@ class Project(I4cBaseModel):
     name: str
     status: ProjectStatusEnum
     versions: List[str] = Field(..., title="List of versions. Numbers are version numbers others are labels.")
-    # todo 5: This should be Optional[Dict[str,str]] insted of json data.
-    extra: Optional[str]
+    extra: Optional[Dict[str, str]] = Field({})
 
 
 class ProjectPatchCondition(I4cBaseModel):
     flipped: Optional[bool]
     status: Optional[List[ProjectStatusEnum]]
-    extra: Optional[str]
+    extra: Optional[Dict[str, str]]
+    has_extra: List[str]  # TODO check if all keys exist
 
     def match(self, project:Project):
         r = ( ((self.status is None) or (project.status in self.status))
-              and ((self.extra is None) or (self.extra == project.extra)))
+              and (self.extra is None) or all(project.extra[k] == v for (k, v) in self.extra.items())
+              and (self.has_extra is None) or all(k in project.extra for k in self.has_extra.keys()))
         if self.flipped is None or not self.flipped:
             return r
         else:
@@ -34,7 +36,8 @@ class ProjectPatchCondition(I4cBaseModel):
 
 class ProjectPatchChange(I4cBaseModel):
     status: Optional[ProjectStatusEnum]
-    extra: Optional[str]
+    extra: Optional[Dict[str,str]]
+    # TODO set_extra del_extra
 
     def is_empty(self):
         return self.status is None and self.extra is None
@@ -255,6 +258,7 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
                  .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else "")
         write_debug_sql("get_projects.sql", sql, *params)
         res = await conn.fetch(sql, *params)
+        res = [{k: (v if k != "extra" else json.loads(v)) for (k, v) in row.items()} for row in res] # TODO how pathetic is that? why does it return a string?
         return res
 
 
@@ -300,7 +304,7 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
                 sql += f"{sep}\"status\"=${len(params)}"
                 sep = ",\n"
             if patch.change.extra:
-                params.append(patch.change.extra)
+                params.append(json.dumps(patch.change.extra))    # TODO pathetic vol 2: why do we need dumps
                 sql += f"{sep}\"extra\"=${len(params)}"
                 sep = ",\n"
             sql += "\nwhere name = $1"
