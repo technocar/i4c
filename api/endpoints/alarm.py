@@ -52,7 +52,7 @@ async def alarmdef_list(
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
-@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups")
+@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups", features=["any user"])
 async def subsgroups_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups", ask_features=["any user"])),
         user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):

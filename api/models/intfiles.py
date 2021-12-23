@@ -1,6 +1,8 @@
 import os
 from hashlib import sha384
 from textwrap import dedent
+from typing import Optional
+
 from fastapi.security import HTTPBasicCredentials
 from starlette.responses import FileResponse
 
@@ -13,7 +15,7 @@ from common.exceptions import I4cClientError, I4cClientNotFound
 class FileDetail(I4cBaseModel):
     name:str
     ver: int
-    size: int
+    size: Optional[int]
     hash: str
 
 
@@ -54,10 +56,14 @@ async def intfiles_list(credentials, name, name_mask, min_ver, max_ver, hash, *,
     async with DatabaseConnection(pconn) as conn:
         dres = await conn.fetch(sql, *params)
         res = []
+
+        def get_file_size(file_name):
+            return os.path.getsize(file_name) if os.path.isfile(file_name) else None
+
         for r in dres:
             res.append(FileDetail(name=r["name"],
                                   ver=r["ver"],
-                                  size=os.path.getsize(get_internal_file_name(r["hash"])),
+                                  size=get_file_size(get_internal_file_name(r["hash"])),
                                   hash=r["hash"]))
         return res
 

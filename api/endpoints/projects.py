@@ -54,14 +54,17 @@ async def patch_project(
     """Change a project if conditions are met"""
     return await models.projects.patch_project(credentials, name, patch)
 
-
 @router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, operation_id="project_ver_get")
-async def list_projects_version(
+async def get_projects_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
     name: str = Path(...),
     ver: int = Path(...)
 ):
     """Retrieve a project version"""
+    # TODO allow ver to be str, meaning label
+      # this assumes label can't be numeric, which is actually a good idea of not yet so
+    # TODO allow ver to be None, meaning latest
+      # is this even possible? 
     res, _ = await models.projects.get_projects_version(credentials, name, ver)
     return res
 
@@ -71,7 +74,7 @@ async def post_projects_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects/{name}/v")),
     name: str = Path(...),
     ver: Optional[int] = Query(None, title="A version number. Must not exist. If omitted, the next number is allocated."),
-    files: List[models.projects.ProjFile] = Body(...),
+    files: List[models.projects.ProjFile] = Body([]),
 ):
     """Create a new project version"""
     return await models.projects.post_projects_version(credentials, name, ver, files)

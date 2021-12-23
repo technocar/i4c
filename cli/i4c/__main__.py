@@ -223,15 +223,11 @@ def make_commands(api_def: I4CDef):
         if len(obj.actions) == 1:
             grp = top_grp
         else:
-            # TODO get description for the object
-            # openapi/rest does not have a concept of objects, thus we need some custom data
             help = f"Command group for managing {obj} data."
             grp = click.Group(obj_name, help=help)
             top_grp.add_command(grp)
             
         for (action_name, action) in obj.actions.items():
-            # , (path, method, info)
-
             params = []
             for param in info.get("parameters", []):
                 param_decl = "--" + param["name"].replace("_", "-")
@@ -316,7 +312,7 @@ def make_commands(api_def: I4CDef):
 
             callback = make_do(path=path, method=method, ep=info)
             cmd_name = action_name if len(actions) > 1 else obj_name
-            cmd = click.Command(cmd_name, callback=callback, params=params, help=help)
+            cmd = click.Command(cmd_name, callback=callback, params=params, help=action.help())
             grp.add_command(cmd)
 
 

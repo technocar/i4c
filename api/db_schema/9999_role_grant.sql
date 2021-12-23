@@ -49,7 +49,7 @@ insert into role_grant values ('aaa', 'get/alarm/subs/{id}', array[]::varchar[])
 insert into role_grant values ('aaa', 'post/alarm/subs', array[]::varchar[]);
 insert into role_grant values ('aaa', 'patch/alarm/subs/{id}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'post/alarm/events/check', array[]::varchar[]);
-insert into role_grant values ('aaa', 'get/alarm/subsgroups', array[]::varchar[]);
+insert into role_grant values ('aaa', 'get/alarm/subsgroups', array['any user']::varchar[]);
 insert into role_grant values ('aaa', 'get/alarm/events', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/alarm/events/{id}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'get/alarm/recips', array[]::varchar[]);

@@ -16,16 +16,16 @@ from models.roles import Priv
 class UserData(I4cBaseModel):
     """Represents data fields of a real person or automated account"""
     name: str = Field(..., title="User's name")
-    roles: List[str] = Field(..., title="Assigned roles")
-    status: UserStatusEnum = Field(...)
-    login_name: str = Field(..., title="Login name")
+    roles: List[str] = Field([], title="Assigned roles")
+    status: UserStatusEnum = Field("active")
+    login_name: Optional[str] = Field(None, title="Login name")
     public_key: Optional[str] = Field(None, nullable=True, title="Public key for signed requests")
     customer: Optional[str] = Field(None, nullable=True)
     email: Optional[str] = Field(None, nullable=True)
 
 
 class UserIn(UserData):
-    password: str
+    password: Optional[str] = Field(None)
 
 
 class User(UserData):
@@ -48,6 +48,7 @@ class UserPatchChange(I4cBaseModel):
     del_password: Optional[bool]
     public_key: Optional[str]
     del_public_key: Optional[bool]
+    status: Optional[bool] # TODO implement this
 
     @root_validator
     def check_exclusive(cls, values):
@@ -158,7 +159,7 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, wit
 
 async def login(credentials: HTTPBasicCredentials, *, pconn=None):
     res = await get_user(login_name=credentials.username, with_privs=True, pconn=pconn)
-    return {"user": res}
+    return res
 
 
 async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
@@ -206,8 +207,9 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pco
                             name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6, email = $7 
                         where id = $1""")
             try:
+                verif = common.create_password(user.password) if user.password is not None else None
                 await conn.fetchrow(sql, id, user.name, user.status, user.login_name,
-                                    common.create_password(user.password), user.customer, user.email)
+                                    verif, user.customer, user.email)
             except UniqueViolationError as e:
                 if hasattr(e, 'constraint_name'):
                     if e.constraint_name == 'uq_user_login':
@@ -217,7 +219,7 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pco
             sub = cmp_list(old_roles, user.roles)
             if len(sub.delete) > 0 or len(sub.insert) > 0:
                 if 'modify role' not in credentials.info_features:
-                    raise I4cClientError("Unable to modify role")
+                    raise I4cClientError("You are not allowed to modify users' roles")
             for c in sub.delete:
                 sql_del = """delete from user_role where "user" = $1 and role = $2"""
                 await conn.execute(sql_del, id, c)
