@@ -61,6 +61,10 @@ async def get_projects_version(
     ver: int = Path(...)
 ):
     """Retrieve a project version"""
+    # TODO allow ver to be str, meaning label
+      # this assumes label can't be numeric, which is actually a good idea of not yet so
+    # TODO allow ver to be None, meaning latest
+      # is this even possible? 
     res, _ = await models.projects.get_projects_version(credentials, name, ver)
     return res
 
