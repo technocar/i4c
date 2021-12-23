@@ -10,7 +10,7 @@ from I4cAPI import I4cApiRouter
 router = I4cApiRouter(include_path="/intfiles")
 
 
-@router.get("", response_model=List[models.intfiles.FileDetail], operation_id="intfiles_list")
+@router.get("", response_model=List[models.intfiles.FileDetail], operation_id="intfile_list")
 async def intfiles_list(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/intfiles")),
     name: Optional[str] = Query(None),
@@ -24,7 +24,7 @@ async def intfiles_list(
 
 
 @router.get("/v/{ver}/{path:path}", response_class=FileResponse(..., media_type="application/octet-stream"),
-            operation_id="intfiles_download")
+            operation_id="intfile_download")
 async def intfiles_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
@@ -34,7 +34,7 @@ async def intfiles_get(
     return await models.intfiles.intfiles_get(credentials, ver, path)
 
 
-@router.put("/v/{ver}/{path:path}", status_code=201, operation_id="intfiles_upload")
+@router.put("/v/{ver}/{path:path}", status_code=201, operation_id="intfile_upload")
 async def intfiles_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
@@ -45,7 +45,7 @@ async def intfiles_put(
     return await models.intfiles.intfiles_put(credentials, ver, path, data)
 
 
-@router.delete("/v/{ver}/{path:path}", status_code=200, operation_id="intfiles_delete")
+@router.delete("/v/{ver}/{path:path}", status_code=200, operation_id="intfile_delete")
 async def intfiles_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(...),
