@@ -54,9 +54,8 @@ async def patch_project(
     """Change a project if conditions are met"""
     return await models.projects.patch_project(credentials, name, patch)
 
-
 @router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, operation_id="project_ver_get")
-async def list_projects_version(
+async def get_projects_version(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
     name: str = Path(...),
     ver: int = Path(...)
