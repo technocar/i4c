@@ -93,7 +93,7 @@ class UncFile(I4cBaseModel):
 
 class IntFile(I4cBaseModel):
     name: str
-    ver: str
+    ver: int
 
     def __eq__(self, other):
         if not isinstance(other, IntFile):
