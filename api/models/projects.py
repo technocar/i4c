@@ -469,9 +469,12 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
                 for l in patch.change.set_label:
                     res_chec = await conn.fetch(sql_check, project_name, l)
                     if res_chec:
+                        # todo 3: check this. This moves here ALL label of this kind from this project.
+                        #         Probably there are maximum 1 per project, but semms to be safer to
+                        #         move one and delete the others.
                         for r in res_chec:
                             if r["project_ver"] != pv_id:
-                                await conn.execute(sql_update, r["project_ver"], pv_id, l)
+                                await conn.execute(sql_update, pv_id, r["project_ver"], l)
                     else:
                         await conn.execute(sql_insert, pv_id, l)
 
