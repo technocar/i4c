@@ -32,12 +32,19 @@ def main():
         notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=push')
         for notif in notifs:
             ev = notif["event"]
-            data = f'{ev["alarm"]} ({ev["created"]}):\n{ev["summary"]}'
+            data = {
+                "notification": {                    
+                    "title": f'{ev["alarm"]} ({ev["created"]})',
+                    "body": f'{ev["summary"]}',
+                    "timestamp": f'{ev["created"]}',
+                    "icon": "/assets/logo.png"
+                }
+            }
 
             log.info(f'Sending notif: id = {notif["id"]}')
             try:
                 webpush(json.loads(notif["address"]),
-                        data,
+                        json.dumps(data),
                         vapid_private_key=private_key,
                         vapid_claims={"sub": f"mailto:{email}"})
             except Exception as e:
