@@ -1,0 +1,52 @@
+<app-notif *ngIf="embed"></app-notif>
+<form class="row m-0" #form="ngForm" (submit)="submit(form)">
+  <div class="col pr-0 mb-4">
+    <button #save type="submit" class="btn btn-success float-right" *ngIf="!embed" [disabled]="form.invalid">
+      <i class="bi bi-save"></i>
+      mentés
+    </button>
+  </div>
+  <div class="w-100"></div>
+  <div class="col">
+    <div class="form-group" *ngIf="!own">
+      <label>felhasználó</label>
+      <label>{{subs.user_name}}</label>
+    </div>
+    <div class="form-group">
+      <div class="btn-group btn-group-toggle" ngbRadioGroup name="status" [ngModel]="subs.status" (ngModelChange)="statusChange($event)">
+        <label ngbButtonLabel class="btn{{subs.status === 'inactive' ? '-outline' : ''}}-success">
+          <input ngbButton type="radio" value="active">aktív
+        </label>
+        <label ngbButtonLabel class="btn{{subs.status === 'active' ? '-outline' : ''}}-secondary">
+          <input ngbButton type="radio" value="inactive">inaktív
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="btn-group btn-group-toggle" ngbRadioGroup name="method" [ngModel]="subs.method" (ngModelChange)="methodChange($event)">
+        <label ngbButtonLabel *ngFor="let method of methods" class="btn{{subs.method !== method[0] ? '-outline' : ''}}-primary">
+          <input ngbButton type="radio" [value]="method[0]" [disabled]="!isNew">{{method[1]}}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="subs_address_name">elnevezés</label>
+      <input id="subs_address_name" [(ngModel)]="subs.address_name" name="address_name" class="form-control" #address_name="ngModel" required />
+      <div *ngIf="address_name.invalid" class="invalid-feedback">
+        <div *ngIf="address_name.errors?.required">elnevezés megadása kötelező</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="subs_address">érték</label>
+      <input id="subs_address" [(ngModel)]="subs.address" name="address" class="form-control" [disabled]="subs.method === 'push'" />
+    </div>
+  </div>
+  <fieldset class="col" >
+    <legend>csoportok</legend>
+    <div class="custom-control custom-checkbox" *ngFor="let group of groups; index as i">
+      <input type="checkbox" class="custom-control-input" id="group_{{i}}" name="groups" [(ngModel)]="group.selected"  [ngModelOptions]="{standalone: true}" />
+      <label class="custom-control-label" for="group_{{i}}">{{group.id}}</label>
+    </div>
+  </fieldset>
+
+</form>

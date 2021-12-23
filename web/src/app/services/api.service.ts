@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -94,15 +94,19 @@ export class ApiService {
     private http: HttpClient
   ) {
     this._apiUrl = environment.apiPath;
+    console.log(this._apiUrl);
   }
 
   getErrorMsg(error: any): string | string[] {
-    console.log(console.error);
+    console.log(error);
 
     error = error.error ?? error;
 
-    if (!error || !error.detail)
+    if (!error)
       return "Ismeretlen hiba!";
+
+    if (!error.detail)
+      return typeof error === "string" ? error : error.message
 
     if (Array.isArray(error.detail)) {
       let details: ErrorDetail[] = error.detail;
@@ -409,5 +413,31 @@ export class ApiService {
 
   setAlarm(name: string, alarm: Alarm): Observable<Alarm> {
     return this.http.put<Alarm>(`${this._apiUrl}/alarm/defs/${name}`, alarm);
+  }
+
+  getAlarmGroups(user: string): Observable<AlarmSubscriptionGroupGrant[]> {
+    return this.http.get<AlarmSubscriptionGroupGrant[]>(`${this._apiUrl}/alarm/subsgroups`, { params: { user } });
+  }
+
+  getAlarmSubscriptions(parameters: AlarmSubscriptionRequestParams): Observable<AlarmSubscription[]> {
+    var params = new RequestParams();
+    params.addFromObject(parameters);
+    return this.http.get<AlarmSubscription[]>(`${this._apiUrl}/alarm/subs`, { params: params.getAll() });
+  }
+
+  getAlarmSubscription(id: number): Observable<AlarmSubscription> {
+    return this.http.get<AlarmSubscription>(`${this._apiUrl}/alarm/subs/${id}`);
+  }
+
+  addAlarmSubscription(subs: AlarmSubscription): Observable<AlarmSubscription> {
+    return this.http.post<AlarmSubscription>(`${this._apiUrl}/alarm/subs`, subs);
+  }
+
+  updateAlarmSubscription(id: number, update: AlarmSubscriptionUpdate): Observable<UpdateResult> {
+    return this.http.patch<UpdateResult>(`${this._apiUrl}/alarm/subs/${id}`, update);
+  }
+
+  getSetting(key: string): Observable<string> {
+    return this.http.get<string>(`${this._apiUrl}/settings/${key}`);
   }
 }

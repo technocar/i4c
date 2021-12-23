@@ -1,0 +1,47 @@
+<div class="row mb-4 p-2">
+  <a class="col-auto btn btn-primary" href="#" [routerLink]="[selectedUser, -1]">
+    <i class="bi bi-pencil-square"></i>
+    feliratkozás...
+  </a>
+</div>
+<div class="row mb-4">
+  <div class="form-group col-3">
+    <label for="subs_users">felhasználók</label>
+    <select id="subs_users" class="form-control" [(ngModel)]="selectedUser">
+      <option *ngFor="let user of users$ | async" [value]="user[0]">{{user[1]}}</option>
+    </select>
+  </div>
+</div>
+<div class="row">
+  <table class="col-12 table table-striped table-hover text-center">
+    <thead>
+      <tr>
+        <th scope="col">megnevezés</th>
+        <th scope="col" title="feliratkozási típus">felir. típus</th>
+        <th scope="col">aktív</th>
+        <th scope="col">&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-template [ngIf]="loading$ | async">
+        <tr class="loading">
+          <td colspan="7">
+            <div class="d-flex justify-content-center">
+              <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template [ngIf]="!(loading$ | async)">
+        <tr *ngFor="let item of subs$ | async; trackBy: trackById">
+          <td>{{item.address_name}}</td>
+          <td>{{getMethodCaption(item.method)}}</td>
+          <td><span class="badge badge-{{item.status === 'active' ? 'success' : 'secondary'}}">{{item.status === 'active' ? 'aktív' : 'inaktív'}}</span></td>
+          <td><a href="#" [routerLink]="[item.user, item.id]">módosítás</a></td>
+        </tr>
+      </ng-template>
+    </tbody>
+  </table>
+</div>

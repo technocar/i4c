@@ -528,6 +528,7 @@ export interface AlarmSubscription {
   user: string,
   method: AlarmNotificationType,
   address: string,
+  address_name: string,
   status: StatusType,
   id: number,
   user_name: string
@@ -542,4 +543,39 @@ export interface AlarmRequestParams {
   subs_address_mask?: string,
   subs_user?: string,
   subs_user_mask?: string
+}
+
+export interface AlarmSubscriptionGroupGrant {
+  user: User,
+  groups: string[]
+}
+
+export interface AlarmSubscriptionRequestParams {
+  id: string,
+  group: string,
+  group_mask: string,
+  user: string,
+  user_name: string,
+  user_name_mask: string,
+  method: AlarmNotificationType,
+  status: StatusType,
+  address: string,
+  address_mask: string,
+  alarm: string
+}
+
+export interface AlarmSubscriptionChange {
+  status: StatusType,
+  address: string,
+  clear_address: boolean,
+  address_name: string,
+  clear_address_name: boolean,
+  add_groups?: string[],
+  set_groups: string[],
+  remove_groups?: string[]
+}
+
+export interface AlarmSubscriptionUpdate {
+  conditions: any[],
+  change: AlarmSubscriptionChange
 }

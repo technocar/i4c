@@ -7,21 +7,26 @@ import { CommonsModule } from '../commons/commons.module';
 import { FormsModule } from '@angular/forms';
 import { AlarmDetailComponent } from './detail/detail.component';
 import { PeriodSelectorComponent } from './period-selector/period-selector.component';
-import { NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgbButtonsModule, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
+import { AlarmSubscriptionComponent } from './subscription/subscription.component';
+import { AlarmSubscriptionDetailComponent } from './subscription/detail/detail.component';
 
 
 @NgModule({
   declarations: [
     AlarmComponent,
     AlarmDetailComponent,
-    PeriodSelectorComponent
+    PeriodSelectorComponent,
+    AlarmSubscriptionComponent,
+    AlarmSubscriptionDetailComponent
   ],
   imports: [
     CommonModule,
     AlarmRoutingModule,
     CommonsModule,
     FormsModule,
-    NgbTypeaheadModule
+    NgbTypeaheadModule,
+    NgbButtonsModule
   ]
 })
 export class AlarmModule { }

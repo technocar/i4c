@@ -25,15 +25,16 @@ export class AuthenticationInterceptor implements HttpInterceptor {
   private addAuth(request: HttpRequest<any>): HttpRequest<any> {
     const isApiUrl = true;//this.isSameOriginUrl(request);
     if (isApiUrl && request.url !== 'api/login') {
-      if (this.authService.isAuthenticated())
+      if (this.authService.isAuthenticated()) {
         this.authService.extendExpiration();
-      else
+        request = request.clone({
+          setHeaders: {
+            "Authorization": `Basic ${this.authService.currentUserValue.token}`
+          }
+        });
+      } else
         this.router.navigate(['/login']);
-      return request = request.clone({
-        setHeaders: {
-          "Authorization": `Basic ${this.authService.currentUserValue.token}`
-        }
-      });
+      return request;
     } else {
       return request;
     }

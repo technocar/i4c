@@ -1,4 +1,4 @@
-import { StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition } from "./api";
+import { AlarmNotificationType, AlarmSubscription, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition } from "./api";
 
 export enum DeviceType { Mill = "mill", Lathe = "lathe", GOM = "gom", Robot = "robot" }
 
@@ -28,4 +28,12 @@ export class Labels {
     ['M', $localize `:@@datetime_month:hónap`, $localize `:@@datetime_month_short:hónap`],
     ['Y', $localize `:@@datetime_year:év`, $localize `:@@datetime_year_short:év`]
   ]
+
+  static alarm = {
+    methods: [
+      [AlarmNotificationType.None, $localize `:@@alarm_method_none:Nincs`],
+      [AlarmNotificationType.Email, $localize `:@@alarm_method_email:E-mail`],
+      [AlarmNotificationType.Push, $localize `:@@alarm_method_push:Push`]
+    ]
+  }
 }

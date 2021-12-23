@@ -15,6 +15,8 @@ import { CommonModule } from '@angular/common';
 import { CommonsModule } from './commons/commons.module';
 import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
 import { QuillModule } from 'ngx-quill';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from 'src/environments/environment';
 
 @NgModule({
   declarations: [
@@ -25,6 +27,12 @@ import { QuillModule } from 'ngx-quill';
   imports: [
     BrowserModule,
     CommonModule,
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: environment.production,
+      // Register the ServiceWorker as soon as the app is stable
+      // or after 30 seconds (whichever comes first).
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
     HttpClientModule,
     AppRoutingModule,
     ReactiveFormsModule,
