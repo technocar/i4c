@@ -235,7 +235,8 @@ class I4CConnection:
         Invokes an API endpoint. You can pass either an object name and an action name, or an action object
         that was acquired using `connection[<object>][<action>]` or `connection.object.action`. It is assumed that
         the first word of the operationId is the object name, and the rest is the action. Typically you wouldn't call
-        this method, instead, call the invoke method of the action object, e.g.: `connection.user.list(...)`
+        this method, instead, call the invoke method of the action object, e.g.: `connection.user.list(...)` if
+        user is the object and list is the action.
 
         :param obj_name: object name, as defined by the interface.
         :param action_name: action name, as defined by the interface.
