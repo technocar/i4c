@@ -39,6 +39,8 @@ class I4CObj:
 
 
 def public_key(private_key):
+    if private_key is None:
+        return None
     if isinstance(private_key, str):
         private_key = nacl.signing.SigningKey(private_key, encoder=nacl.encoding.Base64Encoder)
     elif not isinstance(private_key, nacl.signing.SigningKey):
@@ -61,6 +63,7 @@ def _load_profile(profile_file, require_exist=True):
             raise Exception("Unable to read profile information")
         else:
             return None
+
     # on linux, check file attrs
     if os.name == "posix":
         mode = os.stat(profile_file).st_mode
@@ -71,6 +74,15 @@ def _load_profile(profile_file, require_exist=True):
         data = yaml.safe_load(f)
 
     return data
+
+
+def _save_profile(profile_file, data):
+    folder = os.path.dirname(profile_file)
+    if not os.path.isdir(folder):
+        os.mkdir(folder, 0o700)
+    with open(profile_file, "w") as f:
+        yaml.dump(data, f)
+    os.chmod(profile_file, 0o600)
 
 
 def sign(private_key, data):
@@ -108,6 +120,7 @@ class I4CConnection:
             profile_file = os.environ.get("i4c-profile", None)
         if not profile_file:
             profile_file = os.path.expanduser("~") + "/.i4c/profiles"
+        self.profile_file = profile_file
 
         if not user_name or not (password or private_key) or not base_url or not profile:
             p = _load_profile(profile_file, require_exist=True)
@@ -264,3 +277,68 @@ class I4CConnection:
         body, content_type = action.prepare_body(body)
 
         return self.invoke_url(url, method, bindata=body, data_content_type=content_type)
+
+    def profiles(self):
+        p = _load_profile(self.profile_file, require_exist=False)
+        p = p or {}
+        dp = p.pop("default") if "default" in p else None
+        ps = [{"profile": k,
+               "base-url": v.get("base-url", None),
+               "api_def_file": p.get("api-def-file", None),
+               "user": v.get("user", k),
+               "password": ("password" in v),
+               "public-key": public_key(v.get("private-key", None)),
+               "default": (dp == k)}
+              for (k, v) in p.items()]
+        return ps
+
+    def write_profile(self, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+        if name == "default":
+            raise Exception("Invalid profile name.")
+        if name is None:
+            name = self.profile
+        if name is None:
+            raise Exception("No profile name could be deduced.")
+
+        p = _load_profile(self.profile_file, require_exist=False)
+        p = p or {}
+
+        if name in p:
+            if not override:
+                raise Exception("Profile already exists.")
+            sect = p[name]
+        else:
+            sect = {}
+            p[name] = sect
+        if user and name != user: sect["user"] = user
+        if name == user and "user" in sect: del sect["user"]
+        if base_url: sect["base-url"] = base_url
+        if api_def_file: sect["api-def-file"] = api_def_file
+        if del_api_def_file and "api-def-file" in sect: del sect["api-def-file"]
+        if password: sect["password"] = password
+        if del_password and "password" in sect: del sect["password"]
+        if del_private_key and "private-key" in sect: del sect["private-key"]
+        if make_default:
+            p["default"] = name
+
+        _save_profile(self.profile_file, p)
+
+    def profile_new_key(self, name, override):
+        if name == "default":
+            raise Exception("Invalid profile name.")
+        if name is None:
+            name = self.profile
+        if name is None:
+            raise Exception("No profile name could be deduced.")
+
+        p = _load_profile(self.profile_file, require_exist=False)
+        sect = p and p.get(name, None)
+        if sect is None:
+            raise Exception("No such profile exists.")
+
+        pri, pub = keypair_create()
+        sect["private-key"] = pri
+
+        _save_profile(self.profile_file, p)
+
+        return pub

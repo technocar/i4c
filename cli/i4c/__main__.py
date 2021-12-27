@@ -226,7 +226,7 @@ def make_commands(api_def: I4CDef):
             help = f"Command group for managing {obj} data."
             grp = click.Group(obj_name, help=help)
             top_grp.add_command(grp)
-            
+
         for (action_name, action) in obj.actions.items():
             params = []
             for param in info.get("parameters", []):
@@ -356,76 +356,54 @@ def profile_get(name, output_expr, output_file, output_template):
 @profile.command("new-key", help="Creates a new key pair for the profile, and displays the public key")
 @click.option("--name", help="The profile name to modify. Must exist.")
 @click.option("--override", is_flag=True, help="If the profile has a key already, replace it. The old key is deleted.")
-def profile_new_key(*, name, override):
-    def chg(data):
-        prof = name or data.get("default", None)
-        if not prof:
-            raise click.ClickException("Specify profile or set up a default")
-        if prof not in data:
-            raise click.ClickException("Profile does not exist")
-
-        if not override and "private-key" in data[prof]:
-            raise click.ClickException("The profile already has a key")
-
-        pri, pub = keypair_create()
-        data[prof]["private-key"] = pri
-        return pub
-
-    pubkey = apply_profile_change(chg)
+@click.pass_context
+def profile_new_key(ctx, name, override):
+    conn = ctx["connection"]
+    pubkey = conn.profile_new_key(name, override)
     click.echo(pubkey)
 
 
 @profile.command("put", help="Creates or modifies a profile")
-@click.option("--name", required=True, help="Name of the profile. Can not be 'default'.")
-@click.option("--user-name", help="The value of the user-name used for authentication. If omitted, the profile name will be used.")
+@click.option("--name", help="Name of the profile. Can not be 'default'. If omitted, the default profile will be modified.")
+@click.option("--base-url", help="Base url.")
+@click.option("--api-def-file", help="Name of openapi definition file. If not set, will be downloaded from the server.")
+@click.option("--del-api-def-file", is_flag=True, help="If provided, the openapi-def setting will be removed from the profile.")
+@click.option("--user", help="The value of the user-name used for authentication. If omitted, the profile name will be used.")
 @click.option("--password", help="The value of the password for authentication or . to prompt.")
-@click.option("--custom", multiple=True, help="Custom information that will be stored in the profile. The format "
-    "is name=value. The name will be prefixed with x- if it is not already.")
+@click.option("--del-password", is_flag=True, help="If provided, the password will be removed from the profile.")
+@click.option("--del-private-key", is_flag=True, help="If provided, the private key will be removed from the profile.")
 @click.option("--override", is_flag=True, help="If the profile exists, it will be modified.")
 @click.option("--make-default", is_flag=True, help="Make the profile default")
-def profile_put(name, user_name, password, custom, override, make_default):
-    def chg(data):
-        data = data or {}
-        sect = data.get(name, None)
-        if sect is not None and not override:
-            raise click.ClickException("The profile already exists")
-        if sect is None:
-            sect = {}
-            data[name] = sect
-        if user_name: sect["username"] = user_name
-        if password: sect["password"] = password
-        for cust in custom:
-            (fld, value) = cust.split("=", 1)
-            if not fld.startswith("x-"):
-                fld = "x-" + fld
-            sect[fld] = value
-        if make_default: data["default"] = name
-
+@click.pass_context
+def profile_put(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+    conn = ctx["connection"]
     if password == ".":
         password = click.termui.prompt("Password", hide_input=True, confirmation_prompt=True)
-    apply_profile_change(chg)
+    try:
+        conn.write_profile(name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default)
+    except Exception as e:
+        raise click.ClickException(e.message)
 
 
 @profile.command("list", help="Gives back all existing profiles. Sensitive fields will be redacted.")
 # TODO do we want any filters?
 @json_options
-def profile_list(output_expr, output_file, output_template):
-    data = load_profile(require_exist=False) or {}
-    default = data.get("default", None)
-    data = [{"profile": k, **redact_profile(v), "is-default": (k == default)} for (k,v) in data.items() if k != "default"]
-    data = {"profiles": data}
+@click.pass_context
+def profile_list(ctx, output_expr, output_file, output_template):
+    conn = ctx["connection"]
+    data = conn.profiles()
     process_json(data, output_expr, output_file, output_template)
 
 
 @profile.command("delete", help="Permanently deletes the profile. Irreversible!")
 @click.option("--name", help="The profile name to delete.")
-def profile_delete(name):
-    def chg(data):
-        if name in data:
-            data.pop(name)
-        else:
-            raise click.ClickException("Profile does not exist")
-    apply_profile_change(chg)
+@click.pass_context
+def profile_delete(ctx, name):
+    if name == "default":
+        raise click.ClickException("'default' is not valid profile name.")
+    conn = ctx["connection"]
+    if not conn.delete_profile(name):
+        raise click.ClickException("Profile does not exist")
 
 
 @top_grp.command("doc")
@@ -645,10 +623,15 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     process_json(data, output_expr, output_file, output_template)
 
 
+def read_log_cfg():
+    # TODO
+    pass
+
+
 try:
     read_log_cfg()
     connection = I4CConnection()
     make_commands(connection.api_def())
-    top_grp(obj={}, prog_name="i4c")
+    top_grp(obj={"connection": connection}, prog_name="i4c")
 except click.ClickException as e:
     click.echo(e.message)
