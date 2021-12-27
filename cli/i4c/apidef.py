@@ -1,57 +1,61 @@
+from __future__ import annotations
 import os
 import json
 import datetime
 import urllib.request
 import urllib.error
 import urllib.parse
-from typing import List, Dict, Any
+from typing import List, Dict
+from dataclasses import dataclass, field
 from .tools import jsonify
 
 
+@dataclass
 class Schema:
-    title: str
-    description: str
-    is_array: bool
-    required: bool
-    type: str
-    type_fmt: str
-    type_enum: List[str]
-    sch_obj: str
+    title: str = None
+    description: str = None
+    is_array: bool = None
+    required: bool = None
+    type: str = None
+    type_fmt: str = None
+    type_enum: List[str] = None
+    sch_obj: str = None
+    properties: Dict[str, Schema] = None
 
     def __repr__(self):
-        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
+        # TODO can we do it smarter?
+        # basically we are doing this only to omit the properties on non-objects
+        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items() if f != "properties" or self.type == "object")
         flds = ", ".join(flds)
         return f"{self.__class__.__name__}({flds})"
 
 
+@dataclass
 class Body(Schema):
-    content_type: str
+    content_type: str = None
 
 
+@dataclass
 class Param(Schema):
-    location: str # path | query
+    location: str = None # path | query
 
 
 def nice_name(s):
     return " ".join(word.capitalize() for word in s.split("_"))
 
 
+@dataclass
 class Action:
-    title: str
-    description: str
-    authentication: str  # noauth, basic, unknown
-    response_type: str
-    response_class: str
-    params: Dict[str, Param]
-    body: Body
-    path: str
-    method: str
-    raw: dict
-
-    def __repr__(self):
-        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items() if f != "raw")
-        flds = ", ".join(flds)
-        return f"Action({flds})"
+    summary: str = None
+    description: str = None
+    authentication: str = None  # noauth, basic, unknown
+    response_type: str = None
+    response_class: str = None
+    params: Dict[str, Param] = None
+    body: Body = None
+    path: str = field(repr=False, default=None)
+    method: str = field(repr=False, default=None)
+    raw: dict = field(repr=False, default=None)
 
     def help(self):
         s = []
@@ -122,13 +126,9 @@ class Action:
         return body, content_type
 
 
+@dataclass
 class Obj:
-    actions: Dict[str, Action]
-
-    def __repr__(self):
-        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
-        flds = ", ".join(flds)
-        return f"Obj({flds})"
+    actions: Dict[str, Action] = None
 
     def __getitem__(self, item):
         return self.actions[item]
@@ -140,10 +140,6 @@ class Obj:
         if act is None or act2 is not None:
             raise KeyError()
         return act
-
-
-class Schema:
-    pass # TODO
 
 
 def _proc_auth(a):
@@ -179,14 +175,31 @@ def _proc_sch(sch, target):
     else:
         typeroot = sch
     target.sch_obj = typeroot.get("$ref", None)
+    if target.sch_obj and target.sch_obj.startswith("#/components/schemas/"):
+        target.sch_obj = target.sch_obj[21:]
     target.type_fmt = typeroot.get("format", None)
     target.type_enum = typeroot.get("enum", None)
 
+    props = sch.get("properties", None)
+    if props is not None:
+        target.properties = {}
+        for prop_name, prop in props.items():
+            # TODO would be nice to have some guard against infinite recursion
+            propo = Schema()
+            _proc_sch(prop, propo)
+            target.properties[prop_name] = propo
+
 
 def preproc_def(apidef):
-    # TODO bring singular allOf to parent level
-
     def descend(level):
+        if "allOf" in level:
+            for sub in level["allOf"]:
+                for k, v in sub.items():
+                    level[k] = v
+            del level["allOf"]
+
+        # TODO bring singular anyOf to parent level?
+        
         if "$ref" in level:
             refd = level["$ref"]
             if refd.startswith("#/components/schemas/"):
@@ -224,7 +237,11 @@ class I4CDef:
 
         preproc_def(self.content)
 
-        # TODO collect schema objects
+        self.schema = {}
+        for (sch_name, sch) in self.content["components"]["schemas"].items():
+            scho = Schema()
+            _proc_sch(sch, scho)
+            self.schema[sch_name] = scho
 
         for (path, methods) in self.content["paths"].items():
             for (method, info) in methods.items():

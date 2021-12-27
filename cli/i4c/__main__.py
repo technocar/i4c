@@ -3,8 +3,8 @@ from functools import wraps
 import click.globals
 from .apidef import I4CDef
 from .conn import I4CConnection
-from outputproc import print_table, process_json
-from inputproc import assemble_body
+from .outputproc import print_table, process_json
+from .inputproc import assemble_body
 
 
 def resolve_file(fn):
@@ -229,42 +229,28 @@ def make_commands(api_def: I4CDef):
 
         for (action_name, action) in obj.actions.items():
             params = []
-            for param in info.get("parameters", []):
-                param_decl = "--" + param["name"].replace("_", "-")
+            for param_name, param in action.params.items():
+                param_decl = "--" + param_name.replace("_", "-")
                 attrs = {}
-
-                type_info = get_data_type(api_def, param)
-
-                if type_info["is_array"]:
-                    attrs["multiple"] = True
-
-                attrs["required"] = type_info["required"]
-
+                attrs["multiple"] = param.is_array
+                attrs["required"] = param.required
                 #TODO use data type
 
-                paramhelp = param.get("description", None)
-                paramhelp = paramhelp or type_info["title"]
-                paramhelp = paramhelp or (param["name"].replace("_", " ").capitalize() + "." +
-                                (" Multiple values allowed." if attrs.get("multiple", False) else ""))
+                paramhelp = param.description or param.title
+                paramhelp = paramhelp or (param_name.replace("_", " ").capitalize() + "." +
+                                (" Multiple values allowed." if param.is_array else ""))
                 attrs["help"] = paramhelp
 
                 params.append(click.Option((param_decl,), **attrs))
 
-            body = info.get("requestBody", None)
-            if body:
+            if action.body:
                 param_decl = "--body"
                 attrs = {}
-                attrs["required"] = body.get("required", True)
+                attrs["required"] = action.body.required
 
-                schema = dig(body, ["content", "application/json", "schema"])
-                if schema:
-                    if "$ref" in schema:
-                        _, _, cls = schema["$ref"].rpartition("/")
-                    else:
-                        cls = act.capitalize() + obj.capitalize() + "Body" # TODO doc command does not understand this
                 helpstr = ""
-                if cls:
-                    helpstr = f"Schema: {cls}. Use the `doc {cls}` command to get the definition. "
+                if action.body.sch_obj:
+                    helpstr = f"Use the `doc {action.body.sch_obj}` command to get the definition. "
                 helpstr = helpstr + "Use - to read from stdin, or @filename to read from file."
                 attrs["help"] = helpstr
 
@@ -278,24 +264,18 @@ def make_commands(api_def: I4CDef):
                     help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
                         "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
                         "For a detailed explanation on data input and transformations, see the transform command."))
-                # TODO append body assembly params
 
-            sec = info.get("security", None) or def_sec
-            if sec:
+            if action.authentication == "basic":
                 params.append(click.Option(("--profile",), help="The name of the saved profile to use"))
-                for seci in sec:
-                    sch = next(k for k in seci.keys())
-                    sch = api_def["components"]["securitySchemes"][sch]
-                    if sch["type"] == "http" and sch["scheme"] == "basic":
-                        params.append(click.Option(("--auth-user",), help="User name for authentication"))
-                        params.append(click.Option(("--auth-pwd",), help="Password for basic authentication"))
-                        params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication"))
+                params.append(click.Option(("--auth-user",), help="User name for authentication"))
+                params.append(click.Option(("--auth-pwd",), help="Password for basic authentication"))
+                params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication"))
 
             params.append(click.Option(("--print-curl",), is_flag=True,
                 help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
                     "included in the result. Also note that signature based authentication expires in 60 seconds."))
 
-            if 1==1: # TODO only add output parameters if the response is json
+            if action.response_type == "application/json":
                 params.append(click.Option(("--output-expr",),
                     help="Jsonpath expression to apply to the response. The returned items will be separately processed by " \
                          "--output-file and --output-template. If omitted, the entire result will be one item."))
@@ -306,12 +286,12 @@ def make_commands(api_def: I4CDef):
                 params.append(click.Option(("--output-template",),
                     help="Jinja template to process data items before printed or written to a file. If omitted, raw " \
                           "json will be written."))
-            if 1==2: # TODO if the response is other than json, add output-file, and no templating
+            else:
                 params.append(click.Option(("--output-file",),
                     help="Output file name. If omitted or -, stdout is used."))
 
-            callback = make_do(path=path, method=method, ep=info)
-            cmd_name = action_name if len(actions) > 1 else obj_name
+            callback = make_callback(path=action.path, method=action.method, action=action)
+            cmd_name = action_name if len(obj.actions) > 1 else obj_name
             cmd = click.Command(cmd_name, callback=callback, params=params, help=action.help())
             grp.add_command(cmd)
 
@@ -358,12 +338,12 @@ def profile_get(name, output_expr, output_file, output_template):
 @click.option("--override", is_flag=True, help="If the profile has a key already, replace it. The old key is deleted.")
 @click.pass_context
 def profile_new_key(ctx, name, override):
-    conn = ctx["connection"]
+    conn = ctx.obj["connection"]
     pubkey = conn.profile_new_key(name, override)
     click.echo(pubkey)
 
 
-@profile.command("put", help="Creates or modifies a profile")
+@profile.command("save", help="Creates or modifies a profile")
 @click.option("--name", help="Name of the profile. Can not be 'default'. If omitted, the default profile will be modified.")
 @click.option("--base-url", help="Base url.")
 @click.option("--api-def-file", help="Name of openapi definition file. If not set, will be downloaded from the server.")
@@ -375,8 +355,8 @@ def profile_new_key(ctx, name, override):
 @click.option("--override", is_flag=True, help="If the profile exists, it will be modified.")
 @click.option("--make-default", is_flag=True, help="Make the profile default")
 @click.pass_context
-def profile_put(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
-    conn = ctx["connection"]
+def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+    conn = ctx.obj["connection"]
     if password == ".":
         password = click.termui.prompt("Password", hide_input=True, confirmation_prompt=True)
     try:
@@ -390,7 +370,7 @@ def profile_put(ctx, name, base_url, api_def_file, del_api_def_file, user, passw
 @json_options
 @click.pass_context
 def profile_list(ctx, output_expr, output_file, output_template):
-    conn = ctx["connection"]
+    conn = ctx.obj["connection"]
     data = conn.profiles()
     process_json(data, output_expr, output_file, output_template)
 
@@ -401,7 +381,7 @@ def profile_list(ctx, output_expr, output_file, output_template):
 def profile_delete(ctx, name):
     if name == "default":
         raise click.ClickException("'default' is not valid profile name.")
-    conn = ctx["connection"]
+    conn = ctx.obj["connection"]
     if not conn.delete_profile(name):
         raise click.ClickException("Profile does not exist")
 
@@ -410,109 +390,59 @@ def profile_delete(ctx, name):
 @click.argument("schema", required=False)
 @click.option("--raw", is_flag=True, default=False)
 @json_options
-def doc(schema, raw, output_expr, output_file, output_template):
+@click.pass_context
+def doc(ctx, schema, raw, output_expr, output_file, output_template):
     """
     Output OpenAPI definition. If schema is specified, only that schema is displayed. The names of
     the schemas are used in parameters, especially --body parameters, which almost always take a schema.
 
-    If no output-expr and outout-template is specified, a human readable formatting is provided.
-    If you want the raw format, use --raw.
+    If no output-expr and output-template is specified, a human readable formatting is provided.
+    If you want the raw format, use --raw or specify output-expr as $.
     """
 
-    if raw and not output_expr and not output_template:
-        output_expr = "$"
+    conn = ctx.obj["connection"]
 
-    if schema:
-        obj = api_def["components"]["schemas"][schema]
-    else:
-        obj = api_def
+    if output_expr or output_template or raw:
+        if schema:
+            obj = conn.api_def().content["components"]["schemas"][schema]
+        else:
+            obj = conn.api_def().content
 
-    if output_expr or output_template:
+        if not output_expr and not output_template:
+            output_expr = "$"
+
         process_json(obj, output_expr, output_file, output_template)
         return
 
     if schema:
+        sch = conn.api_def().schema[schema]
         click.echo(schema)
         click.echo()
-        desc = obj.get("description", None)
-        if desc:
-            desc = click.formatting.wrap_text(desc, preserve_paragraphs=True)
-            click.echo(desc)
-            click.echo()
-        sch_type = obj.get("type")
-        if sch_type == "object":
-            props = obj["properties"]
-            req = obj.get("required", [])
-
-            def prop_row(name, info):
-                if 'allOf' in info:
-                    info = info["allOf"]
-                    info = info[0]  # TODO how to handle multi-item allOf?
-
-                if "$ref" in info:
-                    t = info["$ref"]
-                    pre, _, t = t.rpartition("/")
-                else:
-                    if "type" in info:
-                        t = info["type"]
-                    elif "anyOf" in info:
-
-                        def typeof(n):
-                            t = n.get("type", None)
-                            if not t: return None
-                            if t == "array":
-                                t = dig(n, ("items", "type")) or ""
-                                t = f"{t}[]"
-                            return t
-
-                        t = "|".join(filter(None, (typeof(i) for i in info["anyOf"])))
-                        if len(t) > 25: t = t[:22] + "..."
-                    else:
-                        t = "?"
-                    is_array = (t == "array")
-                    if is_array:
-                        t = info["items"]
-                        if "type" in t:
-                            t = t["type"]
-                        elif "$ref" in t:
-                            t = t["$ref"]
-                            pre, _, t = t.rpartition("/")
-                    if is_array:
-                        t = f"{t}[]"
-                desc = info.get("title", "")
-                if desc and not desc.endswith("."): desc = desc + "."
-
-                attribs = []
-                if name in req: attribs.append("required")
-                if info.get("nullable", False): attribs.append("nullable")
-                if attribs:
-                    attribs = ", ".join(attribs)
-                    attribs = attribs.capitalize() + "."
-                    desc = " ".join(filter(None, (desc, attribs)))
-                return [name, t, desc]
-
-            # there is no need to preserve the order, because fastAPI already messes it up. sorting alphabetically.
-            table = [prop_row(k, v) for (k, v) in sorted(props.items(), key=lambda p: p[0])]
+        desc = click.formatting.wrap_text(sch.description, preserve_paragraphs=True)
+        click.echo(desc)
+        click.echo()
+        if sch.data_type == "object":
+            # there is no way to preserve the order, because fastAPI already messes it up. sorting alphabetically.
+            table = [[k, v.data_type, v.description] for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
             click.echo("Fields:")
             print_table(table)
+        elif sch.type_enum is not None:
+            desc = f"It is a {sch.data_type} with possible values:"
+            desc = click.formatting.wrap_text(desc, preserve_paragraphs=True)
+            click.echo(desc)
+            for op in sch.type_enum:
+                click.echo(f"  {op}")
         else:
-            if "enum" in obj:
-                desc = f"It is a {sch_type} with possible values:"
-                desc = click.formatting.wrap_text(desc, preserve_paragraphs=True)
-                click.echo(desc)
-                for op in obj["enum"]:
-                    click.echo(f"  {op}")
-            else:
-                click.echo(f"It is of type {sch_type}")
+            click.echo(f"It is of type {sch.data_type}")
     else:
         click.echo("Commands and paths:")
-        paths = [[obj, act if len(actions) > 1 else "", f"{method.upper()} {path}"]
-                 for (obj, actions) in command_mapping.items()
-                 for (act, (path, method, info)) in actions.items()]
+        paths = [[obj_name, act_name if len(obj.actions) > 1 else "", f"{act.method.upper()} {act.path}"]
+                 for (obj_name, obj) in conn.api_def().objects.items()
+                 for (act_name, act) in obj.actions.items()]
         print_table(paths)
         click.echo()
         click.echo("Schemas:")
-        schemas = ", ".join(api_def["components"]["schemas"].keys())
+        schemas = ", ".join(conn.api_def.schema.keys())
         schemas = click.formatting.wrap_text(schemas, preserve_paragraphs=True)
         click.echo(schemas)
 
