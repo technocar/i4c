@@ -103,6 +103,9 @@ def ProcessRobot(Section):
 
                     APIParams['sequence'] += 1;
                     APIParams['timestamp'] = datetime.datetime.strptime(lines[0], '%Y.%m.%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%SZ');
+                    # TODO we need some conversion here
+                    #   known predefined texts -> nice data ids
+                    #   all other unknown texts -> one data id "other" plus text to value_text
                     APIParams['data_id'] =  lines[1];
                     APIParams['value_text'] = lines[1];
                     ApiParamsArray.append(copy.deepcopy(APIParams));
