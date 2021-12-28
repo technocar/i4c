@@ -1,31 +1,50 @@
-import common_obj;
+# TODO name could be something clearer than ftrans
+
+# TODO ; is not needed ever!
 import os;
 import csv;
 import shutil;
 import datetime;
 import copy;
+import logging.config
+import yaml
+import cli;
 
 
+# TODO make logconfig optional
+with open("logconfig.yaml") as f:
+    cfg = yaml.load(f, Loader=yaml.FullLoader)
+    logging.config.dictConfig(cfg)
+
+log = logging.getLogger("ftrans")
+
+with open("ftrans.yaml") as f:
+    ftranscfg = yaml.load(f, Loader=yaml.FullLoader)
+
+Connection = cli.conn.I4CConnection(); # TODO we could use a profile name setting, coming from the config yaml
+
+
+# TODO pascal case is not pythonic. it goes for procedures, parameters and variables too
 def CheckParams(Paths):
     result = {'SourcePath': None, 'ArchivePath': None, 'OK': False}
     if (not 'SourcePath' in Paths):
-      common_obj.log.error('No SourcePath is set!!!');
+      log.error('No SourcePath is set!!!');
       return result;
     else:
       result['SourcePath'] = Paths['SourcePath']
-      common_obj.log.debug('Source path is: %s', result['SourcePath']);
+      log.debug('Source path is: %s', result['SourcePath']);
     if (not 'ArchivePath' in Paths):
-      common_obj.log.error('No ArchivePath is set!!!');
+      log.error('No ArchivePath is set!!!');
       return result;
     else:
       result['ArchivePath'] = Paths['ArchivePath']
-      common_obj.log.debug('Archive path is: %s', result['ArchivePath']);
+      log.debug('Archive path is: %s', result['ArchivePath']);
 
     result['OK'] = True;
     return result;
 
 def ProcessRobot(Section):
-    common_obj.log.info('Processing ROBOT files...');
+    log.info('Processing ROBOT files...');
 
     APIParams = {
         'timestamp': "2021-12-07T11:20:20.405Z",
@@ -46,18 +65,18 @@ def ProcessRobot(Section):
 
     files = [f for f in os.listdir(Params['SourcePath']) if os.path.isfile(os.path.join(Params['SourcePath'], f)) and f.upper().endswith('.CSV')]
     if len(files) == 0:
-        common_obj.log.debug('No files to load');
+        log.debug('No files to load');
         return;
     for f in files:
         wkpcid = None;
         progid = None;
         ApiParamsArray = [];
-        common_obj.log.debug('Processing file %s', f);
+        log.debug('Processing file %s', f);
         with open(os.path.join(Params['SourcePath'], f)) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=';', quotechar=None);
             for lines in csvreader:
                 if len(lines) != 2:
-                  common_obj.log.error('Line %d in rong format!', [csvreader.line_num]);
+                  log.error('Line %d in rong format!', [csvreader.line_num]);
                   return;
 
                 if lines[0].upper() == 'Munkadarab azonosítója'.upper():
@@ -67,10 +86,10 @@ def ProcessRobot(Section):
                 elif csvreader.line_num >= 5:
                     if csvreader.line_num == 5:
                         if wkpcid is None:
-                            common_obj.log.error('Workpiece id is not set!', [csvreader.line_num]);
+                            log.error('Workpiece id is not set!', [csvreader.line_num]);
                             return;
                         if progid is None:
-                            common_obj.log.error('Program id is not set!', [csvreader.line_num]);
+                            log.error('Program id is not set!', [csvreader.line_num]);
                             return;
                         APIParams['sequence'] = 0;
                         APIParams['timestamp'] = datetime.datetime.strptime(lines[0], '%Y.%m.%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%SZ');
@@ -80,22 +99,22 @@ def ProcessRobot(Section):
                         APIParams['sequence'] += 1;
                         APIParams['data_id'] = 'pgm';
                         APIParams['value_text'] = progid;
-                        ApiParamsArray.append(copy.deepcopy(APIParams));
+                        ApiParamsArray.append(copy.deepcopy(APIParams)); # TODO maybe this is a little too clever. just make a new dict, and fill in
 
                     APIParams['sequence'] += 1;
                     APIParams['timestamp'] = datetime.datetime.strptime(lines[0], '%Y.%m.%d %H:%M:%S').strftime('%Y-%m-%dT%H:%M:%SZ');
                     APIParams['data_id'] =  lines[1];
                     APIParams['value_text'] = lines[1];
-                    ApiParamsArray. append(copy.deepcopy(APIParams));
+                    ApiParamsArray.append(copy.deepcopy(APIParams));
 
             csvfile.close();
-        common_obj.Connection.invoke_url('log', 'POST', ApiParamsArray);
-        common_obj.log.debug('Archiving file...');
+        Connection.invoke_url('log', 'POST', ApiParamsArray);
+        log.debug('Archiving file...');
         shutil.move(os.path.join(Params['SourcePath'], f), os.path.join(Params['ArchivePath'], f));
 
 
 def ProcessGOM(Section):
-    common_obj.log.info('Processing GOM files...');
+    log.info('Processing GOM files...');
 
     APIParams = {
         'timestamp': "2021-12-07T11:20:20.405Z",
@@ -119,11 +138,11 @@ def ProcessGOM(Section):
                                                                 or f.upper().endswith('.ATOS')
                                                                 or f.upper().endswith('.PDF'))]
     if len(files) == 0:
-      common_obj.log.debug('No files to load');
+      log.debug('No files to load');
       return;
 
     for f in files:
-        common_obj.log.debug('Processing file %s', f);
+        log.debug('Processing file %s', f);
         fname = os.path.splitext(f)[0];
 
         if f.upper().endswith('.CSV'):
@@ -150,20 +169,20 @@ def ProcessGOM(Section):
                         ApiParamsArray.append(copy.deepcopy(APIParams));
                 csvfile.close();
 
-            common_obj.Connection.invoke_url('log', 'POST', ApiParamsArray);
+            Connection.invoke_url('log', 'POST', ApiParamsArray);
         else:
             with open(os.path.join(Params['SourcePath'], f), 'rb') as datafile:
-                common_obj.Connection.invoke_url('intfiles/v/1/' + f, 'PUT', datafile);
+                Connection.invoke_url('intfiles/v/1/' + f, 'PUT', datafile);
                 datafile.close();
 
-        common_obj.log.debug('Archiving file...');
+        log.debug('Archiving file...');
         shutil.move(os.path.join(Params['SourcePath'], f), os.path.join(Params['ArchivePath'], f));
 
 
 
-common_obj.log.info('FTRANS started.');
-if ('Robot' in common_obj.ftranscfg):
-    ProcessRobot(common_obj.ftranscfg['Robot'])
-if ('GOM' in common_obj.ftranscfg ):
-    ProcessGOM(common_obj.ftranscfg['GOM'])
-common_obj.log.info('FTRANS finished.');
+log.info('FTRANS started.');
+if ('Robot' in ftranscfg):
+    ProcessRobot(ftranscfg['Robot'])
+if ('GOM' in ftranscfg ):
+    ProcessGOM(ftranscfg['GOM'])
+log.info('FTRANS finished.');
