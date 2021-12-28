@@ -12,14 +12,16 @@ from models import FileProtocolEnum
 router = I4cApiRouter()
 
 
-@router.get("/login", response_model=models.users.UserWithPrivs, tags=["user"], operation_id="user_login")
+@router.get("/login", response_model=models.users.UserWithPrivs, tags=["user"], operation_id="user_login",
+            summary="Login.")
 async def login(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/login"))):
     "Get user info based on login name."
     return await models.users.login(credentials)
 
 
-@router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], operation_id="priv_list")
+@router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], operation_id="priv_list",
+            summary="List privileges.")
 async def privs(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/privs"))):
     "List available privileges."
@@ -27,7 +29,7 @@ async def privs(
 
 
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],
-            operation_id="file_search")
+            operation_id="file_search", summary="Global file search.")
 async def files(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/files")),
         proj_name: Optional[str] = Query(None),

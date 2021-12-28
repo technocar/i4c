@@ -29,19 +29,24 @@ class AlarmCondLogRowCategory(str, Enum):
 
 
 class AlarmCondSampleAggMethod(str, Enum):
+    """
+    Aggregation function for numeric values. Q1st and q4th are 1st and 4th quintiles, and slope is linear regression.
+    """
     avg = "avg"
     median = "median"
-    q1st = "q1th"
+    q1st = "q1st"
     q4th = "q4th"
     slope = "slope"
 
 
 class AlarmCondSampleAggSlopeKind(str, Enum):
+    """Slope calculation x value."""
     time = "time"
     position = "position"
 
 
 class AlarmCondSampleRel(str, Enum):
+    """Relation for numeric values."""
     eq = "="
     neq = "!="
     less = "<"
@@ -51,13 +56,14 @@ class AlarmCondSampleRel(str, Enum):
 
 
 class AlarmCondSample(I4cBaseModel):
-    device: str
-    data_id: str
-    aggregate_period: Optional[float] = Field(None, description="sec")
-    aggregate_count: Optional[int]
-    aggregate_method: AlarmCondSampleAggMethod
-    rel: AlarmCondSampleRel
-    value: float
+    """Alarm condition for numeric values."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Data type.")
+    aggregate_period: Optional[float] = Field(None, title="Aggregation period, seconds.")
+    aggregate_count: Optional[int] = Field(..., title="Aggregation, number of samples.")
+    aggregate_method: AlarmCondSampleAggMethod = Field(..., title="Aggregation function.")
+    rel: AlarmCondSampleRel = Field(..., title="Relation.")
+    value: float = Field(..., title="Value.")
 
     def __eq__(self, other):
         if not isinstance(other, AlarmCondSample):
@@ -98,12 +104,13 @@ class AlarmCondSample(I4cBaseModel):
 
 
 class AlarmCondEvent(I4cBaseModel):
-    device: str
-    data_id: str
-    rel: AlarmCondEventRel
-    value: str
-    age_min: Optional[float] = Field(None, description="sec")
-    age_max: Optional[float] = Field(None, description="sec")
+    """Alarm condition for events."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Data type.")
+    rel: AlarmCondEventRel = Field(..., title="Relation")
+    value: str = Field(..., title="Value.")
+    age_min: Optional[float] = Field(None, title="Value persists for minimum, seconds.")
+    age_max: Optional[float] = Field(None, title="Value persists for maximum, seconds.")
 
     def __eq__(self, other):
         if not isinstance(other, AlarmCondEvent):
@@ -131,10 +138,11 @@ class AlarmCondEvent(I4cBaseModel):
 
 
 class AlarmCondCondition(I4cBaseModel):
-    device: str
-    data_id: str
-    value: str
-    age_min: Optional[float] = Field(None, description="sec")
+    """Alarm condition for condition types."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Condition type.")
+    value: str = Field(..., title="Value. Normal, Fault or Warning.")
+    age_min: Optional[float] = Field(None, title="Active at least since, seconds")
 
     def __eq__(self, other):
         if not isinstance(other, AlarmCondCondition):
@@ -157,9 +165,10 @@ class AlarmCondCondition(I4cBaseModel):
 
 
 class AlarmCond(I4cBaseModel):
-    sample: Optional[AlarmCondSample]
-    event: Optional[AlarmCondEvent]
-    condition: Optional[AlarmCondCondition]
+    """Alarm condition without id. Only one field should be non-null."""
+    sample: Optional[AlarmCondSample] = Field(None, title="Numeric data condition")
+    event: Optional[AlarmCondEvent] = Field(None, title="Event type condition")
+    condition: Optional[AlarmCondCondition] = Field(None, title="Condition typed condition.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -190,52 +199,59 @@ class AlarmCond(I4cBaseModel):
 
 
 class AlarmCondId(AlarmCond):
+    """Alarm condition. Only one field should be non-null."""
     id: int
 
 
 class AlarmDefIn(I4cBaseModel):
+    """Alarm definition. Input."""
     conditions: List[AlarmCond]
-    max_freq: Optional[float] = Field(None, description="sec")
-    window: Optional[float] = Field(None, description="sec")
-    subsgroup: str
+    max_freq: Optional[float] = Field(None, title="Max checking frequency, seconds.")
+    window: Optional[float] = Field(None, title="Observation window, seconds.", description="Observation window in seconds. Useful when there is no event or condition filtering.")
+    subsgroup: str = Field(..., title="Subscription group to be notified.")
 
 
 class AlarmMethod(str, Enum):
+    """Notification method."""
     email = "email"
     push = "push"
     none = "none"
 
 
 class AlarmSubIn(I4cBaseModel):
-    groups: List[str]
-    user: Optional[str]
-    method: AlarmMethod
-    address: Optional[str]
-    address_name: Optional[str]
-    status: CommonStatusEnum
+    """Subscriber to an alarm. Input."""
+    groups: List[str] = Field(..., title="Subscription group membership.")
+    user: Optional[str] = Field(None, title="User id.")
+    method: AlarmMethod = Field(..., title="Notification method.")
+    address: Optional[str] = Field(None, title="Address")
+    address_name: Optional[str] = Field(None, title="Address description.")
+    status: CommonStatusEnum = Field(..., title="Status.")
 
 
 class AlarmSub(AlarmSubIn):
-    id: int
-    user_name: Optional[str]
+    """Subscriber to an alarm."""
+    id: int = Field(..., title="Identifier.")
+    user_name: Optional[str] = Field(None, title="User name.")
 
 
 class AlarmDef(AlarmDefIn):
-    id: int
-    name: str
-    last_check: datetime
-    last_report: Optional[datetime]
-    subs: List[AlarmSub]
+    """Alarm definition. Input."""
+    id: int = Field(..., title="Identifier.")
+    name: str = Field(..., title="Identifier name.")
+    last_check: datetime = Field(..., title="Last check time.")
+    last_report: Optional[datetime] = Field(None, title="Last report time.")
+    subs: List[AlarmSub] = Field(..., title="Subscribers.")
 
 
 class AlarmSubPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    status: Optional[CommonStatusEnum]
-    address: Optional[str]
-    address_name: Optional[str]
-    empty_address: Optional[bool]
-    empty_address_name: Optional[bool]
-    has_group: Optional[str]
+    """Alarm subscription update, preliminary check. Updates will only be carried out if all checks pass."""
+    flipped: Optional[bool] = Field(None, title="Pass if the condition does not hold.")
+    status: Optional[CommonStatusEnum] = Field(None, title="Status matches.")
+    address: Optional[str] = Field(None, title="Address matches.")
+    address_name: Optional[str] = Field(None, title="Address name matches.")
+    empty_address: Optional[bool] = Field(None, title="Address is empty.")
+    empty_address_name: Optional[bool] = Field(None, title="Address name is empty.")
+    has_group: Optional[str] = Field(None, title="Assigned to the group.")
 
     def match(self, alarmsub:AlarmSub):
         r = (((self.status is None) or (alarmsub.status == self.status))
@@ -253,14 +269,18 @@ class AlarmSubPatchCondition(I4cBaseModel):
 
 
 class AlarmSubPatchChange(I4cBaseModel):
-    status: Optional[CommonStatusEnum]
-    address: Optional[str]
-    clear_address: Optional[bool]
-    address_name: Optional[str]
-    clear_address_name: Optional[bool]
-    add_groups: Optional[List[str]]
-    set_groups: Optional[List[str]]
-    remove_groups: Optional[List[str]]
+    """
+    Describes the changes to be done to a subscription. Part of an alarm subscription update. All null fields will be
+    ignored.
+    """
+    status: Optional[CommonStatusEnum] = Field(None, title="Set status.")
+    address: Optional[str] = Field(None, title="Set address.")
+    clear_address: Optional[bool] = Field(None, title="If true, clear address.")
+    address_name: Optional[str] = Field(None, title="Set address name.")
+    clear_address_name: Optional[bool] = Field(None, title="If true, clear address name.")
+    add_groups: Optional[List[str]] = Field(None, title="Add to the given groups.")
+    set_groups: Optional[List[str]] = Field(None, title="Add to these groups, remove from all others.")
+    remove_groups: Optional[List[str]] = Field(None, title="Remove from the given groups.")
 
     def is_empty(self):
         return self.status is None \

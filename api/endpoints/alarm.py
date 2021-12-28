@@ -13,7 +13,8 @@ import pytz
 router = I4cApiRouter(include_path="/alarm")
 
 
-@router.put("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_set")
+@router.put("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_set",
+            summary="Update alarm definition.")
 async def alarmdef_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/alarm/defs/{name}")),
     name: str = Path(...),
@@ -23,7 +24,8 @@ async def alarmdef_put(
     return await models.alarm.alarmdef_put(credentials, name, alarm)
 
 
-@router.get("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_get")
+@router.get("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_get",
+            summary="Retrieve alarm definition.")
 async def alarmdef_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs/{name}")),
     name: str = Path(...),
@@ -35,7 +37,8 @@ async def alarmdef_get(
     return res
 
 
-@router.get("/defs", response_model=List[models.alarm.AlarmDef], operation_id="alarm_list")
+@router.get("/defs", response_model=List[models.alarm.AlarmDef], operation_id="alarm_list",
+            summary="List alarm definitions.")
 async def alarmdef_list(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs")),
     name_mask: Optional[List[str]] = Query(None),
@@ -52,7 +55,8 @@ async def alarmdef_list(
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
-@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups", features=["any user"])
+@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups",
+            summary="List subscription groups.", features=["any user"])
 async def subsgroups_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups", ask_features=["any user"])),
         user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):
@@ -64,7 +68,8 @@ async def subsgroups_list(
 # PUT /alarm/subsgroups/{grp}     <-- {name, users:[]}
 
 
-@router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers")
+@router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers",
+            summary="List subscribers.")
 async def alarmsub_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
         id: Optional[str] = Query(None),
@@ -84,7 +89,8 @@ async def alarmsub_list(
                                             method, status, address, address_mask, alarm)
 
 
-@router.get("/subs/{id}", response_model=models.alarm.AlarmSub, operation_id="alarm_subscriber")
+@router.get("/subs/{id}", response_model=models.alarm.AlarmSub, operation_id="alarm_subscriber",
+            summary="Retrieve subscriber.")
 async def alarmsub_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{id}")),
         id: int = Path(...)):
@@ -96,7 +102,8 @@ async def alarmsub_get(
     raise I4cClientNotFound("No record found")
 
 
-@router.post("/subs", response_model=models.alarm.AlarmSub, operation_id="alarm_subscribe")
+@router.post("/subs", response_model=models.alarm.AlarmSub, operation_id="alarm_subscribe",
+             summary="Create subscriber.")
 async def post_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/subs")),
     alarmsub: models.alarm.AlarmSubIn = Body(...),
@@ -106,7 +113,8 @@ async def post_alarmsub(
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
-@router.patch("/subs/{id}", response_model=models.common.PatchResponse, operation_id="alarm_subscription_update")
+@router.patch("/subs/{id}", response_model=models.common.PatchResponse, operation_id="alarm_subscription_update",
+              summary="Update subscriber.")
 async def patch_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{id}")),
     id: int = Path(...),
@@ -118,7 +126,7 @@ async def patch_alarmsub(
 
 
 @router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], operation_id="alarm_check",
-             features=['noaudit'])
+             summary="Check for alarm conditions.", features=['noaudit'])
 async def check_alarmevent(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check", ask_features=['noaudit'])),
     alarm: Optional[str] = Query(None),
@@ -134,7 +142,8 @@ async def check_alarmevent(
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)
 
 
-@router.get("/events", response_model=List[models.alarm.AlarmEvent], operation_id="alarm_events")
+@router.get("/events", response_model=List[models.alarm.AlarmEvent], operation_id="alarm_events",
+            summary="List alarm events.")
 async def alarmevent_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/events")),
         id: Optional[str] = Query(None),
@@ -150,7 +159,8 @@ async def alarmevent_list(
     return await models.alarm.alarmevent_list(credentials, id, alarm, alarm_mask, user, user_name, user_name_mask, before, after)
 
 
-@router.get("/events/{id}", response_model=models.alarm.AlarmEvent, operation_id="alarm_event")
+@router.get("/events/{id}", response_model=models.alarm.AlarmEvent, operation_id="alarm_event",
+            summary="Retrieve alarm event.")
 async def alarmevent_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/events/{id}")),
         id: int = Path(...)):
@@ -162,7 +172,7 @@ async def alarmevent_get(
 
 
 @router.get("/recips", response_model=List[models.alarm.AlarmRecip], operation_id="alarm_recips",
-            features=['noaudit'])
+            summary="List alarm recipients.", features=['noaudit'])
 async def alarmrecips_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips", ask_features=['noaudit'])),
         id: Optional[str] = Query(None),
@@ -182,7 +192,8 @@ async def alarmrecips_list(
                                                user, user_name, user_name_mask, user_status, method, status)
 
 
-@router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, operation_id="alarm_recip")
+@router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, operation_id="alarm_recip",
+            summary="Retrieve alarm recipient.")
 async def alarmrecips_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips/{id}")),
         id: int = Path(...)):
@@ -193,7 +204,8 @@ async def alarmrecips_get(
     raise I4cClientNotFound("No record found")
 
 
-@router.patch("/recips/{id}", response_model=models.common.PatchResponse, operation_id="alarm_recip_update")
+@router.patch("/recips/{id}", response_model=models.common.PatchResponse, operation_id="alarm_recip_update",
+              summary="Update alarm recipient.")
 async def patch_alarmrecips(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/recips/{id}")),
     id: int = Path(...),

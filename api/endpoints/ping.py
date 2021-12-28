@@ -15,7 +15,7 @@ class Pong(BaseModel):
 
 
 @router.get("/noop", response_model=Pong, operation_id="ping_noop",
-            summary="Test API availability")
+            summary="Test API availability.")
 async def noop_get(
         data: Optional[str] = Query(None, title="Will be given back in the response")):
     """Test API availability."""
@@ -23,7 +23,7 @@ async def noop_get(
 
 
 @router.post("/noop", response_model=Dict[Any, Any], operation_id="ping_post",
-            summary="Test API post")
+            summary="Test API POST.")
 async def noop_post(
         data: Optional[Dict[Any, Any]] = Body(None, title="Will be given back as the response")):
     """Test POST method and json transport."""
@@ -33,7 +33,7 @@ async def noop_post(
 
 
 @router.get("/pwd", response_model=Pong, operation_id="ping_pwd",
-            summary="Test API password auth")
+            summary="Test API password auth.")
 async def pwd_get(
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
@@ -44,7 +44,7 @@ async def pwd_get(
 
 
 @router.get("/sign", response_model=Pong, operation_id="ping_sign",
-            summary="Test API signature auth")
+            summary="Test API signature auth.")
 async def sign_get(
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
@@ -64,7 +64,7 @@ async def sign_get(
 
 
 @router.get("/db", response_model=Pong, operation_id="ping_db",
-            summary="Test API w backend auth")
+            summary="Test API db backend auth.")
 async def db_get(
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/ping/db")),
         data: Optional[str] = Query(None, title="Will be given back in the response")):

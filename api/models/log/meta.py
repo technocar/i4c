@@ -1,5 +1,6 @@
 import datetime
 from typing import Optional, List
+from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 
 view_meta_sql = open("models/log/meta.sql").read()
@@ -7,20 +8,22 @@ view_meta_event_values_sql = open("models/log/meta_event_values.sql").read()
 
 
 class Meta(I4cBaseModel):
-    device: str
-    data_id: str
-    name: Optional[str]
-    nice_name: Optional[str]
-    system1: Optional[str]
-    system2: Optional[str]
-    category: Optional[str]
-    type: Optional[str]
-    subtype: Optional[str]
-    unit: Optional[str]
-    value_list: Optional[List[str]]
+    """Information about the data types in the log."""
+    device: str = Field(..., title="Originating device.")
+    data_id: str = Field(..., title="Data type.")
+    name: Optional[str] = Field(None, title="Vendor defined descriptive name.")
+    nice_name: Optional[str] = Field(None, title="User readable name.")
+    system1: Optional[str] = Field(None, title="Subsystem level 1.")
+    system2: Optional[str] = Field(None, title="Subsystem level 2.")
+    category: Optional[str] = Field(None, title="Category. Sample, event or condition.")
+    type: Optional[str] = Field(None, title="Vendor supplied type.")
+    subtype: Optional[str] = Field(None, title="Vendor supplied sub type.")
+    unit: Optional[str] = Field(None, title="Measurement unit.")
+    value_list: Optional[List[str]] = Field(None, title="Possible values.")
 
 
 class EventValue:
+    """Possible values of an event type."""
     data_id: str
     values: List[str]
 
