@@ -1,10 +1,13 @@
 import sys
 from functools import wraps
+import logging
 import click.globals
 from .apidef import I4CDef
 from .conn import I4CConnection
 from .outputproc import print_table, process_json
 from .inputproc import assemble_body
+
+log = logging.getLogger("i4c")
 
 
 def resolve_file(fn):
@@ -223,7 +226,7 @@ def make_commands(api_def: I4CDef):
         if len(obj.actions) == 1:
             grp = top_grp
         else:
-            help = f"Command group for managing {obj} data."
+            help = f"Command group for managing {obj_name} data."
             grp = click.Group(obj_name, help=help)
             top_grp.add_command(grp)
 
@@ -271,11 +274,11 @@ def make_commands(api_def: I4CDef):
                 params.append(click.Option(("--auth-pwd",), help="Password for basic authentication"))
                 params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication"))
 
-            params.append(click.Option(("--print-curl",), is_flag=True,
-                help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
-                    "included in the result. Also note that signature based authentication expires in 60 seconds."))
+            # params.append(click.Option(("--print-curl",), is_flag=True,
+            #    help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
+            #        "included in the result. Also note that signature based authentication expires in 60 seconds."))
 
-            if action.response_type == "application/json":
+            if action.response.content_type == "application/json":
                 params.append(click.Option(("--output-expr",),
                     help="Jsonpath expression to apply to the response. The returned items will be separately processed by " \
                          "--output-file and --output-template. If omitted, the entire result will be one item."))
@@ -292,7 +295,7 @@ def make_commands(api_def: I4CDef):
 
             callback = make_callback(path=action.path, method=action.method, action=action)
             cmd_name = action_name if len(obj.actions) > 1 else obj_name
-            cmd = click.Command(cmd_name, callback=callback, params=params, help=action.help())
+            cmd = click.Command(cmd_name, callback=callback, params=params, help=action.help(), short_help=action.short_help())
             grp.add_command(cmd)
 
 
@@ -418,12 +421,13 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
         sch = conn.api_def().schema[schema]
         click.echo(schema)
         click.echo()
-        desc = click.formatting.wrap_text(sch.description, preserve_paragraphs=True)
+        desc = sch.describe()
+        desc = click.formatting.wrap_text(desc, preserve_paragraphs=True)
         click.echo(desc)
         click.echo()
-        if sch.data_type == "object":
+        if sch.type == "object":
             # there is no way to preserve the order, because fastAPI already messes it up. sorting alphabetically.
-            table = [[k, v.data_type, v.description] for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
+            table = [[k, v.type, v.describe()] for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
             click.echo("Fields:")
             print_table(table)
         elif sch.type_enum is not None:

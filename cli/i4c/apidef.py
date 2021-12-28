@@ -29,6 +29,20 @@ class Schema:
         flds = ", ".join(flds)
         return f"{self.__class__.__name__}({flds})"
 
+    def describe(self):
+        desc = self.description or self.title
+        if desc is None:
+            if self.is_array:
+                desc = f"A list of {self.type}."
+            else:
+                desc = self.type + "."
+        return desc
+
+
+@dataclass
+class Response(Schema):
+    content_type: str = None
+
 
 @dataclass
 class Body(Schema):
@@ -49,8 +63,7 @@ class Action:
     summary: str = None
     description: str = None
     authentication: str = None  # noauth, basic, unknown
-    response_type: str = None
-    response_class: str = None
+    response: Response = None
     params: Dict[str, Param] = None
     body: Body = None
     path: str = field(repr=False, default=None)
@@ -59,15 +72,28 @@ class Action:
 
     def help(self):
         s = []
-        if self.summary:
-            s.append(self.summary)
-            s.append("")
         if self.description:
             s.append(self.description)
         if not s:
             return nice_name(self.raw["operationId"])
+        if self.response is not None:
+            if self.response.sch_obj is not None:
+                typedesc = self.response.sch_obj
+                if self.response.is_array:
+                    typedesc = f"a list of {typedesc}"
+                s.append(f"Returns {typedesc}, see `doc {self.response.sch_obj}` for details.")
+            else:
+                if self.response.content_type == "application/json": ct = "json"
+                elif self.response.content_type == "application/octet-stream": ct = "binary"
+                elif self.response.content_type == "text/plain": ct = "text"
+                elif self.response.content_type == "text/html": ct = "html"
+                else: ct = self.response.content_type
+                s.append(f"Returns {ct}.")
         s.append(f"Calls {self.method.upper()} {self.path}")
         return "\n".join(s)
+
+    def short_help(self):
+        return self.summary or  self.description or  nice_name(self.raw["operationId"])
 
     def assemble_url(self, **kwargs):
         method = self.method.upper()
@@ -167,6 +193,7 @@ def _proc_sch(sch, target):
         target.sch_obj = None
 
     target.title = sch.get("title", None)
+    target.description = sch.get("description", None)
     target.type = sch.get("type", "unknown")
     target.is_array = target.type == "array"
     if target.is_array:
@@ -296,7 +323,16 @@ class I4CDef:
                 else:
                     action.body = None
 
-                # TODO fill in response
+                resp = info.get("responses", None)
+                resp = resp and (resp.get("200", None) or resp.get("201", None))
+                resp = resp and resp.get("content", None)
+                if resp:
+                    ct, ctdef = next(iter(resp.items()), (None, None))
+                    ctdef = ctdef and ctdef.get("schema", None)
+                    resp = Response()
+                    resp.content_type = ct
+                    _proc_sch(ctdef, resp)
+                    action.response = resp
 
                 obj.actions[action_name] = action
 

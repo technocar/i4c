@@ -1,10 +1,14 @@
 import sys
 import jinja2
 import json
-import jsonpath_ng
+import jsonpath_ng.ext
 import datetime
+import logging
 import click
 import click.formatting
+from .tools import jsonify
+
+log = logging.getLogger("i4c")
 
 
 def format_time(time, format_str):

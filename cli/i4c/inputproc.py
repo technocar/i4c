@@ -3,6 +3,9 @@ import json
 import jsonpath_ng
 import functools
 import datetime
+import logging
+
+log = logging.getLogger("i4c")
 
 
 class InputFormat:
