@@ -235,7 +235,7 @@ class AlarmSub(AlarmSubIn):
 
 
 class AlarmDef(AlarmDefIn):
-    """Alarm definition. Input."""
+    """Alarm definition."""
     id: int = Field(..., title="Identifier.")
     name: str = Field(..., title="Identifier name.")
     last_check: datetime = Field(..., title="Last check time.")
@@ -311,18 +311,21 @@ class AlarmSubPatchChange(I4cBaseModel):
 
 
 class AlarmSubPatchBody(I4cBaseModel):
+    """Used for alarm subscriber update. If all conditions are met, the changes will be carried out."""
     conditions: List[AlarmSubPatchCondition]
     change: AlarmSubPatchChange
 
 
 class SubsGroupsItem(I4cBaseModel):
+    """Subscription groups belonging to a user."""
     user: str
     groups: List[str] = Field([])
 
 
 class AlarmEventCheckResult(I4cBaseModel):
-    alarm: str
-    alarmevent_count: Optional[int]
+    """Returned by alarm event check. Represents an alarm that was triggered."""
+    alarm: str = Field(..., title="Triggered alarm")
+    alarmevent_count: Optional[int] = Field(None, title="Number of created events for the alarm.")
 
 
 class AlarmRecipientStatus(str, Enum):
@@ -332,33 +335,37 @@ class AlarmRecipientStatus(str, Enum):
 
 
 class AlarmEvent(I4cBaseModel):
-    id: int
-    alarm: str
-    created: datetime
-    summary: str
-    description: str
+    """Created when an alarm condition is detected."""
+    id: int = Field(..., title="Identifier")
+    alarm: str = Field(..., title="The triggered alarm")
+    created: datetime = Field(..., title="The timestamp when the alarm condition was detected.")
+    summary: str = Field(..., title="One line description of the event.")
+    description: str = Field(..., title="Detailed description of the event.")
 
 
 class AlarmRecipUser(I4cBaseModel):
+    """Information on a recipient user."""
     id: str
     name: str
     status: CommonStatusEnum
 
 
 class AlarmRecip(I4cBaseModel):
-    id: int
-    event: AlarmEvent
-    alarm: str
-    method: AlarmMethod
-    status: AlarmRecipientStatus
-    user: AlarmRecipUser
-    address: Optional[str]
-    address_name: Optional[str]
+    """Recipient of an alarm event. Reflects to the subscribers of the alarm the time when it was triggered."""
+    id: int = Field(..., title="Identifier")
+    event: AlarmEvent = Field(..., title="Alarm event.")
+    alarm: str = Field(..., title="Alarm definition identifier.")
+    method: AlarmMethod = Field(..., title="Notification method.")
+    status: AlarmRecipientStatus = Field(..., title="Notification status.")
+    user: AlarmRecipUser = Field(..., title="Information on the recipient user.")
+    address: Optional[str] = Field(None, title="Recipient's address.")
+    address_name: Optional[str] = Field(None, title="Description of the recipient's address.")
 
 
 class AlarmRecipPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    status: Optional[List[AlarmRecipientStatus]]
+    """Condition in an update to an alarm recipient."""
+    flipped: Optional[bool] = Field(None, title="Pass if the condition does not hold.")
+    status: Optional[List[AlarmRecipientStatus]] = Field(None, title="Status is one of the listed.")
 
     def match(self, recip:AlarmRecip):
         r = ((self.status is None) or (recip.status in self.status))
@@ -369,15 +376,20 @@ class AlarmRecipPatchCondition(I4cBaseModel):
 
 
 class AlarmRecipPatchChange(I4cBaseModel):
-    status: Optional[AlarmRecipientStatus]
+    """
+    Describes the changes to be done to an alarm recipient. Part of an alarm recipient update. Null fields will be
+    ignored.
+    """
+    status: Optional[AlarmRecipientStatus] = Field(None, title="New status.")
 
     def is_empty(self):
         return self.status is None
 
 
 class AlarmRecipPatchBody(I4cBaseModel):
-    conditions: List[AlarmRecipPatchCondition]
-    change: AlarmRecipPatchChange
+    """Change to an alarm recipient. If all conditions are met, the change is carried out."""
+    conditions: List[AlarmRecipPatchCondition] = Field(..., title="Conditions evaluated before the change.")
+    change: AlarmRecipPatchChange = Field(..., title="Requested changes.")
 
 
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,

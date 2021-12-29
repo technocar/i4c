@@ -34,16 +34,15 @@ class StatUser(I4cBaseModel):
         return StatUser(**d)
 
 
-
 class StatTimeseriesFilter(I4cBaseModel):
-    """ category="EVENT" only """
+    """Time series query, filter for Event data types."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
-    device: str
-    data_id: str
-    rel: AlarmCondEventRel
-    value: str
-    age_min: Optional[float] = Field(None, description="sec")
-    age_max: Optional[float] = Field(None, description="sec")
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Event type.")
+    rel: AlarmCondEventRel = Field(..., title="Relation.")
+    value: str = Field(..., title="Value.")
+    age_min: Optional[float] = Field(None, description="In effect for at least this many seconds.")
+    age_max: Optional[float] = Field(None, description="In effect for at most this many seconds.")
 
     @classmethod
     async def load_filters(cls, conn, timeseries):
@@ -77,9 +76,9 @@ class StatTimeseriesFilter(I4cBaseModel):
 
 
 class StatTimeseriesMetric(I4cBaseModel):
-    """ category="SAMPLE" only """
-    device: str
-    data_id: str
+    """Time series query, the shown metric (Sample data type)."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Numeric data type.")
 
 
 class StatAggMethod(str, Enum):
@@ -92,25 +91,27 @@ class StatAggMethod(str, Enum):
 
 
 class StatTimeseriesSeriesName(str, Enum):
+    """Time series query, series naming rule."""
     separator_event = "separator_event"
     sequence = "sequence"
     timestamp = "timestamp"
 
 
 class StatTimeseriesXAxis(str, Enum):
+    """Time series query, X axis."""
     timestamp = "timestamp"
     sequence = "sequence"
 
 
-class StatTimeseriesType(str, Enum):
+class StatTimeseriesType(str, Enum):      # TODO how is this Timeseries?
     timeseries = "timeseries"
     xy = "xy"
 
 
-class StatSepEvent(I4cBaseModel):
-    """ category="EVENT" only """
-    device: str
-    data_id: str
+class StatSepEvent(I4cBaseModel):      # TODO how is this NOT timeseries?
+    """Time series query, Event selection."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Event type.")
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -124,7 +125,8 @@ class StatSepEvent(I4cBaseModel):
 
 
 class StatVisualSettingsAxis(I4cBaseModel):
-    caption: Optional[str]
+    """Axis settings for charts."""
+    caption: Optional[str] = Field(None, title="Caption.")
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -137,6 +139,7 @@ class StatVisualSettingsAxis(I4cBaseModel):
 
 
 class StatVisualSettingsLegendPosition(str, Enum):
+    """Legend position for charts."""
     Top = 'top'
     Bottom = 'bottom'
     Left = 'left'
@@ -145,12 +148,14 @@ class StatVisualSettingsLegendPosition(str, Enum):
 
 
 class StatVisualSettingsLegendAlign(str, Enum):
+    """Legend alingment for charts."""
     Start = 'start'
     Center = 'center'
     End = 'end'
 
 
 class StatVisualSettingsLegend(I4cBaseModel):
+    """Legend settings for charts."""
     position: Optional[StatVisualSettingsLegendPosition]
     align: Optional[StatVisualSettingsLegendAlign]
 
@@ -166,6 +171,7 @@ class StatVisualSettingsLegend(I4cBaseModel):
 
 
 class StatVisualSettingsTooltip(I4cBaseModel):
+    """Tooltip template for charts."""
     html: Optional[str]
 
     @classmethod
@@ -179,6 +185,7 @@ class StatVisualSettingsTooltip(I4cBaseModel):
 
 
 class StatVisualSettings(I4cBaseModel):
+    """Visual settings for charts."""
     title: Optional[str]
     subtitle: Optional[str]
     xaxis: Optional[StatVisualSettingsAxis]
@@ -233,17 +240,21 @@ class StatVisualSettings(I4cBaseModel):
 
 
 class StatTimeseriesDef(I4cBaseModel):
-    after: Optional[datetime]
-    before: Optional[datetime]
-    duration: Optional[str]
-    filter: List[StatTimeseriesFilter]
-    metric: StatTimeseriesMetric
-    agg_func: Optional[StatAggMethod]
-    agg_sep: Optional[StatSepEvent]
-    series_sep: Optional[StatSepEvent]
-    series_name: Optional[StatTimeseriesSeriesName]
-    xaxis: StatTimeseriesXAxis
-    visualsettings: StatVisualSettings
+    """
+    Time series query definition. After and before are exclusive. If both omitted, before defaults to now.
+    If before is set, duration is required. If after is set, default duration extends to now.
+    """
+    after: Optional[datetime] = Field(None, title="Query data after this time.")
+    before: Optional[datetime] = Field(None, title="Query data before this time.")
+    duration: Optional[str] = Field(None, title="Observed period length.")
+    filter: List[StatTimeseriesFilter] = Field(..., title="Event and Condition filters.")
+    metric: StatTimeseriesMetric = Field(..., title="The displayed metric, numeric data type.")
+    agg_func: Optional[StatAggMethod] = Field(None, title="Aggregation function, if needed.")
+    agg_sep: Optional[StatSepEvent] = Field(None, title="Event separating data points, if aggregation is used.")
+    series_sep: Optional[StatSepEvent] = Field(None, title="Event separating series, if needed.")
+    series_name: Optional[StatTimeseriesSeriesName] = Field(None, title="Rule for naming series.")
+    xaxis: StatTimeseriesXAxis = Field(..., title="What is on the x axis.")
+    visualsettings: StatVisualSettings = Field(..., title="Chart settings.")
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -361,6 +372,7 @@ class StatTimeseriesDef(I4cBaseModel):
 
 
 class StatXYObjectType(str, Enum):
+    """Virtual object type."""
     workpiece = "workpiece"
     mazakprogram = "mazakprogram"
     mazaksubprogram = "mazaksubprogram"
@@ -369,6 +381,7 @@ class StatXYObjectType(str, Enum):
 
 
 class StatXYObjectParam(I4cBaseModel):
+    """Parameter for parametrized virtual objects."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
     key: str
     value: Optional[str]
@@ -395,6 +408,10 @@ class StatXYObjectParam(I4cBaseModel):
 
 
 class StatXYObject(I4cBaseModel):
+    """
+    Virtual object definition. Virtual objects represent meaningful views of the log, possibly combined with
+    user provided metadata. E.g. workpieces, program executions.
+    """
     type: StatXYObjectType
     params: List[StatXYObjectParam]
 
@@ -435,6 +452,7 @@ class StatXYFilterRel(str, Enum):
 
 
 class StatXYFilter(I4cBaseModel):
+    """XY query filter."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
     field: str
     rel: StatXYFilterRel
@@ -466,18 +484,22 @@ class StatXYFilter(I4cBaseModel):
 
 
 class StatXYDef(I4cBaseModel):
-    obj: StatXYObject
-    after: Optional[datetime]
-    before: Optional[datetime]
-    duration: Optional[str]
-    x: str
-    y: Optional[str]
-    shape: Optional[str]
-    color: Optional[str]
-    other: List[str]
+    """
+    XY query definition. After and before are exclusive. If both omitted, before defaults to now.
+    If before is set, duration is required. If after is set, default duration extends to now.
+    """
+    obj: StatXYObject = Field(..., title="Virtual object to show.")
+    after: Optional[datetime] = Field(None, title="Query data after this time.")
+    before: Optional[datetime] = Field(None, title="Query data before this time.")
+    duration: Optional[str] = Field(None, title="Observed period length.")
+    x: str = Field(..., title="Numeric field to show on X axis.")
+    y: Optional[str] = Field(None, title="Numeric field to show on Y axis.")
+    shape: Optional[str] = Field(None, title="Field to represent as dot shape.")
+    color: Optional[str] = Field(None, title="Field to represent as dot color.")
+    other: List[str] = Field(..., title="Fields to be used in the tooltip.")
     other_internal: List[StatXYOther] = Field([], hidden_from_schema=True)
-    filter: List[StatXYFilter]
-    visualsettings: StatVisualSettings
+    filter: List[StatXYFilter] = Field(..., title="Filters.")
+    visualsettings: StatVisualSettings = Field(..., title="Chart settings.")
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -601,10 +623,11 @@ class StatXYDef(I4cBaseModel):
 
 
 class StatDefIn(I4cBaseModel):
-    name: str
-    shared: bool
-    timeseriesdef: Optional[StatTimeseriesDef]
-    xydef: Optional[StatXYDef]
+    """Query definition. Input. Exactly one of timeseriesdef or xydef must be given."""
+    name: str = Field(..., title="Name.")
+    shared: bool = Field(..., title="If set, everyone can run.")
+    timeseriesdef: Optional[StatTimeseriesDef] = Field(..., title="Time series definition.")
+    xydef: Optional[StatXYDef] = Field(..., title="XY query definition.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -615,14 +638,16 @@ class StatDefIn(I4cBaseModel):
 
 
 class StatDef(StatDefIn):
-    id: int
-    user: StatUser
-    modified: datetime
+    """Query definition. Exactly one of timeseriesdef or xydef is set."""
+    id: int = Field(..., title="Identifier.")
+    user: StatUser = Field(..., title="Owner of the query.")
+    modified: datetime = Field(..., title="Latest modification to the query.")
 
 
 class StatPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    shared: Optional[bool]
+    """Condition for a query definition update."""
+    flipped: Optional[bool] = Field(False, title="Pass if the condition is not met.")
+    shared: Optional[bool] = Field(None, title="Is shared.")
 
     def match(self, stat:StatDef):
         r = ((self.shared is None) or (stat.shared == self.shared))
@@ -634,9 +659,13 @@ class StatPatchCondition(I4cBaseModel):
 
 
 class StatPatchChange(I4cBaseModel):
-    shared: Optional[bool]
-    timeseriesdef: Optional[StatTimeseriesDef]
-    xydef: Optional[StatXYDef]
+    """
+    Change to a query. The timeseriesdef and xydef fields must conform with the current type of the query. It is not
+    possible to change a query from one type to another.
+    """
+    shared: Optional[bool] = Field(None, title="Set sharing.")
+    timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
+    xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -650,8 +679,9 @@ class StatPatchChange(I4cBaseModel):
 
 
 class StatPatchBody(I4cBaseModel):
-    conditions: List[StatPatchCondition]
-    change: StatPatchChange
+    """Update to a query. All conditions are checked, and passed, the change is carried out."""
+    conditions: List[StatPatchCondition] = Field(..., title="Conditions to check before the change.")
+    change: StatPatchChange = Field(..., title="Change to the query.")
 
 
 async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, name=None, name_mask=None,
@@ -842,24 +872,31 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
 
 class StatTimeseriesDataSeries(I4cBaseModel):
-    name: str
-    x_timestamp: Optional[List[datetime]]
-    x_relative: Optional[List[float]] = Field(None, description="relative sec to first item")
-    y: List[float]
+    """
+    One data series in a time series query. If the X axis represents time, the values are given in the X properties.
+    If the X properties are not given, the X axis should be a sequence. If X values are given, the length of the array
+    matches the Y array.
+    """
+    name: str = Field(..., title="Display name.")
+    x_timestamp: Optional[List[datetime]] = Field(None, title="X values if timestamp.")
+    x_relative: Optional[List[float]] = Field(None, title="X values, if relative time. Seconds.")
+    y: List[float] = Field(..., title="Data points.")
 
 
 class StatXYData(I4cBaseModel):
-    x: Union[float, str, None]
-    y: Optional[Union[float, str, None]]
-    shape: Optional[Union[float, str, None]]
-    color: Optional[Union[float, str, None]]
-    others: List[Union[float, str, None]]
+    """One dot in the XY query results."""
+    x: Union[float, str, None] = Field(None, title="Value to show on the X axis.")
+    y: Optional[Union[float, str, None]] = Field(None, title="Value to show on the Y axis.")
+    shape: Optional[Union[float, str, None]] = Field(None, title="Value to show as shape.")
+    color: Optional[Union[float, str, None]] = Field(None, title="Value to show as color.")
+    others: List[Union[float, str, None]] = Field(..., title="Values to show as tooltip.")
 
 
 class StatData(I4cBaseModel):
-    stat_def: StatDef
-    timeseriesdata: Optional[List[StatTimeseriesDataSeries]]
-    xydata: Optional[List[StatXYData]]
+    """Results of a query. Either timeseriesdata or xydata will be given."""
+    stat_def: StatDef = Field(..., title="Definition of the query.")
+    timeseriesdata: Optional[List[StatTimeseriesDataSeries]] = Field(None, title="Time series results.")
+    xydata: Optional[List[StatXYData]] = Field(None, title="XY query results.")
 
 
 def resolve_time_period(after, before, duration):
@@ -1024,6 +1061,7 @@ class StatXYMetaFieldUnit(str, Enum):
 
 
 class StatXYMetaField(I4cBaseModel):
+    """Data field of a virtual object."""
     name: str
     displayname: str
     type: StatXYMateFieldType
@@ -1032,6 +1070,7 @@ class StatXYMetaField(I4cBaseModel):
 
 
 class StatXYMetaObjectParamType(str, Enum):
+    """Data type of a virtual object parameter."""
     int = "int"
     float = "float"
     str = "str"
@@ -1039,23 +1078,27 @@ class StatXYMetaObjectParamType(str, Enum):
 
 
 class StatXYMetaObjectParam(I4cBaseModel):
+    """Virtual object parameter."""
     name: str
     type: StatXYMetaObjectParamType
     label: str
 
 
 class StatXYMetaObject(I4cBaseModel):
-    name: str
-    displayname: str
-    fields: List[StatXYMetaField]
-    params: List[StatXYMetaObjectParam]
+    """XY query virtual object. Some object types require parameters."""
+    name: str = Field(..., title="Internal name.")
+    displayname: str = Field(..., title="Display name.")
+    fields: List[StatXYMetaField] = Field(..., title="Fields.")
+    params: List[StatXYMetaObjectParam] = Field(..., title="Parameters defining the actual objects.")
 
 
 class StatXYMeta(I4cBaseModel):
+    """XY query metadata. Contains information about the available virtual objects and their fields."""
     objects: List[StatXYMetaObject]
 
 
-class StatXYMozakAxis(str, Enum):
+class StatXYMazakAxis(str, Enum):
+    """Axes of a Mazak machine. X,Y and Z axes are linear, B and C are rotary."""
     x = "x"
     y = "y"
     z = "z"
@@ -1114,7 +1157,7 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                             value_list=good_bad_list),
             StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second)
         ]
-        for axis in StatXYMozakAxis:
+        for axis in StatXYMazakAxis:
             for agg in StatAggMethod:
                 mazak_fields.append(
                     StatXYMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
@@ -1289,7 +1332,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
             raise Exception("Invalid field name: " + field_name)
         try:
             agg = StatAggMethod[match.group("agg")]
-            axis = StatXYMozakAxis[match.group("axis")]
+            axis = StatXYMazakAxis[match.group("axis")]
         except KeyError:
             raise Exception("Invalid field name: " + field_name)
         mf_device = dbo["mf_device"]
@@ -1297,7 +1340,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         mf_end = dbo["mf_end"]
         key = (mf_device, axis)
         if key not in agg_measures:
-            measure = axis + 'l' if axis != StatXYMozakAxis.b else 'al'
+            measure = axis + 'l' if axis != StatXYMazakAxis.b else 'al'
             prods_measure = await load_measure_mazak(conn, after, before, mf_device, measure)
             agg_measures[key] = prods_measure
         prods_measure = agg_measures[key]

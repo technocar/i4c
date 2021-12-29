@@ -8,7 +8,7 @@ from I4cAPI import I4cApiRouter
 router = I4cApiRouter(include_path="/batch")
 
 
-@router.get("", response_model=List[models.batch.ListItem], operation_id="batch_list", summary="List batches.")
+@router.get("", response_model=List[models.batch.BatchListItem], operation_id="batch_list", summary="List batches.")
 async def batch_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/batch")),
         project: Optional[str] = Query(None),
