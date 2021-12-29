@@ -14,7 +14,7 @@ from models.roles import Priv
 
 
 class UserData(I4cBaseModel):
-    """Represents data fields of a real person or automated account"""
+    """Core fields of a real person or automated account."""
     name: str = Field(..., title="User's name")
     roles: List[str] = Field([], title="Assigned roles")
     status: UserStatusEnum = Field("active")
@@ -25,30 +25,35 @@ class UserData(I4cBaseModel):
 
 
 class UserIn(UserData):
+    """Real person or automated account. Input."""
     password: Optional[str] = Field(None)
 
 
 class User(UserData):
-    """Represents a real person or automated account."""
+    """Real person or automated account."""
     id: str = Field(..., title="User's identifier")
     roles_eff: List[str] = Field(..., title="All roles assigned directly or indirectly")
 
 
 class UserWithPrivs(User):
+    """Real person or automated account with privileges."""
     privs: List[Priv]
 
 
+# TODO why is this?
 class LoginUserResponse(I4cBaseModel):
-    """Single user response"""
+    """Response of login."""
     user: UserWithPrivs
 
 
 class UserPatchChange(I4cBaseModel):
-    password: Optional[str]
-    del_password: Optional[bool]
-    public_key: Optional[str]
-    del_public_key: Optional[bool]
-    status: Optional[bool] # TODO implement this
+    """Change in a user update."""
+    password: Optional[str] = Field(None, title="Set password.")
+    del_password: Optional[bool] = Field(None, title="If set, removes the password.")
+    public_key: Optional[str] = Field(None, title="Public key.")
+    del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")
+    # TODO implement this:
+    status: Optional[bool] = Field(None, title="Set status.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -64,6 +69,7 @@ class UserPatchChange(I4cBaseModel):
 
 
 class UserPatchBody(I4cBaseModel):
+    """Update to a user."""
     change: UserPatchChange
 
 
@@ -102,7 +108,7 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, wit
         sql_roles = dedent("""\
                 select ur.role
                 from user_role ur
-                join "role" r on r.name = ur.role 
+                join "role" r on r.name = ur.role
                 where ur."user" = $1
                 <filter>
               """)
@@ -123,12 +129,12 @@ async def get_user(*, user_id=None, login_name=None, active_roles_only=True, wit
                     (select distinct "name" as toprole, "name" as midrole, "name" as subrole from "role"
                      union
                      select deep_role_r.toprole, role_subrole.role as midrole, role_subrole.subrole
-                     from deep_role_r 
+                     from deep_role_r
                      join role_subrole on deep_role_r."subrole" = role_subrole."role"),
                   deep_role as (select distinct toprole as role, subrole from deep_role_r)
-                select distinct 
+                select distinct
                   deep_role.subrole as "role"
-                from user_role 
+                from user_role
                 join deep_role on deep_role.role = user_role."role"
                 join role_grant on deep_role.subrole = role_grant."role"
                 join "role" r on r.name = deep_role.subrole
@@ -165,10 +171,10 @@ async def login(credentials: HTTPBasicCredentials, *, pconn=None):
 async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\
-                select 
+                select
                   u.id
                 from "user" u
-                where True 
+                where True
                   <filter>
                 """)
         params = []
@@ -195,16 +201,16 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pco
             if not old:
                 old_roles = []
                 sql = dedent("""\
-                    insert into "user" 
-                        (id, name, "status", login_name, password_verifier, customer, email) 
-                    values 
+                    insert into "user"
+                        (id, name, "status", login_name, password_verifier, customer, email)
+                    values
                         ($1, $2, $3,         $4, $5, $6,                              $7)""")
             else:
                 old_roles = old.roles
                 sql = dedent("""\
-                        update "user" 
-                        set 
-                            name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6, email = $7 
+                        update "user"
+                        set
+                            name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6, email = $7
                         where id = $1""")
             try:
                 verif = common.create_password(user.password) if user.password is not None else None
@@ -245,7 +251,7 @@ async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBod
         sql = dedent("""\
                   update "user"
                   set
-                    <fields>                        
+                    <fields>
                   where id = $1
                   """)
         fields = []

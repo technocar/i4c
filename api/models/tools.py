@@ -2,28 +2,33 @@ from datetime import datetime, date, timedelta
 from enum import Enum
 from textwrap import dedent
 from typing import Optional
+from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 import models.log
 from models.common import PatchResponse
 
 
 class ToolsPatchChange(I4cBaseModel):
-    type: Optional[str]
+    """Change to a tool."""
+    type: Optional[str] = Field(None, title="Type of the tool")
 
     def is_empty(self):
         return self.type is None
 
 
 class ToolsPatchBody(I4cBaseModel):
-    change: ToolsPatchChange
+    """Update to a tool. Check conditions, and if all checks out, carry out the change."""
+    change: ToolsPatchChange = Field(..., title="Change to be carried out.")
 
 
 class ToolDataId(str, Enum):
+    """Tool related event types."""
     install_tool = "install_tool"
     remove_tool = "remove_tool"
 
 
 class ToolDataPointKey(I4cBaseModel):
+    """Identifies a tool change log event."""
     timestamp: datetime
     sequence: int
     device: str
@@ -31,6 +36,7 @@ class ToolDataPointKey(I4cBaseModel):
 
 
 class ToolDataPoint(I4cBaseModel):
+    """Tool change event."""
     timestamp: datetime
     sequence: int
     device: str
@@ -39,14 +45,17 @@ class ToolDataPoint(I4cBaseModel):
     slot_number: Optional[str]
 
 
+# TODO this name is not really representative of the function
 class ToolDataPointType(ToolDataPoint):
-    type: Optional[str]
+    """Tool change event with extended fields."""
+    type: Optional[str] = Field(None, title="Type of the tool.")
 
 
 class ToolItem(I4cBaseModel):
-    tool_id: Optional[str]
-    type: Optional[str]
-    count: int
+    """Tool information."""
+    tool_id: Optional[str] = Field(None, title="Identifier.")
+    type: Optional[str] = Field(None, title="Tool type.")
+    count: int = Field(..., title="Number of times the tool was installed.")
 
 
 async def patch_project_version(credentials, tool_id, patch:ToolsPatchBody, *, pconn=None):
@@ -125,6 +134,8 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
         return res
 
 
+# TODO don't use "public" in sqls. marking it here, but applies everywhere
+# it is because if we decide to use a schema, we can set search_path for connections
 async def tool_list_usage(credentials):
     async with DatabaseConnection() as conn:
         sql = dedent("""\

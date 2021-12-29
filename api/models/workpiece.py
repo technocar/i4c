@@ -1,7 +1,7 @@
 from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional
-from pydantic import root_validator
+from pydantic import root_validator, Field
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, CredentialsAndFeatures
 from common.db_tools import get_user_customer
 from common.exceptions import I4cClientError
@@ -11,45 +11,55 @@ import common.db_helpers
 
 
 class NoteAdd(I4cBaseModel):
-    user: str
-    timestamp: datetime
-    text: str
+    """Workpiece comment. Input."""
+    user: str = Field(..., title="Commenter.")
+    timestamp: datetime = Field(..., title="Timestamp.")
+    text: str = Field(..., title="Comment text.")
 
 
 class Note(NoteAdd):
-    note_id: int
-    user_name: str
-    deleted: bool
+    """Workpiece comment."""
+    note_id: int = Field(..., title="Identifier.")
+    user_name: str = Field(..., title="Commenter's name.")
+    deleted: bool = Field(..., title="Deleted.")
 
 
 class Log(I4cBaseModel):
-    ts: datetime
-    seq: int
-    data: str
-    text: Optional[str]
+    """Workpiece manufacturing log item."""
+    ts: datetime = Field(..., title="Timestamp.")
+    seq: int = Field(..., title="Sequence.")
+    data: str = Field(..., title="Event or condition type.")
+    text: Optional[str] = Field(..., title="Event or condition data.")
 
 
 class File(I4cBaseModel):
+    """
+    Files collected during manufacturing. Downloadable via the intfiles
+    interface. The version is always 1.
+    """
     download_name: str
 
 
 class Workpiece(I4cBaseModel):
-    id: Optional[str]
-    project: Optional[str]
-    batch: Optional[str]
-    status: Optional[WorkpieceStatusEnum]
-    notes: List[Note]
-    log: List[Log]
-    files: List[File]
-    begin_timestamp: Optional[datetime]
-    end_timestamp: Optional[datetime]
+    """Workpiece. Combined from the log and user recorded data."""
+    id: Optional[str] = Field(None, title="Identifier.")
+    project: Optional[str] = Field(None, title="Project inferred from the log.")
+    batch: Optional[str] = Field(None, title="Assigned to batch.")
+    status: Optional[WorkpieceStatusEnum] = Field(None, title="Status, manually set or from the log.")
+    notes: List[Note] = Field(None, title="User supplied comments.")
+    log: List[Log] = Field(None, title="Events and conditions collected from the machine log.")
+    files: List[File] = Field(None, title="Files collected during manufacturing.")
+    begin_timestamp: Optional[datetime] = Field(None, title="Manufacturing start time.")
+    end_timestamp: Optional[datetime] = Field(None, title="Manufacturing end time.")
 
 
 class WorkpiecePatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    batch: Optional[str]
-    empty_batch: Optional[bool]
-    status: Optional[List[WorkpieceStatusEnum]]
+    """Conditions to check before a change is carried out to a workpiece."""
+    flipped: Optional[bool] = Field(False, title="Pass if the condition does not hold.")
+    batch: Optional[str] = Field(None, title="Assigned to batch.")
+    # TODO next is stupid, it should be has_batch
+    empty_batch: Optional[bool] = Field(None, title="Not assigned to any batches.")
+    status: Optional[List[WorkpieceStatusEnum]] = Field(None, title="Has any of the statuses.")
 
     def match(self, workpiece:Workpiece):
         r = (
@@ -64,11 +74,13 @@ class WorkpiecePatchCondition(I4cBaseModel):
 
 
 class WorkpiecePatchChange(I4cBaseModel):
-    batch: Optional[str]
-    delete_batch: Optional[bool]
-    status: Optional[WorkpieceStatusEnum]
-    add_note: Optional[List[NoteAdd]]
-    delete_note: Optional[List[int]]
+    """Change to a workpiece."""
+    batch: Optional[str] = Field(None, title="Assign to batch.")
+    delete_batch: Optional[bool] = Field(None, title="Remove from batch.")
+    status: Optional[WorkpieceStatusEnum] = Field(None, title="Set status.")
+    # TODO remove status (back to default)
+    add_note: Optional[List[NoteAdd]] = Field(None, title="Add notes.")
+    delete_note: Optional[List[int]] = Field(None, title="Mark notes deleted.")
 
     def is_empty(self):
         return (self.status is None
@@ -86,8 +98,9 @@ class WorkpiecePatchChange(I4cBaseModel):
 
 
 class WorkpiecePatchBody(I4cBaseModel):
-    conditions: List[WorkpiecePatchCondition]
-    change: WorkpiecePatchChange
+    """Update to a workpiece. Conditions are evaluated, and if all match, the change is carried out."""
+    conditions: List[WorkpiecePatchCondition] = Field(..., title="Conditions to check before the change.")
+    change: WorkpiecePatchChange = Field(..., title="Change to be carried out.")
 
 
 async def get_workpiece_notes(id, with_deleted=False, *, pconn=None):
