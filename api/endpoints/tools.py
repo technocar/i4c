@@ -20,7 +20,6 @@ async def tools_log_write(
     """
     Record a tool change event. Updates if same device/timestamp/sequence/slot.
     """
-    # TODO data_id should be fixed
     d = models.log.DataPoint(timestamp=datapoint.timestamp,
                              sequence=datapoint.sequence,
                              device=datapoint.device,
@@ -30,7 +29,7 @@ async def tools_log_write(
     return await models.log.put_log_write(credentials, [d], override=True)
 
 
-# TODO response_model?
+# TODO response_model? or 204
 @router.delete("", status_code=200, operation_id="tool_delete", summary="Delete tool change.")
 async def tools_log_delete(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/tools")),
@@ -38,7 +37,6 @@ async def tools_log_delete(
     """
     Remove a tool change event.
     """
-    # TODO data_id should be fixed
     d = models.log.DataPointKey(timestamp=datapointkey.timestamp,
                                 sequence=datapointkey.sequence,
                                 device=datapointkey.device,
@@ -56,7 +54,6 @@ async def patch_tools(
     """
     Update or register a tool.
     """
-    # without
     return await models.tools.patch_project_version(credentials, tool_id, patch)   # TODO !!! wut? project version?
 
 
