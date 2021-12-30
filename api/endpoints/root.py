@@ -28,8 +28,9 @@ async def privs(
     return await models.roles.get_priv(credentials)
 
 
+# logically it belongs to projects. it is here because its path does not start with "/projects".
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],
-            operation_id="file_search", summary="Global file search.")
+            operation_id="project_search_file", summary="Global file search.")
 async def files(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/files")),
         proj_name: Optional[str] = Query(None),
