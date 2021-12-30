@@ -6,7 +6,7 @@ import datetime
 import logging
 import click
 import click.formatting
-from .tools import jsonify
+from .tools import jsonify, resolve_file
 
 log = logging.getLogger("i4c")
 

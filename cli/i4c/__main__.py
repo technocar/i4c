@@ -1,26 +1,15 @@
 import sys
 from functools import wraps
+import json
 import logging
 import click.globals
 from .apidef import I4CDef
-from .conn import I4CConnection
-from .outputproc import print_table, process_json
+from .conn import I4CConnection, HTTPError
+from .outputproc import print_table, process_json, make_jinja_env
 from .inputproc import assemble_body
+from .tools import resolve_file
 
 log = logging.getLogger("i4c")
-
-
-def resolve_file(fn):
-    """
-    Resolves filename parameter. @<file> will be read from file, - will read from stdin, otherwise the
-    parameter itself is returned.
-    """
-    if fn == "-":
-        return sys.stdin.read()
-    if fn is not None and fn.startswith("@"):
-        with open(fn[1:], "r") as f:
-            return f.read()
-    return fn
 
 
 def stream_copy(src, dst):
@@ -71,103 +60,34 @@ def json_options(f):
 def callback(ctx, **args):
     # This is the main Click callback that performs the API call
 
-    path = args["path"]
-    method = args["method"]
-    ep = args["ep"]
-
-    additional_headers = {}
-    sec = ep.get("security", None)
-    if sec:
-        profile = args.get("profile", None)
-        for seci in sec:
-            sch = next(k for k in seci.keys())
-            sch = api_def["components"]["securitySchemes"][sch]
-            if sch["type"] == "http" and sch["scheme"] == "basic":
-                auth_user = args["auth_user"]
-                auth_pwd = args["auth_pwd"]
-                auth_key = args["auth_key"]
-                if not auth_user or (not auth_pwd and not auth_key):
-                    (profile, p_user, p_pwd, p_key) = read_profile(profile, "~", "username", "password", "private-key")
-                    auth_user = auth_user or p_user or profile
-                    auth_pwd = auth_pwd or p_pwd
-                    auth_key = auth_key or p_key
-                if auth_key:
-                    timestamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-                    signature = sign(auth_key, timestamp)
-                    token = f"{auth_user}:{timestamp}{signature}"
-                    token = token.encode()
-                    token = base64.b64encode(token).decode()
-                    additional_headers["Authorization"] = f"Basic {token}"
-                elif auth_pwd:
-                    token = f"{auth_user}:{auth_pwd}"
-                    token = token.encode()
-                    token = base64.b64encode(token).decode()
-                    additional_headers["Authorization"] = f"Basic {token}"
-            # TODO handle other methods, not needed for this project
-
-    # assemble url
-    url = base_url + path
-
-    for p in ep.get("parameters", []):
-        if p["in"] == "path":
-            pn = p["name"]
-            if pn not in args:
-                raise Exception(f"Missing argument: {pn}")
-            value = args[pn]
-            value = urllib.parse.quote(value)
-            url = url.replace("{" + pn + "}", value)
-
-    queries = []
-    for p in ep.get("parameters", []):
-        if p["in"] == "query":
-            pn = p["name"]
-            val = args.get(pn, None)
-            if val:
-                if not isinstance(val, list) and not isinstance(val, tuple):
-                    val = [val]
-                for i in val:
-                    i = urllib.parse.quote(i)
-                    queries.append(pn + "=" + i)
-    if queries:
-        url = url + "?" + "&".join(queries)
+    path = args.pop("path")
+    method = args.pop("method")
+    action = args.pop("action")
 
     # process body
-    body = args.get("body", None)
-    body = resolve_file(body)
-    if isinstance(body, dict):
-        body = jsonify(body).encode("utf-8")
-    if isinstance(body, str):
-        body = body.encode("utf-8")
-
-    # do the call
-    method = method.upper()
+    if "body" in args:
+        body = args.pop("body")
+        body = resolve_file(body)
+        if isinstance(body, dict):
+            body = jsonify(body).encode("utf-8")
+        if isinstance(body, str):
+            body = body.encode("utf-8")
+    else:
+        body = None
 
     if args.get("print_curl", False):
         raise Exception("Not implemented") # TODO
 
-    log.debug(f"calling {method} {url}")
-    if body: log.debug(f"body {jsonbrief(body)}")
-    req = urllib.request.Request(url, data=body, method=method, headers=additional_headers)
-    conn = urllib.request.urlopen(req)
-    # TODO handle errors?
-    content_type = conn.headers.get_content_type()
-    origin_file_name = conn.headers.get_filename()
-    if content_type == "application/json":
-        log.debug(f"parsing json response")
-        response = json.load(conn)
-        if origin_file_name:
-            response["origin"] = origin_file_name
-    else:
-        log.debug(f"{content_type} response")
-        response = conn
+    response = action.invoke(**args, body=None)
 
-    output_expr = args.get("output_expr", None)
     output_file = args.get("output_file", None)
+    output_expr = args.get("output_expr", None)
     output_template = args.get("output_template", None)
 
-    if isinstance(response, dict):
+    if action.response.content_type == "application/json":
         process_json(response, output_expr, output_file, output_template)
     else:
+        origin_file_name = response.headers.get_filename()
         if output_expr or output_template:
             click.ClickException("Can't apply expression or template to non-json responses")
         if not output_file:
@@ -185,14 +105,14 @@ def callback(ctx, **args):
 def make_callback(**outer_args):
     """
     Create a closure that takes a Click context, outer_args and any number of actual arguments defined in OpenAPI doc,
-    and calls `do`. The closure also handles exceptions.
+    and calls `callback`. The closure also handles exceptions.
     """
     def f(**args):
         try:
-            res = do(click.globals.get_current_context(), **outer_args, **args)
+            res = callback(click.globals.get_current_context(), **outer_args, **args)
         except click.ClickException as e:
             raise
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             body = e.read()
             if e.headers["Content-Type"] == "application/json":
                 body = json.loads(body)
@@ -217,16 +137,19 @@ def make_callback(**outer_args):
     return f
 
 
-def make_commands(api_def: I4CDef):
+def make_commands(conn: I4CConnection):
     """
     Make click Groups and Commands based on command_mapping, which is derived from openapi.json
     """
+
+    api_def = conn.api_def()
 
     for (obj_name, obj) in api_def.objects.items():
         if len(obj.actions) == 1:
             grp = top_grp
         else:
-            help = f"Command group for managing {obj_name} data."
+            # TODO could figure out some way to explain an object
+            help = f"Has subcommands: " + ", ".join(obj.actions)
             grp = click.Group(obj_name, help=help)
             top_grp.add_command(grp)
 
@@ -293,7 +216,7 @@ def make_commands(api_def: I4CDef):
                 params.append(click.Option(("--output-file",),
                     help="Output file name. If omitted or -, stdout is used."))
 
-            callback = make_callback(path=action.path, method=action.method, action=action)
+            callback = make_callback(path=action.path, method=action.method, action=conn[obj_name][action_name])
             cmd_name = action_name if len(obj.actions) > 1 else obj_name
             cmd = click.Command(cmd_name, callback=callback, params=params, help=action.help(), short_help=action.short_help())
             grp.add_command(cmd)
@@ -427,7 +350,7 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
         click.echo()
         if sch.type == "object":
             # there is no way to preserve the order, because fastAPI already messes it up. sorting alphabetically.
-            table = [[k, v.type, v.describe()] for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
+            table = [[k, v.type_desc(), v.describe(brief=True)] for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
             click.echo("Fields:")
             print_table(table)
         elif sch.type_enum is not None:
@@ -446,7 +369,7 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
         print_table(paths)
         click.echo()
         click.echo("Schemas:")
-        schemas = ", ".join(conn.api_def.schema.keys())
+        schemas = ", ".join(conn.api_def().schema.keys())
         schemas = click.formatting.wrap_text(schemas, preserve_paragraphs=True)
         click.echo(schemas)
 
@@ -565,7 +488,7 @@ def read_log_cfg():
 try:
     read_log_cfg()
     connection = I4CConnection()
-    make_commands(connection.api_def())
+    make_commands(connection)
     top_grp(obj={"connection": connection}, prog_name="i4c")
 except click.ClickException as e:
     click.echo(e.message)

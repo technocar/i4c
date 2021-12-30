@@ -9,6 +9,7 @@ import nacl.signing
 import nacl.encoding
 from .apidef import I4CDef, Obj, Action
 from .tools import jsonify
+from urllib.error import HTTPError
 
 
 class I4CAction:
@@ -17,6 +18,9 @@ class I4CAction:
 
     def __call__(self, **kwargs):
         return self.host.invoke(self.action, **kwargs)
+
+    def __getattr__(self, item):
+        return self.action.__getattribute__(item)
 
     def invoke(self, **kwargs):
         return self.host.invoke(self.action, **kwargs)
@@ -32,6 +36,10 @@ class I4CObj:
         return action
 
     def __getattr__(self, item):
+        # we forward the only existing attribute to obj
+        if item == "actions":
+            return self.obj.actions
+        # all others are translated to dynamic calls to endpoints
         action = I4CAction()
         action.action = self.obj.__getattr__(item)
         action.host = self.host

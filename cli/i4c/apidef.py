@@ -29,14 +29,22 @@ class Schema:
         flds = ", ".join(flds)
         return f"{self.__class__.__name__}({flds})"
 
-    def describe(self):
-        desc = self.description or self.title
-        if desc is None:
-            if self.is_array:
-                desc = f"A list of {self.type}."
-            else:
-                desc = self.type + "."
-        return desc
+    def type_desc(self, *, brief=True):
+        type_name = self.sch_obj or self.type
+        if not self.is_array and brief:
+            return type_name
+        if self.is_array and not brief:
+            return f"A list of {type_name}."
+        if not self.is_array and not brief:
+            return type_name + "."
+        if self.is_array and brief:
+            return f"{type_name}[]"
+
+    def describe(self, *, brief=False):
+        if brief:
+            return self.title or self.description or self.type_desc()
+        else:
+            return self.description or self.title or self.type_desc()
 
 
 @dataclass
@@ -81,7 +89,7 @@ class Action:
                 typedesc = self.response.sch_obj
                 if self.response.is_array:
                     typedesc = f"a list of {typedesc}"
-                s.append(f"Returns {typedesc}, see `doc {self.response.sch_obj}` for details.")
+                s.append(f"Returns {typedesc}, see `doc\xa0{self.response.sch_obj}` for details.")
             else:
                 if self.response.content_type == "application/json": ct = "json"
                 elif self.response.content_type == "application/octet-stream": ct = "binary"
@@ -89,7 +97,7 @@ class Action:
                 elif self.response.content_type == "text/html": ct = "html"
                 else: ct = self.response.content_type
                 s.append(f"Returns {ct}.")
-        s.append(f"Calls {self.method.upper()} {self.path}")
+        s.append(f"Calls {self.method.upper()}\xa0{self.path}")
         return "\n".join(s)
 
     def short_help(self):
