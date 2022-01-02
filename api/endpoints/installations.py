@@ -16,10 +16,9 @@ router = I4cApiRouter(include_path="/installations")
              operation_id="installation_start", summary="New installation.")
 async def new_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/installations/{project}/{version}")),
-    project: str = Path(...),
-    version: str = Path(...),
-    statuses: Optional[List[ProjectVersionStatusEnum]] = Query(None, title="Check project status.",
-                                                               description="Check project status. If omitted, only final projects are allowed.")
+    project: str = Path(..., title="The installed project."),
+    version: str = Path(..., title="The installed version."),
+    statuses: Optional[List[ProjectVersionStatusEnum]] = Query(None, title="Check project status. If omitted, only final projects are allowed.")
 ):
     """
     Initiate an installation of the given project version. If you want to install a project that is not final, you have
@@ -34,9 +33,9 @@ async def list_installation(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations", ask_features=['noaudit'])),
     id: Optional[int] = Query(None),
     status: Optional[InstallationStatusEnum] = Query(None),
-    after: Optional[datetime] = Query(None, title="After timestamp", description="After timestamp, iso format. E.g.: 2021-08-15T15:53:11.123456Z"),
-    before: Optional[datetime] = Query(None, title="Before timestamp", description="Before timestamp, iso format. E.g.: 2021-08-15T15:53:11.123456Z"),
-    project_name: Optional[str] = Query(None),
+    after: Optional[datetime] = Query(None, title="After timestamp, iso format."),
+    before: Optional[datetime] = Query(None, title="Before timestamp, iso format."),
+    project_name: Optional[str] = Query(None, title="Exact name of the project."),
     ver: Optional[int] = Query(None, title="Project version."),
     noaudit: bool = Query(False, title="Skip audit record", description="Will not write an audit record. Requires special privilege.") # TODO why is not not used?
 ):
