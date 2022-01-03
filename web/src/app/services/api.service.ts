@@ -122,8 +122,8 @@ export class ApiService {
     return (error.detail as ErrorDetail).msg;
   };
 
-  login(username: string, password: string): Observable<LoginResponse> {
-    return this.http.get<LoginResponse>(`${this._apiUrl}/login`, {
+  login(username: string, password: string): Observable<User> {
+    return this.http.get<User>(`${this._apiUrl}/login`, {
       headers: {
         "Authorization": `Basic ${window.btoa(username + ':' + password)}`
       }

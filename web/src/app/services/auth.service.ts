@@ -36,17 +36,14 @@ export class AuthenticationService {
 
   login(username: string, password: string): Observable<User> {
     return this.api.login(username, password).pipe(
-      tap(r => {
+      tap(user => {
         this.storeUser({
-          id: r.user.id,
-          username: r.user.login_name,
+          id: user.id,
+          username: user.login_name,
           expires: Date.now() + (1000 * 60 * 45),
           token: `${window.btoa(username + ':' + password)}`,
-          privs: r.user.privs ?? []
+          privs: user.privs ?? []
         });
-      }),
-      map(r => {
-        return r.user;
       })
     );
   }
