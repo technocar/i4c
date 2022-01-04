@@ -77,12 +77,11 @@ async def stat_data_get(
     return await models.stat.statdata_get(credentials, id)
 
 
-@router.get("/xymeta", response_model=models.stat.StatXYMeta, operation_id="stat_xymeta",
-            summary="Metadata for xy charts.")
-async def get_xymeta(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/xymeta")),
+@router.get("/objmeta", response_model=List[models.stat.StaMetaObject], operation_id="stat_objmeta",
+            summary="Metadata for chart objects.")
+async def get_objmeta(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/objmeta")),
     after: Optional[datetime] = Query(None, title="timestamp", description="Iso format, defaults to last year."),
 ):
-    # TODO this might worth renaming, because it is the same for virtual object lists
     """Get metadata for xy queries."""
-    return await models.stat.get_xymeta(credentials, after)
+    return await models.stat.get_objmeta(credentials, after)

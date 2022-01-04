@@ -392,6 +392,8 @@ class AlarmRecipPatchBody(I4cBaseModel):
     change: AlarmRecipPatchChange = Field(..., title="Requested changes.")
 
 
+# todo 1: ***** alarm_sub."user" legyen not-null és mindenhol ennek megfelelõen kezelve
+
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:

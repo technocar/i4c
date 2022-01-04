@@ -15,8 +15,8 @@ router = I4cApiRouter(include_path="/log")
             allow_log=False)
 async def snapshot(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/snapshot")),
-    ts: datetime = Query(..., title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
-    device: DeviceAuto = Query("auto", title="Name of the devide", description="mill|lathe|gom|robot|auto")
+    ts: datetime = Query(..., title="Timestamp, iso format."),
+    device: DeviceAuto = Query("auto", title="Name of the device, or `auto` for the active at the time.")
 ):
     """Log snapshot at a given time."""
     return await models.log.get_snapshot(credentials, ts, device)
@@ -26,16 +26,16 @@ async def snapshot(
             summary="Search the log.")
 async def find(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/find")),
-        device: Device = Query(..., title="device"),
-        timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
-        sequence: Optional[int] = Query(None, description="sequence excluding this"),
-        before_count: Optional[int] = Query(None),
-        after_count: Optional[int] = Query(None, description="when before_count and after_count both are None, then it defaults to after=1"),
-        categ: Optional[models.log.MetaCategory] = Query(None),
-        name: Optional[str] = Query(None),
-        val: Optional[List[str]] = Query(None),
-        extra: Optional[str] = Query(None),
-        rel: Optional[str] = Query(None)
+        device: Device = Query(..., title="Device."),
+        timestamp: Optional[datetime] = Query(None, title="Around timestamp, iso format."),
+        sequence: Optional[int] = Query(None, title="Sequence, after or before."),
+        before_count: Optional[int] = Query(None, title="Number of log records before the timestamp."),
+        after_count: Optional[int] = Query(None, description="Number of log records after the timestamp. Defaults to 1 if before is omitted, 0 otherwise."),
+        categ: Optional[models.log.MetaCategory] = Query(None, title="Log data category."),
+        name: Optional[str] = Query(None, title="Log data type."), # TODO rename this to data_id, everywhere else it is data_id
+        val: Optional[List[str]] = Query(None, title="Value of the log item."),
+        extra: Optional[str] = Query(None, title="Extra of the log item."),
+        rel: Optional[str] = Query(None, title="Relation for the val or extra.") # TODO for the what? extra uses it?
 ):
     """List log entries."""
     rs = await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
@@ -62,6 +62,6 @@ async def log_write(
             summary="Last known instance of a device.")
 async def last_instance(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/log/last_instance")),
-        device: Device = Query(..., title="device")):
+        device: Device = Query(..., title="Device.")):
     """For Mazak machines, the last seen MTConnect instance. Can be used to determine if we need to query back data."""
     return await models.log.get_last_instance(credentials, device)
