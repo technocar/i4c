@@ -1055,21 +1055,21 @@ class StatXYMateFieldType(str, Enum):
     label = "label"
 
 
-class StatXYMetaFieldUnit(str, Enum):
+class StatObjMetaFieldUnit(str, Enum):
     percent = "percent"
     second = "second"
 
 
-class StatXYMetaField(I4cBaseModel):
+class StatObjMetaField(I4cBaseModel):
     """Data field of a virtual object."""
     name: str
     displayname: str
     type: StatXYMateFieldType
     value_list: Optional[List[str]]
-    unit: Optional[StatXYMetaFieldUnit]
+    unit: Optional[StatObjMetaFieldUnit]
 
 
-class StatXYMetaObjectParamType(str, Enum):
+class StatObjMetaParamType(str, Enum):
     """Data type of a virtual object parameter."""
     int = "int"
     float = "float"
@@ -1077,24 +1077,19 @@ class StatXYMetaObjectParamType(str, Enum):
     datetime = "datetime"
 
 
-class StatXYMetaObjectParam(I4cBaseModel):
+class StatObjMetaParam(I4cBaseModel):
     """Virtual object parameter."""
     name: str
-    type: StatXYMetaObjectParamType
+    type: StatObjMetaParamType
     label: str
 
 
-class StatXYMetaObject(I4cBaseModel):
+class StaMetaObject(I4cBaseModel):
     """XY query virtual object. Some object types require parameters."""
     name: str = Field(..., title="Internal name.")
     displayname: str = Field(..., title="Display name.")
-    fields: List[StatXYMetaField] = Field(..., title="Fields.")
-    params: List[StatXYMetaObjectParam] = Field(..., title="Parameters defining the actual objects.")
-
-
-class StatXYMeta(I4cBaseModel):
-    """XY query metadata. Contains information about the available virtual objects and their fields."""
-    objects: List[StatXYMetaObject]
+    fields: List[StatObjMetaField] = Field(..., title="Fields.")
+    params: List[StatObjMetaParam] = Field(..., title="Parameters defining the actual objects.")
 
 
 class StatXYMazakAxis(str, Enum):
@@ -1110,7 +1105,7 @@ stat_xy_mazak_project_verison_sql = open("models/stat_xy_mazak_project_verison.s
 stat_xy_workpiece_batch_sql = open("models/stat_xy_workpiece_batch.sql").read()
 
 
-async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> StatXYMeta:
+async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> List[StaMetaObject]:
     if after is None:
         after = datetime.utcnow() - timedelta(days=365)
     async with DatabaseConnection(pconn) as conn:
@@ -1135,12 +1130,12 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                                 """))
 
         mazak_fields = [
-            StatXYMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="device", displayname="eszköz", type=StatXYMateFieldType.category,
-                            value_list=['mill', 'lathe']),
-            StatXYMetaField(name="program", displayname="program", type=StatXYMateFieldType.category,
-                            value_list=await get_value_list(dedent("""\
+            StatObjMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="device", displayname="eszköz", type=StatXYMateFieldType.category,
+                             value_list=['mill', 'lathe']),
+            StatObjMetaField(name="program", displayname="program", type=StatXYMateFieldType.category,
+                             value_list=await get_value_list(dedent("""\
                                 select distinct l.value_text
                                 from log l
                                 where
@@ -1149,35 +1144,35 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                                   and l.data_id='pgm'
                                 order by 1
                             """))),
-            StatXYMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
-                            value_list=[r["project"] for r in pv_db]),
-            StatXYMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
-                            value_list=[str(r["version"]) for r in pv_db]),
-            StatXYMetaField(name="workpiece good/bad", displayname="munkadarab jó/hibás",type=StatXYMateFieldType.category,
-                            value_list=good_bad_list),
-            StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second)
+            StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
+                             value_list=[r["project"] for r in pv_db]),
+            StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
+                             value_list=[str(r["version"]) for r in pv_db]),
+            StatObjMetaField(name="workpiece good/bad", displayname="munkadarab jó/hibás", type=StatXYMateFieldType.category,
+                             value_list=good_bad_list),
+            StatObjMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second)
         ]
         for axis in StatXYMazakAxis:
             for agg in StatAggMethod:
                 mazak_fields.append(
-                    StatXYMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
+                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
 
-        mazakprogram = StatXYMetaObject(
+        mazakprogram = StaMetaObject(
             name=StatXYObjectType.mazakprogram,
             displayname="mazakprogram",
             fields=mazak_fields,
             params=[
-                StatXYMetaObjectParam(name="age_min", type=StatXYMetaObjectParamType.float, label="futás min (s)"),
-                StatXYMetaObjectParam(name="age_max", type=StatXYMetaObjectParamType.float, label="futás max (s)")
+                StatObjMetaParam(name="age_min", type=StatObjMetaParamType.float, label="futás min (s)"),
+                StatObjMetaParam(name="age_max", type=StatObjMetaParamType.float, label="futás max (s)")
             ]
         )
 
-        mazaksubprogram = StatXYMetaObject(**dict(mazakprogram))
+        mazaksubprogram = StaMetaObject(**dict(mazakprogram))
         mazaksubprogram.name = StatXYObjectType.mazaksubprogram
         mazaksubprogram.displayname = "mazaksubprogram"
         mazaksubprogram.fields = list(mazak_fields)
-        mazaksubprogram.fields.insert(4, StatXYMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category,
-                                                         value_list=await get_value_list(dedent("""\
+        mazaksubprogram.fields.insert(4, StatObjMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category,
+                                                          value_list=await get_value_list(dedent("""\
                                                              select distinct l.value_text
                                                              from log l
                                                              where
@@ -1189,19 +1184,19 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                                       )
 
         workpiece_fields = [
-            StatXYMetaField(name="code", displayname="code", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="batch", displayname="batch", type=StatXYMateFieldType.category,
-                            value_list=await get_value_list(stat_xy_workpiece_batch_sql)),
-            StatXYMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
-                            value_list=[r["project"] for r in pv_db]),
-            StatXYMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
-                            value_list=[str(r["version"]) for r in pv_db]),
-            StatXYMetaField(name="eval", displayname="eval", type=StatXYMateFieldType.category,
-                            value_list=good_bad_list),
-            StatXYMetaField(name="gom max deviance", displayname="gom max deviance", type=StatXYMateFieldType.numeric),
-            StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second)
+            StatObjMetaField(name="code", displayname="code", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="batch", displayname="batch", type=StatXYMateFieldType.category,
+                             value_list=await get_value_list(stat_xy_workpiece_batch_sql)),
+            StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
+                             value_list=[r["project"] for r in pv_db]),
+            StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
+                             value_list=[str(r["version"]) for r in pv_db]),
+            StatObjMetaField(name="eval", displayname="eval", type=StatXYMateFieldType.category,
+                             value_list=good_bad_list),
+            StatObjMetaField(name="gom max deviance", displayname="gom max deviance", type=StatXYMateFieldType.numeric),
+            StatObjMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second)
         ]
 
         sql = dedent("""\
@@ -1215,51 +1210,50 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
             order by 1""")
 
         for r in await conn.fetch(sql, after):
-            workpiece_fields.append(StatXYMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
+            workpiece_fields.append(StatObjMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
 
-        workpiece = StatXYMetaObject(
+        workpiece = StaMetaObject(
             name=StatXYObjectType.workpiece,
             displayname="munkadarab",
             fields=workpiece_fields,
             params=[]
         )
 
-        batch = StatXYMetaObject(
+        batch = StaMetaObject(
             name=StatXYObjectType.batch,
             displayname="batch",
             fields=[
-                StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
-                StatXYMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
-                                value_list=[r["project"] for r in pv_db]),
-                StatXYMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
-                                value_list=[str(r["version"]) for r in pv_db]),
-                StatXYMetaField(name="total wpc count", displayname="munkadarab szám", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="good wpc count", displayname="munkadarab jó", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="bad wpc count", displayname="munkadarab hibás", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="bad percent", displayname="hibás %", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.percent),
-                StatXYMetaField(name="time range total", displayname="időtartam", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
-                StatXYMetaField(name="time per wpc", displayname="idő/db", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
-                StatXYMetaField(name="time per good", displayname="idő/jó", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
+                StatObjMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
+                StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
+                                 value_list=[r["project"] for r in pv_db]),
+                StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
+                                 value_list=[str(r["version"]) for r in pv_db]),
+                StatObjMetaField(name="total wpc count", displayname="munkadarab szám", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="good wpc count", displayname="munkadarab jó", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="bad wpc count", displayname="munkadarab hibás", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="bad percent", displayname="hibás %", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.percent),
+                StatObjMetaField(name="time range total", displayname="időtartam", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
+                StatObjMetaField(name="time per wpc", displayname="idő/db", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
+                StatObjMetaField(name="time per good", displayname="idő/jó", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
             ],
             params=[]
         )
 
-        tool = StatXYMetaObject(
+        tool = StaMetaObject(
             name=StatXYObjectType.tool,
             displayname="tool",
             fields=[
-                StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
-                StatXYMetaField(name="type", displayname="típus", type=StatXYMateFieldType.category,
-                                value_list=await get_value_list('select distinct "type" from tools order by 1', params=[])),
-                StatXYMetaField(name="count used", displayname="használat szám", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="accumulated cutting time", displayname="össz. használati idő",
-                                type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
+                StatObjMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
+                StatObjMetaField(name="type", displayname="típus", type=StatXYMateFieldType.category,
+                                 value_list=await get_value_list('select distinct "type" from tools order by 1', params=[])),
+                StatObjMetaField(name="count used", displayname="használat szám", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="accumulated cutting time", displayname="össz. használati idő",
+                                 type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
             ],
             params=[]
         )
 
-        res = StatXYMeta(objects=[mazakprogram, mazaksubprogram, workpiece, batch, tool])
-        return res
+        return [mazakprogram, mazaksubprogram, workpiece, batch, tool]
 
 stat_xy_mazakprogram_sql = open("models/stat_xy_mazakprogram.sql").read()
 stat_xy_mazaksubprogram_sql = open("models/stat_xy_mazaksubprogram.sql").read()
@@ -1291,10 +1285,10 @@ async def load_measure_workpiece(conn, after, before, measure):
 async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     after, before = resolve_time_period(st.xydef.after, st.xydef.before, st.xydef.duration)
 
-    meta = await get_xymeta(credentials, after, pconn=conn)
+    meta = await get_objmeta(credentials, after, pconn=conn)
 
     res = StatData(stat_def=st, xydata=[])
-    meta = [m for m in meta.objects if m.name == st.xydef.obj.type]
+    meta = [m for m in meta if m.name == st.xydef.obj.type]
     if len(meta) != 1:
         raise I4cClientError("Invalid meta data")
     meta = meta[0]
