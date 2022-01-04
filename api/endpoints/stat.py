@@ -83,6 +83,5 @@ async def get_objmeta(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/objmeta")),
     after: Optional[datetime] = Query(None, title="timestamp", description="Iso format, defaults to last year."),
 ):
-    # TODO this might worth renaming, because it is the same for virtual object lists
     """Get metadata for xy queries."""
     return await models.stat.get_objmeta(credentials, after)

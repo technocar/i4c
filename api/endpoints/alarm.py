@@ -64,8 +64,11 @@ async def subsgroups_list(
     return await models.alarm.subsgroups_list(credentials, user)
 
 
-# TODO GET /alarm/subsgroups/{grp}  --> {name, users:[]}
-# PUT /alarm/subsgroups/{grp}     <-- {name, users:[]}
+# TODO 1: ****** GET /alarm/subsgroups/{grp}  --> {name, users:[]}
+#                PUT /alarm/subsgroups/{grp}  <-- {users:[]}
+#                DELETE /alarm/subsgroups/{grp}?forced
+#                    forced = bool default false. if true, kick users.
+#                    IF SET FOR AN ALARM, ALWAYS RETURN ERROR, even if forced=true
 
 
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers",

@@ -37,7 +37,8 @@ async def list_installation(
     before: Optional[datetime] = Query(None, title="Before timestamp, iso format."),
     project_name: Optional[str] = Query(None, title="Exact name of the project."),
     ver: Optional[int] = Query(None, title="Project version."),
-    noaudit: bool = Query(False, title="Skip audit record", description="Will not write an audit record. Requires special privilege.") # TODO why is not not used?
+    # this is used on higher level only. See I4cApiRouter class.
+    noaudit: bool = Query(False, title="Skip audit record", description="Will not write an audit record. Requires special privilege.")
 ):
     """
     List ongoing or previous installations.

@@ -1,4 +1,4 @@
-import os
+# -*- coding: utf-8 -*-
 from typing import List, Optional
 from fastapi import Depends, Path, Body, Query
 from fastapi.security import HTTPBasicCredentials
@@ -47,6 +47,8 @@ async def intfiles_put(
 
 
 # TODO this should return either 204 or some meaningful response. now it is json null
+#      Gy: A "204-No Content"-el valami bug van a FastAPI-ban, nem akartam sok időt eltölteni a nyomozásával.
+#          https://github.com/tiangolo/fastapi/issues/717
 @router.delete("/v/{ver}/{path:path}", status_code=200, operation_id="intfile_delete", summary="Delete internal file.")
 async def intfiles_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/intfiles/v/{ver}/{path:path}")),
