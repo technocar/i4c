@@ -147,7 +147,6 @@ class I4CConnection:
                 base_url = p.get("base-url")
             if not api_def_file:
                 api_def_file = p.get("api-def-file")
-            # TODO openapi file to the profile and then store
 
         if base_url.endswith("/"):
             base_url = base_url[:-1]

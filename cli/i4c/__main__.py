@@ -149,7 +149,7 @@ def make_commands(conn: I4CConnection):
             grp = top_grp
         else:
             # TODO could figure out some way to explain an object
-            help = f"Has subcommands: " + ", ".join(obj.actions)
+            help = ", ".join(obj.actions)
             grp = click.Group(obj_name, help=help)
             top_grp.add_command(grp)
 
@@ -160,7 +160,16 @@ def make_commands(conn: I4CConnection):
                 attrs = {}
                 attrs["multiple"] = param.is_array
                 attrs["required"] = param.required
-                #TODO use data type
+                if param.type == "integer":
+                    attrs["type"] = click.INT
+                elif param.type == "number":
+                    attrs["type"] = click.FLOAT
+                elif param.type == "boolean":
+                    attrs["type"] = click.BOOL
+                elif param.type == "string" and param.type_fmt == "date-time":
+                    attrs["type"] = click.DateTime()
+                elif param.type_enum:
+                    attrs["type"] = click.Choice(param.type_enum)
 
                 paramhelp = param.description or param.title
                 paramhelp = paramhelp or (param_name.replace("_", " ").capitalize() + "." +

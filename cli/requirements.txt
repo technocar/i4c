@@ -3,3 +3,4 @@ jsonpath_ng
 click
 jinja2
 pynacl
+isodate
