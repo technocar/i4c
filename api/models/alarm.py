@@ -629,7 +629,7 @@ async def subsgroups_list(credentials, user, *, pconn=None):
 
     sql = dedent("""\
             select "user", array_agg("group") as groups
-            from alarm_subsgroup where "user" = $1 or $1 is null
+            from alarm_subsgroup_map where "user" = $1 or $1 is null
             group by "user" 
             """)
     async with DatabaseConnection(pconn) as conn:
