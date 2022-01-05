@@ -13,12 +13,12 @@ from models import Device
 router = I4cApiRouter(include_path="/tools")
 
 
-@router.put("", status_code=201, operation_id="tool_record")
+@router.put("", status_code=201, operation_id="tool_record", summary="Record tool change.")
 async def tools_log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("put/tools")),
         datapoint: models.tools.ToolDataPoint = Body(...)):
     """
-    Record a tool change event.
+    Record a tool change event. Updates if same device/timestamp/sequence/slot.
     """
     d = models.log.DataPoint(timestamp=datapoint.timestamp,
                              sequence=datapoint.sequence,
@@ -29,7 +29,8 @@ async def tools_log_write(
     return await models.log.put_log_write(credentials, [d], override=True)
 
 
-@router.delete("", status_code=200, operation_id="tool_delete") # TODO response_model?
+# TODO response_model? or 204
+@router.delete("", status_code=200, operation_id="tool_delete", summary="Delete tool change.")
 async def tools_log_delete(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/tools")),
         datapointkey: models.tools.ToolDataPointKey = Body(...)):
@@ -43,19 +44,21 @@ async def tools_log_delete(
     return await models.log.delete_log(credentials, d)
 
 
-@router.patch("/{tool_id}", response_model=models.common.PatchResponse, operation_id="tool_update")
+@router.patch("/{tool_id}", response_model=models.common.PatchResponse, operation_id="tool_update",
+              summary="Update or create tool.")
 async def patch_tools(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/tools/{tool_id}")),
     tool_id: str = Path(...),
     patch: models.tools.ToolsPatchBody = Body(...),
 ):
     """
-    Update a tool change event.
+    Update or register a tool.
     """
-    return await models.tools.patch_project_version(credentials, tool_id, patch)
+    return await models.tools.patch_project_version(credentials, tool_id, patch)   # TODO !!! wut? project version?
 
 
-@router.get("", response_model=List[models.tools.ToolDataPointType], operation_id="tool_list")
+@router.get("", response_model=List[models.tools.ToolDataPointType], operation_id="tool_list",
+            summary="List tool changes.")
 async def tool_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools")),
         device: Device = Query(..., title="device"),
@@ -66,8 +69,9 @@ async def tool_list(
     return await models.tools.tool_list(credentials, device, timestamp, sequence, max_count)
 
 
-@router.get("/list_usage", response_model=List[models.tools.ToolItem], operation_id="tool_usage")
+@router.get("/list_usage", response_model=List[models.tools.ToolItem], operation_id="tool_usage",
+            summary="List tools.")
 async def tool_list_usage(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list_usage"))):
-    """Seriously, what is this."""  # TODO give proper descripton
+    """List tools and some statistics on their usage."""
     return await models.tools.tool_list_usage(credentials)

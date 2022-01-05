@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from pydantic import Field
 
 from common import I4cBaseModel, DatabaseConnection
 from enum import Enum
@@ -13,18 +14,21 @@ class BatchStatus(str, Enum):
 
 
 class BatchIn(I4cBaseModel):
-    customer: Optional[str]
-    project: str
-    target_count: Optional[int]
-    status: BatchStatus
+    """Batch of machining operations. Input."""
+    customer: Optional[str] = Field(None, title="Customer that ordered the item.")
+    project: str = Field(..., title="Manufacturing program collection.")
+    target_count: Optional[int] = Field(None, title="Number of items to produce.")
+    status: BatchStatus = Field(..., title="Status.")
 
 
 class Batch(BatchIn):
-    batch: str
+    """Batch of machining operations."""
+    batch: str = Field(..., title="Batch number or code.")
 
 
-class ListItem(Batch):
-    last: Optional[datetime]
+class BatchListItem(Batch):
+    """Batch of machining operations, with last date."""
+    last: Optional[datetime] = Field(None, title="Date of the last machining.")
 
 
 batch_list_sql = open("models/batch_list.sql").read()

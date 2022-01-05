@@ -12,17 +12,18 @@ import common.db_helpers
 
 
 class Project(I4cBaseModel):
-    name: str
-    status: ProjectStatusEnum
-    versions: List[str] = Field(..., title="List of versions. Numbers are version numbers others are labels.")
-    extra: Optional[Dict[str, str]] = Field({})
+    """Collection of programs needed for machining a product."""
+    name: str = Field(..., title="Name.")
+    status: ProjectStatusEnum = Field(..., title="Status.")
+    versions: List[str] = Field(..., title="List of versions. Numbers are version numbers, others are labels.")
+    extra: Optional[Dict[str, str]] = Field({}, title="Additional data, e.g. external identifiers.")
 
 
 class ProjectPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    status: Optional[List[ProjectStatusEnum]]
-    extra: Optional[Dict[str, str]]
-    has_extra: List[str]  # TODO check if all keys exist
+    flipped: Optional[bool] = Field(None, title="Pass if the condition is not met.")
+    status: Optional[List[ProjectStatusEnum]] = Field(None, title="Has any of the listed statuses.")
+    extra: Optional[Dict[str, str]] = Field(None, title="All the listed extra values are set and match.")
+    has_extra: List[str] = Field(None, title="Has the listed extra values.")  # TODO check if all keys exist
 
     def match(self, project:Project):
         r = ( ((self.status is None) or (project.status in self.status))
@@ -35,8 +36,9 @@ class ProjectPatchCondition(I4cBaseModel):
 
 
 class ProjectPatchChange(I4cBaseModel):
-    status: Optional[ProjectStatusEnum]
-    extra: Optional[Dict[str,str]]
+    """Change to a project."""
+    status: Optional[ProjectStatusEnum] = Field(None, title="Set the status.")
+    extra: Optional[Dict[str,str]] = Field(None, title="Add extra values.")
     # TODO set_extra del_extra
 
     def is_empty(self):
@@ -44,11 +46,13 @@ class ProjectPatchChange(I4cBaseModel):
 
 
 class ProjectPatchBody(I4cBaseModel):
-    conditions: Optional[List[ProjectPatchCondition]] = Field([])
-    change: ProjectPatchChange
+    """Update to a project. If all conditions are met, the change is carried out."""
+    conditions: Optional[List[ProjectPatchCondition]] = Field([], title="Conditions evaluated before the change.")
+    change: ProjectPatchChange = Field(..., title="Changes.")
 
 
 class ProjectIn(I4cBaseModel):
+    """Collection of programs needed for machining a product. Input."""
     name: str
     status: ProjectStatusEnum = Field("active")
     # todo 5: This should be Optional[Dict[str,str]] insted of json data.
@@ -56,9 +60,10 @@ class ProjectIn(I4cBaseModel):
 
 
 class GitFile(I4cBaseModel):
-    repo: str
-    name: str
-    commit: str
+    """File in a GIT repository."""
+    repo: str = Field(..., title="Address of the repository.")
+    name: str = Field(..., title="File name with relative path if needed.")
+    commit: str = Field(..., title="Id of the commit.")
 
     def __eq__(self, other):
         if not isinstance(other, GitFile):
@@ -76,7 +81,8 @@ class GitFile(I4cBaseModel):
 
 
 class UncFile(I4cBaseModel):
-    name: str
+    """File on the network. Version control is not provided, use folders or file name elements."""
+    name: str = Field(..., title="Full path and name.")
 
     def __eq__(self, other):
         if not isinstance(other, UncFile):
@@ -92,8 +98,9 @@ class UncFile(I4cBaseModel):
 
 
 class IntFile(I4cBaseModel):
-    name: str
-    ver: int
+    """Internalized file. Can be managed with the intfile endpoints."""
+    name: str = Field(..., title="Logical name.")
+    ver: int = Field(..., title="Version number.")
 
     def __eq__(self, other):
         if not isinstance(other, IntFile):
@@ -110,10 +117,11 @@ class IntFile(I4cBaseModel):
 
 
 class ProjFile(I4cBaseModel):
-    savepath: str
-    file_git: Optional[GitFile]
-    file_unc: Optional[UncFile]
-    file_int: Optional[IntFile]
+    """File in the project. Exactly one of file_git, file_unc and file_int must be provided."""
+    savepath: str = Field(..., title="Logical name of the target file.")
+    file_git: Optional[GitFile] = Field(None, title="GIT file.")
+    file_unc: Optional[UncFile] = Field(None, title="Network file.")
+    file_int: Optional[IntFile] = Field(None, title="Internal file.")
 
     @validator('savepath')
     def check_savepath(cls, v):
@@ -153,23 +161,29 @@ class ProjFile(I4cBaseModel):
 
 
 class FileWithProjInfo(ProjFile):
-    project_name: str
-    project_ver: int
+    """Result of file search."""
+    project_name: str = Field(..., title="Containing project.")
+    project_ver: int = Field(..., title="Containing project version.")
 
 
 class ProjectVersion(I4cBaseModel):
+    """
+    Project version. Projects are subject to versioning. Projects in use can't be changed, but new versions can be
+    created. Versions can be labeled.
+    """
     ver: int = Field(..., title="Version number.")
     labels: List[str] = Field(..., title="List of labels.")
-    status: ProjectVersionStatusEnum
-    files: List[ProjFile]
+    status: ProjectVersionStatusEnum = Field(..., title="Status.")
+    files: List[ProjFile] = Field(..., title="Contained files.")
 
 
 class ProjectVersionPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    status: Optional[List[ProjectVersionStatusEnum]]
-    has_label: Optional[bool]
-    exist_label: Optional[str]
-    exist_label_in_proj: Optional[str]
+    """Condition to a project version update."""
+    flipped: Optional[bool] = Field(False, title="Pass if the condition is not met.")
+    status: Optional[List[ProjectVersionStatusEnum]] = Field(None, title="Has any of the listed statuses.")
+    has_label: Optional[bool] = Field(None, title="Has any labels set.")
+    exist_label: Optional[str] = Field(None, title="Has the label.")
+    exist_label_in_proj: Optional[str] = Field(None, title="The label is set on any versions of the project.")
 
     def match(self, pv:ProjectVersion, pi: Project):
         r = ((self.status is None) or (pv.status in self.status)) \
@@ -184,11 +198,12 @@ class ProjectVersionPatchCondition(I4cBaseModel):
 
 
 class ProjectVersionPatchChange(I4cBaseModel):
-    status: Optional[ProjectVersionStatusEnum]
-    clear_label: Optional[List[str]]
-    set_label: Optional[List[str]]
-    add_file: Optional[List[ProjFile]]
-    del_file: Optional[List[str]]
+    """Change to a project version. Unset members are ignored."""
+    status: Optional[ProjectVersionStatusEnum] = Field(None, title="New status.")
+    clear_label: Optional[List[str]] = Field(None, title="Remove the labels.")
+    set_label: Optional[List[str]] = Field(None, title="Set the labels.")
+    add_file: Optional[List[ProjFile]] = Field(None, title="Add files.")
+    del_file: Optional[List[str]] = Field(None, title="Remove files.")
 
     def is_empty(self):
         return ( self.status is None
@@ -199,8 +214,9 @@ class ProjectVersionPatchChange(I4cBaseModel):
 
 
 class ProjectVersionPatchBody(I4cBaseModel):
-    conditions: List[ProjectVersionPatchCondition] = Field([])
-    change: ProjectVersionPatchChange
+    """Update to a project version. Conditions are evaluated, and if met, change is carried out."""
+    conditions: List[ProjectVersionPatchCondition] = Field([], title="Conditions to be evaluated before the change.")
+    change: ProjectVersionPatchChange = Field(..., title="Change to be carried out.")
 
 
 class GetProjectsVersions(Enum):

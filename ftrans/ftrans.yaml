@@ -1,3 +1,4 @@
+Profile: bot
 Robot:
   SourcePath: sources\robot
   ArchivePath: archive\robot

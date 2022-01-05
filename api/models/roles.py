@@ -10,17 +10,20 @@ path_list = []
 
 
 class Priv(I4cBaseModel):
-    endpoint: str
-    features: Optional[List[str]] = Field([])
+    """Access to an endpoint."""
+    endpoint: str = Field(..., title="Endpoint.")
+    features: Optional[List[str]] = Field([], title="Additional rights within the endpoint.")
 
 
 class RoleIn(I4cBaseModel):
-    subroles: Optional[List[str]] = Field([])
-    privs: Optional[List[Priv]] = Field([])
-    status: CommonStatusEnum = Field("active")
+    """Group of privileges forming a typical role. Input."""
+    subroles: Optional[List[str]] = Field([], title="Contained other roles.")
+    privs: Optional[List[Priv]] = Field([], title="Granted privileges.")
+    status: CommonStatusEnum = Field("active", title="Status.")
 
 
 class Role(RoleIn):
+    """Group of privileges forming a typical role."""
     name: str
 
 

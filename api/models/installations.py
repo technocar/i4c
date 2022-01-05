@@ -14,19 +14,21 @@ from models.intfiles import get_internal_file_name
 
 
 class Installation(I4cBaseModel):
-    id: int
-    ts: datetime
-    project: str
-    invoked_version: str
-    real_version: int
-    status: InstallationStatusEnum
-    status_msg: Optional[str]
-    files: List[str] = Field([])
+    """Installation event. Serves as a request or an archive record of an installation."""
+    id: int = Field(..., title="Identifier.")
+    ts: datetime = Field(..., title="Timestamp of creation.")
+    project: str = Field(..., title="Project to be installed.")
+    invoked_version: str = Field(..., title="Project version number or label requested.")
+    real_version: int = Field(..., title="Actual project version, label resolved.")
+    status: InstallationStatusEnum = Field(..., title="Status of installation.")
+    status_msg: Optional[str] = Field(..., title="Reason associated with the status.")
+    files: List[str] = Field([], title="List of files to be installed.")
 
 
 class InstallationPatchCondition(I4cBaseModel):
-    flipped: Optional[bool] = Field(False, title="Negate the condition")
-    status: Optional[List[InstallationStatusEnum]]
+    """Conditions before an update to an installation."""
+    flipped: Optional[bool] = Field(False, title="Pass if the condition is not met.")
+    status: Optional[List[InstallationStatusEnum]] = Field(None, title="Has any of the given statuses.")
 
     def match(self, ins:Installation):
         r = ((self.status is None) or (ins.status in self.status))
@@ -37,17 +39,18 @@ class InstallationPatchCondition(I4cBaseModel):
 
 
 class InstallationPatchChange(I4cBaseModel):
-    status: Optional[InstallationStatusEnum]
-    status_msg: Optional[str]
+    """Changes to an installation."""
+    status: Optional[InstallationStatusEnum] = Field(None, title="Set the status.")
+    status_msg: Optional[str] = Field(None, title="Set the status message.")
 
     def is_empty(self):
         return self.status is None and self.status_msg is None
 
 
 class InstallationPatchBody(I4cBaseModel):
-    conditions: List[InstallationPatchCondition]
-    change: InstallationPatchChange
-
+    """Update to an installation. The change will be carried out if all conditions are met."""
+    conditions: List[InstallationPatchCondition] = Field(..., title="Conditions to check before the update.")
+    change: InstallationPatchChange = Field(..., title="Change to be carried out.")
 
 
 async def new_installation(credentials, project, version,

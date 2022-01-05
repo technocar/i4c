@@ -13,20 +13,22 @@ import pytz
 router = I4cApiRouter(include_path="/alarm")
 
 
-@router.put("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_set")
+@router.put("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_set",
+            summary="Update alarm definition.")
 async def alarmdef_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/alarm/defs/{name}")),
-    name: str = Path(...),
+    name: str = Path(..., title="Identifier name."),
     alarm: models.alarm.AlarmDefIn = Body(...),
 ):
     """Create or update alarm definition."""
     return await models.alarm.alarmdef_put(credentials, name, alarm)
 
 
-@router.get("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_get")
+@router.get("/defs/{name}", response_model=models.alarm.AlarmDef, operation_id="alarm_get",
+            summary="Retrieve alarm definition.")
 async def alarmdef_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs/{name}")),
-    name: str = Path(...),
+    name: str = Path(..., title="Identifier name."),
 ):
     """Retrieve definition of alarm."""
     res = await models.alarm.alarmdef_get(credentials, name)
@@ -35,24 +37,26 @@ async def alarmdef_get(
     return res
 
 
-@router.get("/defs", response_model=List[models.alarm.AlarmDef], operation_id="alarm_list")
+@router.get("/defs", response_model=List[models.alarm.AlarmDef], operation_id="alarm_list",
+            summary="List alarm definitions.")
 async def alarmdef_list(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs")),
-    name_mask: Optional[List[str]] = Query(None),
+    name_mask: Optional[List[str]] = Query(None, title="Search phrase for the name."),
     report_after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
-    subs_status: Optional[CommonStatusEnum] = Query(None),
-    subs_method: Optional[models.alarm.AlarmMethod] = Query(None),
-    subs_address: Optional[str] = Query(None),
-    subs_address_mask: Optional[List[str]] = Query(None),
-    subs_user: Optional[str] = Query(None),
-    subs_user_mask: Optional[List[str]] = Query(None)
+    subs_status: Optional[CommonStatusEnum] = Query(None, title="Has a subscriber with the status."),
+    subs_method: Optional[models.alarm.AlarmMethod] = Query(None, title="Has a subscriber via this method."),
+    subs_address: Optional[str] = Query(None, title="Has a subscriber with this exact address."),
+    subs_address_mask: Optional[List[str]] = Query(None, title="Has a subscriber with address matching this search expression."),
+    subs_user: Optional[str] = Query(None, title="User subscribing."),
+    subs_user_mask: Optional[List[str]] = Query(None, title="Search expression for a subscriber user name.")
 ):
     """List alarm definitions."""
     return await models.alarm.alarmdef_list(credentials, name_mask, report_after,
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
-@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups", features=["any user"])
+@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups",
+            summary="List subscription groups.", features=["any user"])
 async def subsgroups_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups", ask_features=["any user"])),
         user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):
@@ -60,31 +64,36 @@ async def subsgroups_list(
     return await models.alarm.subsgroups_list(credentials, user)
 
 
-# TODO GET /alarm/subsgroups/{grp}  --> {name, users:[]}
-# PUT /alarm/subsgroups/{grp}     <-- {name, users:[]}
+# TODO 1: ****** GET /alarm/subsgroups/{grp}  --> {name, users:[]}
+#                PUT /alarm/subsgroups/{grp}  <-- {users:[]}
+#                DELETE /alarm/subsgroups/{grp}?forced
+#                    forced = bool default false. if true, kick users.
+#                    IF SET FOR AN ALARM, ALWAYS RETURN ERROR, even if forced=true
 
 
-@router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers")
+@router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers",
+            summary="List subscribers.")
 async def alarmsub_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
-        id: Optional[str] = Query(None),
-        group: Optional[str] = Query(None),
-        group_mask: Optional[List[str]] = Query(None),
-        user: Optional[str] = Query(None),
-        user_name: Optional[str] = Query(None),
-        user_name_mask: Optional[List[str]] = Query(None),
-        method: Optional[models.alarm.AlarmMethod] = Query(None),
-        status: Optional[CommonStatusEnum] = Query(None),
-        address: Optional[str] = Query(None),
-        address_mask: Optional[List[str]] = Query(None),
-        alarm: Optional[str] = Query(None)):
+        id: Optional[str] = Query(None, title="Identifier."),
+        group: Optional[str] = Query(None, title="Member of the group."),
+        group_mask: Optional[List[str]] = Query(None, title="Search phrase for a group name."),
+        user: Optional[str] = Query(None, title="Identifier of the user."),
+        user_name: Optional[str] = Query(None, title="Exact user name."),
+        user_name_mask: Optional[List[str]] = Query(None, title="Search phrase for user name."),
+        method: Optional[models.alarm.AlarmMethod] = Query(None, title="Method."),
+        status: Optional[CommonStatusEnum] = Query(None, title="Status."),
+        address: Optional[str] = Query(None, title="Exact address."),
+        address_mask: Optional[List[str]] = Query(None, title="Search phrase for address."),
+        alarm: Optional[str] = Query(None, title="Subscribes to this alarm.")):
     """Get the list of subscribers"""
     # TODO feature to list subs of other users
     return await models.alarm.alarmsub_list(credentials, id, group, group_mask, user, user_name, user_name_mask,
                                             method, status, address, address_mask, alarm)
 
 
-@router.get("/subs/{id}", response_model=models.alarm.AlarmSub, operation_id="alarm_subscriber")
+@router.get("/subs/{id}", response_model=models.alarm.AlarmSub, operation_id="alarm_subscriber",
+            summary="Retrieve subscriber.")
 async def alarmsub_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{id}")),
         id: int = Path(...)):
@@ -96,7 +105,8 @@ async def alarmsub_get(
     raise I4cClientNotFound("No record found")
 
 
-@router.post("/subs", response_model=models.alarm.AlarmSub, operation_id="alarm_subscribe")
+@router.post("/subs", response_model=models.alarm.AlarmSub, operation_id="alarm_subscribe",
+             summary="Create subscriber.")
 async def post_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/subs")),
     alarmsub: models.alarm.AlarmSubIn = Body(...),
@@ -106,7 +116,8 @@ async def post_alarmsub(
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
-@router.patch("/subs/{id}", response_model=models.common.PatchResponse, operation_id="alarm_subscription_update")
+@router.patch("/subs/{id}", response_model=models.common.PatchResponse, operation_id="alarm_subscription_update",
+              summary="Update subscriber.")
 async def patch_alarmsub(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{id}")),
     id: int = Path(...),
@@ -118,12 +129,12 @@ async def patch_alarmsub(
 
 
 @router.post("/events/check", response_model=List[models.alarm.AlarmEventCheckResult], operation_id="alarm_check",
-             features=['noaudit'])
+             summary="Check for alarm conditions.", features=['noaudit'])
 async def check_alarmevent(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check", ask_features=['noaudit'])),
-    alarm: Optional[str] = Query(None),
-    max_count: Optional[int] = Query(None),
-    noaudit: bool = Query(False)
+    alarm: Optional[str] = Query(None, title="Only check this alarm."),
+    max_count: Optional[int] = Query(None, title="Stop after creating this many events."),
+    noaudit: bool = Query(False, title="Don't write audit record. Requires special privilege.")
 ):
     """Check alarms and create events if an alarm state is detected."""
     def hun_tz(dt):
@@ -134,23 +145,25 @@ async def check_alarmevent(
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)
 
 
-@router.get("/events", response_model=List[models.alarm.AlarmEvent], operation_id="alarm_events")
+@router.get("/events", response_model=List[models.alarm.AlarmEvent], operation_id="alarm_events",
+            summary="List alarm events.")
 async def alarmevent_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/events")),
-        id: Optional[str] = Query(None),
-        alarm: Optional[str] = Query(None),
-        alarm_mask: Optional[List[str]] = Query(None),
-        user: Optional[str] = Query(None),
-        user_name: Optional[str] = Query(None),
-        user_name_mask: Optional[List[str]] = Query(None),
-        before: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
-        after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
+        id: Optional[str] = Query(None, title="."),
+        alarm: Optional[str] = Query(None, title="Exact alarm name."),
+        alarm_mask: Optional[List[str]] = Query(None, title="Alarm name search expression."),
+        user: Optional[str] = Query(None, title="User identifier."),
+        user_name: Optional[str] = Query(None, title="Exact user name."),
+        user_name_mask: Optional[List[str]] = Query(None, title="User name search expression."),
+        before: Optional[datetime] = Query(None, title="Created before, iso timestamp."),
+        after: Optional[datetime] = Query(None, title="Created after, iso timestamp."),
 ):
     """List alarm events."""
     return await models.alarm.alarmevent_list(credentials, id, alarm, alarm_mask, user, user_name, user_name_mask, before, after)
 
 
-@router.get("/events/{id}", response_model=models.alarm.AlarmEvent, operation_id="alarm_event")
+@router.get("/events/{id}", response_model=models.alarm.AlarmEvent, operation_id="alarm_event",
+            summary="Retrieve alarm event.")
 async def alarmevent_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/events/{id}")),
         id: int = Path(...)):
@@ -162,27 +175,28 @@ async def alarmevent_get(
 
 
 @router.get("/recips", response_model=List[models.alarm.AlarmRecip], operation_id="alarm_recips",
-            features=['noaudit'])
+            summary="List alarm recipients.", features=['noaudit'])
 async def alarmrecips_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips", ask_features=['noaudit'])),
         id: Optional[str] = Query(None),
-        alarm: Optional[str] = Query(None),
-        alarm_mask: Optional[List[str]] = Query(None),
-        event: Optional[int] = Query(None),
-        user: Optional[str] = Query(None),
-        user_name: Optional[str] = Query(None),
-        user_name_mask: Optional[List[str]] = Query(None),
-        user_status: Optional[CommonStatusEnum] = Query(None),
-        method: Optional[models.alarm.AlarmMethod] = Query(None),
-        status: Optional[models.alarm.AlarmRecipientStatus] = Query(None),
-        noaudit: bool = Query(False)
+        alarm: Optional[str] = Query(None, title="Exact alarm name."),
+        alarm_mask: Optional[List[str]] = Query(None, title="Alarm name search expression."),
+        event: Optional[int] = Query(None, title="Event id."),
+        user: Optional[str] = Query(None, title="User identifier."),
+        user_name: Optional[str] = Query(None, title="Exact user name."),
+        user_name_mask: Optional[List[str]] = Query(None, title="User name search expression."),
+        user_status: Optional[CommonStatusEnum] = Query(None, title="User status."),
+        method: Optional[models.alarm.AlarmMethod] = Query(None, title="Notification method."),
+        status: Optional[models.alarm.AlarmRecipientStatus] = Query(None, title="Notification status."),
+        noaudit: bool = Query(False, title="Don't write audit record. Requires special privilege.")
 ):
     """List the recipients of an alarm event."""
     return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
                                                user, user_name, user_name_mask, user_status, method, status)
 
 
-@router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, operation_id="alarm_recip")
+@router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, operation_id="alarm_recip",
+            summary="Retrieve alarm recipient.")
 async def alarmrecips_get(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips/{id}")),
         id: int = Path(...)):
@@ -193,7 +207,8 @@ async def alarmrecips_get(
     raise I4cClientNotFound("No record found")
 
 
-@router.patch("/recips/{id}", response_model=models.common.PatchResponse, operation_id="alarm_recip_update")
+@router.patch("/recips/{id}", response_model=models.common.PatchResponse, operation_id="alarm_recip_update",
+              summary="Update alarm recipient.")
 async def patch_alarmrecips(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/recips/{id}")),
     id: int = Path(...),

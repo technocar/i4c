@@ -9,6 +9,7 @@ class Device(str, Enum):
 
 
 class DeviceAuto(str, Enum):
+    """Device or 'auto' for automatic selection."""
     auto = "auto"
     mill = "mill"
     lathe = "lathe"
@@ -17,6 +18,7 @@ class DeviceAuto(str, Enum):
 
 
 class AlarmCondEventRel(str, Enum):
+    """Relation for alarm condition, event data type."""
     eq = "="
     neq = "!="
     contains = "*"
@@ -24,6 +26,7 @@ class AlarmCondEventRel(str, Enum):
 
 
 class CommonStatusEnum(str, Enum):
+    """Active or inactive"""
     active = "active"
     inactive = "inactive"
 

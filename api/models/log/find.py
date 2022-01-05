@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
+from pydantic import Field
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 from common.exceptions import I4cClientError
 
@@ -7,23 +8,25 @@ view_find_sql = open("models/log/find.sql").read()
 
 
 class DataPointKey(I4cBaseModel):
-    timestamp: datetime
-    sequence: int
-    device: str
-    data_id: str
+    """Unique identifier of a data point in the log."""
+    timestamp: datetime = Field(..., title="Exact time the data was collected.")
+    sequence: int = Field(..., title="Sequence, used to determine order when the timestamp is identical.")
+    device: str = Field(..., title="Originating device.")
+    data_id: str = Field(..., title="Data type.")
 
 
 class DataPoint(I4cBaseModel):
-    timestamp: datetime
-    sequence: int
-    device: str
-    instance: Optional[str]
-    data_id: str
+    """One data point in the log."""
+    timestamp: datetime = Field(..., title="Exact time the data was collected.")
+    sequence: int = Field(..., title="Sequence, used to determine order when the timestamp is identical.")
+    device: str = Field(..., title="Originating device.")
+    instance: Optional[str] = Field(None, title="Identifies a session on a device. Changes when turned off.")
+    data_id: str = Field(..., title="Data type.")
     value: Optional[str]
-    value_num: Optional[float]
-    value_text: Optional[str]
-    value_extra: Optional[str]
-    value_add: Optional[str]
+    value_num: Optional[float] = Field(None, title="Numeric value")
+    value_text: Optional[str] = Field(None, title="Text value")
+    value_extra: Optional[str] = Field(None, title="Additional text value")
+    value_add: Optional[str] = Field(None, title="Other information") # TODO this should not be str
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,

@@ -1,69 +1,108 @@
+from __future__ import annotations
 import os
 import json
 import datetime
+import isodate
 import urllib.request
 import urllib.error
 import urllib.parse
-from typing import List, Dict, Any
+from typing import List, Dict
+from dataclasses import dataclass, field
 from .tools import jsonify
 
 
+@dataclass
 class Schema:
-    title: str
-    description: str
-    is_array: bool
-    required: bool
-    type: str
-    type_fmt: str
-    type_enum: List[str]
-    sch_obj: str
+    title: str = None
+    description: str = None
+    is_array: bool = None
+    required: bool = None
+    type: str = None
+    type_fmt: str = None
+    type_enum: List[str] = None
+    sch_obj: str = None
+    properties: Dict[str, Schema] = None
 
     def __repr__(self):
-        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
+        # TODO can we do it smarter?
+        # basically we are having this func only to omit the properties on non-objects
+        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items() if f != "properties" or self.type == "object")
         flds = ", ".join(flds)
         return f"{self.__class__.__name__}({flds})"
 
+    def type_desc(self, *, brief=True):
+        type_name = self.sch_obj or self.type
+        if not self.is_array and brief:
+            return type_name
+        if self.is_array and not brief:
+            return f"A list of {type_name}."
+        if not self.is_array and not brief:
+            return type_name + "."
+        if self.is_array and brief:
+            return f"{type_name}[]"
 
+    def describe(self, *, brief=False):
+        if brief:
+            return self.title or self.description or self.type_desc()
+        else:
+            return self.description or self.title or self.type_desc()
+
+
+@dataclass
+class Response(Schema):
+    content_type: str = None
+
+
+@dataclass
 class Body(Schema):
-    content_type: str
+    content_type: str = None
 
 
+@dataclass
 class Param(Schema):
-    location: str # path | query
+    location: str = None # path | query
 
 
 def nice_name(s):
     return " ".join(word.capitalize() for word in s.split("_"))
 
 
+@dataclass
 class Action:
-    title: str
-    description: str
-    authentication: str  # noauth, basic, unknown
-    response_type: str
-    response_class: str
-    params: Dict[str, Param]
-    body: Body
-    path: str
-    method: str
-    raw: dict
-
-    def __repr__(self):
-        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items() if f != "raw")
-        flds = ", ".join(flds)
-        return f"Action({flds})"
+    summary: str = None
+    description: str = None
+    authentication: str = None  # noauth, basic, unknown
+    response: Response = None
+    params: Dict[str, Param] = None
+    body: Body = None
+    path: str = field(repr=False, default=None)
+    method: str = field(repr=False, default=None)
+    raw: dict = field(repr=False, default=None)
 
     def help(self):
         s = []
-        if self.summary:
-            s.append(self.summary)
-            s.append("")
         if self.description:
             s.append(self.description)
         if not s:
             return nice_name(self.raw["operationId"])
-        s.append(f"Calls {self.method.upper()} {self.path}")
+        if self.response is not None:
+            if self.response.sch_obj is not None:
+                typedesc = self.response.sch_obj
+                if self.response.is_array:
+                    typedesc = f"a list of {typedesc}"
+                s.append(f"Returns {typedesc}, see `doc\xa0{self.response.sch_obj}` for details.")
+            else:
+                if self.response.content_type == "application/json": ct = "json"
+                elif self.response.content_type == "application/octet-stream": ct = "binary"
+                elif self.response.content_type == "text/plain": ct = "text"
+                elif self.response.content_type == "text/html": ct = "html"
+                else: ct = self.response.content_type
+                s.append(f"Returns {ct}.")
+        s.append(f"Calls {self.method.upper()}\xa0{self.path}")
         return "\n".join(s)
+
+    def short_help(self):
+        return self.summary or  self.description or  nice_name(self.raw["operationId"])
 
     def assemble_url(self, **kwargs):
         method = self.method.upper()
@@ -87,12 +126,11 @@ class Action:
                     if not isinstance(val, list) and not isinstance(val, tuple):
                         val = [val]
                     for i in val:
-                        if isinstance(i, datetime.datetime):
+                        if any(isinstance(i, t) for t in (datetime.datetime, datetime.date, datetime.time)):
                             i = i.isoformat()
+                        if isinstance(i, datetime.timedelta):
+                            i = isodate.duration_isoformat(i)
                         elif not isinstance(i, str) and not isinstance(i, bytes):
-                            # TODO there should be a whole lot more conversions
-                            # datetime
-                            # period
                             i = str(i)
                         i = urllib.parse.quote(i)
                         queries.append(pn + "=" + i)
@@ -122,13 +160,9 @@ class Action:
         return body, content_type
 
 
+@dataclass
 class Obj:
-    actions: Dict[str, Action]
-
-    def __repr__(self):
-        flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items())
-        flds = ", ".join(flds)
-        return f"Obj({flds})"
+    actions: Dict[str, Action] = None
 
     def __getitem__(self, item):
         return self.actions[item]
@@ -140,10 +174,6 @@ class Obj:
         if act is None or act2 is not None:
             raise KeyError()
         return act
-
-
-class Schema:
-    pass # TODO
 
 
 def _proc_auth(a):
@@ -171,6 +201,7 @@ def _proc_sch(sch, target):
         target.sch_obj = None
 
     target.title = sch.get("title", None)
+    target.description = sch.get("description", None)
     target.type = sch.get("type", "unknown")
     target.is_array = target.type == "array"
     if target.is_array:
@@ -179,14 +210,38 @@ def _proc_sch(sch, target):
     else:
         typeroot = sch
     target.sch_obj = typeroot.get("$ref", None)
+    if target.sch_obj and target.sch_obj.startswith("#/components/schemas/"):
+        target.sch_obj = target.sch_obj[21:]
     target.type_fmt = typeroot.get("format", None)
     target.type_enum = typeroot.get("enum", None)
 
+    props = sch.get("properties", None)
+    if props is not None:
+        target.properties = {}
+        for prop_name, prop in props.items():
+            propo = Schema()
+            _proc_sch(prop, propo)
+            target.properties[prop_name] = propo
+
 
 def preproc_def(apidef):
-    # TODO bring singular allOf to parent level
-
+    # this could lead to infinite recursion. not an issue with our API.
     def descend(level):
+        if "allOf" in level:
+            for sub in level["allOf"]:
+                for k, v in sub.items():
+                    level[k] = v
+            del level["allOf"]
+
+        if "anyOf" in level:
+            subs = level["anyOf"]
+            if len(subs) == 1:
+                sub = subs[0]
+                for k, v in sub.items():
+                    level[k] = v
+                del level["anyOf"]
+            # TODO what can we do with multivalued anyOf?
+
         if "$ref" in level:
             refd = level["$ref"]
             if refd.startswith("#/components/schemas/"):
@@ -196,7 +251,11 @@ def preproc_def(apidef):
                 if k not in level:
                     level[k] = v
         for (k, v) in level.items():
-            if isinstance(v, dict):
+            if isinstance(v, list):
+                for i in v:
+                    if isinstance(i, dict):
+                        descend(i)
+            elif isinstance(v, dict):
                 descend(v)
 
     descend(apidef)
@@ -224,7 +283,11 @@ class I4CDef:
 
         preproc_def(self.content)
 
-        # TODO collect schema objects
+        self.schema = {}
+        for (sch_name, sch) in self.content["components"]["schemas"].items():
+            scho = Schema()
+            _proc_sch(sch, scho)
+            self.schema[sch_name] = scho
 
         for (path, methods) in self.content["paths"].items():
             for (method, info) in methods.items():
@@ -279,7 +342,16 @@ class I4CDef:
                 else:
                     action.body = None
 
-                # TODO fill in response
+                resp = info.get("responses", None)
+                resp = resp and (resp.get("200", None) or resp.get("201", None))
+                resp = resp and resp.get("content", None)
+                if resp:
+                    ct, ctdef = next(iter(resp.items()), (None, None))
+                    ctdef = ctdef and ctdef.get("schema", None)
+                    resp = Response()
+                    resp.content_type = ct
+                    _proc_sch(ctdef, resp)
+                    action.response = resp
 
                 obj.actions[action_name] = action
 

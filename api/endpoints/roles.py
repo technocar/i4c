@@ -9,7 +9,7 @@ from common.exceptions import I4cClientNotFound
 router = I4cApiRouter(include_path="/roles")
 
 
-@router.get("", response_model=List[models.roles.Role], operation_id="role_list")
+@router.get("", response_model=List[models.roles.Role], operation_id="role_list", summary="List roles.")
 async def get_roles(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/roles")),
     active_only: Optional[bool] = Query(True)
@@ -18,7 +18,7 @@ async def get_roles(
     return await models.roles.get_roles(credentials, active_only=active_only)
 
 
-@router.get("/{name}", response_model=models.roles.Role, operation_id="role_get")
+@router.get("/{name}", response_model=models.roles.Role, operation_id="role_get", summary="Retrieve role.")
 async def get_role(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/roles/{name}")),
     name: str = Path(...)
@@ -30,7 +30,7 @@ async def get_role(
     return res[0]
 
 
-@router.put("/{name}", response_model=models.roles.Role, operation_id="role_set")
+@router.put("/{name}", response_model=models.roles.Role, operation_id="role_set", summary="Create or update role.")
 async def role_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/roles/{name}")),
     name: str = Path(...),

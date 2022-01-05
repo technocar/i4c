@@ -1,3 +1,4 @@
+import sys
 import datetime
 import json
 import functools
@@ -17,3 +18,16 @@ def jsonify(*pars, **kwpars):
     kwpars["default"] = new_default
 
     return json.dumps(*pars, **kwpars)
+
+
+def resolve_file(fn):
+    """
+    Resolves filename parameter. @<file> will be read from file, - will read from stdin, otherwise the
+    parameter itself is returned.
+    """
+    if fn == "-":
+        return sys.stdin.read()
+    if fn is not None and fn.startswith("@"):
+        with open(fn[1:], "r") as f:
+            return f.read()
+    return fn

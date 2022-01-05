@@ -1,10 +1,14 @@
 import sys
 import jinja2
 import json
-import jsonpath_ng
-import datetime
+import jsonpath_ng.ext
+import isodate
+import logging
 import click
 import click.formatting
+from .tools import jsonify, resolve_file
+
+log = logging.getLogger("i4c")
 
 
 def format_time(time, format_str):
@@ -13,7 +17,7 @@ def format_time(time, format_str):
 
     if isinstance(time, str):
         try:
-            time = datetime.datetime.fromisoformat(time) # TODO not stable
+            time = isodate.parse_datetime(time)
         except Exception as e:
             log.debug(f"can't parse time: {time}")
             return "???"
@@ -33,7 +37,6 @@ def make_jinja_env():
     env.filters["jd"] = json.dumps
     env.filters["format_time"] = format_time
     env.filters["ft"] = format_time
-    # TODO moar filters?
     return env
 
 
@@ -81,7 +84,7 @@ def process_json(response, outexpr, outfile, template):
                 item_str = str(item)
 
         if not outfile:
-            sys.stdout.write(item_str)  # TODO determine if we need click.echo() instead
+            sys.stdout.write(item_str)
         else:
             fn = outfile.render(itemdict)
             log.debug(f"writing item to {fn}")

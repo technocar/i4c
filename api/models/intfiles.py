@@ -2,10 +2,9 @@ import os
 from hashlib import sha384
 from textwrap import dedent
 from typing import Optional
-
+from pydantic import Field
 from fastapi.security import HTTPBasicCredentials
 from starlette.responses import FileResponse
-
 import common
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection
@@ -13,10 +12,11 @@ from common.exceptions import I4cClientError, I4cClientNotFound
 
 
 class FileDetail(I4cBaseModel):
-    name:str
-    ver: int
-    size: Optional[int]
-    hash: str
+    """Information about an internal file."""
+    name: str = Field(..., title="Name, optionally including path.")
+    ver: int = Field(..., title="Version.")
+    size: Optional[int] = Field(..., title="Physical size in bytes.")
+    hash: str = Field(..., title="Content hash.")
 
 
 def get_internal_file_name(hash):

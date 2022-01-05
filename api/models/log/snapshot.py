@@ -1,81 +1,93 @@
 from datetime import datetime
 from typing import Optional, List
+from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 from common.exceptions import I4cServerError
 from ..enums import DeviceAuto
 
 
 class SnapshotStatusStatus(I4cBaseModel):
-    value: Optional[str]
-    since: Optional[float]
+    """Timed status field of the device in a snapshot."""
+    value: Optional[str] = Field(None, title="Device status.")
+    since: Optional[float] = Field(None, title="Not changed since, seconds.")
 
 
 class SnapshotStatusNCS(I4cBaseModel):
-    name: Optional[str]
-    comment: Optional[str]
-    since: Optional[float]
+    """Timed name and comment field in a snapshot."""
+    name: Optional[str] = Field(None, title="Name.")
+    comment: Optional[str] = Field(None, title="Comment.")
+    since: Optional[float] = Field(None, title="Not changed since, seconds.")
 
 
 class SnapshotStatusInt(I4cBaseModel):
-    num: Optional[int]
-    since: Optional[float]
+    """Timed numeric (integer) field in a shapshot."""
+    num: Optional[int] = Field(None, title="Number.")
+    since: Optional[float] = Field(None, title="Not changed since, seconds.")
 
 
 class SnapshotStatusStr(I4cBaseModel):
-    status: Optional[str]
-    since: Optional[float]
+    """Timed string field in a snapshot."""
+    status: Optional[str] = Field(None, title="String.")
+    since: Optional[float] = Field(None, title="Not changed since, seconds.")
 
 
 class SnapshotAxis(I4cBaseModel):
-    name: Optional[str]
-    mode: Optional[str]
-    pos: Optional[float]
-    load: Optional[float]
-    rate: Optional[float]
+    """Axis information in a snapshot."""
+    name: Optional[str] = Field(None, title="Axis name.")
+    mode: Optional[str] = Field(None, title="Mode of operation.")
+    pos: Optional[float] = Field(None, title="Position.")
+    load: Optional[float] = Field(None, title="Load.")
+    rate: Optional[float] = Field(None, title="Motion rate.")
 
 
 class SnapshotStatus(I4cBaseModel):
-    status: SnapshotStatusStatus
-    program: SnapshotStatusNCS
-    subprogram: SnapshotStatusNCS
-    unit: SnapshotStatusInt
-    sequence: SnapshotStatusInt
-    tool: SnapshotStatusInt
-    door: SnapshotStatusStr
-    lin_axes: List[SnapshotAxis]
-    rot_axes: List[SnapshotAxis]
+    """The device status part of a snapshot."""
+    status: SnapshotStatusStatus = Field(..., title="Device status.")
+    program: SnapshotStatusNCS = Field(..., title="Active program.")
+    subprogram: SnapshotStatusNCS = Field(..., title="Active subprogram.")
+    unit: SnapshotStatusInt = Field(..., title="Active program unit.")
+    sequence: SnapshotStatusInt = Field(..., title="Active program sequence.")
+    tool: SnapshotStatusInt = Field(..., title="Selected tool.")
+    door: SnapshotStatusStr = Field(..., title="Door state.")
+    lin_axes: List[SnapshotAxis] = Field(..., title="Linear axes.")
+    rot_axes: List[SnapshotAxis] = Field(..., title="Rotary axes.")
 
 
 class SnapshotEvent(I4cBaseModel):
-    data_id: str
-    name: Optional[str]
-    timestamp: Optional[datetime]
-    value: Optional[str]
+    """Event item of a snapshot."""
+    data_id: str = Field(..., title="Event type.")
+    name: Optional[str] = Field(..., title="Event name.")
+    timestamp: Optional[datetime] = Field(..., title="Timestamp.")
+    value: Optional[str] = Field(..., title="Value.")
 
 
 class SnapshotCondition(I4cBaseModel):
-    severity: str
-    data_id: str
-    name: Optional[str]
-    message: Optional[str]
-    since: Optional[float]
+    """Active condition in a snapshot"""
+    severity: str = Field(..., title="Severity.")
+    data_id: str = Field(..., title="Condition type.")
+    name: Optional[str] = Field(..., title="Condition name.")
+    message: Optional[str] = Field(..., title="Message.")
+    since: Optional[float] = Field(..., title="Active since, seconds.")
 
 
 class MazakSnapshot(I4cBaseModel):
-    status: SnapshotStatus
-    event_log: List[SnapshotEvent]
-    conditions: List[SnapshotCondition]
+    """Snapshot of a Mazak machine."""
+    status: SnapshotStatus = Field(..., title="Status panel.")
+    event_log: List[SnapshotEvent] = Field(..., title="Recent events")
+    conditions: List[SnapshotCondition] = Field(..., title="Active conditions.")
 
 
 class SimpleSnapshot(I4cBaseModel):
+    """Simple snapshot."""
     event_log: List[SnapshotEvent]
 
 
 class Snapshot(I4cBaseModel):
-    mill: Optional[MazakSnapshot]
-    lathe: Optional[MazakSnapshot]
-    gom: Optional[SimpleSnapshot]
-    robot: Optional[SimpleSnapshot]
+    """Snapshot of the cell at a given timestamp. Only one part is returned, based on the request."""
+    mill: Optional[MazakSnapshot] = Field(None, title="Milling machine.")
+    lathe: Optional[MazakSnapshot] = Field(None, title="Lathe.")
+    gom: Optional[SimpleSnapshot] = Field(None, title="GOM scanner.")
+    robot: Optional[SimpleSnapshot] = Field(None, title="Robot.")
 
 
 view_snapshot_sql = open("models/log/snapshot.sql").read()

@@ -34,16 +34,15 @@ class StatUser(I4cBaseModel):
         return StatUser(**d)
 
 
-
 class StatTimeseriesFilter(I4cBaseModel):
-    """ category="EVENT" only """
+    """Time series query, filter for Event data types."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
-    device: str
-    data_id: str
-    rel: AlarmCondEventRel
-    value: str
-    age_min: Optional[float] = Field(None, description="sec")
-    age_max: Optional[float] = Field(None, description="sec")
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Event type.")
+    rel: AlarmCondEventRel = Field(..., title="Relation.")
+    value: str = Field(..., title="Value.")
+    age_min: Optional[float] = Field(None, description="In effect for at least this many seconds.")
+    age_max: Optional[float] = Field(None, description="In effect for at most this many seconds.")
 
     @classmethod
     async def load_filters(cls, conn, timeseries):
@@ -77,9 +76,9 @@ class StatTimeseriesFilter(I4cBaseModel):
 
 
 class StatTimeseriesMetric(I4cBaseModel):
-    """ category="SAMPLE" only """
-    device: str
-    data_id: str
+    """Time series query, the shown metric (Sample data type)."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Numeric data type.")
 
 
 class StatAggMethod(str, Enum):
@@ -92,25 +91,27 @@ class StatAggMethod(str, Enum):
 
 
 class StatTimeseriesSeriesName(str, Enum):
+    """Time series query, series naming rule."""
     separator_event = "separator_event"
     sequence = "sequence"
     timestamp = "timestamp"
 
 
 class StatTimeseriesXAxis(str, Enum):
+    """Time series query, X axis."""
     timestamp = "timestamp"
     sequence = "sequence"
 
 
-class StatTimeseriesType(str, Enum):
+class StatTimeseriesType(str, Enum):      # TODO how is this Timeseries?
     timeseries = "timeseries"
     xy = "xy"
 
 
-class StatSepEvent(I4cBaseModel):
-    """ category="EVENT" only """
-    device: str
-    data_id: str
+class StatSepEvent(I4cBaseModel):      # TODO how is this NOT timeseries?
+    """Time series query, Event selection."""
+    device: str = Field(..., title="Device.")
+    data_id: str = Field(..., title="Event type.")
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -124,7 +125,8 @@ class StatSepEvent(I4cBaseModel):
 
 
 class StatVisualSettingsAxis(I4cBaseModel):
-    caption: Optional[str]
+    """Axis settings for charts."""
+    caption: Optional[str] = Field(None, title="Caption.")
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -137,6 +139,7 @@ class StatVisualSettingsAxis(I4cBaseModel):
 
 
 class StatVisualSettingsLegendPosition(str, Enum):
+    """Legend position for charts."""
     Top = 'top'
     Bottom = 'bottom'
     Left = 'left'
@@ -145,12 +148,14 @@ class StatVisualSettingsLegendPosition(str, Enum):
 
 
 class StatVisualSettingsLegendAlign(str, Enum):
+    """Legend alingment for charts."""
     Start = 'start'
     Center = 'center'
     End = 'end'
 
 
 class StatVisualSettingsLegend(I4cBaseModel):
+    """Legend settings for charts."""
     position: Optional[StatVisualSettingsLegendPosition]
     align: Optional[StatVisualSettingsLegendAlign]
 
@@ -166,6 +171,7 @@ class StatVisualSettingsLegend(I4cBaseModel):
 
 
 class StatVisualSettingsTooltip(I4cBaseModel):
+    """Tooltip template for charts."""
     html: Optional[str]
 
     @classmethod
@@ -179,6 +185,7 @@ class StatVisualSettingsTooltip(I4cBaseModel):
 
 
 class StatVisualSettings(I4cBaseModel):
+    """Visual settings for charts."""
     title: Optional[str]
     subtitle: Optional[str]
     xaxis: Optional[StatVisualSettingsAxis]
@@ -233,17 +240,21 @@ class StatVisualSettings(I4cBaseModel):
 
 
 class StatTimeseriesDef(I4cBaseModel):
-    after: Optional[datetime]
-    before: Optional[datetime]
-    duration: Optional[str]
-    filter: List[StatTimeseriesFilter]
-    metric: StatTimeseriesMetric
-    agg_func: Optional[StatAggMethod]
-    agg_sep: Optional[StatSepEvent]
-    series_sep: Optional[StatSepEvent]
-    series_name: Optional[StatTimeseriesSeriesName]
-    xaxis: StatTimeseriesXAxis
-    visualsettings: StatVisualSettings
+    """
+    Time series query definition. After and before are exclusive. If both omitted, before defaults to now.
+    If before is set, duration is required. If after is set, default duration extends to now.
+    """
+    after: Optional[datetime] = Field(None, title="Query data after this time.")
+    before: Optional[datetime] = Field(None, title="Query data before this time.")
+    duration: Optional[str] = Field(None, title="Observed period length.")
+    filter: List[StatTimeseriesFilter] = Field(..., title="Event and Condition filters.")
+    metric: StatTimeseriesMetric = Field(..., title="The displayed metric, numeric data type.")
+    agg_func: Optional[StatAggMethod] = Field(None, title="Aggregation function, if needed.")
+    agg_sep: Optional[StatSepEvent] = Field(None, title="Event separating data points, if aggregation is used.")
+    series_sep: Optional[StatSepEvent] = Field(None, title="Event separating series, if needed.")
+    series_name: Optional[StatTimeseriesSeriesName] = Field(None, title="Rule for naming series.")
+    xaxis: StatTimeseriesXAxis = Field(..., title="What is on the x axis.")
+    visualsettings: StatVisualSettings = Field(..., title="Chart settings.")
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -361,6 +372,7 @@ class StatTimeseriesDef(I4cBaseModel):
 
 
 class StatXYObjectType(str, Enum):
+    """Virtual object type."""
     workpiece = "workpiece"
     mazakprogram = "mazakprogram"
     mazaksubprogram = "mazaksubprogram"
@@ -369,6 +381,7 @@ class StatXYObjectType(str, Enum):
 
 
 class StatXYObjectParam(I4cBaseModel):
+    """Parameter for parametrized virtual objects."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
     key: str
     value: Optional[str]
@@ -395,6 +408,10 @@ class StatXYObjectParam(I4cBaseModel):
 
 
 class StatXYObject(I4cBaseModel):
+    """
+    Virtual object definition. Virtual objects represent meaningful views of the log, possibly combined with
+    user provided metadata. E.g. workpieces, program executions.
+    """
     type: StatXYObjectType
     params: List[StatXYObjectParam]
 
@@ -435,6 +452,7 @@ class StatXYFilterRel(str, Enum):
 
 
 class StatXYFilter(I4cBaseModel):
+    """XY query filter."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
     field: str
     rel: StatXYFilterRel
@@ -466,18 +484,22 @@ class StatXYFilter(I4cBaseModel):
 
 
 class StatXYDef(I4cBaseModel):
-    obj: StatXYObject
-    after: Optional[datetime]
-    before: Optional[datetime]
-    duration: Optional[str]
-    x: str
-    y: Optional[str]
-    shape: Optional[str]
-    color: Optional[str]
-    other: List[str]
+    """
+    XY query definition. After and before are exclusive. If both omitted, before defaults to now.
+    If before is set, duration is required. If after is set, default duration extends to now.
+    """
+    obj: StatXYObject = Field(..., title="Virtual object to show.")
+    after: Optional[datetime] = Field(None, title="Query data after this time.")
+    before: Optional[datetime] = Field(None, title="Query data before this time.")
+    duration: Optional[str] = Field(None, title="Observed period length.")
+    x: str = Field(..., title="Numeric field to show on X axis.")
+    y: Optional[str] = Field(None, title="Numeric field to show on Y axis.")
+    shape: Optional[str] = Field(None, title="Field to represent as dot shape.")
+    color: Optional[str] = Field(None, title="Field to represent as dot color.")
+    other: List[str] = Field(..., title="Fields to be used in the tooltip.")
     other_internal: List[StatXYOther] = Field([], hidden_from_schema=True)
-    filter: List[StatXYFilter]
-    visualsettings: StatVisualSettings
+    filter: List[StatXYFilter] = Field(..., title="Filters.")
+    visualsettings: StatVisualSettings = Field(..., title="Chart settings.")
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -601,10 +623,11 @@ class StatXYDef(I4cBaseModel):
 
 
 class StatDefIn(I4cBaseModel):
-    name: str
-    shared: bool
-    timeseriesdef: Optional[StatTimeseriesDef]
-    xydef: Optional[StatXYDef]
+    """Query definition. Input. Exactly one of timeseriesdef or xydef must be given."""
+    name: str = Field(..., title="Name.")
+    shared: bool = Field(..., title="If set, everyone can run.")
+    timeseriesdef: Optional[StatTimeseriesDef] = Field(..., title="Time series definition.")
+    xydef: Optional[StatXYDef] = Field(..., title="XY query definition.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -615,14 +638,16 @@ class StatDefIn(I4cBaseModel):
 
 
 class StatDef(StatDefIn):
-    id: int
-    user: StatUser
-    modified: datetime
+    """Query definition. Exactly one of timeseriesdef or xydef is set."""
+    id: int = Field(..., title="Identifier.")
+    user: StatUser = Field(..., title="Owner of the query.")
+    modified: datetime = Field(..., title="Latest modification to the query.")
 
 
 class StatPatchCondition(I4cBaseModel):
-    flipped: Optional[bool]
-    shared: Optional[bool]
+    """Condition for a query definition update."""
+    flipped: Optional[bool] = Field(False, title="Pass if the condition is not met.")
+    shared: Optional[bool] = Field(None, title="Is shared.")
 
     def match(self, stat:StatDef):
         r = ((self.shared is None) or (stat.shared == self.shared))
@@ -634,9 +659,13 @@ class StatPatchCondition(I4cBaseModel):
 
 
 class StatPatchChange(I4cBaseModel):
-    shared: Optional[bool]
-    timeseriesdef: Optional[StatTimeseriesDef]
-    xydef: Optional[StatXYDef]
+    """
+    Change to a query. The timeseriesdef and xydef fields must conform with the current type of the query. It is not
+    possible to change a query from one type to another.
+    """
+    shared: Optional[bool] = Field(None, title="Set sharing.")
+    timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
+    xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -650,8 +679,9 @@ class StatPatchChange(I4cBaseModel):
 
 
 class StatPatchBody(I4cBaseModel):
-    conditions: List[StatPatchCondition]
-    change: StatPatchChange
+    """Update to a query. All conditions are checked, and passed, the change is carried out."""
+    conditions: List[StatPatchCondition] = Field(..., title="Conditions to check before the change.")
+    change: StatPatchChange = Field(..., title="Change to the query.")
 
 
 async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, name=None, name_mask=None,
@@ -842,24 +872,31 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
 
 
 class StatTimeseriesDataSeries(I4cBaseModel):
-    name: str
-    x_timestamp: Optional[List[datetime]]
-    x_relative: Optional[List[float]] = Field(None, description="relative sec to first item")
-    y: List[float]
+    """
+    One data series in a time series query. If the X axis represents time, the values are given in the X properties.
+    If the X properties are not given, the X axis should be a sequence. If X values are given, the length of the array
+    matches the Y array.
+    """
+    name: str = Field(..., title="Display name.")
+    x_timestamp: Optional[List[datetime]] = Field(None, title="X values if timestamp.")
+    x_relative: Optional[List[float]] = Field(None, title="X values, if relative time. Seconds.")
+    y: List[float] = Field(..., title="Data points.")
 
 
 class StatXYData(I4cBaseModel):
-    x: Union[float, str, None]
-    y: Optional[Union[float, str, None]]
-    shape: Optional[Union[float, str, None]]
-    color: Optional[Union[float, str, None]]
-    others: List[Union[float, str, None]]
+    """One dot in the XY query results."""
+    x: Union[float, str, None] = Field(None, title="Value to show on the X axis.")
+    y: Optional[Union[float, str, None]] = Field(None, title="Value to show on the Y axis.")
+    shape: Optional[Union[float, str, None]] = Field(None, title="Value to show as shape.")
+    color: Optional[Union[float, str, None]] = Field(None, title="Value to show as color.")
+    others: List[Union[float, str, None]] = Field(..., title="Values to show as tooltip.")
 
 
 class StatData(I4cBaseModel):
-    stat_def: StatDef
-    timeseriesdata: Optional[List[StatTimeseriesDataSeries]]
-    xydata: Optional[List[StatXYData]]
+    """Results of a query. Either timeseriesdata or xydata will be given."""
+    stat_def: StatDef = Field(..., title="Definition of the query.")
+    timeseriesdata: Optional[List[StatTimeseriesDataSeries]] = Field(None, title="Time series results.")
+    xydata: Optional[List[StatXYData]] = Field(None, title="XY query results.")
 
 
 def resolve_time_period(after, before, duration):
@@ -1018,44 +1055,45 @@ class StatXYMateFieldType(str, Enum):
     label = "label"
 
 
-class StatXYMetaFieldUnit(str, Enum):
+class StatObjMetaFieldUnit(str, Enum):
     percent = "percent"
     second = "second"
 
 
-class StatXYMetaField(I4cBaseModel):
+class StatObjMetaField(I4cBaseModel):
+    """Data field of a virtual object."""
     name: str
     displayname: str
     type: StatXYMateFieldType
     value_list: Optional[List[str]]
-    unit: Optional[StatXYMetaFieldUnit]
+    unit: Optional[StatObjMetaFieldUnit]
 
 
-class StatXYMetaObjectParamType(str, Enum):
+class StatObjMetaParamType(str, Enum):
+    """Data type of a virtual object parameter."""
     int = "int"
     float = "float"
     str = "str"
     datetime = "datetime"
 
 
-class StatXYMetaObjectParam(I4cBaseModel):
+class StatObjMetaParam(I4cBaseModel):
+    """Virtual object parameter."""
     name: str
-    type: StatXYMetaObjectParamType
+    type: StatObjMetaParamType
     label: str
 
 
-class StatXYMetaObject(I4cBaseModel):
-    name: str
-    displayname: str
-    fields: List[StatXYMetaField]
-    params: List[StatXYMetaObjectParam]
+class StaMetaObject(I4cBaseModel):
+    """XY query virtual object. Some object types require parameters."""
+    name: str = Field(..., title="Internal name.")
+    displayname: str = Field(..., title="Display name.")
+    fields: List[StatObjMetaField] = Field(..., title="Fields.")
+    params: List[StatObjMetaParam] = Field(..., title="Parameters defining the actual objects.")
 
 
-class StatXYMeta(I4cBaseModel):
-    objects: List[StatXYMetaObject]
-
-
-class StatXYMozakAxis(str, Enum):
+class StatXYMazakAxis(str, Enum):
+    """Axes of a Mazak machine. X,Y and Z axes are linear, B and C are rotary."""
     x = "x"
     y = "y"
     z = "z"
@@ -1067,7 +1105,7 @@ stat_xy_mazak_project_verison_sql = open("models/stat_xy_mazak_project_verison.s
 stat_xy_workpiece_batch_sql = open("models/stat_xy_workpiece_batch.sql").read()
 
 
-async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> StatXYMeta:
+async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> List[StaMetaObject]:
     if after is None:
         after = datetime.utcnow() - timedelta(days=365)
     async with DatabaseConnection(pconn) as conn:
@@ -1092,12 +1130,12 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                                 """))
 
         mazak_fields = [
-            StatXYMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="device", displayname="eszköz", type=StatXYMateFieldType.category,
-                            value_list=['mill', 'lathe']),
-            StatXYMetaField(name="program", displayname="program", type=StatXYMateFieldType.category,
-                            value_list=await get_value_list(dedent("""\
+            StatObjMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="device", displayname="eszköz", type=StatXYMateFieldType.category,
+                             value_list=['mill', 'lathe']),
+            StatObjMetaField(name="program", displayname="program", type=StatXYMateFieldType.category,
+                             value_list=await get_value_list(dedent("""\
                                 select distinct l.value_text
                                 from log l
                                 where
@@ -1106,35 +1144,35 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                                   and l.data_id='pgm'
                                 order by 1
                             """))),
-            StatXYMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
-                            value_list=[r["project"] for r in pv_db]),
-            StatXYMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
-                            value_list=[str(r["version"]) for r in pv_db]),
-            StatXYMetaField(name="workpiece good/bad", displayname="munkadarab jó/hibás",type=StatXYMateFieldType.category,
-                            value_list=good_bad_list),
-            StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second)
+            StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
+                             value_list=[r["project"] for r in pv_db]),
+            StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
+                             value_list=[str(r["version"]) for r in pv_db]),
+            StatObjMetaField(name="workpiece good/bad", displayname="munkadarab jó/hibás", type=StatXYMateFieldType.category,
+                             value_list=good_bad_list),
+            StatObjMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second)
         ]
-        for axis in StatXYMozakAxis:
+        for axis in StatXYMazakAxis:
             for agg in StatAggMethod:
                 mazak_fields.append(
-                    StatXYMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
+                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
 
-        mazakprogram = StatXYMetaObject(
+        mazakprogram = StaMetaObject(
             name=StatXYObjectType.mazakprogram,
             displayname="mazakprogram",
             fields=mazak_fields,
             params=[
-                StatXYMetaObjectParam(name="age_min", type=StatXYMetaObjectParamType.float, label="futás min (s)"),
-                StatXYMetaObjectParam(name="age_max", type=StatXYMetaObjectParamType.float, label="futás max (s)")
+                StatObjMetaParam(name="age_min", type=StatObjMetaParamType.float, label="futás min (s)"),
+                StatObjMetaParam(name="age_max", type=StatObjMetaParamType.float, label="futás max (s)")
             ]
         )
 
-        mazaksubprogram = StatXYMetaObject(**dict(mazakprogram))
+        mazaksubprogram = StaMetaObject(**dict(mazakprogram))
         mazaksubprogram.name = StatXYObjectType.mazaksubprogram
         mazaksubprogram.displayname = "mazaksubprogram"
         mazaksubprogram.fields = list(mazak_fields)
-        mazaksubprogram.fields.insert(4, StatXYMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category,
-                                                         value_list=await get_value_list(dedent("""\
+        mazaksubprogram.fields.insert(4, StatObjMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category,
+                                                          value_list=await get_value_list(dedent("""\
                                                              select distinct l.value_text
                                                              from log l
                                                              where
@@ -1146,19 +1184,19 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
                                       )
 
         workpiece_fields = [
-            StatXYMetaField(name="code", displayname="code", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
-            StatXYMetaField(name="batch", displayname="batch", type=StatXYMateFieldType.category,
-                            value_list=await get_value_list(stat_xy_workpiece_batch_sql)),
-            StatXYMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
-                            value_list=[r["project"] for r in pv_db]),
-            StatXYMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
-                            value_list=[str(r["version"]) for r in pv_db]),
-            StatXYMetaField(name="eval", displayname="eval", type=StatXYMateFieldType.category,
-                            value_list=good_bad_list),
-            StatXYMetaField(name="gom max deviance", displayname="gom max deviance", type=StatXYMateFieldType.numeric),
-            StatXYMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second)
+            StatObjMetaField(name="code", displayname="code", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
+            StatObjMetaField(name="batch", displayname="batch", type=StatXYMateFieldType.category,
+                             value_list=await get_value_list(stat_xy_workpiece_batch_sql)),
+            StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
+                             value_list=[r["project"] for r in pv_db]),
+            StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
+                             value_list=[str(r["version"]) for r in pv_db]),
+            StatObjMetaField(name="eval", displayname="eval", type=StatXYMateFieldType.category,
+                             value_list=good_bad_list),
+            StatObjMetaField(name="gom max deviance", displayname="gom max deviance", type=StatXYMateFieldType.numeric),
+            StatObjMetaField(name="runtime", displayname="futásidő", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second)
         ]
 
         sql = dedent("""\
@@ -1172,51 +1210,50 @@ async def get_xymeta(credentials, after: Optional[datetime], *, pconn=None, with
             order by 1""")
 
         for r in await conn.fetch(sql, after):
-            workpiece_fields.append(StatXYMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
+            workpiece_fields.append(StatObjMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
 
-        workpiece = StatXYMetaObject(
+        workpiece = StaMetaObject(
             name=StatXYObjectType.workpiece,
             displayname="munkadarab",
             fields=workpiece_fields,
             params=[]
         )
 
-        batch = StatXYMetaObject(
+        batch = StaMetaObject(
             name=StatXYObjectType.batch,
             displayname="batch",
             fields=[
-                StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
-                StatXYMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
-                                value_list=[r["project"] for r in pv_db]),
-                StatXYMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
-                                value_list=[str(r["version"]) for r in pv_db]),
-                StatXYMetaField(name="total wpc count", displayname="munkadarab szám", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="good wpc count", displayname="munkadarab jó", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="bad wpc count", displayname="munkadarab hibás", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="bad percent", displayname="hibás %", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.percent),
-                StatXYMetaField(name="time range total", displayname="időtartam", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
-                StatXYMetaField(name="time per wpc", displayname="idő/db", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
-                StatXYMetaField(name="time per good", displayname="idő/jó", type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
+                StatObjMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
+                StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
+                                 value_list=[r["project"] for r in pv_db]),
+                StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
+                                 value_list=[str(r["version"]) for r in pv_db]),
+                StatObjMetaField(name="total wpc count", displayname="munkadarab szám", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="good wpc count", displayname="munkadarab jó", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="bad wpc count", displayname="munkadarab hibás", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="bad percent", displayname="hibás %", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.percent),
+                StatObjMetaField(name="time range total", displayname="időtartam", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
+                StatObjMetaField(name="time per wpc", displayname="idő/db", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
+                StatObjMetaField(name="time per good", displayname="idő/jó", type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
             ],
             params=[]
         )
 
-        tool = StatXYMetaObject(
+        tool = StaMetaObject(
             name=StatXYObjectType.tool,
             displayname="tool",
             fields=[
-                StatXYMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
-                StatXYMetaField(name="type", displayname="típus", type=StatXYMateFieldType.category,
-                                value_list=await get_value_list('select distinct "type" from tools order by 1', params=[])),
-                StatXYMetaField(name="count used", displayname="használat szám", type=StatXYMateFieldType.numeric),
-                StatXYMetaField(name="accumulated cutting time", displayname="össz. használati idő",
-                                type=StatXYMateFieldType.numeric, unit=StatXYMetaFieldUnit.second),
+                StatObjMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
+                StatObjMetaField(name="type", displayname="típus", type=StatXYMateFieldType.category,
+                                 value_list=await get_value_list('select distinct "type" from tools order by 1', params=[])),
+                StatObjMetaField(name="count used", displayname="használat szám", type=StatXYMateFieldType.numeric),
+                StatObjMetaField(name="accumulated cutting time", displayname="össz. használati idő",
+                                 type=StatXYMateFieldType.numeric, unit=StatObjMetaFieldUnit.second),
             ],
             params=[]
         )
 
-        res = StatXYMeta(objects=[mazakprogram, mazaksubprogram, workpiece, batch, tool])
-        return res
+        return [mazakprogram, mazaksubprogram, workpiece, batch, tool]
 
 stat_xy_mazakprogram_sql = open("models/stat_xy_mazakprogram.sql").read()
 stat_xy_mazaksubprogram_sql = open("models/stat_xy_mazaksubprogram.sql").read()
@@ -1248,10 +1285,10 @@ async def load_measure_workpiece(conn, after, before, measure):
 async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     after, before = resolve_time_period(st.xydef.after, st.xydef.before, st.xydef.duration)
 
-    meta = await get_xymeta(credentials, after, pconn=conn)
+    meta = await get_objmeta(credentials, after, pconn=conn)
 
     res = StatData(stat_def=st, xydata=[])
-    meta = [m for m in meta.objects if m.name == st.xydef.obj.type]
+    meta = [m for m in meta if m.name == st.xydef.obj.type]
     if len(meta) != 1:
         raise I4cClientError("Invalid meta data")
     meta = meta[0]
@@ -1289,7 +1326,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
             raise Exception("Invalid field name: " + field_name)
         try:
             agg = StatAggMethod[match.group("agg")]
-            axis = StatXYMozakAxis[match.group("axis")]
+            axis = StatXYMazakAxis[match.group("axis")]
         except KeyError:
             raise Exception("Invalid field name: " + field_name)
         mf_device = dbo["mf_device"]
@@ -1297,7 +1334,7 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         mf_end = dbo["mf_end"]
         key = (mf_device, axis)
         if key not in agg_measures:
-            measure = axis + 'l' if axis != StatXYMozakAxis.b else 'al'
+            measure = axis + 'l' if axis != StatXYMazakAxis.b else 'al'
             prods_measure = await load_measure_mazak(conn, after, before, mf_device, measure)
             agg_measures[key] = prods_measure
         prods_measure = agg_measures[key]

@@ -2,13 +2,14 @@
 import base64
 import secrets
 from textwrap import dedent
+from pydantic import Field
 import common
 import models.users
 from common import I4cBaseModel, DatabaseConnection
 from common.exceptions import I4cClientError
 
 
-class LoginNameModel(I4cBaseModel):
+class LoginNameModel(I4cBaseModel):   # TODO why 'model' in the name?
     loginname: str
 
 
@@ -36,9 +37,10 @@ async def init(loginname):
 
 
 class SetPassParams(I4cBaseModel):
-    loginname: str
-    token: str
-    password: str
+    """Password reset data."""
+    loginname: str = Field(..., title="Login name.")
+    token: str = Field(..., title="Password reset token.")
+    password: str = Field(..., title="New password.")
 
 
 async def setpass(loginname, token, password, *, pconn=None):
@@ -73,9 +75,10 @@ async def setpass(loginname, token, password, *, pconn=None):
 
 
 class PwdresetOutboxItem(I4cBaseModel):
-    token: str
-    loginname: str
-    email: str
+    """Password reset to be sent."""
+    token: str = Field(..., title="Password reset token.")
+    loginname: str = Field(..., title="Login name.")
+    email: str = Field(..., title="User's email.")
 
 
 async def get_outbox_list(credentials):
