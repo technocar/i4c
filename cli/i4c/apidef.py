@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import json
 import datetime
+import isodate
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -24,7 +25,7 @@ class Schema:
 
     def __repr__(self):
         # TODO can we do it smarter?
-        # basically we are doing this only to omit the properties on non-objects
+        # basically we are having this func only to omit the properties on non-objects
         flds = (f"{f}={repr(v)}" for f,v in self.__dict__.items() if f != "properties" or self.type == "object")
         flds = ", ".join(flds)
         return f"{self.__class__.__name__}({flds})"
@@ -125,12 +126,11 @@ class Action:
                     if not isinstance(val, list) and not isinstance(val, tuple):
                         val = [val]
                     for i in val:
-                        if isinstance(i, datetime.datetime):
+                        if any(isinstance(i, t) for t in (datetime.datetime, datetime.date, datetime.time)):
                             i = i.isoformat()
+                        if isinstance(i, datetime.timedelta):
+                            i = isodate.duration_isoformat(i)
                         elif not isinstance(i, str) and not isinstance(i, bytes):
-                            # TODO there should be a whole lot more conversions
-                            # datetime
-                            # period
                             i = str(i)
                         i = urllib.parse.quote(i)
                         queries.append(pn + "=" + i)
@@ -219,13 +219,13 @@ def _proc_sch(sch, target):
     if props is not None:
         target.properties = {}
         for prop_name, prop in props.items():
-            # TODO would be nice to have some guard against infinite recursion
             propo = Schema()
             _proc_sch(prop, propo)
             target.properties[prop_name] = propo
 
 
 def preproc_def(apidef):
+    # this could lead to infinite recursion. not an issue with our API.
     def descend(level):
         if "allOf" in level:
             for sub in level["allOf"]:
@@ -233,8 +233,15 @@ def preproc_def(apidef):
                     level[k] = v
             del level["allOf"]
 
-        # TODO bring singular anyOf to parent level?
-        
+        if "anyOf" in level:
+            subs = level["anyOf"]
+            if len(subs) == 1:
+                sub = subs[0]
+                for k, v in sub.items():
+                    level[k] = v
+                del level["anyOf"]
+            # TODO what can we do with multivalued anyOf?
+
         if "$ref" in level:
             refd = level["$ref"]
             if refd.startswith("#/components/schemas/"):
@@ -244,7 +251,11 @@ def preproc_def(apidef):
                 if k not in level:
                     level[k] = v
         for (k, v) in level.items():
-            if isinstance(v, dict):
+            if isinstance(v, list):
+                for i in v:
+                    if isinstance(i, dict):
+                        descend(i)
+            elif isinstance(v, dict):
                 descend(v)
 
     descend(apidef)
