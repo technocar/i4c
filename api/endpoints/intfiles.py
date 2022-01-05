@@ -2,7 +2,7 @@
 from typing import List, Optional
 from fastapi import Depends, Path, Body, Query
 from fastapi.security import HTTPBasicCredentials
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 import common
 import models.intfiles
 from I4cAPI import I4cApiRouter
@@ -46,14 +46,11 @@ async def intfiles_put(
     return await models.intfiles.intfiles_put(credentials, ver, path, data)
 
 
-# TODO this should return either 204 or some meaningful response. now it is json null
-#      Gy: A "204-No Content"-el valami bug van a FastAPI-ban, nem akartam sok időt eltölteni a nyomozásával.
-#          https://github.com/tiangolo/fastapi/issues/717
-@router.delete("/v/{ver}/{path:path}", status_code=200, operation_id="intfile_delete", summary="Delete internal file.")
+@router.delete("/v/{ver}/{path:path}", status_code=204, response_class=Response, operation_id="intfile_delete", summary="Delete internal file.")
 async def intfiles_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(..., title="Version."),
     path: str = Path(..., title="Unique name.")
 ):
     """Delete an internal file."""
-    return await models.intfiles.intfiles_delete(credentials, ver, path)
+    await models.intfiles.intfiles_delete(credentials, ver, path)
