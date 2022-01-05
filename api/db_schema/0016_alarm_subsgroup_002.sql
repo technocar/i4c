@@ -21,3 +21,8 @@ ALTER TABLE alarm_subsgroup_map
 ADD CONSTRAINT fk_alarm_subsgroup_map__user
 FOREIGN KEY ("user") 
 REFERENCES "user" ("id");
+
+ALTER TABLE alarm 
+ADD CONSTRAINT fk_alarm__alarm_subsgroup
+FOREIGN KEY ("subsgroup") 
+REFERENCES alarm_subsgroup ("group");
