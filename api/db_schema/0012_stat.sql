@@ -1,10 +1,19 @@
 /* 
+drop table "stat_list_visual_setting_col";
+drop table "stat_list_visual_setting";
+drop table "stat_list_filter";
+drop table "stat_list_order_by";
+drop table "stat_list_object_params";
+drop table "stat_list";
+
 drop table "stat_xy_filter";
 drop table "stat_xy_other";
 drop table "stat_xy_object_params";
 drop table "stat_xy";
+
 drop table "stat_timeseries_filter";
 drop table "stat_timeseries";
+
 drop table "stat_visual_setting";
 drop table "stat";
 */
@@ -47,6 +56,7 @@ add column tooltip_html text null;
 GRANT ALL ON TABLE public."stat_visual_setting" TO aaa;
 GRANT ALL ON TABLE public."stat_visual_setting" TO postgres;
 
+/* **************** stat_timeseries **************** */
 
 create table "stat_timeseries" (
     id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
@@ -86,6 +96,7 @@ GRANT USAGE, SELECT ON SEQUENCE stat_timeseries_filter_id_seq TO aaa;
 GRANT ALL ON TABLE "stat_timeseries_filter" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_timeseries_filter_id_seq TO postgres;
 
+/* **************** stat_xy **************** */
 
 create table "stat_xy" (
     id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
@@ -147,15 +158,112 @@ GRANT USAGE, SELECT ON SEQUENCE stat_xy_filter_id_seq TO aaa;
 GRANT ALL ON TABLE "stat_xy_filter" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_xy_filter_id_seq TO postgres;
 
+/* **************** stat_list **************** */
+
+create table "stat_list" (
+    id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
+    
+    object_name character varying (200) not null,
+    
+    after timestamp with time zone NULL,
+    before timestamp with time zone NULL,
+    duration interval null
+); 
+
+
+GRANT ALL ON TABLE public."stat_list" TO aaa;
+GRANT ALL ON TABLE public."stat_list" TO postgres;
+
+create table "stat_list_object_params" (
+    id SERIAL PRIMARY KEY,
+    list integer not null constraint fk_pv references "stat_list" on delete cascade,
+    
+    key character varying (200) not null,
+    value character varying (200) null
+);
+
+GRANT ALL ON TABLE "stat_list_object_params" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_object_params_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_list_object_params" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_object_params_id_seq TO postgres;
+
+create table "stat_list_order_by" (
+    id SERIAL PRIMARY KEY,
+    list integer not null constraint fk_pv references "stat_list" on delete cascade,
+    
+    field character varying (200) not null,
+    ascending bool not null default true
+);
+
+GRANT ALL ON TABLE "stat_list_order_by" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_order_by_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_list_order_by" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_order_by_id_seq TO postgres;
+
+create table "stat_list_filter" (
+    id SERIAL PRIMARY KEY,
+    list integer not null constraint fk_pv references "stat_list" on delete cascade,
+    
+    field_name character varying (200) not null,
+    rel character varying (200) not null,
+    value character varying (200) not null
+);
+
+GRANT ALL ON TABLE "stat_list_filter" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_filter_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_list_filter" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_filter_id_seq TO postgres;
+
+
+create table "stat_list_visual_setting" (
+    id integer not null constraint fk_pv references "stat_list" on delete cascade PRIMARY KEY,
+    
+    title character varying (200) null,
+    subtitle character varying (200) null,
+    
+    header_bg character varying (200) null,
+    header_fg character varying (200) null,
+    normal_bg character varying (200) null,
+    normal_fg character varying (200) null,
+    even_bg character varying (200) null,
+    even_fg character varying (200) null
+); 
+
+
+GRANT ALL ON TABLE public."stat_list_visual_setting" TO aaa;
+GRANT ALL ON TABLE public."stat_list_visual_setting" TO postgres;
+
+create table "stat_list_visual_setting_col" (
+    id SERIAL PRIMARY KEY,
+    list integer not null constraint fk_pv references "stat_list" on delete cascade,
+    
+    field character varying (200) not null,
+    caption character varying (200) null,
+    width integer null
+); 
+
+
+GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO aaa;
+GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO postgres;
+
 
 
 /*
+delete from "stat_list_visual_setting_col" where id<0;
+delete from "stat_list_visual_setting" where id<0;
+delete from "stat_list_filter" where id<0;
+delete from "stat_list_order_by" where id<0;
+delete from "stat_list_object_params" where id<0;
+delete from "stat_list" where id<0;
+
 delete from "stat_xy_filter" where id<0;
 delete from "stat_xy_other" where id<0;
 delete from "stat_xy_object_params" where id<0;
 delete from "stat_xy" where id<0;
+
 delete from "stat_timeseries_filter" where id<0;
 delete from "stat_timeseries" where id<0;
+
 delete from "stat_visual_setting" where id<0;
 delete from "stat" where id<0;
 
@@ -165,6 +273,9 @@ insert into "stat_timeseries_filter" values (-2, -2, 'lathe', 'pgm', '*', 'a', n
 
 insert into "stat" values (-3, 'stat-2', '1', false , now());
 insert into "stat_xy" values (-3, 'mazakprogram', null, null, 'P1M'::interval, 'avg_x_load', 'avg_y_load', null, null); 
+
+insert into "stat" values (-4, 'stat-4', '1', false , now());
+insert into "stat_list" values (-3, 'mazakprogram', null, null, 'P1M'::interval); 
 
 
 */

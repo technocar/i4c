@@ -58,7 +58,7 @@ def check_signature(s, pubkey):
     except nacl.exceptions.BadSignatureError:
         return False, f"auth fail, signature bad"
     except Exception as e:
-        return False, f"auth fail, signature verify for user {login} throws {e}"
+        return False, f"auth fail, signature verify throws {e}"
 
     return True, f"auth signature ok"
 

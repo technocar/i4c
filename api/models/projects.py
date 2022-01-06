@@ -28,7 +28,7 @@ class ProjectPatchCondition(I4cBaseModel):
     def match(self, project:Project):
         r = ( ((self.status is None) or (project.status in self.status))
               and (self.extra is None) or all(project.extra[k] == v for (k, v) in self.extra.items())
-              and (self.has_extra is None) or all(k in project.extra for k in self.has_extra.keys()))
+              and (self.has_extra is None) or all(k in project.extra for k in self.has_extra))
         if self.flipped is None or not self.flipped:
             return r
         else:
@@ -275,6 +275,7 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
         write_debug_sql("get_projects.sql", sql, *params)
         res = await conn.fetch(sql, *params)
         res = [{k: (v if k != "extra" else json.loads(v)) for (k, v) in row.items()} for row in res] # TODO how pathetic is that? why does it return a string?
+        res = [Project(**d) for d in res]
         return res
 
 
@@ -300,7 +301,7 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
             project = await get_projects(credentials, name, pconn=conn)
             if len(project) == 0:
                 raise I4cClientError("Project not found")
-            project = Project(**project[0])
+            project = project[0]
 
             match = True
             for cond in patch.conditions:
@@ -403,7 +404,7 @@ async def post_projects_version(credentials, project_name, ver, files):
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             pi = await get_projects(credentials, project_name, pconn=conn, versions=GetProjectsVersions.versions_only)
-            pv = Project(**pi[0]).versions if len(pi) > 0 else []
+            pv = pi[0].versions if len(pi) > 0 else []
             if ver is None:
                 ver = 1
                 for v in pv:
