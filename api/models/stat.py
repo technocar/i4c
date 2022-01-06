@@ -371,7 +371,7 @@ class StatTimeseriesDef(I4cBaseModel):
         return StatTimeseriesDef(**d)
 
 
-class StatXYObjectType(str, Enum):
+class StatObjectType(str, Enum):
     """Virtual object type."""
     workpiece = "workpiece"
     mazakprogram = "mazakprogram"
@@ -380,7 +380,7 @@ class StatXYObjectType(str, Enum):
     tool = "tool"
 
 
-class StatXYObjectParam(I4cBaseModel):
+class StatObjectParam(I4cBaseModel):
     """Parameter for parametrized virtual objects."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
     key: str
@@ -390,7 +390,7 @@ class StatXYObjectParam(I4cBaseModel):
     async def load_params(cls, conn, xy_id):
         sql = "select * from stat_xy_object_params where xy = $1"
         res = await conn.fetch(sql, xy_id)
-        return [StatXYObjectParam(**r) for r in res]
+        return [StatObjectParam(**r) for r in res]
 
     async def insert_to_db(self, xy_id, conn):
         sql_insert = dedent("""\
@@ -401,19 +401,19 @@ class StatXYObjectParam(I4cBaseModel):
         self.id = (await conn.fetchrow(sql_insert, xy_id, self.key, self.value))[0]
 
     def __eq__(self, other):
-        if not isinstance(other, StatXYObjectParam):
+        if not isinstance(other, StatObjectParam):
             return False
         return ((self.key == other.key)
                 and (self.value == other.value))
 
 
-class StatXYObject(I4cBaseModel):
+class StatObject(I4cBaseModel):
     """
     Virtual object definition. Virtual objects represent meaningful views of the log, possibly combined with
     user provided metadata. E.g. workpieces, program executions.
     """
-    type: StatXYObjectType
-    params: List[StatXYObjectParam]
+    type: StatObjectType
+    params: List[StatObjectParam]
 
 
 class StatXYOther(I4cBaseModel):
@@ -488,7 +488,7 @@ class StatXYDef(I4cBaseModel):
     XY query definition. After and before are exclusive. If both omitted, before defaults to now.
     If before is set, duration is required. If after is set, default duration extends to now.
     """
-    obj: StatXYObject = Field(..., title="Virtual object to show.")
+    obj: StatObject = Field(..., title="Virtual object to show.")
     after: Optional[datetime] = Field(None, title="Query data after this time.")
     before: Optional[datetime] = Field(None, title="Query data before this time.")
     duration: Optional[str] = Field(None, title="Observed period length.")
@@ -615,7 +615,7 @@ class StatXYDef(I4cBaseModel):
 
         if d["id"] is None:
             return None
-        d["obj"] = StatXYObject(type=d["object_name"], params=d["object_param"])
+        d["obj"] = StatObject(type=d["object_name"], params=d["object_param"])
         d["x"] = d["x_field"]
         d["y"] = d["y_field"]
         d["visualsettings"] = StatVisualSettings.create_from_dict(d, "vs_")
@@ -766,7 +766,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                     d["st_filter"] = await StatTimeseriesFilter.load_filters(conn, d["st_id"])
                     timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_', ['vs_'])
                 if d["sx_id"] is not None:
-                    d["sx_object_param"] = await StatXYObjectParam.load_params(conn, d["sx_id"])
+                    d["sx_object_param"] = await StatObjectParam.load_params(conn, d["sx_id"])
                     d["sx_other"], d["sx_other_internal"] = await StatXYOther.load_others(conn, d["sx_id"])
                     d["sx_filter"] = await StatXYFilter.load_filters(conn, d["sx_id"])
                     xydef = StatXYDef.create_from_dict(d, 'sx_', ['vs_'])
@@ -1158,7 +1158,7 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
                     StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatXYMateFieldType.numeric))
 
         mazakprogram = StaMetaObject(
-            name=StatXYObjectType.mazakprogram,
+            name=StatObjectType.mazakprogram,
             displayname="mazakprogram",
             fields=mazak_fields,
             params=[
@@ -1168,7 +1168,7 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
         )
 
         mazaksubprogram = StaMetaObject(**dict(mazakprogram))
-        mazaksubprogram.name = StatXYObjectType.mazaksubprogram
+        mazaksubprogram.name = StatObjectType.mazaksubprogram
         mazaksubprogram.displayname = "mazaksubprogram"
         mazaksubprogram.fields = list(mazak_fields)
         mazaksubprogram.fields.insert(4, StatObjMetaField(name="subprogram", displayname="alprogram", type=StatXYMateFieldType.category,
@@ -1213,14 +1213,14 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
             workpiece_fields.append(StatObjMetaField(name=f"gom {r[0]} deviance", displayname=f"gom {r[0]} deviance", type=StatXYMateFieldType.numeric))
 
         workpiece = StaMetaObject(
-            name=StatXYObjectType.workpiece,
+            name=StatObjectType.workpiece,
             displayname="munkadarab",
             fields=workpiece_fields,
             params=[]
         )
 
         batch = StaMetaObject(
-            name=StatXYObjectType.batch,
+            name=StatObjectType.batch,
             displayname="batch",
             fields=[
                 StatObjMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
@@ -1240,7 +1240,7 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
         )
 
         tool = StaMetaObject(
-            name=StatXYObjectType.tool,
+            name=StatObjectType.tool,
             displayname="tool",
             fields=[
                 StatObjMetaField(name="id", displayname="id", type=StatXYMateFieldType.label),
@@ -1292,15 +1292,15 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
     if len(meta) != 1:
         raise I4cClientError("Invalid meta data")
     meta = meta[0]
-    if st.xydef.obj.type == StatXYObjectType.mazakprogram:
+    if st.xydef.obj.type == StatObjectType.mazakprogram:
         sql = stat_obj_mazakprogram_sql
-    elif st.xydef.obj.type == StatXYObjectType.mazaksubprogram:
+    elif st.xydef.obj.type == StatObjectType.mazaksubprogram:
         sql = stat_obj_mazaksubprogram_sql
-    elif st.xydef.obj.type == StatXYObjectType.workpiece:
+    elif st.xydef.obj.type == StatObjectType.workpiece:
         sql = stat_obj_workpiece_sql
-    elif st.xydef.obj.type == StatXYObjectType.batch:
+    elif st.xydef.obj.type == StatObjectType.batch:
         sql = stat_obj_batch_sql
-    elif st.xydef.obj.type == StatXYObjectType.tool:
+    elif st.xydef.obj.type == StatObjectType.tool:
         sql = stat_obj_tool_sql
     else:
         raise Exception("Not implemented")
@@ -1312,9 +1312,9 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         if "mf_"+field_name in dbo:
             return dbo["mf_" + field_name]
         else:
-            if st.xydef.obj.type in (StatXYObjectType.mazakprogram, StatXYObjectType.mazaksubprogram):
+            if st.xydef.obj.type in (StatObjectType.mazakprogram, StatObjectType.mazaksubprogram):
                 return await get_detail_field_mazak(dbo, field_name)
-            elif st.xydef.obj.type == StatXYObjectType.workpiece:
+            elif st.xydef.obj.type == StatObjectType.workpiece:
                 return await get_detail_field_workpiece(dbo, field_name)
             else:
                 raise Exception("Invalid field name: " + field_name)
