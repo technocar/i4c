@@ -1101,8 +1101,8 @@ class StatXYMazakAxis(str, Enum):
     c = "c"
 
 
-stat_xy_mazak_project_verison_sql = open("models/stat_xy_mazak_project_verison.sql").read()
-stat_xy_workpiece_batch_sql = open("models/stat_xy_workpiece_batch.sql").read()
+stat_obj_mazak_project_verison_sql = open("models/stat_obj_mazak_project_verison.sql").read()
+stat_obj_workpiece_batch_sql = open("models/stat_obj_workpiece_batch.sql").read()
 
 
 async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> List[StaMetaObject]:
@@ -1117,7 +1117,7 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
                 params = [after]
             return [r[0] for r in await conn.fetch(sql, *params) if r[0] is not None]
 
-        pv_db = (await conn.fetch(stat_xy_mazak_project_verison_sql, after)) if with_value_list else []
+        pv_db = (await conn.fetch(stat_obj_mazak_project_verison_sql, after)) if with_value_list else []
 
         good_bad_list = await get_value_list(dedent("""\
                                 select distinct l.value_text
@@ -1188,7 +1188,7 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
             StatObjMetaField(name="start", displayname="start", type=StatXYMateFieldType.label),
             StatObjMetaField(name="end", displayname="vége", type=StatXYMateFieldType.label),
             StatObjMetaField(name="batch", displayname="batch", type=StatXYMateFieldType.category,
-                             value_list=await get_value_list(stat_xy_workpiece_batch_sql)),
+                             value_list=await get_value_list(stat_obj_workpiece_batch_sql)),
             StatObjMetaField(name="project", displayname="project", type=StatXYMateFieldType.category,
                              value_list=[r["project"] for r in pv_db]),
             StatObjMetaField(name="project version", displayname="project verzió", type=StatXYMateFieldType.category,
@@ -1255,13 +1255,13 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
 
         return [mazakprogram, mazaksubprogram, workpiece, batch, tool]
 
-stat_xy_mazakprogram_sql = open("models/stat_xy_mazakprogram.sql").read()
-stat_xy_mazaksubprogram_sql = open("models/stat_xy_mazaksubprogram.sql").read()
-stat_xy_mazakprogram_measure_sql = open("models/stat_xy_mazakprogram_measure.sql").read()
-stat_xy_workpiece_sql = open("models/stat_xy_workpiece.sql").read()
-stat_xy_workpiece_measure_sql = open("models/stat_xy_workpiece_measure.sql").read()
-stat_xy_batch_sql = open("models/stat_xy_batch.sql").read()
-stat_xy_tool_sql = open("models/stat_xy_tool.sql").read()
+stat_obj_mazakprogram_sql = open("models/stat_obj_mazakprogram.sql").read()
+stat_obj_mazaksubprogram_sql = open("models/stat_obj_mazaksubprogram.sql").read()
+stat_obj_mazakprogram_measure_sql = open("models/stat_obj_mazakprogram_measure.sql").read()
+stat_obj_workpiece_sql = open("models/stat_obj_workpiece.sql").read()
+stat_obj_workpiece_measure_sql = open("models/stat_obj_workpiece_measure.sql").read()
+stat_obj_batch_sql = open("models/stat_obj_batch.sql").read()
+stat_obj_tool_sql = open("models/stat_obj_tool.sql").read()
 
 
 class LoadMeasureItem:
@@ -1271,14 +1271,14 @@ class LoadMeasureItem:
 
 
 async def load_measure_mazak(conn, after, before, mf_device, measure):
-    db_objs = await conn.fetch(stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
-    write_debug_sql(f"stat_xy_mazakprogram_measure__{mf_device}__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, mf_device, measure)
+    db_objs = await conn.fetch(stat_obj_mazakprogram_measure_sql, before, after, mf_device, measure)
+    write_debug_sql(f"stat_xy_mazakprogram_measure__{mf_device}__{measure}.sql", stat_obj_mazakprogram_measure_sql, before, after, mf_device, measure)
     return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
 
 
 async def load_measure_workpiece(conn, after, before, measure):
-    db_objs = await conn.fetch(stat_xy_workpiece_measure_sql, before, after, measure)
-    write_debug_sql(f"stat_xy_workpiece_measure__{measure}.sql", stat_xy_mazakprogram_measure_sql, before, after, measure)
+    db_objs = await conn.fetch(stat_obj_workpiece_measure_sql, before, after, measure)
+    write_debug_sql(f"stat_xy_workpiece_measure__{measure}.sql", stat_obj_mazakprogram_measure_sql, before, after, measure)
     return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
 
 
@@ -1293,15 +1293,15 @@ async def statdata_get_xy(credentials, st:StatDef, conn) -> StatData:
         raise I4cClientError("Invalid meta data")
     meta = meta[0]
     if st.xydef.obj.type == StatXYObjectType.mazakprogram:
-        sql = stat_xy_mazakprogram_sql
+        sql = stat_obj_mazakprogram_sql
     elif st.xydef.obj.type == StatXYObjectType.mazaksubprogram:
-        sql = stat_xy_mazaksubprogram_sql
+        sql = stat_obj_mazaksubprogram_sql
     elif st.xydef.obj.type == StatXYObjectType.workpiece:
-        sql = stat_xy_workpiece_sql
+        sql = stat_obj_workpiece_sql
     elif st.xydef.obj.type == StatXYObjectType.batch:
-        sql = stat_xy_batch_sql
+        sql = stat_obj_batch_sql
     elif st.xydef.obj.type == StatXYObjectType.tool:
-        sql = stat_xy_tool_sql
+        sql = stat_obj_tool_sql
     else:
         raise Exception("Not implemented")
     write_debug_sql(f"stat_xy_{st.xydef.obj.type}.sql", sql, before, after)
