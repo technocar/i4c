@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from fastapi import Depends, Body, Path, Query
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import Response
+
 import common
 import models.log
 import models.tools
@@ -29,8 +31,7 @@ async def tools_log_write(
     return await models.log.put_log_write(credentials, [d], override=True)
 
 
-# TODO response_model? or 204
-@router.delete("", status_code=200, operation_id="tool_delete", summary="Delete tool change.")
+@router.delete("", status_code=204, response_class=Response, operation_id="tool_delete", summary="Delete tool change.")
 async def tools_log_delete(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/tools")),
         datapointkey: models.tools.ToolDataPointKey = Body(...)):
@@ -41,7 +42,7 @@ async def tools_log_delete(
                                 sequence=datapointkey.sequence,
                                 device=datapointkey.device,
                                 data_id=datapointkey.data_id)
-    return await models.log.delete_log(credentials, d)
+    await models.log.delete_log(credentials, d)
 
 
 @router.patch("/{tool_id}", response_model=models.common.PatchResponse, operation_id="tool_update",
@@ -54,7 +55,7 @@ async def patch_tools(
     """
     Update or register a tool.
     """
-    return await models.tools.patch_project_version(credentials, tool_id, patch)   # TODO !!! wut? project version?
+    return await models.tools.patch_tool(credentials, tool_id, patch)
 
 
 @router.get("", response_model=List[models.tools.ToolDataPointType], operation_id="tool_list",
