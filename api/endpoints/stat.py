@@ -4,7 +4,6 @@ from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
 import common
 import models.stat
-import models.stat_virt_obj
 import models.common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
@@ -78,11 +77,11 @@ async def stat_data_get(
     return await models.stat.statdata_get(credentials, id)
 
 
-@router.get("/objmeta", response_model=List[models.stat_virt_obj.StatMetaObject], operation_id="stat_objmeta",
+@router.get("/objmeta", response_model=List[models.stat.StatMetaObject], operation_id="stat_objmeta",
             summary="Metadata for chart objects.")
 async def get_objmeta(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/objmeta")),
     after: Optional[datetime] = Query(None, title="timestamp", description="Iso format, defaults to last year."),
 ):
     """Get metadata for xy queries."""
-    return await models.stat_virt_obj.get_objmeta(credentials, after)
+    return await models.stat.get_objmeta(credentials, after)

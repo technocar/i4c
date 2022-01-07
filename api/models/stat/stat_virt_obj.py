@@ -6,7 +6,7 @@ from typing import Optional, List
 from pydantic import Field
 from common import DatabaseConnection, write_debug_sql
 from common import I4cBaseModel
-from models.stat_common import StatAggMethod, StatObjectType
+from .stat_common import StatAggMethod, StatObjectType
 
 
 class StatObjMateFieldType(str, Enum):
@@ -61,8 +61,8 @@ class StatObjMazakAxis(str, Enum):
     c = "c"
 
 
-stat_obj_mazak_project_verison_sql = open("models/stat_obj_mazak_project_verison.sql").read()
-stat_obj_workpiece_batch_sql = open("models/stat_obj_workpiece_batch.sql").read()
+stat_obj_mazak_project_verison_sql = open("models/stat/stat_obj_mazak_project_verison.sql").read()
+stat_obj_workpiece_batch_sql = open("models/stat/stat_obj_workpiece_batch.sql").read()
 
 
 async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, with_value_list=True) -> List[StatMetaObject]:
@@ -216,13 +216,13 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
         return [mazakprogram, mazaksubprogram, workpiece, batch, tool]
 
 
-stat_obj_mazakprogram_sql = open("models/stat_obj_mazakprogram.sql").read()
-stat_obj_mazaksubprogram_sql = open("models/stat_obj_mazaksubprogram.sql").read()
-stat_obj_mazakprogram_measure_sql = open("models/stat_obj_mazakprogram_measure.sql").read()
-stat_obj_workpiece_sql = open("models/stat_obj_workpiece.sql").read()
-stat_obj_workpiece_measure_sql = open("models/stat_obj_workpiece_measure.sql").read()
-stat_obj_batch_sql = open("models/stat_obj_batch.sql").read()
-stat_obj_tool_sql = open("models/stat_obj_tool.sql").read()
+stat_obj_mazakprogram_sql = open("models/stat/stat_obj_mazakprogram.sql").read()
+stat_obj_mazaksubprogram_sql = open("models/stat/stat_obj_mazaksubprogram.sql").read()
+stat_obj_mazakprogram_measure_sql = open("models/stat/stat_obj_mazakprogram_measure.sql").read()
+stat_obj_workpiece_sql = open("models/stat/stat_obj_workpiece.sql").read()
+stat_obj_workpiece_measure_sql = open("models/stat/stat_obj_workpiece_measure.sql").read()
+stat_obj_batch_sql = open("models/stat/stat_obj_batch.sql").read()
+stat_obj_tool_sql = open("models/stat/stat_obj_tool.sql").read()
 
 
 class LoadMeasureItem:

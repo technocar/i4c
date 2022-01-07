@@ -9,10 +9,10 @@ from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.db_tools import get_user_customer
 from common.exceptions import I4cClientError, I4cClientNotFound
 from models.common import PatchResponse
-from models.stat_common import StatObjectParam
-from models.stat_timeseries import StatTimeseriesDef, StatTimeseriesFilter, StatTimeseriesDataSeries, \
+from .stat_common import StatObjectParam
+from .stat_timeseries import StatTimeseriesDef, StatTimeseriesFilter, StatTimeseriesDataSeries, \
     statdata_get_timeseries
-from models.stat_xy import StatXYDef, StatXYOther, StatXYFilter, StatXYData, statdata_get_xy
+from .stat_xy import StatXYDef, StatXYOther, StatXYFilter, StatXYData, statdata_get_xy
 
 
 class StatUser(I4cBaseModel):

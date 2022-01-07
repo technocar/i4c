@@ -11,10 +11,9 @@ from common.exceptions import I4cServerError, I4cClientError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 import re
-
-from models.stat_common import StatObject, StatVisualSettings, resolve_time_period, StatObjectType, StatAggMethod, \
+from .stat_common import StatObject, StatVisualSettings, resolve_time_period, StatObjectType, StatAggMethod, \
     calc_aggregate
-from models.stat_virt_obj import get_objmeta, stat_obj_mazakprogram_sql, stat_obj_mazaksubprogram_sql, \
+from .stat_virt_obj import get_objmeta, stat_obj_mazakprogram_sql, stat_obj_mazaksubprogram_sql, \
     stat_obj_workpiece_sql, stat_obj_batch_sql, stat_obj_tool_sql, StatObjMazakAxis, load_measure_mazak, \
     load_measure_workpiece
 
