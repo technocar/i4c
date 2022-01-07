@@ -277,7 +277,7 @@ insert into "stat" values (-3, 'stat-2', '1', false , now());
 insert into "stat_xy" values (-3, 'mazakprogram', null, null, 'P1M'::interval, 'avg_x_load', 'avg_y_load', null, null); 
 
 insert into "stat" values (-4, 'stat-4', '1', false , now());
-insert into "stat_list" values (-3, 'mazakprogram', null, null, 'P1M'::interval); 
+insert into "stat_list" values (-4, 'mazakprogram', null, null, 'P1M'::interval); 
 
 
 */

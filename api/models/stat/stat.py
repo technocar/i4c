@@ -41,9 +41,9 @@ class StatDefIn(I4cBaseModel):
     """Query definition. Input. Exactly one of timeseriesdef or xydef must be given."""
     name: str = Field(..., title="Name.")
     shared: bool = Field(..., title="If set, everyone can run.")
-    timeseriesdef: Optional[StatTimeseriesDef] = Field(..., title="Time series definition.")
-    xydef: Optional[StatXYDef] = Field(..., title="XY query definition.")
-    listdef: Optional[StatListDef] = Field(..., title="List query definition.")
+    timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
+    xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
+    listdef: Optional[StatListDef] = Field(None, title="List query definition.")
 
 
     @root_validator
@@ -84,7 +84,7 @@ class StatPatchChange(I4cBaseModel):
     shared: Optional[bool] = Field(None, title="Set sharing.")
     timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
     xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
-    listdef: Optional[StatListDef] = Field(..., title="List query definition.")
+    listdef: Optional[StatListDef] = Field(None, title="List query definition.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -145,6 +145,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                       sl.object_name as sl_object_name,
                       sl.after as sl_after,
                       sl.before as sl_before,
+                      sl.duration::varchar(200) as sl_duration,
 
                       vs.title as vs_title,
                       vs.subtitle as vs_subtitle,

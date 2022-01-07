@@ -95,9 +95,10 @@ class StatListVisualSettings(I4cBaseModel):
     async def load_settings(cls, conn, id):
         sql = f"""select * from stat_list_visual_setting where id = $1"""
         res = await conn.fetchrow(sql, id)
-        if not res:
-            raise I4cServerError("No visual settings found")
-        res = StatListVisualSettings(**res, cols=[])
+        if res:
+            res = StatListVisualSettings(**res, cols=[])
+        else:
+            res = StatListVisualSettings(cols=[])
 
         sql = f"""select * from stat_list_visual_setting_col where list = $1 order by sortorder"""
         res_cols = await conn.fetch(sql, id)
