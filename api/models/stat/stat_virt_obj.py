@@ -6,7 +6,9 @@ from typing import Optional, List
 from pydantic import Field
 from common import DatabaseConnection, write_debug_sql
 from common import I4cBaseModel
-from .stat_common import StatAggMethod, StatObjectType
+from common.exceptions import I4cClientError
+from .stat_common import StatAggMethod, StatObjectType, StatObject, calc_aggregate
+import re
 
 
 class StatObjMateFieldType(str, Enum):
@@ -45,7 +47,7 @@ class StatObjMetaParam(I4cBaseModel):
 
 
 class StatMetaObject(I4cBaseModel):
-    """XY query virtual object. Some object types require parameters."""
+    """Virtual object. Some object types require parameters."""
     name: str = Field(..., title="Internal name.")
     displayname: str = Field(..., title="Display name.")
     fields: List[StatObjMetaField] = Field(..., title="Fields.")
@@ -233,11 +235,109 @@ class LoadMeasureItem:
 
 async def load_measure_mazak(conn, after, before, mf_device, measure):
     db_objs = await conn.fetch(stat_obj_mazakprogram_measure_sql, before, after, mf_device, measure)
-    write_debug_sql(f"stat_xy_mazakprogram_measure__{mf_device}__{measure}.sql", stat_obj_mazakprogram_measure_sql, before, after, mf_device, measure)
+    write_debug_sql(f"stat_mazakprogram_measure__{mf_device}__{measure}.sql", stat_obj_mazakprogram_measure_sql, before, after, mf_device, measure)
     return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
 
 
 async def load_measure_workpiece(conn, after, before, measure):
     db_objs = await conn.fetch(stat_obj_workpiece_measure_sql, before, after, measure)
-    write_debug_sql(f"stat_xy_workpiece_measure__{measure}.sql", stat_obj_mazakprogram_measure_sql, before, after, measure)
+    write_debug_sql(f"stat_workpiece_measure__{measure}.sql", stat_obj_mazakprogram_measure_sql, before, after, measure)
     return [LoadMeasureItem(x["timestamp"], x["value_num"]) for x in db_objs]
+
+
+class StatVirtObjFilterRel(str, Enum):
+    eq = "="
+    neq = "!="
+    less = "<"
+    leq = "<="
+    gtr = ">"
+    geq = ">="
+
+
+async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObject, conn):
+    meta = await get_objmeta(credentials, after, pconn=conn)
+
+    meta = [m for m in meta if m.name == virt_obj.type]
+    if len(meta) != 1:
+        raise I4cClientError("Invalid meta data")
+    meta = meta[0]
+    if virt_obj.type == StatObjectType.mazakprogram:
+        sql = stat_obj_mazakprogram_sql
+    elif virt_obj.type == StatObjectType.mazaksubprogram:
+        sql = stat_obj_mazaksubprogram_sql
+    elif virt_obj.type == StatObjectType.workpiece:
+        sql = stat_obj_workpiece_sql
+    elif virt_obj.type == StatObjectType.batch:
+        sql = stat_obj_batch_sql
+    elif virt_obj.type == StatObjectType.tool:
+        sql = stat_obj_tool_sql
+    else:
+        raise Exception("Not implemented")
+    write_debug_sql(f"stat_{virt_obj.type}.sql", sql, before, after)
+    db_objs = await conn.fetch(sql, before, after)
+
+    async def get_field_value(dbo, field_name:str, agg_measures):
+        if "mf_"+field_name in dbo:
+            return dbo["mf_" + field_name]
+        else:
+            if virt_obj.type in (StatObjectType.mazakprogram, StatObjectType.mazaksubprogram):
+                return await get_detail_field_mazak(dbo, field_name, agg_measures)
+            elif virt_obj.type == StatObjectType.workpiece:
+                return await get_detail_field_workpiece(dbo, field_name, agg_measures)
+            else:
+                raise Exception("Invalid field name: " + field_name)
+
+    async def get_detail_field_mazak(dbo, field_name, agg_measures):
+        regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
+        match = re.fullmatch(regex, field_name)
+        if not match:
+            raise Exception("Invalid field name: " + field_name)
+        try:
+            agg = StatAggMethod[match.group("agg")]
+            axis = StatObjMazakAxis[match.group("axis")]
+        except KeyError:
+            raise Exception("Invalid field name: " + field_name)
+        mf_device = dbo["mf_device"]
+        mf_start = dbo["mf_start"]
+        mf_end = dbo["mf_end"]
+        key = (mf_device, axis)
+        if key not in agg_measures:
+            measure = axis + 'l' if axis != StatObjMazakAxis.b else 'al'
+            prods_measure = await load_measure_mazak(conn, after, before, mf_device, measure)
+            agg_measures[key] = prods_measure
+        prods_measure = agg_measures[key]
+        age_min = [x.value for x in virt_obj.params if x.key == "age_min"]
+        age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
+        age_max = [x.value for x in virt_obj.params if x.key == "age_max"]
+        age_max = timedelta(seconds=float(age_max[0])) if age_max else None
+        prod_measure = [x.value_num for x in prods_measure
+                        if (mf_start + age_min <= x.timestamp < mf_end
+                            and x.timestamp < mf_start + age_max if age_max is not None else True)]
+        return calc_aggregate(agg, prod_measure, from_record=False)
+
+    async def get_detail_field_workpiece(dbo, field_name, agg_measures):
+        regex = r"gom (?P<measure>.+) deviance"
+        match = re.fullmatch(regex, field_name)
+        if not match:
+            raise Exception("Invalid field name: " + field_name)
+        measure = match.group("measure")
+
+        if measure == "max":
+            return max(filter(lambda x: x is not None,
+                              [await get_detail_field_workpiece(dbo, m.name, agg_measures) for m in meta.fields
+                               if re.fullmatch(regex, m.name) and (m.name != field_name)]),
+                       default=None)
+
+        mf_start = dbo["mf_start"]
+        mf_end = dbo["mf_end"]
+        key = measure
+        if key not in agg_measures:
+            workpieces_measure = await load_measure_workpiece(conn, after, before, measure)
+            agg_measures[key] = workpieces_measure
+        workpieces_measure = agg_measures[key]
+        workpiece_measure = [x for x in workpieces_measure if mf_start <= x.timestamp < mf_end]
+        if not workpiece_measure:
+            return None
+        return max(workpiece_measure, key=lambda x:x.timestamp).value_num
+
+    return db_objs, get_field_value

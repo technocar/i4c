@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 import isodate
 from isodate import ISO8601Error
-from datetime import datetime, timedelta
-from enum import Enum
+from datetime import datetime
 from textwrap import dedent
 from typing import Optional, List, Union
 from pydantic import root_validator, validator, Field
-from common import write_debug_sql
-from common.exceptions import I4cServerError, I4cClientError
+from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
-import re
-from .stat_common import StatObject, StatVisualSettings, resolve_time_period, StatObjectType, StatAggMethod, \
-    calc_aggregate
-from .stat_virt_obj import get_objmeta, stat_obj_mazakprogram_sql, stat_obj_mazaksubprogram_sql, \
-    stat_obj_workpiece_sql, stat_obj_batch_sql, stat_obj_tool_sql, StatObjMazakAxis, load_measure_mazak, \
-    load_measure_workpiece
+from .stat_common import StatObject, StatVisualSettings, resolve_time_period, StatObjectParamType
+from .stat_virt_obj import StatVirtObjFilterRel, statdata_virt_obj_fields
 
 
 class StatXYOther(I4cBaseModel):
@@ -44,20 +38,11 @@ class StatXYOther(I4cBaseModel):
         return self.field_name == other.field_name
 
 
-class StatXYFilterRel(str, Enum):
-    eq = "="
-    neq = "!="
-    less = "<"
-    leq = "<="
-    gtr = ">"
-    geq = ">="
-
-
 class StatXYFilter(I4cBaseModel):
     """XY query filter."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
     field: str
-    rel: StatXYFilterRel
+    rel: StatVirtObjFilterRel
     value: str
 
     @classmethod
@@ -135,7 +120,7 @@ class StatXYDef(I4cBaseModel):
         await conn.execute(sql_insert, stat_id, *self.get_sql_params())
 
         for p in self.obj.params:
-            await p.insert_to_db(stat_id, conn)
+            await p.insert_to_db(stat_id, conn, StatObjectParamType.xy)
 
         for o in self.other:
             await StatXYOther(field_name=o).insert_to_db(stat_id, conn)
@@ -178,13 +163,13 @@ class StatXYDef(I4cBaseModel):
 
         insert, delete, _, _ = cmp_list(self.obj.params, new_state.obj.params)
         for f in insert:
-            await f.insert_to_db(stat_id, conn)
+            await f.insert_to_db(stat_id, conn, StatObjectParamType.xy)
         for d in delete:
             if d.id is None:
                 raise I4cServerError("Missing id from StatXYObjectParam")
             await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
 
-        new_other = [StatXYOther(field_name=o) for o in new_state.other]
+        new_other = [StatXYOther(field_name=o) for o in new_state.order_by]
         insert, delete, _, _ = cmp_list(self.other_internal, new_other)
         for f in insert:
             await f.insert_to_db(stat_id, conn)
@@ -234,107 +219,22 @@ class StatXYData(I4cBaseModel):
 
 
 async def statdata_get_xy(credentials, st_id: int, st_xydef: StatXYDef, conn) -> List[StatXYData]:
-    after, before = resolve_time_period(st_xydef.after, st_xydef.before, st_xydef.duration)
-
-    meta = await get_objmeta(credentials, after, pconn=conn)
-
     res = []
-    meta = [m for m in meta if m.name == st_xydef.obj.type]
-    if len(meta) != 1:
-        raise I4cClientError("Invalid meta data")
-    meta = meta[0]
-    if st_xydef.obj.type == StatObjectType.mazakprogram:
-        sql = stat_obj_mazakprogram_sql
-    elif st_xydef.obj.type == StatObjectType.mazaksubprogram:
-        sql = stat_obj_mazaksubprogram_sql
-    elif st_xydef.obj.type == StatObjectType.workpiece:
-        sql = stat_obj_workpiece_sql
-    elif st_xydef.obj.type == StatObjectType.batch:
-        sql = stat_obj_batch_sql
-    elif st_xydef.obj.type == StatObjectType.tool:
-        sql = stat_obj_tool_sql
-    else:
-        raise Exception("Not implemented")
-    write_debug_sql(f"stat_xy_{st_xydef.obj.type}.sql", sql, before, after)
-    db_objs = await conn.fetch(sql, before, after)
-    agg_measures = {}
-
-    async def get_field_value(dbo, field_name:str):
-        if "mf_"+field_name in dbo:
-            return dbo["mf_" + field_name]
-        else:
-            if st_xydef.obj.type in (StatObjectType.mazakprogram, StatObjectType.mazaksubprogram):
-                return await get_detail_field_mazak(dbo, field_name)
-            elif st_xydef.obj.type == StatObjectType.workpiece:
-                return await get_detail_field_workpiece(dbo, field_name)
-            else:
-                raise Exception("Invalid field name: " + field_name)
-
-    async def get_detail_field_mazak(dbo, field_name):
-        regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
-        match = re.fullmatch(regex, field_name)
-        if not match:
-            raise Exception("Invalid field name: " + field_name)
-        try:
-            agg = StatAggMethod[match.group("agg")]
-            axis = StatObjMazakAxis[match.group("axis")]
-        except KeyError:
-            raise Exception("Invalid field name: " + field_name)
-        mf_device = dbo["mf_device"]
-        mf_start = dbo["mf_start"]
-        mf_end = dbo["mf_end"]
-        key = (mf_device, axis)
-        if key not in agg_measures:
-            measure = axis + 'l' if axis != StatObjMazakAxis.b else 'al'
-            prods_measure = await load_measure_mazak(conn, after, before, mf_device, measure)
-            agg_measures[key] = prods_measure
-        prods_measure = agg_measures[key]
-        age_min = [x.value for x in st_xydef.obj.params if x.key == "age_min"]
-        age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
-        age_max = [x.value for x in st_xydef.obj.params if x.key == "age_max"]
-        age_max = timedelta(seconds=float(age_max[0])) if age_max else None
-        prod_measure = [x.value_num for x in prods_measure
-                        if (mf_start + age_min <= x.timestamp < mf_end
-                            and x.timestamp < mf_start + age_max if age_max is not None else True)]
-        return calc_aggregate(agg, prod_measure, from_record=False)
-
-    async def get_detail_field_workpiece(dbo, field_name):
-        regex = r"gom (?P<measure>.+) deviance"
-        match = re.fullmatch(regex, field_name)
-        if not match:
-            raise Exception("Invalid field name: " + field_name)
-        measure = match.group("measure")
-
-        if measure == "max":
-            return max(filter(lambda x: x is not None,
-                              [await get_detail_field_workpiece(dbo, m.name) for m in meta.fields
-                               if re.fullmatch(regex, m.name) and (m.name != field_name)]),
-                       default=None)
-
-        mf_start = dbo["mf_start"]
-        mf_end = dbo["mf_end"]
-        key = measure
-        if key not in agg_measures:
-            workpieces_measure = await load_measure_workpiece(conn, after, before, measure)
-            agg_measures[key] = workpieces_measure
-        workpieces_measure = agg_measures[key]
-        workpiece_measure = [x for x in workpieces_measure if mf_start <= x.timestamp < mf_end]
-        if not workpiece_measure:
-            return None
-        return max(workpiece_measure, key=lambda x:x.timestamp).value_num
-
+    after, before = resolve_time_period(st_xydef.after, st_xydef.before, st_xydef.duration)
+    db_objs, get_field_value = await statdata_virt_obj_fields(credentials, after, before, st_xydef.obj, conn)
 
     for dbo in db_objs:
-        cox = await get_field_value(dbo, st_xydef.x)
+        agg_measures = {}
+        cox = await get_field_value(dbo, st_xydef.x, agg_measures)
         co = StatXYData(x=cox, others=[])
         if st_xydef.y:
-            co.y = await get_field_value(dbo, st_xydef.y)
+            co.y = await get_field_value(dbo, st_xydef.y, agg_measures)
         if st_xydef.shape:
-            co.shape = await get_field_value(dbo, st_xydef.shape)
+            co.shape = await get_field_value(dbo, st_xydef.shape, agg_measures)
         if st_xydef.color:
-            co.color = await get_field_value(dbo, st_xydef.color)
+            co.color = await get_field_value(dbo, st_xydef.color, agg_measures)
         for o in st_xydef.other:
-            co.others.append(await get_field_value(dbo, o))
+            co.others.append(await get_field_value(dbo, o, agg_measures))
         res.append(co)
 
     return res

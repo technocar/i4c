@@ -192,7 +192,8 @@ create table "stat_list_order_by" (
     list integer not null constraint fk_pv references "stat_list" on delete cascade,
     
     field character varying (200) not null,
-    ascending bool not null default true
+    ascending bool not null default true,
+    sortorder integer not null 
 );
 
 GRANT ALL ON TABLE "stat_list_order_by" TO aaa;
@@ -239,7 +240,8 @@ create table "stat_list_visual_setting_col" (
     
     field character varying (200) not null,
     caption character varying (200) null,
-    width integer null
+    width integer null,
+    sortorder integer not null
 ); 
 
 
