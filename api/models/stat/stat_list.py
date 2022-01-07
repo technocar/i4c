@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import namedtuple
 import isodate
 from isodate import ISO8601Error
 from datetime import datetime
@@ -10,12 +11,13 @@ from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from .stat_common import StatObject, resolve_time_period, StatObjectParamType
 from .stat_virt_obj import StatVirtObjFilterRel, statdata_virt_obj_fields
+from functools import total_ordering
 
 
 class StatListOrderBy(I4cBaseModel):
     id: Optional[int] = Field(None, hidden_from_schema=True)
     field: str
-    ascending: bool
+    ascending: Optional[bool] = Field(True, title="sort direction")
 
     @classmethod
     async def load_order_by(cls, conn, xy_id):
@@ -111,7 +113,7 @@ class StatListVisualSettings(I4cBaseModel):
         exists = await conn.fetchrow("select id from stat_visual_setting where id = $1", id)
         if exists:
             sql = dedent("""\
-                update stat_visual_setting
+                update stat_list_visual_setting
                 set
                   title = $2,
                   subtitle = $3,
@@ -173,6 +175,15 @@ class StatListDef(I4cBaseModel):
         period_s = sum(int(x) for x in (after_s, before_s, duration_s))
         if period_s in (0, 3) or (period_s == 1 and before_s):
             raise ValueError('invalid (after, before, duration) configuration.')
+
+        order_by = values.get('order_by')
+        if len(set(s.field for s in order_by)) != len(order_by):
+            raise ValueError('duplicates in order_by')
+
+        visualsettingscols = values.get('visualsettings').cols
+        if len(set(s.field for s in visualsettingscols)) != len(visualsettingscols):
+            raise ValueError('duplicates in visualsettings cols')
+
         return values
 
     async def insert_to_db(self, stat_id, conn):
@@ -237,7 +248,7 @@ class StatListDef(I4cBaseModel):
         for d in delete:
             if d[1].id is None:
                 raise I4cServerError("Missing id from StatListOrderBy")
-            await conn.execute("delete from stat_list_order_by where id = $1", d.id)
+            await conn.execute("delete from stat_list_order_by where id = $1", d[1].id)
 
         insert, delete, _, _ = cmp_list(self.filter, new_state.filter)
         for f in insert:
@@ -267,14 +278,33 @@ class StatListDef(I4cBaseModel):
         return StatListDef(**d)
 
 
+@total_ordering
+class MinType(object):
+    def __le__(self, other):
+        return True
+
+    def __eq__(self, other):
+        return self is other
+
+
 async def statdata_get_list(credentials, st_id: int, st_listdef: StatListDef, conn) -> List[Dict[str, Union[float, str, None]]]:
-    res = []
     after, before = resolve_time_period(st_listdef.after, st_listdef.before, st_listdef.duration)
     db_objs, get_field_value = await statdata_virt_obj_fields(credentials, after, before, st_listdef.obj, conn)
+
+    result_row = namedtuple('result_row', ['content', 'order'])
+
+    grid = []
     for dbo in db_objs:
         agg_measures = {}
-        co = {}
+        co = result_row({}, [])
         for c in st_listdef.visualsettings.cols:
-            co[c] = await get_field_value(dbo, c, agg_measures)
-        res.append(co)
-    return res
+            co.content[c.field] = await get_field_value(dbo, c.field, agg_measures)
+        for c in st_listdef.order_by:
+            co.order.append(await get_field_value(dbo, c.field, agg_measures))
+        grid.append(co)
+
+    Min = MinType()
+    for idx, c in reversed(list(enumerate(st_listdef.order_by))):
+        grid = sorted(grid, key=lambda x: Min if x.order[idx] is None else x.order[idx], reverse=not c.ascending)
+
+    return [r.content for r in grid]

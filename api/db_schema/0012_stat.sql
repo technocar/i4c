@@ -246,7 +246,9 @@ create table "stat_list_visual_setting_col" (
 
 
 GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO aaa;
 GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO postgres;
 
 
 
