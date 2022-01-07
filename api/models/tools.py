@@ -58,7 +58,7 @@ class ToolItem(I4cBaseModel):
     count: int = Field(..., title="Number of times the tool was installed.")
 
 
-async def patch_project_version(credentials, tool_id, patch:ToolsPatchBody, *, pconn=None):
+async def patch_tool(credentials, tool_id, patch:ToolsPatchBody, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\
                   insert into tools (id, "type")

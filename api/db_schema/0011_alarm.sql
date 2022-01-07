@@ -59,6 +59,7 @@ GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO aaa;
 GRANT ALL ON TABLE "alarm_sub" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE alarm_sub_id_seq TO postgres;
 
+ALTER TABLE alarm_sub ALTER COLUMN "user" SET NOT NULL;
 
 create table "alarm_event" (
     id SERIAL PRIMARY KEY,

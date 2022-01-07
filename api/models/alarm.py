@@ -221,7 +221,7 @@ class AlarmMethod(str, Enum):
 class AlarmSubIn(I4cBaseModel):
     """Subscriber to an alarm. Input."""
     groups: List[str] = Field(..., title="Subscription group membership.")
-    user: Optional[str] = Field(None, title="User id.")
+    user: str = Field(..., title="User id.")
     method: AlarmMethod = Field(..., title="Notification method.")
     address: Optional[str] = Field(None, title="Address")
     address_name: Optional[str] = Field(None, title="Address description.")
@@ -316,7 +316,18 @@ class AlarmSubPatchBody(I4cBaseModel):
     change: AlarmSubPatchChange
 
 
-class SubsGroupsItem(I4cBaseModel):
+class SubsGroups(I4cBaseModel):
+    """Subscription group with member users."""
+    name: str
+    users: List[str] = Field([])
+
+
+class SubsGroupsIn(I4cBaseModel):
+    """Subscription group with member users. Without name."""
+    users: List[str] = Field([])
+
+
+class SubsGroupsUser(I4cBaseModel):
     """Subscription groups belonging to a user."""
     user: str
     groups: List[str] = Field([])
@@ -391,8 +402,6 @@ class AlarmRecipPatchBody(I4cBaseModel):
     conditions: List[AlarmRecipPatchCondition] = Field(..., title="Conditions evaluated before the change.")
     change: AlarmRecipPatchChange = Field(..., title="Requested changes.")
 
-
-# todo 1: ***** alarm_sub."user" legyen not-null és mindenhol ennek megfelelõen kezelve
 
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
@@ -623,19 +632,88 @@ async def alarmdef_list(credentials, name_mask, report_after,
         return res
 
 
-async def subsgroups_list(credentials, user, *, pconn=None):
+async def subsgroupsusage_list(credentials, user, *, pconn=None):
     if credentials.user_id != user and "any user" not in credentials.info_features:
         raise I4cClientError("Unauthorized to access other users' subscriptions.")
 
     sql = dedent("""\
             select "user", array_agg("group") as groups
-            from alarm_subsgroup where "user" = $1 or $1 is null
+            from alarm_subsgroup_map where "user" = $1 or $1 is null
             group by "user" 
             """)
     async with DatabaseConnection(pconn) as conn:
         res = await conn.fetch(sql, user)
         res = [{"user":r["user"], "groups":r["groups"]} for r in res]
         return res
+
+
+async def subsgroup_members(credentials, user=None, group=None, *, pconn=None):
+    sql = dedent("""\
+            with
+              p as (select
+                      $1::varchar(200) -- */ '1'::varchar(200) 
+                          as user,
+                      $2::varchar(200) -- */ 'grpxxx'::varchar(200)
+                          as group
+                   ), 
+              gm as (
+                  select g."group", array_agg(g."user") as "users"
+                  from alarm_subsgroup_map g
+                  cross join p
+                  where p.user is null or p.user = g.user
+                  group by g."group"
+              )
+            select 
+              g."group" as "name", 
+              coalesce(gm."users", array[]::varchar[]) "users"
+            from alarm_subsgroup g
+            cross join p
+            left join gm on gm.group = g.group
+            where p.group is null or p.group = g.group
+            """)
+    async with DatabaseConnection(pconn) as conn:
+        return await conn.fetch(sql, user, group)
+
+
+async def subsgroup_members_put(credentials, name, sub_groups_in: SubsGroupsIn, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            found = await subsgroup_members(credentials, group=name, pconn=conn)
+            if found:
+                found_user = set(found[0]["users"])
+            else:
+                found_user = set()
+                sql_insert = """insert into alarm_subsgroup ("group") values ($1)"""
+                await conn.execute(sql_insert, name)
+            needed_user = set(sub_groups_in.users)
+            for i in needed_user - found_user:
+                sql_insert_member = """insert into alarm_subsgroup_map ("user", "group") values ($1, $2)"""
+                await conn.execute(sql_insert_member, i, name)
+            for d in found_user - needed_user:
+                sql_delete_member = """delete from alarm_subsgroup_map where "user" = $1 and "group" = $2"""
+                await conn.execute(sql_delete_member, d, name)
+
+
+async def subsgroup_delete(credentials, name, forced, *, pconn=None):
+    # IF SET FOR AN ALARM, ALWAYS RETURN ERROR, even if forced=true
+    async with DatabaseConnection(pconn) as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            sql_check = """select *  from alarm where subsgroup = $1"""
+            db_check = await conn.fetch(sql_check, name)
+            if db_check:
+                raise I4cClientError("Group already in use.")
+
+            found = await subsgroup_members(credentials, group=name, pconn=conn)
+            if not found:
+                return
+            found_user = found[0]["users"]
+            if found_user:
+                if forced:
+                    await subsgroup_members_put(credentials, name, SubsGroupsIn(users=[]), pconn=conn)
+                else:
+                    raise I4cClientError("Group already in use.")
+            sql_delete = """delete from alarm_subsgroup where "group" = $1"""
+            await conn.execute(sql_delete, name)
 
 
 async def post_alarmsub(credentials, alarmsub:AlarmSubIn) -> AlarmSub:

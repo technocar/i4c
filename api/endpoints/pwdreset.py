@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import Query, Depends, Body
+from fastapi import Depends, Body
 from fastapi.security import HTTPBasicCredentials
 import models.pwdreset
 from I4cAPI import I4cApiRouter

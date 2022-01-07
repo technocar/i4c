@@ -3,9 +3,9 @@ drop table alarm_subsgroup;
 */
 
 create table alarm_subsgroup (
-	"user" varchar(200) not null,
-	"group" varchar(200) not null,
-	primary key ("user", "group")
+  "user" varchar(200) not null,
+  "group" varchar(200) not null,
+  primary key ("user", "group")
 )
 
 GRANT ALL ON TABLE public.alarm_subsgroup TO aaa;

@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Body, Path, Query
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import Response
+
 import common
 import models.alarm
 import models.common
@@ -55,20 +57,57 @@ async def alarmdef_list(
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
-@router.get("/subsgroups", response_model=List[models.alarm.SubsGroupsItem], operation_id="alarm_subsgroups",
-            summary="List subscription groups.", features=["any user"])
-async def subsgroups_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups", ask_features=["any user"])),
+@router.get("/subsgroupusage", response_model=List[models.alarm.SubsGroupsUser], operation_id="alarm_subsgroupusage",
+            summary="List subscription user memberships.", features=["any user"])
+async def subsgroupsusage_list(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroupusage", ask_features=["any user"])),
         user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):
     """List subscription groups."""
-    return await models.alarm.subsgroups_list(credentials, user)
+    return await models.alarm.subsgroupsusage_list(credentials, user)
 
 
-# TODO 1: ****** GET /alarm/subsgroups/{grp}  --> {name, users:[]}
-#                PUT /alarm/subsgroups/{grp}  <-- {users:[]}
-#                DELETE /alarm/subsgroups/{grp}?forced
-#                    forced = bool default false. if true, kick users.
-#                    IF SET FOR AN ALARM, ALWAYS RETURN ERROR, even if forced=true
+@router.get("/subsgroups/{name}", response_model=models.alarm.SubsGroups, operation_id="alarm_subsgroup_members_get",
+            summary="Get subscription group with members.")
+async def subsgroup_members_get(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups/{name}")),
+        name: str = Path(..., title="Filter for this group.")):
+    """Get subscription group with members."""
+    res = await models.alarm.subsgroup_members(credentials, group=name)
+    if len(res) > 0:
+        return res[0]
+    raise I4cClientNotFound("No record found")
+
+
+@router.get("/subsgroups", response_model=List[models.alarm.SubsGroups], operation_id="alarm_subsgroup_members_list",
+            summary="List subscription groups.")
+async def subsgroup_members_list(
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroups")),
+        user: Optional[str] = Query(None, title="Filter for user."),
+        group: Optional[str] = Query(None, title="Filter for group.")):
+    """List subscription group with members."""
+    return await models.alarm.subsgroup_members(credentials, user, group)
+
+
+@router.put("/subsgroups/{name}", status_code=201, response_class=Response, operation_id="alarm_subsgroup_members_put",
+            summary="Update alarm subgroup member definition.")
+async def subsgroup_members_put(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("put/alarm/subsgroups/{name}")),
+    name: str = Path(..., title="Identifier name."),
+    sub_groups_in: models.alarm.SubsGroupsIn = Body(...),
+):
+    """Update alarm subgroup member definition."""
+    await models.alarm.subsgroup_members_put(credentials, name, sub_groups_in)
+
+
+@router.delete("/subsgroups/{name}", status_code=204, response_class=Response, operation_id="alarm_subsgroup_delete",
+               summary="Delete alarm subgroup.")
+async def subsgroup_delete(
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/alarm/subsgroups/{name}")),
+    name: str = Path(..., title="Group name."),
+    forced: Optional[bool] = Query(False, title="Delete group with members, but groups used in alarms cannot be deleted")
+):
+    """Delete alarm subgroup."""
+    await models.alarm.subsgroup_delete(credentials, name, forced)
 
 
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers",
