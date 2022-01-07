@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -8,7 +9,8 @@ export class FiltersService {
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private location: Location
   ) { }
 
   read(name: string, filters: object) {
@@ -36,13 +38,12 @@ export class FiltersService {
   }
 
   private _saveToQueryParams(filters: Object) {
-    if (!this.route || !this.router)
+    if (!this.route || !this.router || !this.location || (filters ?? undefined) === undefined)
       return;
 
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: filters,
-      queryParamsHandling: 'merge'
-    });
+  let urlTree = this.router.parseUrl(this.router.url);
+  urlTree.queryParams = {};
+
+  this.location.replaceState(urlTree.toString(), Object.keys(filters).filter(key => (filters[key] ?? null) !== null).map(key => key + '=' + filters[key]).join('&'));
   }
 }

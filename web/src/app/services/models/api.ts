@@ -316,7 +316,8 @@ export interface StatDef {
   shared: boolean,
   modified: string,
   timeseriesdef: StatTimeSeriesDef,
-  xydef: StatXYDef
+  xydef: StatXYDef,
+  listdef: StatListDef
 }
 
 export interface StatDefBase {
@@ -339,7 +340,7 @@ export interface StatTimeSeriesDef extends StatDateTimeDef {
   series_sep: Meta,
   series_name: StatTimeSeriesName,
   xaxis: string | number,
-  visualsettings: StatVisualSettings
+  visualsettings: StatVisualSettingsChart
 }
 
 export interface StatTimesSeriesFilter {
@@ -352,29 +353,32 @@ export interface StatTimesSeriesFilter {
   age_max: number
 }
 
-export interface StatVisualSettingsAxis {
+export interface StatVisualSettingsChartAxis {
   caption: string
 }
 
-export enum StatVisualSettingsLegendPosition { Top = 'top', Bottom = 'bottom', Left = 'left', Right = 'right', ChartArea = 'chartArea' }
-export enum StatVisualSettingsLegendAlign { Start = 'start', Center = 'center', End = 'end' }
+export enum StatVisualSettingsChartLegendPosition { Top = 'top', Bottom = 'bottom', Left = 'left', Right = 'right', ChartArea = 'chartArea' }
+export enum StatVisualSettingsChartLegendAlign { Start = 'start', Center = 'center', End = 'end' }
 
-export interface StatVisualSettingsLegend {
-  position: StatVisualSettingsLegendPosition,
-  align: StatVisualSettingsLegendAlign
+export interface StatVisualSettingsChartLegend {
+  position: StatVisualSettingsChartLegendPosition,
+  align: StatVisualSettingsChartLegendAlign
 }
 
-export interface StatVisualSettingsTooltip {
+export interface StatVisualSettingsChartTooltip {
   html: string
+}
+
+export interface StatVisualSettingsChart extends StatVisualSettings  {
+  xaxis: StatVisualSettingsChartAxis,
+  yaxis: StatVisualSettingsChartAxis,
+  legend: StatVisualSettingsChartLegend,
+  tooltip: StatVisualSettingsChartTooltip
 }
 
 export interface StatVisualSettings {
   title: string,
-  subtitle: string,
-  xaxis: StatVisualSettingsAxis,
-  yaxis: StatVisualSettingsAxis,
-  legend: StatVisualSettingsLegend,
-  tooltip: StatVisualSettingsTooltip
+  subtitle: string
 }
 
 export interface StatDefUpdateConditions {
@@ -409,10 +413,6 @@ export interface StatData {
 }
 
 export interface StatXYMeta {
-  objects: StatXYMetaObject[]
-}
-
-export interface StatXYMetaObject {
   name: string,
   displayname: string,
   fields: StatXYMetaObjectField[],
@@ -447,12 +447,12 @@ export interface StatXYDef extends StatDateTimeDef {
   color: string,
   other: string[],
   filter: StatXYFilter[],
-  visualsettings: StatVisualSettings
+  visualsettings: StatVisualSettingsChart
 }
 
 export enum StatXYObjectType { Workpiece = 'workpiece', MazakProgram = 'mazakprogram', MazakSubProgram = 'mazaksubprogram', Batch = 'batch', Tool = 'tool' }
 export interface StatXYObject {
-  type: StatXYObjectType ,
+  type: StatXYObjectType,
   params: StatXYParam[]
 }
 
@@ -477,6 +477,34 @@ export interface StatXYParam {
   value: string
 }
 
+export interface StatListDef extends StatDateTimeDef {
+  obj: StatXYObject,
+  orderby: StatListOrderBy[],
+  filter: StatXYFilter[],
+  visualsettings: StatListVisualSettings
+}
+
+export interface StatListOrderBy {
+  field: string,
+  ascending: boolean
+}
+
+export interface StatListVisualSettings extends StatVisualSettings {
+  header_bg: string,
+  header_fg: string,
+  normal_bg: string,
+  normal_fg: string,
+  even_bg: string,
+  even_fg: string,
+  cols: StatListVisualSettingsCol[]
+}
+
+export interface StatListVisualSettingsCol {
+  field: string,
+  caption: string,
+  width: number
+}
+
 export interface Alarm {
   conditions: AlarmRule[],
   max_freq: number,
@@ -487,6 +515,11 @@ export interface Alarm {
   last_check: string,
   last_report: string,
   subs: AlarmSubscription[]
+}
+
+export interface AlarmGroup {
+  name: string,
+  users: string[]
 }
 
 export interface AlarmRule {

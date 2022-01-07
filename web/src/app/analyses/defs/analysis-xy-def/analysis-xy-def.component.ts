@@ -4,7 +4,7 @@ import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatData, StatVisualSettings, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObject, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
+import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
@@ -35,7 +35,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
   @ViewChild(QuillEditorComponent) quill: QuillEditorComponent;
 
-  objects$: BehaviorSubject<StatXYMetaObject[]> = new BehaviorSubject([]);
+  objects$: BehaviorSubject<StatXYMeta[]> = new BehaviorSubject([]);
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
   filters$: BehaviorSubject<Filter[]> = new BehaviorSubject([]);
   others$: BehaviorSubject<Other[]> = new BehaviorSubject([]);
@@ -97,12 +97,12 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   }
 
   setDefualtVisualSettings() {
-    var defaults: StatVisualSettings = {
+    var defaults: StatVisualSettingsChart = {
       title: "",
       subtitle: "",
       legend: {
-        align: StatVisualSettingsLegendAlign.Center,
-        position: StatVisualSettingsLegendPosition.Top
+        align: StatVisualSettingsChartLegendAlign.Center,
+        position: StatVisualSettingsChartLegendPosition.Top
       },
       xaxis: {
         caption: ""
@@ -123,7 +123,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
   getMeta() {
     this.apiService.getStatXYMeta(undefined).subscribe(meta => {
-      this.objects$.next(meta.objects);
+      this.objects$.next(meta);
       var filters = (this.def.filter ?? []).map((f, i) => {
         var result: Filter = {
           _id: i,

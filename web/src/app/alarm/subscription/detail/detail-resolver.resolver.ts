@@ -36,6 +36,6 @@ export class AlarmSubscriptionDetailResolver implements Resolve<Observable<[Alar
     } else {
       detail = this.apiService.getAlarmSubscription(id);
     }
-    return forkJoin([detail, this.apiService.getAlarmGroups(user)]);
+    return forkJoin([detail, this.apiService.getAlarmUserGroups(user)]);
   }
 }

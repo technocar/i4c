@@ -2,10 +2,10 @@ import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ViewChild } from '
 import { NgbDateStruct } from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-date-struct';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject, forkJoin, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { filter, tap } from 'rxjs/operators';
 import { ApiService } from '../../services/api.service';
 import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPieceStatus } from '../../services/models/api';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterState } from '@angular/router';
 import { FilterControlComponent } from 'src/app/commons/filter/filter.component';
 import { FiltersService } from 'src/app/services/filters.service';
 
@@ -99,7 +99,8 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
       fs: undefined,
       fwob: undefined
     };
-    filtersService.read("workpiece", filters)
+    filtersService.read("workpiece", filters);
+
     if (filters.fd) {
       try
       {

@@ -6,6 +6,7 @@ import { FilterControlComponent } from '../commons/filter/filter.component';
 import { ApiService } from '../services/api.service';
 import { AuthenticationService } from '../services/auth.service';
 import { StatData, StatDef, StatDefBase } from '../services/models/api';
+import * as XLSX from 'xlsx-with-styles';
 
 export interface AnalysisDef {
   getDef(): StatDefBase
@@ -15,7 +16,7 @@ export interface AnalysisChart {
   getChartConfiguration(data: StatData): ChartConfiguration
 }
 
-export enum AnalysisType { TimeSeries = '0', XY = '1' }
+export enum AnalysisType { TimeSeries = '0', XY = '1', List = '2' }
 
 @Component({
   selector: 'app-analyses',
@@ -43,7 +44,8 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   analysesOthers$: BehaviorSubject<StatDef[]> = new BehaviorSubject([]);
   analysisTypes: string[][] = [
     [AnalysisType.TimeSeries, $localize `:@@analysis_type_timeseries:idősoros`],
-    [AnalysisType.XY, $localize `:@@analysis_type_xy:XY`]
+    [AnalysisType.XY, $localize `:@@analysis_type_xy:XY`],
+    [AnalysisType.List, $localize `:@@analysis_type_list:Lista`]
   ]
 
   constructor(
@@ -107,5 +109,24 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
       return type[1];
     else
       return code;
+  }
+
+  exportexcel() {
+      /* table id is passed over here */
+      let element = document.getElementById('analyses');
+      const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(element);
+      (ws["A3"] as XLSX.CellObject).s = {
+        fill: {
+          patternType: "solid",
+          bgColor: { rgb: "007BFF" }
+        }
+      }
+      /* generate workbook and add the worksheet */
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+      /* save to file */
+      XLSX.writeFile(wb, "test.xlsx");
+
   }
 }

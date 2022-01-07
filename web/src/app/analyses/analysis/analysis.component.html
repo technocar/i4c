@@ -21,6 +21,7 @@
         <ng-template ngbPanelContent>
           <app-analysis-timeseries-def #timeseries_def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>
           <app-analysis-xy-def #xy_def *ngIf="analysisType === '1'" [def]="def.xydef"></app-analysis-xy-def>
+          <app-analysis-list-def #list_def *ngIf="analysisType === '2'" [def]="def.listdef"></app-analysis-list-def>
         </ng-template>
       </ngb-panel>
     </ngb-accordion>

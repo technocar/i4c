@@ -26,6 +26,14 @@
       </div>
     </div>
     <div class="row mb-4">
+      <fieldset class="col-6 p-4">
+        <legend>csoport</legend>
+        <select class="form-control" name="group" [(ngModel)]="def.subsgroup">
+          <option *ngFor="let group of groups" [value]="group">{{group}}</option>
+        </select>
+      </fieldset>
+    </div>
+    <div class="row mb-4">
       <fieldset class="col p-4 mr-4">
         <legend>maximum jelentési frekvencia</legend>
         <app-period-selector [(seconds)]="def.max_freq"></app-period-selector>

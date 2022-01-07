@@ -19,11 +19,11 @@ const routes: Routes = [{
       },
       { path: '', component: AlarmSubscriptionComponent, canActivate: [AuthGuard] }]
     },
-    { path: '', component: AlarmComponent, canActivate: [AuthGuard] },
     { path: ':name', component: AlarmDetailComponent, canActivate: [AuthGuard],
       resolve: { data: AlarmDetailResolver },
       data: { breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].name : "???"}` }
-    }
+    },
+    { path: '', component: AlarmComponent, canActivate: [AuthGuard] }
   ],
   data: { breadcrumb: 'Riasztások' }
 }];

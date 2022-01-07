@@ -1,7 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { NgbDateStruct, NgbModal, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { FiltersService } from '../services/filters.service';
 import { Device, Tool, ToolUsage } from '../services/models/api';

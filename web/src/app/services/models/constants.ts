@@ -1,4 +1,4 @@
-import { AlarmNotificationType, AlarmSubscription, StatVisualSettingsLegendAlign, StatVisualSettingsLegendPosition } from "./api";
+import { AlarmNotificationType, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition } from "./api";
 
 export enum DeviceType { Mill = "mill", Lathe = "lathe", GOM = "gom", Robot = "robot" }
 
@@ -7,15 +7,15 @@ export class Labels {
   static analysis = {
     legend: {
       positions: [
-        [StatVisualSettingsLegendPosition.Top, $localize `:@@analysis_legend_position_top:Fent`],
-        [StatVisualSettingsLegendPosition.Bottom, $localize `:@@analysis_legend_position_bottom:Lent`],
-        [StatVisualSettingsLegendPosition.Left, $localize `:@@analysis_legend_position_left:Baloldal`],
-        [StatVisualSettingsLegendPosition.Right, $localize `:@@analysis_legend_position_right:Jobboldal`]
+        [StatVisualSettingsChartLegendPosition.Top, $localize `:@@analysis_legend_position_top:Fent`],
+        [StatVisualSettingsChartLegendPosition.Bottom, $localize `:@@analysis_legend_position_bottom:Lent`],
+        [StatVisualSettingsChartLegendPosition.Left, $localize `:@@analysis_legend_position_left:Baloldal`],
+        [StatVisualSettingsChartLegendPosition.Right, $localize `:@@analysis_legend_position_right:Jobboldal`]
       ],
       aligns: [
-        [StatVisualSettingsLegendAlign.Start, $localize `:@@analysis_legend_align_start:Elől`],
-        [StatVisualSettingsLegendAlign.End, $localize `:@@analysis_legend_align_end:Hátul`],
-        [StatVisualSettingsLegendAlign.Center, $localize `:@@analysis_legend_align_center:Középen`]
+        [StatVisualSettingsChartLegendAlign.Start, $localize `:@@analysis_legend_align_start:Elől`],
+        [StatVisualSettingsChartLegendAlign.End, $localize `:@@analysis_legend_align_end:Hátul`],
+        [StatVisualSettingsChartLegendAlign.Center, $localize `:@@analysis_legend_align_center:Középen`]
       ]
     }
   }

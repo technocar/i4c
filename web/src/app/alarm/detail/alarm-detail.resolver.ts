@@ -6,18 +6,19 @@ import {
 } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { Alarm, Meta } from 'src/app/services/models/api';
+import { Alarm, AlarmGroup, Meta } from 'src/app/services/models/api';
 
 @Injectable({
   providedIn: 'root'
 })
-export class AlarmDetailResolver implements Resolve<[Alarm, Meta[]]> {
+export class AlarmDetailResolver implements Resolve<[Alarm, Meta[], AlarmGroup[]]> {
   constructor(private apiService: ApiService) {}
 
-  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[Alarm, Meta[]]> {
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[Alarm, Meta[], AlarmGroup[]]> {
     return forkJoin([
       this.apiService.getAlarm(route.paramMap.get("name")),
-      this.apiService.getMeta()
+      this.apiService.getMeta(),
+      this.apiService.getAlarmGroups()
     ]);
   }
 }

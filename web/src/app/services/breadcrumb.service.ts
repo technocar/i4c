@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, Data, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, Data, NavigationCancel, NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -17,19 +17,20 @@ export class BreadcrumbService {
   readonly breadcrumbs$ = this._breadcrumbs$.asObservable();
 
   constructor(private router: Router) {
-    this.router.events.pipe(
-      filter((event) => event instanceof NavigationEnd)
-    ).subscribe(event => {
-      const root = this.router.routerState.snapshot.root;
-      const breadcrumbs: Breadcrumb[] = [];
-      this.addBreadcrumb(root, [], breadcrumbs);
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        const root = this.router.routerState.snapshot.root;
+        const breadcrumbs: Breadcrumb[] = [];
+        this.addBreadcrumb(root, [], breadcrumbs);
 
-      if (!breadcrumbs.find((b) => { return b.url === "/selector" || b.url === "/" }))
-        breadcrumbs.splice(0, 0, { label: "Kezdőlap", url: "/selector" });
-      else if (breadcrumbs.length === 1 && breadcrumbs[0].url === "/selector")
-        breadcrumbs.splice(0, 1);
+        if (!breadcrumbs.find((b) => { return b.url === "/selector" || b.url === "/" }))
+          breadcrumbs.splice(0, 0, { label: "Kezdőlap", url: "/selector" });
+        else if (breadcrumbs.length === 1 && breadcrumbs[0].url === "/selector")
+          breadcrumbs.splice(0, 1);
 
-      this._breadcrumbs$.next(breadcrumbs);
+        this._breadcrumbs$.next(breadcrumbs);
+      } else if (event instanceof NavigationCancel)
+        console.log(event);
     });
   }
 

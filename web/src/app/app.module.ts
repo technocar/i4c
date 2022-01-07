@@ -47,7 +47,7 @@ import { environment } from 'src/environments/environment';
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard] },
       { path: 'tools', loadChildren: () => import('./tools/tools.module').then(m => m.ToolsModule), canActivate: [AuthGuard] },
       { path: 'analyses', loadChildren: () => import('./analyses/analyses.module').then(m => m.AnalysesModule), canActivate: [AuthGuard] },
-      { path: 'alarm', loadChildren: () => import('./alarm/alarm.module').then(m => m.AlarmModule), canActivate: [AuthGuard] },
+      { path: 'alarms', loadChildren: () => import('./alarm/alarm.module').then(m => m.AlarmModule), canActivate: [AuthGuard] },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard], data: { breadcrumb: "Kezdőlap" } },
       { path: 'login', component: LoginComponent },
       { path: '', redirectTo: 'selector', pathMatch: "full" }

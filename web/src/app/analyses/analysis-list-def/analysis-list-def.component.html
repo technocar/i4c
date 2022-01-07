@@ -1,0 +1,54 @@
+<app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
+<div id="analysing_data" class="row form-group m-0 mb-4 align-items-center">
+  <label class="col">Elemezendő adat</label>
+  <select class="col form-control" [ngModel]="def.obj?.type" (change)="objectChanged(def.obj.type)">
+    <option *ngFor="let obj of objects$ | async" [value]="obj.name">{{obj.displayname}}</option>
+  </select>
+</div>
+<div class="row m-0">
+  <fieldset class="filters col-12 p-4">
+    <legend>szűrő</legend>
+    <table class="table mr-0 mt-2 text-center">
+      <tbody>
+        <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
+          <td>
+            <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)">
+              <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+            </select>
+          </td>
+          <td>
+            <select class="form-control mr-2" [(ngModel)]="filter.rel">
+              <option *ngFor="let op of operators" value="{{op}}">{{op}}</option>
+            </select>
+          </td>
+          <td>
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values.length === 0" />
+            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values.length > 0">
+              <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
+            </select>
+          </td>
+          <td>
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="btn btn-primary mt-4" (click)="newFilter()">
+      <i class="bi bi-plus"></i>
+      hozzadás...
+    </button>
+  </fieldset>
+  <fieldset class="list-settings col p-4 mt-4 ml-2">
+    <legend>lista beállítás</legend>
+    <div class="row form-group">
+      <label class="col">megnevezés</label>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.title" />
+    </div>
+    <div class="row form-group">
+      <label class="col">rövid magyarázat</label>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" />
+    </div>
+  </fieldset>
+</div>

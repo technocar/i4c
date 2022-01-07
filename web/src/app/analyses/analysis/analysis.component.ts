@@ -13,6 +13,7 @@ import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/mod
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
+import { AnalysisListDefComponent } from '../analysis-list-def/analysis-list-def.component';
 
 Chart.register(...registerables);
 
@@ -35,6 +36,7 @@ export class AnalysisComponent implements OnInit {
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
+  @ViewChild('list_def')  listDef: AnalysisListDefComponent;
   @ViewChild('new_dialog') newDialog;
   @ViewChild('chart', {static: false}) chart: ElementRef;
 
@@ -66,7 +68,8 @@ export class AnalysisComponent implements OnInit {
         name: this.authService.currentUserValue.username
       };
     } else {
-      this.analysisType = this.def.timeseriesdef ? AnalysisType.TimeSeries : AnalysisType.XY;
+      this.analysisType = this.def.timeseriesdef ? AnalysisType.TimeSeries :
+        this.def.xydef ? AnalysisType.XY : AnalysisType.List;
     }
   }
 
@@ -91,6 +94,9 @@ export class AnalysisComponent implements OnInit {
         break;
       case AnalysisType.XY:
         this.def.xydef = this.xyDef.getDef();
+        break;
+      case AnalysisType.List:
+        this.def.listdef = this.listDef.getDef();
         break;
     }
   }
@@ -143,7 +149,7 @@ export class AnalysisComponent implements OnInit {
       let options: ChartConfiguration;
       if (result.timeseriesdata)
         options = this.buildTimeSeriesChart(result);
-      else
+      else if (result.xydata)
         options = this.buildXYChart(result);
 
       this._chartInstance = new Chart(ctx, options);

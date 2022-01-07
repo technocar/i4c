@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate, AlarmGroup } from './models/api';
 import { DeviceType } from './models/constants';
 
 export interface LoginResponse {
@@ -340,6 +340,7 @@ export class ApiService {
         shared: false,
         timeseriesdef: undefined,
         xydef: undefined,
+        listdef: undefined,
         user: undefined
       });
     else
@@ -359,10 +360,10 @@ export class ApiService {
     return this.http.get<StatData>(`${this._apiUrl}/stat/data/${id}`);
   }
 
-  getStatXYMeta(after: Date): Observable<StatXYMeta> {
+  getStatXYMeta(after: Date): Observable<StatXYMeta[]> {
     var params = new RequestParams();
     params.add("after", after);
-    return this.http.get<StatXYMeta>(`${this._apiUrl}/stat/xymeta`, { params: params.getAll() });
+    return this.http.get<StatXYMeta[]>(`${this._apiUrl}/stat/objmeta`, { params: params.getAll() });
   }
 
   //This method for resolver of analsysis module to download data for selected analysis
@@ -415,8 +416,15 @@ export class ApiService {
     return this.http.put<Alarm>(`${this._apiUrl}/alarm/defs/${name}`, alarm);
   }
 
-  getAlarmGroups(user: string): Observable<AlarmSubscriptionGroupGrant[]> {
-    return this.http.get<AlarmSubscriptionGroupGrant[]>(`${this._apiUrl}/alarm/subsgroups`, { params: { user } });
+  getAlarmGroups(user?: string, group?: string): Observable<AlarmGroup[]> {
+    var params = new RequestParams();
+    params.add("user", user);
+    params.add("group", group);
+    return this.http.get<AlarmGroup[]>(`${this._apiUrl}/alarm/subsgroups`, { params: params.getAll() });
+  }
+
+  getAlarmUserGroups(user: string): Observable<AlarmSubscriptionGroupGrant[]> {
+    return this.http.get<AlarmSubscriptionGroupGrant[]>(`${this._apiUrl}/alarm/subsgroupusage`, { params: { user } });
   }
 
   getAlarmSubscriptions(parameters: AlarmSubscriptionRequestParams): Observable<AlarmSubscription[]> {

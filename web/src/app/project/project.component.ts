@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { NgbDate, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { FiltersService } from '../services/filters.service';
 import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus } from '../services/models/api';
@@ -62,6 +63,7 @@ export class ProjectComponent implements OnInit {
 
     var filters: ProjectFilters = {};
     filtersService.read("project", filters);
+
     if (filters.fds || filters.fde) {
       this._filterFromDate = this.convertFromDate(filters.fds);
       this._filterToDate = this.convertFromDate(filters.fde);

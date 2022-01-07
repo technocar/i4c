@@ -1,5 +1,7 @@
 import { AfterViewInit, ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { FilterControlComponent } from '../commons/filter/filter.component';
 import { ApiService } from '../services/api.service';
 import { FiltersService } from '../services/filters.service';
@@ -34,6 +36,7 @@ export class AlarmComponent implements OnInit, AfterViewInit {
     private apiService: ApiService,
     private filterService: FiltersService,
     private cd: ChangeDetectorRef,
+    private router: Router
   ) {
     filterService.read("alarm", this.filters);
   }

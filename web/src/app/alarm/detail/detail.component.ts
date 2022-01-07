@@ -3,7 +3,7 @@ import { NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { Alarm, AlarmRule, AlarmRuleSampleAggMethod, Device, Meta, NumberRelation, StringRelation } from 'src/app/services/models/api';
+import { Alarm, AlarmGroup, AlarmRule, AlarmRuleSampleAggMethod, Device, Meta, NumberRelation, StringRelation } from 'src/app/services/models/api';
 import { DeviceType, Labels } from 'src/app/services/models/constants';
 import { AppNotifType, NotificationService } from 'src/app/services/notification.service';
 
@@ -24,6 +24,7 @@ export class AlarmDetailComponent implements OnInit {
   rules$: BehaviorSubject<Rule[]> = new BehaviorSubject([]);
   devices: Device[] = [];
   metaList: Meta[];
+  groups: string[];
 
   constructor(
     private route: ActivatedRoute,
@@ -44,6 +45,7 @@ export class AlarmDetailComponent implements OnInit {
         var rule = Object.assign({ device: device, value_list: [] }, r);
         return rule;
       }));
+      this.groups = (<AlarmGroup[]>(r.data[2] ?? [])).map(g => g.name);
     });
   }
 
