@@ -14,9 +14,9 @@ router = I4cApiRouter(include_path="/projects")
 @router.get("", response_model=List[models.projects.Project], operation_id="project_list", summary="List projects.")
 async def list_projects(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects")),
-    name: Optional[str] = Query(None),
-    name_mask: Optional[List[str]] = Query(None),
-    status: Optional[ProjectStatusEnum] = Query(None),
+    name: Optional[str] = Query(None, title="Exact name."),
+    name_mask: Optional[List[str]] = Query(None, title="Name search expression."),
+    status: Optional[ProjectStatusEnum] = Query(None, title="Status."),
     file: Optional[str] = Query(None, description="Full savepath of the file.")
 ):
     """Get a filtered list of projects."""

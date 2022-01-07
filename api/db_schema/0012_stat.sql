@@ -192,7 +192,8 @@ create table "stat_list_order_by" (
     list integer not null constraint fk_pv references "stat_list" on delete cascade,
     
     field character varying (200) not null,
-    ascending bool not null default true
+    ascending bool not null default true,
+    sortorder integer not null 
 );
 
 GRANT ALL ON TABLE "stat_list_order_by" TO aaa;
@@ -239,12 +240,15 @@ create table "stat_list_visual_setting_col" (
     
     field character varying (200) not null,
     caption character varying (200) null,
-    width integer null
+    width integer null,
+    sortorder integer not null
 ); 
 
 
 GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO aaa;
 GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO postgres;
 
 
 
@@ -275,7 +279,7 @@ insert into "stat" values (-3, 'stat-2', '1', false , now());
 insert into "stat_xy" values (-3, 'mazakprogram', null, null, 'P1M'::interval, 'avg_x_load', 'avg_y_load', null, null); 
 
 insert into "stat" values (-4, 'stat-4', '1', false , now());
-insert into "stat_list" values (-3, 'mazakprogram', null, null, 'P1M'::interval); 
+insert into "stat_list" values (-4, 'mazakprogram', null, null, 'P1M'::interval); 
 
 
 */

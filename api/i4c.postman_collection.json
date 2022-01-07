@@ -2038,7 +2038,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/stat/def/-2",
+							"raw": "localhost:5000/stat/def/-4",
 							"host": [
 								"localhost"
 							],
@@ -2046,7 +2046,7 @@
 							"path": [
 								"stat",
 								"def",
-								"-2"
+								"-4"
 							]
 						}
 					},
@@ -2058,7 +2058,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/stat/data/-3",
+							"raw": "localhost:5000/stat/data/-4",
 							"host": [
 								"localhost"
 							],
@@ -2066,7 +2066,7 @@
 							"path": [
 								"stat",
 								"data",
-								"-3"
+								"-4"
 							]
 						}
 					},
@@ -2108,6 +2108,34 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\r\n    \"name\": \"stat_xy112\",\r\n    \"shared\": false,\r\n    \"timeseriesdef\": null,\r\n    \"xydef\": {\r\n        \"obj\": {\r\n            \"type\": \"mazakprogram\",\r\n            \"params\": []\r\n        },\r\n        \"after\": null,\r\n        \"before\": null,\r\n        \"duration\": \"P1M\",\r\n        \"x\": \"avg_x_load\",\r\n        \"y\": \"avg_y_load\",\r\n        \"shape\": null,\r\n        \"color\": null,\r\n        \"other\": [],\r\n        \"filter\": [],\r\n        \"visualsettings\": {\r\n            \"title\": null,\r\n            \"subtitle\": null,\r\n            \"xaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"yaxis\": {\r\n                \"caption\": null\r\n            },\r\n            \"legend\": {\r\n                \"position\": null,\r\n                \"align\": null\r\n            }\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/stat/def",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat post list",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n        \"name\": \"stat-5\",\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"xydef\": null,\r\n        \"listdef\": {\r\n            \"obj\": {\r\n                \"type\": \"mazakprogram\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"order_by\": [],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n                \"title\": null,\r\n                \"subtitle\": null,\r\n                \"header_bg\": null,\r\n                \"header_fg\": null,\r\n                \"normal_bg\": null,\r\n                \"normal_fg\": null,\r\n                \"even_bg\": null,\r\n                \"even_fg\": null,\r\n                \"cols\": []\r\n            }\r\n        }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2210,6 +2238,35 @@
 								"stat",
 								"def",
 								"-3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stat patch list",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"conditions\": [\r\n    ],\r\n    \"change\": {\r\n        \"shared\": false,\r\n        \"timeseriesdef\": null,\r\n        \"listdef\": {\r\n            \"obj\": {\r\n                \"type\": \"mazakprogram\",\r\n                \"params\": []\r\n            },\r\n            \"after\": null,\r\n            \"before\": null,\r\n            \"duration\": \"P1M\",\r\n            \"order_by\": [{\"field\": \"project\"}, {\"field\": \"runtime\", \"ascending\": false}],\r\n            \"filter\": [],\r\n            \"visualsettings\": {\r\n                \"title\": null,\r\n                \"subtitle\": null,\r\n                \"header_bg\": null,\r\n                \"header_fg\": null,\r\n                \"normal_bg\": null,\r\n                \"normal_fg\": null,\r\n                \"even_bg\": null,\r\n                \"even_fg\": null,\r\n                \"cols\": [{\"field\": \"project\"}, {\"field\": \"runtime\"}]\r\n            }\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:5000/stat/def/-4",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"stat",
+								"def",
+								"-4"
 							]
 						}
 					},

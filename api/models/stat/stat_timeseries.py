@@ -13,7 +13,7 @@ from common.cmp_list import cmp_list
 from common.tools import optimize_timestamp_label
 from models import AlarmCondEventRel, alarm
 from models.alarm import prev_iterator
-from models.stat_common import StatAggMethod, StatVisualSettings, resolve_time_period, calc_aggregate
+from .stat_common import StatAggMethod, StatVisualSettings, resolve_time_period, calc_aggregate
 
 
 class StatTimeseriesFilter(I4cBaseModel):

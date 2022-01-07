@@ -143,6 +143,11 @@ class StatObjectType(str, Enum):
     tool = "tool"
 
 
+class StatObjectParamType(str, Enum):
+    xy = "xy"
+    list = "list"
+
+
 class StatObjectParam(I4cBaseModel):
     """Parameter for parametrized virtual objects."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
@@ -150,18 +155,18 @@ class StatObjectParam(I4cBaseModel):
     value: Optional[str]
 
     @classmethod
-    async def load_params(cls, conn, xy_id):
-        sql = "select * from stat_xy_object_params where xy = $1"
-        res = await conn.fetch(sql, xy_id)
+    async def load_params(cls, conn, id, type: StatObjectParamType):
+        sql = f"""select * from stat_{type}_object_params where "{type}" = $1"""
+        res = await conn.fetch(sql, id)
         return [StatObjectParam(**r) for r in res]
 
-    async def insert_to_db(self, xy_id, conn):
-        sql_insert = dedent("""\
-            insert into stat_xy_object_params (xy, key, value)
+    async def insert_to_db(self, id, conn, type: StatObjectParamType):
+        sql_insert = dedent(f"""\
+            insert into stat_{type}_object_params ("{type}", key, value)
                 values ($1, $2, $3)
             returning id
             """)
-        self.id = (await conn.fetchrow(sql_insert, xy_id, self.key, self.value))[0]
+        self.id = (await conn.fetchrow(sql_insert, id, self.key, self.value))[0]
 
     def __eq__(self, other):
         if not isinstance(other, StatObjectParam):
