@@ -12,7 +12,7 @@ from common.exceptions import I4cClientNotFound
 router = I4cApiRouter(include_path="/stat")
 
 
-@router.get("/def", response_model=List[models.stat.StatDef], operation_id="stat_def_list",
+@router.get("/def", response_model=List[models.stat.StatDef], operation_id="stat_list",
             summary="List saved queries.")
 async def stat_list(
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def")),
@@ -25,7 +25,7 @@ async def stat_list(
     return await models.stat.stat_list(credentials, id, user_id, name, name_mask, type)
 
 
-@router.get("/def/{id}", response_model=models.stat.StatDef, operation_id="stat_def_get",
+@router.get("/def/{id}", response_model=models.stat.StatDef, operation_id="stat_get",
             summary="Retrieve saved query.")
 async def stat_get(
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def/{id}")),
@@ -38,7 +38,7 @@ async def stat_get(
     return res[0]
 
 
-@router.post("/def", response_model=models.stat.StatDef, operation_id="stat_def_save", summary="Save query.")
+@router.post("/def", response_model=models.stat.StatDef, operation_id="stat_save", summary="Save query.")
 async def stat_post(
     credentials: CredentialsAndFeatures = Depends(common.security_checker("post/stat/def")),
     stat: models.stat.StatDefIn = Body(...),
@@ -47,7 +47,7 @@ async def stat_post(
     return await models.stat.stat_post(credentials, stat)
 
 
-@router.delete("/def/{id}", status_code=200, operation_id="stat_def_delete", features=['delete any'],
+@router.delete("/def/{id}", status_code=200, operation_id="stat_delete", features=['delete any'],
                summary="Delete query.")
 async def stat_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/stat/def/{id}", ask_features=['delete any'])),
@@ -57,7 +57,7 @@ async def stat_delete(
     return await models.stat.stat_delete(credentials, id)
 
 
-@router.patch("/def/{id}", response_model=models.common.PatchResponse, operation_id="stat_def_update",
+@router.patch("/def/{id}", response_model=models.common.PatchResponse, operation_id="stat_update",
               summary="Update query.", features=['patch any'])
 async def stat_patch(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/stat/def/{id}", ask_features=['patch any'])),
@@ -68,7 +68,7 @@ async def stat_patch(
     return await models.stat.stat_patch(credentials, id, patch)
 
 
-@router.get("/data/{id}", response_model=models.stat.StatData, operation_id="stat_data", summary="Run query.")
+@router.get("/data/{id}", response_model=models.stat.StatData, operation_id="stat_run", summary="Run query.")
 async def stat_data_get(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/data/{id}")),
     id: int = Path(...),

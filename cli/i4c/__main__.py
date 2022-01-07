@@ -210,20 +210,21 @@ def make_commands(conn: I4CConnection):
             #    help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
             #        "included in the result. Also note that signature based authentication expires in 60 seconds."))
 
-            if action.response.content_type == "application/json":
-                params.append(click.Option(("--output-expr",),
-                    help="Jsonpath expression to apply to the response. The returned items will be separately processed by " \
-                         "--output-file and --output-template. If omitted, the entire result will be one item."))
-                params.append(click.Option(("--output-file",),
-                    help="Output file name or jinja template. If a template is given, it will be evaluated " \
-                         "against each data item (see --output-expr). If omitted or -, stdout is used. " \
-                         "If the response contains file name, it can be referred to as {{origin}}"))
-                params.append(click.Option(("--output-template",),
-                    help="Jinja template to process data items before printed or written to a file. If omitted, raw " \
-                          "json will be written."))
-            else:
-                params.append(click.Option(("--output-file",),
-                    help="Output file name. If omitted or -, stdout is used."))
+            if action.response:
+                if action.response.content_type == "application/json":
+                    params.append(click.Option(("--output-expr",),
+                        help="Jsonpath expression to apply to the response. The returned items will be separately processed by " \
+                             "--output-file and --output-template. If omitted, the entire result will be one item."))
+                    params.append(click.Option(("--output-file",),
+                        help="Output file name or jinja template. If a template is given, it will be evaluated " \
+                             "against each data item (see --output-expr). If omitted or -, stdout is used. " \
+                             "If the response contains file name, it can be referred to as {{origin}}"))
+                    params.append(click.Option(("--output-template",),
+                        help="Jinja template to process data items before printed or written to a file. If omitted, raw " \
+                              "json will be written."))
+                else:
+                    params.append(click.Option(("--output-file",),
+                        help="Output file name. If omitted or -, stdout is used."))
 
             callback = make_callback(path=action.path, method=action.method, action=conn[obj_name][action_name])
             cmd_name = action_name if len(obj.actions) > 1 else obj_name

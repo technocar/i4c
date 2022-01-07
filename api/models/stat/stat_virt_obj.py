@@ -272,7 +272,7 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
     elif virt_obj.type == StatObjectType.tool:
         sql = stat_obj_tool_sql
     else:
-        raise Exception("Not implemented")
+        raise I4cClientError(f"Not implemented object type: {virt_obj.type}")
     write_debug_sql(f"stat_{virt_obj.type}.sql", sql, before, after)
     db_objs = await conn.fetch(sql, before, after)
 
@@ -285,18 +285,18 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
             elif virt_obj.type == StatObjectType.workpiece:
                 return await get_detail_field_workpiece(dbo, field_name, agg_measures)
             else:
-                raise Exception("Invalid field name: " + field_name)
+                raise I4cClientError("Invalid field name: " + field_name)
 
     async def get_detail_field_mazak(dbo, field_name, agg_measures):
         regex = r"(?P<agg>[^_]+)_(?P<axis>[^_]+)_load+"
         match = re.fullmatch(regex, field_name)
         if not match:
-            raise Exception("Invalid field name: " + field_name)
+            raise I4cClientError("Invalid field name: " + field_name)
         try:
             agg = StatAggMethod[match.group("agg")]
             axis = StatObjMazakAxis[match.group("axis")]
         except KeyError:
-            raise Exception("Invalid field name: " + field_name)
+            raise I4cClientError("Invalid field name: " + field_name)
         mf_device = dbo["mf_device"]
         mf_start = dbo["mf_start"]
         mf_end = dbo["mf_end"]
@@ -319,7 +319,7 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
         regex = r"gom (?P<measure>.+) deviance"
         match = re.fullmatch(regex, field_name)
         if not match:
-            raise Exception("Invalid field name: " + field_name)
+            raise I4cClientError("Invalid field name: " + field_name)
         measure = match.group("measure")
 
         if measure == "max":
