@@ -30,15 +30,16 @@ export class AnalysisComponent implements OnInit {
   def: StatDef;
   origDef: StatDef;
   analysisType: AnalysisType;
-  chartLoading$: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  chartError: boolean = false;
-  chartErrorMsg: string = "";
+  loading$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  error: boolean = false;
+  errorMsg: string = "";
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
   @ViewChild('list_def')  listDef: AnalysisListDefComponent;
   @ViewChild('new_dialog') newDialog;
   @ViewChild('chart', {static: false}) chart: ElementRef;
+  @ViewChild('table', {static: false}) table: ElementRef<HTMLTableElement>;
 
   constructor(
     private route: ActivatedRoute,
@@ -101,7 +102,7 @@ export class AnalysisComponent implements OnInit {
     }
   }
 
-  getChart() {
+  getResult() {
     this.buildDef();
     if (this.hasChanges()) {
       this.def.modified = (new Date()).toISOString();
@@ -116,31 +117,57 @@ export class AnalysisComponent implements OnInit {
       if (r)
         this.getData();
     }, (err) => {
-      this.showChartError(this.apiService.getErrorMsg(err).toString());
+      this.showError(this.apiService.getErrorMsg(err).toString());
     });
   }
 
   getData() {
-    this.chartError = false;
-    this.chartErrorMsg = "";
+    this.error = false;
+    this.errorMsg = "";
 
     if (this._chartInstance)
       this._chartInstance.destroy();
 
-    this.chartLoading$.next(true);
+    this.loading$.next(true);
     this.apiService.getStatData(this.def.id)
       .subscribe(r => {
-        this.buildChart(r);
+        if (this.analysisType === AnalysisType.List)
+          this.buildTable(r);
+        else
+          this.buildChart(r);
       }, (err) => {
-        this.showChartError(this.apiService.getErrorMsg(err).toString());
+        this.showError(this.apiService.getErrorMsg(err).toString());
+        this.loading$.next(false);
       }, () => {
-        this.chartLoading$.next(false);
+        this.loading$.next(false);
       });
+  }
+
+  buildTable(result: StatData) {
+    if (!result) {
+      this.showError($localize `:@@table_no_data:Nincs megjeleníthető adat!`);
+      return;
+    }
+
+    try {
+      if (result.listdata)
+        this.table.nativeElement.append(this.buildListTable(result));
+    }
+    catch(err) {
+      this.showError(err);
+    }
+  }
+
+  buildListTable(result: StatData): HTMLTableElement {
+    if (!result?.xydata || result.xydata.length === 0)
+      throw ($localize `:@@table_no_data:Nincs megjeleníthető adat!`);
+
+    return this.listDef.buildTable(result);
   }
 
   buildChart(result: StatData) {
     if (!result) {
-      this.showChartError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+      this.showError($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
       return;
     }
 
@@ -155,7 +182,7 @@ export class AnalysisComponent implements OnInit {
       this._chartInstance = new Chart(ctx, options);
     }
     catch(err) {
-      this.showChartError(err);
+      this.showError(err);
     }
   }
 
@@ -167,6 +194,7 @@ export class AnalysisComponent implements OnInit {
     return this.xyDef.getChartConfiguration(result);
 
   }
+
   buildTimeSeriesChart(result: StatData): ChartConfiguration {
     if (!result?.timeseriesdata || result.timeseriesdata.length === 0)
       throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
@@ -221,9 +249,9 @@ export class AnalysisComponent implements OnInit {
     );
   }
 
-  showChartError(message: string) {
-    this.chartError = true;
-    this.chartErrorMsg = message;
+  showError(message: string) {
+    this.error = true;
+    this.errorMsg = message;
   }
 
   saveAs() {

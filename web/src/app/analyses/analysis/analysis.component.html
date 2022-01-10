@@ -27,14 +27,15 @@
     </ngb-accordion>
   </div>
   <div class="col-12 mt-4 mb-4 text-center">
-    <button class="btn btn-outline-success" (click)="getChart()">Adatok lekérdezése</button>
+    <button class="btn btn-outline-success" (click)="getResult()">Adatok lekérdezése</button>
   </div>
   <div id="chart-container" class="col-12">
-    <div *ngIf="chartError" class="alert alert-danger text-center" role="alert">
-      {{chartErrorMsg}}
+    <div *ngIf="error" class="alert alert-danger text-center" role="alert">
+      {{errorMsg}}
     </div>
     <canvas #chart class="chart"></canvas>
-    <div *ngIf="chartLoading$ | async" class="chart-loading-indicator text-center">
+    <div #table></div>
+    <div *ngIf="loading$ | async" class="loading-indicator text-center">
       <div class="spinner-border" role="status">
         <span class="sr-only">Loading...</span>
       </div>

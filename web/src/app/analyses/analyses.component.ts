@@ -100,7 +100,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   }
 
   getAnalaysisType(analysis: StatDef): AnalysisType {
-    return analysis.timeseriesdef ? AnalysisType.TimeSeries : AnalysisType.XY;
+    return analysis.timeseriesdef ? AnalysisType.TimeSeries : analysis.xydef ? AnalysisType.XY : AnalysisType.List;
   }
 
   getAnalsysTypeDesc(code: AnalysisType): string {

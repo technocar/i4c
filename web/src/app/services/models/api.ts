@@ -409,7 +409,8 @@ export interface StatDataXY {
 export interface StatData {
   stat_def: StatDef,
   timeseriesdata: StatDataTimeSeries[],
-  xydata: StatDataXY[]
+  xydata: StatDataXY[],
+  listdata: any[]
 }
 
 export interface StatXYMeta {
