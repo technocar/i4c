@@ -22,8 +22,8 @@
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values.length === 0" />
-            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values.length > 0">
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length === 0" />
+            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length > 0">
               <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
             </select>
           </td>
