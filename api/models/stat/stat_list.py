@@ -110,7 +110,7 @@ class StatListVisualSettings(I4cBaseModel):
 
 
     async def insert_or_update_db(self, id, conn):
-        exists = await conn.fetchrow("select id from stat_visual_setting where id = $1", id)
+        exists = await conn.fetchrow("select id from stat_list_visual_setting where id = $1", id)
         if exists:
             sql = dedent("""\
                 update stat_list_visual_setting
