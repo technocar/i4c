@@ -425,7 +425,7 @@ export enum StatMetaObjectFieldType { Numeric = 'numeric', Catgeory = 'category'
 export interface StatXYMetaObjectField {
   name: string,
   displayname: string,
-  type: StatXYMetaObjectField,
+  type: StatMetaObjectFieldType,
   value_list: string[],
   unit: StatXYMetaObjectFieldUnit
 }
