@@ -30,4 +30,25 @@
       border-bottom: none;
     }
   }
+
+  tr:not(.subtitle):not(.title) {
+    th {
+      cursor: pointer;
+    }
+    th:hover {
+      background-color: $color-light-blue;
+    }
+  }
+
+  th[order-direction="asc"]::after {
+    content: "▴"
+  }
+
+  th[order-direction="desc"]::after {
+    content: "▾"
+  }
+
+  th[order-direction]::after {
+    float: right;
+  }
 }

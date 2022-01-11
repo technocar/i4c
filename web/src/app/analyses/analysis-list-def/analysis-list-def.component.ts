@@ -55,7 +55,7 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
         duration: undefined,
         filter: [],
         obj: undefined,
-        orderby: [],
+        order_by: [],
         visualsettings: undefined
       };
 
@@ -217,6 +217,23 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     this.collectSelectableColumns();
   }
 
+  setOrder(field: string, direction: string, multi: boolean) {
+    if ((this.def.order_by ?? undefined) === undefined || !multi)
+          this.def.order_by = [];
+
+    let idx = this.def.order_by.findIndex(o => o.field === field);
+    if (idx > -1 && direction === undefined)
+      this.def.order_by.splice(idx, 1);
+    else if (idx > -1)
+      this.def.order_by[idx].ascending = direction === "asc";
+    else if (direction !== undefined) {
+      this.def.order_by.push({
+        ascending: direction === "asc",
+        field: field
+      });
+    }
+  }
+
   buildTable(result: StatData): HTMLTableElement {
     var table: HTMLTableElement = document.createElement('table');
     var thead = document.createElement('thead');
@@ -258,6 +275,9 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
       let th = document.createElement('th');
       th.textContent = header.caption ?? header.field;
       th.setAttribute("column-name", header.field);
+      let order = (this.def.order_by ?? []).find(o => o.field === header.field);
+      if (order)
+        th.setAttribute("order-direction", order.ascending ? "asc" : "desc");
       if (header.width)
         th.style.width = `${header.width}%`;
       th.style.padding = "0.75rem";

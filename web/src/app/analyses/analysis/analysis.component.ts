@@ -14,7 +14,6 @@ import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
 import { AnalysisListDefComponent } from '../analysis-list-def/analysis-list-def.component';
-//import * as XLSX from 'xlsx-with-styles';
 import * as Excel from "exceljs";
 
 Chart.register(...registerables);
@@ -169,7 +168,30 @@ export class AnalysisComponent implements OnInit {
     if (!result?.listdata || result.listdata.length === 0)
       throw ($localize `:@@table_no_data:Nincs megjeleníthető adat!`);
 
-    return this.listDef.buildTable(result);
+    var table = this.listDef.buildTable(result);
+
+    table.addEventListener("click", (e: KeyboardEvent) => {
+      var el = e.target as HTMLElement;
+      var multi = e.ctrlKey;
+      if (el.nodeName.toLowerCase() === "th") {
+        let field = el.getAttribute("column-name");
+        if (!field)
+          return;
+
+        let direction = el.getAttribute("order-direction");
+        if (direction === "asc")
+          direction = "desc";
+        else if (direction === "desc")
+          direction = undefined;
+        else
+          direction = "asc";
+
+        this.listDef.setOrder(field, direction, multi);
+        this.getResult();
+      }
+    });
+
+    return table;
   }
 
   buildChart(result: StatData) {
