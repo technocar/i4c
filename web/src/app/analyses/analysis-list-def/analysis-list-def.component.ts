@@ -40,9 +40,10 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     even_fg: '#000000',
     header_bg: '#ffffff',
     header_fg: '#000000',
-    normal_bg: '#dee2e6',
+    normal_bg: '#ffffff',
     normal_fg: '#000000'
-  }
+  };
+  colors = Object.assign({}, this.defaultColors);
 
   constructor(private apiService: ApiService) { }
 
@@ -67,21 +68,21 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
       title: "",
       subtitle: "",
       cols: [],
-      even_bg: this.defaultColors.even_bg,
-      even_fg: this.defaultColors.even_fg,
-      header_bg: this.defaultColors.header_bg,
-      header_fg: this.defaultColors.header_fg,
-      normal_bg: this.defaultColors.normal_bg,
-      normal_fg: this.defaultColors.normal_fg
+      even_bg: undefined,
+      even_fg: undefined,
+      header_bg: undefined,
+      header_fg: undefined,
+      normal_bg: undefined,
+      normal_fg: undefined
     };
 
     if (!this.def.visualsettings)
       this.def.visualsettings = defaults;
     else {
-      for (let color in this.defaultColors)
-        if (!this.def.visualsettings[color])
-          this.def.visualsettings[color] = this.defaultColors[color];
       this.def.visualsettings = Object.assign(defaults, this.def.visualsettings);
+      for (let color in this.colors)
+        if (this.def.visualsettings[color])
+          this.colors[color] = this.def.visualsettings[color];
     }
 
     this.columns$.next(this.def.visualsettings.cols);
@@ -89,17 +90,18 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
 
   getDef(): StatListDef {
     var pDef = this.period.getDef();
-    var def = Object.assign({}, this.def);
     console.log(pDef);
-    def.after = pDef.after;
-    def.before = pDef.before;
-    def.duration = pDef.duration;
-    def.filter = this.filters$.value.slice(0);
+    this.def.after = pDef.after;
+    this.def.before = pDef.before;
+    this.def.duration = pDef.duration;
+    this.def.filter = this.filters$.value.slice(0);
     for (let color in this.defaultColors)
-      if (this.defaultColors[color] === def.visualsettings[color])
-        def.visualsettings[color] = undefined;
-    def.visualsettings.cols = this.columns$.value;
-    return def;
+      if (this.defaultColors[color] === this.colors[color])
+        this.def.visualsettings[color] = undefined;
+      else
+      this.def.visualsettings[color] = this.colors[color];
+    this.def.visualsettings.cols = this.columns$.value;
+    return this.def;
   }
 
   getMeta() {
@@ -218,18 +220,47 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
   buildTable(result: StatData): HTMLTableElement {
     var table: HTMLTableElement = document.createElement('table');
     var thead = document.createElement('thead');
-    var tr: HTMLTableRowElement = document.createElement('tr');
+    var tr: HTMLTableRowElement;
 
-    table.classList.add('table');
+    function createTitle(text: string, type: string, cols: number) {
+      if ((text ?? undefined) === undefined)
+        return;
+
+      tr = document.createElement('tr');
+      tr.classList.add(type);
+      let th = document.createElement('th');
+      th.colSpan = cols;
+      if (th.colSpan === 0)
+        th.colSpan = 1;
+      th.innerText = text;
+      th.style.padding = "0.75rem";
+      tr.append(th);
+      thead.append(tr);
+    }
+
+    table.id = "result";
+    //table.classList.add('table');
+    table.style.borderCollapse = "collapse";
+    table.style.textAlign = "left";
+    table.style.width = "100%";
+
+    createTitle(this.def.visualsettings.title, "title", this.def.visualsettings.cols?.length);
+    createTitle(this.def.visualsettings.subtitle, "subtitle", this.def.visualsettings.cols?.length);
+
+    tr = document.createElement('tr');
     tr.style.backgroundColor = this.def.visualsettings.header_bg;
+    tr.setAttribute("color-bg", this.def.visualsettings.header_bg ?? "");
     tr.style.color = this.def.visualsettings.header_fg;
-
+    tr.setAttribute("color-fg", this.def.visualsettings.header_fg ?? "");
+    tr.style.borderTop = "2px solid #dee2e6";
+    tr.style.borderBottom = "2px solid #dee2e6";
     for (let header of this.def.visualsettings.cols) {
       let th = document.createElement('th');
-      th.textContent = header.caption;
+      th.textContent = header.caption ?? header.field;
       th.setAttribute("column-name", header.field);
       if (header.width)
         th.style.width = `${header.width}%`;
+      th.style.padding = "0.75rem";
       tr.append(th);
     }
     thead.append(tr);
@@ -243,21 +274,28 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     let rowIdx = 0;
     for (let row of result.listdata) {
       tr = document.createElement('tr');
+      tr.style.borderTop = "1px solid #dee2e6";
       if (rowIdx % 2 === 0) {
         tr.style.backgroundColor = this.def.visualsettings.even_bg;
+        tr.setAttribute("color-bg", this.def.visualsettings.even_bg ?? "");
         tr.style.color = this.def.visualsettings.even_fg;
+        tr.setAttribute("color-fg", this.def.visualsettings.even_fg ?? "");
       } else {
         tr.style.backgroundColor = this.def.visualsettings.normal_bg;
+        tr.setAttribute("color-bg", this.def.visualsettings.normal_bg ?? "");
         tr.style.color = this.def.visualsettings.normal_fg;
+        tr.setAttribute("color-fg", this.def.visualsettings.normal_fg ?? "");
       }
       for (let header of this.def.visualsettings.cols) {
         let td = document.createElement('td');
         if (row[header.field])
           td.innerText = row[header.field];
+        td.style.padding = "0.75rem";
 
         tr.append(td);
       }
       container.append(tr);
+      rowIdx++;
     }
     tbody.append(container);
     table.append(tbody);

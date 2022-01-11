@@ -14,6 +14,8 @@ import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
 import { AnalysisListDefComponent } from '../analysis-list-def/analysis-list-def.component';
+//import * as XLSX from 'xlsx-with-styles';
+import * as Excel from "exceljs";
 
 Chart.register(...registerables);
 
@@ -33,6 +35,7 @@ export class AnalysisComponent implements OnInit {
   loading$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   error: boolean = false;
   errorMsg: string = "";
+  showResult: boolean = false;
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
@@ -122,6 +125,7 @@ export class AnalysisComponent implements OnInit {
   }
 
   getData() {
+    this.showResult = false;
     this.error = false;
     this.errorMsg = "";
 
@@ -144,14 +148,17 @@ export class AnalysisComponent implements OnInit {
   }
 
   buildTable(result: StatData) {
+    this.table.nativeElement.innerHTML = "";
     if (!result) {
       this.showError($localize `:@@table_no_data:Nincs megjeleníthető adat!`);
       return;
     }
 
     try {
-      if (result.listdata)
+      if (result.listdata) {
         this.table.nativeElement.append(this.buildListTable(result));
+        this.showResult = true;
+      }
     }
     catch(err) {
       this.showError(err);
@@ -159,7 +166,7 @@ export class AnalysisComponent implements OnInit {
   }
 
   buildListTable(result: StatData): HTMLTableElement {
-    if (!result?.xydata || result.xydata.length === 0)
+    if (!result?.listdata || result.listdata.length === 0)
       throw ($localize `:@@table_no_data:Nincs megjeleníthető adat!`);
 
     return this.listDef.buildTable(result);
@@ -272,5 +279,89 @@ export class AnalysisComponent implements OnInit {
         })
       }
     })
+  }
+
+  exportToExcel(toCSV: boolean = false) {
+    let table = document.querySelector('table#result');
+    console.log(table);
+    const wb = new Excel.Workbook();
+    const ws = wb.addWorksheet(this.def.name);
+
+    var rows = table.querySelectorAll("tr");
+    var mergeCells = [];
+    for (let r = 0; r < rows.length; r++) {
+      let row = (rows.item(r) as HTMLTableRowElement);
+      let cells = row.childNodes;
+      for (let c = 0; c < cells.length; c++) {
+        let cell = cells.item(c) as HTMLTableCellElement;
+        let excelCell = ws.getCell(r + 1, c + 1);
+        excelCell.value = cell.textContent;
+        excelCell.font = {
+          bold: cell.nodeName.toLowerCase() === "th",
+          color: { argb: row.getAttribute("color-fg") ? "ff" + row.getAttribute("color-fg").replace("#", "") : undefined }
+        };
+        if (row.classList.contains("subtitle")) {
+          excelCell.font.color.argb = "ff666666";
+          excelCell.font.size = 10;
+        }
+        excelCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: row.getAttribute("color-bg") ? "ff" + row.getAttribute("color-bg").replace("#", "") : undefined }
+        };
+        excelCell.alignment = {
+          horizontal: cell.nodeName.toLowerCase() === "th" ? "center" : "left"
+        };
+        if (cell.colSpan > 1) {
+          if (toCSV)
+            for (let i = 1; i < cell.colSpan; i++)
+            ws.getCell(r + 1, c +1 + i).value = "";
+          else
+            mergeCells.push([r + 1, c + 1, r + 1, c + cell.colSpan]);
+        }
+      }
+    }
+
+    if (toCSV)
+      wb.csv.writeBuffer({
+        formatterOptions: {
+          delimiter: ';',
+        }
+      }).then((data) => {
+        let blob = new Blob([data], { type: 'text/csv' });
+        this.downloadFile(blob, "csv");
+      });
+    else {
+      for (let mergeCell of mergeCells)
+        ws.mergeCells(mergeCell[0], mergeCell[1], mergeCell[2], mergeCell[3]);
+
+      wb.xlsx.writeBuffer().then((data) => {
+        let blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        this.downloadFile(blob, "xlsx");
+      });
+    }
+  }
+
+  exportToHtml() {
+    let table = document.querySelector('table#result');
+    let html  = table.outerHTML;
+    var uint8 = new Uint8Array(html.length);
+    for (var i = 0; i <  uint8.length; i++) {
+      uint8[i] = html.charCodeAt(i);
+    }
+    let blob = new Blob([html], { type: 'text/html' });
+    this.downloadFile(blob, "html");
+  }
+
+  downloadFile(blob: Blob, fileExt: string) {
+    let url = window.URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    document.body.appendChild(a);
+    a.setAttribute("style", "display: none");
+    a.href = url;
+    a.download = `${this.def.name}.${fileExt}`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
   }
 }

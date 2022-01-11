@@ -34,6 +34,20 @@
       {{errorMsg}}
     </div>
     <canvas #chart class="chart"></canvas>
+    <div *ngIf="showResult" class="mb-4">
+      <button class="btn btn-outline-success mr-4" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel-fill"></i>
+        Excel export
+      </button>
+      <button class="btn btn-outline-secondary mr-4" (click)="exportToExcel(true)">
+        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+        CSV export
+      </button>
+      <button class="btn btn-outline-primary" (click)="exportToHtml()">
+        <i class="bi bi-file-earmark-code-fill"></i>
+        HTML export
+      </button>
+    </div>
     <div #table></div>
     <div *ngIf="loading$ | async" class="loading-indicator text-center">
       <div class="spinner-border" role="status">

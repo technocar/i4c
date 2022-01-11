@@ -28,6 +28,8 @@
     "chart.js": "^3.6.0",
     "chartjs-adapter-date-fns": "^2.0.0",
     "date-fns": "^2.27.0",
+    "exceljs": "^4.3.0",
+    "file-saver": "^2.0.5",
     "http-server": "^14.0.0",
     "ng-packagr": "^11.0.0",
     "ngx-quill": "^14.0.0",
