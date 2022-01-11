@@ -169,7 +169,7 @@ class StatXYDef(I4cBaseModel):
                 raise I4cServerError("Missing id from StatXYObjectParam")
             await conn.execute("delete from stat_xy_object_params where id = $1", d.id)
 
-        new_other = [StatXYOther(field_name=o) for o in new_state.order_by]
+        new_other = [StatXYOther(field_name=o) for o in new_state.other]
         insert, delete, _, _ = cmp_list(self.other_internal, new_other)
         for f in insert:
             await f.insert_to_db(stat_id, conn)
