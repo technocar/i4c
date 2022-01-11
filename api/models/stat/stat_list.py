@@ -287,7 +287,7 @@ class MinType(object):
         return self is other
 
 
-async def statdata_get_list(credentials, st_id: int, st_listdef: StatListDef, conn) -> List[Dict[str, Union[float, str, None]]]:
+async def statdata_get_list(credentials, st_id: int, st_listdef: StatListDef, conn) -> List[Dict[str, Union[float, str, datetime, None]]]:
     after, before = resolve_time_period(st_listdef.after, st_listdef.before, st_listdef.duration)
     db_objs, get_field_value = await statdata_virt_obj_fields(credentials, after, before, st_listdef.obj, conn)
 

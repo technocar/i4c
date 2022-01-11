@@ -215,7 +215,7 @@ class StatXYData(I4cBaseModel):
     y: Optional[Union[float, str, None]] = Field(None, title="Value to show on the Y axis.")
     shape: Optional[Union[float, str, None]] = Field(None, title="Value to show as shape.")
     color: Optional[Union[float, str, None]] = Field(None, title="Value to show as color.")
-    others: List[Union[float, str, None]] = Field(..., title="Values to show as tooltip.")
+    others: List[Union[float, str, datetime, None]] = Field(..., title="Values to show as tooltip.")
 
 
 async def statdata_get_xy(credentials, st_id: int, st_xydef: StatXYDef, conn) -> List[StatXYData]:
