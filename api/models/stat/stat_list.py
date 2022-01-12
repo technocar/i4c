@@ -16,8 +16,8 @@ from functools import total_ordering
 
 class StatListOrderBy(I4cBaseModel):
     id: Optional[int] = Field(None, hidden_from_schema=True)
-    field: str
-    ascending: Optional[bool] = Field(True, title="sort direction")
+    field: str = Field(..., title="Field.")
+    ascending: Optional[bool] = Field(True, title="Sort from lowest to highest.")
 
     @classmethod
     async def load_order_by(cls, conn, xy_id):
@@ -45,9 +45,9 @@ class StatListOrderBy(I4cBaseModel):
 class StatListFilter(I4cBaseModel):
     """List query filter."""
     id: Optional[int] = Field(None, hidden_from_schema=True)
-    field: str
-    rel: StatVirtObjFilterRel
-    value: str
+    field: str = Field(..., title="Field.")
+    rel: StatVirtObjFilterRel = Field("=", title="Relation.")
+    value: str = Field(..., title="Value.")
 
     @classmethod
     async def load_filters(cls, conn, list_id):
@@ -75,23 +75,23 @@ class StatListFilter(I4cBaseModel):
 
 
 class StatListVisualSettingsCol(I4cBaseModel):
-    """Visual setting col parameter"""
-    field: str
-    caption: Optional[str]
-    width: Optional[int]
+    """List query, visual settings, column parameters."""
+    field: str = Field(..., title="Field name.")
+    caption: Optional[str] = Field(None, title="Column caption.")
+    width: Optional[int] = Field(None, title="Width.")
 
 
 class StatListVisualSettings(I4cBaseModel):
-    """List settings."""
-    title: Optional[str]
-    subtitle: Optional[str]
-    header_bg: Optional[str]
-    header_fg: Optional[str]
-    normal_bg: Optional[str]
-    normal_fg: Optional[str]
-    even_bg: Optional[str]
-    even_fg: Optional[str]
-    cols: List[StatListVisualSettingsCol]
+    """List query, visual settings."""
+    title: Optional[str] = Field(None, title="Title.")
+    subtitle: Optional[str] = Field(None, title="Subtitle.")
+    header_bg: Optional[str] = Field(None, title="Header background color.")
+    header_fg: Optional[str] = Field(None, title="Header font color.")
+    normal_bg: Optional[str] = Field(None, title="Row background color.")
+    normal_fg: Optional[str] = Field(None, title="Row font color.")
+    even_bg: Optional[str] = Field(None, title="Alternate row background color.")
+    even_fg: Optional[str] = Field(None, title="Alternate row font color.")
+    cols: List[StatListVisualSettingsCol] = Field(..., title="Column definitions.")
 
     @classmethod
     async def load_settings(cls, conn, id):

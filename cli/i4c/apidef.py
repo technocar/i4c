@@ -43,9 +43,9 @@ class Schema:
 
     def describe(self, *, brief=False):
         if brief:
-            return self.title or self.description or self.type_desc()
+            return self.title or self.description or self.type_desc(brief=brief)
         else:
-            return self.description or self.title or self.type_desc()
+            return self.description or self.title or self.type_desc(brief=brief)
 
 
 @dataclass
@@ -199,6 +199,7 @@ def _proc_sch(sch, target):
         target.type_fmt = None
         target.type_enum = None
         target.sch_obj = None
+        target.required = False
 
     target.title = sch.get("title", None)
     target.description = sch.get("description", None)
@@ -217,10 +218,12 @@ def _proc_sch(sch, target):
 
     props = sch.get("properties", None)
     if props is not None:
+        required = sch.get("required", [])
         target.properties = {}
         for prop_name, prop in props.items():
             propo = Schema()
             _proc_sch(prop, propo)
+            propo.required = prop_name in required
             target.properties[prop_name] = propo
 
 
