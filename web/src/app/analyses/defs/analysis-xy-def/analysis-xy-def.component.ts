@@ -4,7 +4,7 @@ import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther } from 'src/app/services/models/api';
+import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther, StatMetaObjectFieldType } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
@@ -37,6 +37,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
   objects$: BehaviorSubject<StatXYMeta[]> = new BehaviorSubject([]);
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
+  numFields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
   filters$: BehaviorSubject<Filter[]> = new BehaviorSubject([]);
   others$: BehaviorSubject<Other[]> = new BehaviorSubject([]);
   operators: NumberRelation[] = [
@@ -154,6 +155,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       };
     }
     this.fields$.next(obj.length > 0 ? obj[0].fields : []);
+    this.numFields$.next(obj.length > 0 ? obj[0].fields.filter(f => f.type === StatMetaObjectFieldType.Numeric) : []);
   }
 
   deleteFilter(filter: Filter) {

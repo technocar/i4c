@@ -1,3 +1,5 @@
+@import '/src/base.scss';
+
 .chart-container {
   position: relative;
 }
@@ -7,4 +9,46 @@
   width: 100%;
   left: 0;
   top: 0;
+}
+
+::ng-deep table#result {
+
+  .title {
+    text-align: center;
+    th {
+      border-top: none;
+      border-bottom: none;
+    }
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: smaller;
+    color: $color-gray;
+    th {
+      border-top: none;
+      border-bottom: none;
+    }
+  }
+
+  tr:not(.subtitle):not(.title) {
+    th {
+      cursor: pointer;
+    }
+    th:hover {
+      background-color: $color-light-blue;
+    }
+  }
+
+  th[order-direction="asc"]::after {
+    content: "▴"
+  }
+
+  th[order-direction="desc"]::after {
+    content: "▾"
+  }
+
+  th[order-direction]::after {
+    float: right;
+  }
 }

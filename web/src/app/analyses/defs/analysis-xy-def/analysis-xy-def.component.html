@@ -22,8 +22,8 @@
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values.length === 0" />
-            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values.length > 0">
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length === 0" />
+            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length > 0">
               <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
             </select>
           </td>
@@ -45,25 +45,25 @@
     <div class="row form-group">
       <label class="col-6">x</label>
       <select class="col form-control" [(ngModel)]="def.x">
-        <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">y</label>
       <select class="col form-control" [(ngModel)]="def.y">
-        <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">forma</label>
       <select class="col form-control" [(ngModel)]="def.shape">
-        <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">szín</label>
       <select class="col form-control" [(ngModel)]="def.color">
-        <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
       </select>
     </div>
     <fieldset class="row p-4">

@@ -339,7 +339,7 @@ class StatData(I4cBaseModel):
     stat_def: StatDef = Field(..., title="Definition of the query.")
     timeseriesdata: Optional[List[StatTimeseriesDataSeries]] = Field(None, title="Time series results.")
     xydata: Optional[List[StatXYData]] = Field(None, title="XY query results.")
-    listdata: Optional[List[Dict[str, Union[float, str, None]]]] = Field(None, title="XY query results.")
+    listdata: Optional[List[Dict[str, Union[float, str, datetime, None]]]] = Field(None, title="XY query results.")
 
 
 async def statdata_get(credentials, id) -> StatData:
