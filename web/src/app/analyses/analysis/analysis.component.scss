@@ -13,24 +13,6 @@
 
 ::ng-deep table#result {
 
-  .title {
-    text-align: center;
-    th {
-      border-top: none;
-      border-bottom: none;
-    }
-  }
-
-  .subtitle {
-    text-align: center;
-    font-size: smaller;
-    color: $color-gray;
-    th {
-      border-top: none;
-      border-bottom: none;
-    }
-  }
-
   tr:not(.subtitle):not(.title) {
     th {
       cursor: pointer;

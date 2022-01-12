@@ -245,12 +245,19 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
 
       tr = document.createElement('tr');
       tr.classList.add(type);
+      tr.style.textAlign = "center";
+      if (type === "subtitle") {
+        tr.style.color = "#aaaaaa";
+        tr.style.fontSize = "smaller";
+      }
       let th = document.createElement('th');
       th.colSpan = cols;
       if (th.colSpan === 0)
         th.colSpan = 1;
       th.innerText = text;
       th.style.padding = "0.75rem";
+      th.style.borderBottom = "none";
+      th.style.borderTop = "none";
       tr.append(th);
       thead.append(tr);
     }
