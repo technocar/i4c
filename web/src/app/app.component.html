@@ -4,7 +4,7 @@
     <div ngbDropdown class="col-auto" *ngIf="isLoggedIn$ | async">
       <button class="btn btn-outline-primary" id="logged_user" ngbDropdownToggle>{{loggedUserName$ | async}}</button>
       <div ngbDropdownMenu aria-labelledby="logged_user">
-        <a ngbDropdownItem href="#" [routerLink]="['/alarms/subscriptions']">Feliratkozások</a>
+        <a ngbDropdownItem href="#" [routerLink]="['/alarms/subscriptions']" *ngIf="access.subscriptions">Feliratkozások</a>
         <button ngbDropdownItem (click)="logout()">Kijelentkezés</button>
       </div>
     </div>

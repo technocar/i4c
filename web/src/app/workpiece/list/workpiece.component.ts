@@ -8,6 +8,7 @@ import { UpdateResult, WorkPiece, WorkPieceBatch, WorkPieceBatchItemType, WorkPi
 import { ActivatedRoute, NavigationEnd, Router, RouterState } from '@angular/router';
 import { FilterControlComponent } from 'src/app/commons/filter/filter.component';
 import { FiltersService } from 'src/app/services/filters.service';
+import { AuthenticationService } from 'src/app/services/auth.service';
 
 interface WorkPieceItem extends WorkPiece {
   selected: boolean
@@ -81,6 +82,10 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
 
   statuses: string[][] = [];
 
+  access = {
+    canUpdate: false
+  }
+
   private selected: string[] = [];
 
   constructor(
@@ -89,7 +94,11 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     private route: ActivatedRoute,
     private router: Router,
     private cd: ChangeDetectorRef,
-    private filtersService: FiltersService) {
+    private filtersService: FiltersService,
+    private authService: AuthenticationService)
+  {
+    this.access.canUpdate = authService.hasPrivilige("patch/workpiece/{id}");
+
     var date = new Date();
     var filters: WorkPieceFilters = {
       fd: undefined,

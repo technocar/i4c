@@ -21,6 +21,9 @@ export class AppComponent {
   loggedUserName$: BehaviorSubject<string> = new BehaviorSubject("");
   isLoggedIn$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   breadcrumbs$: Observable<Breadcrumb[]>;
+  access = {
+    subscriptions: false
+  }
 
   constructor(
     private router: Router,
@@ -29,7 +32,7 @@ export class AppComponent {
     private authService: AuthenticationService,
     private breadcrumbService: BreadcrumbService
   ) {
-
+    this.access.subscriptions = authService.hasPrivilige("get/alarm/subs");
     authService.currentUser.subscribe(r => {
       if (r && authService.isAuthenticated()) {
         this.loggedUserName$.next(r.username);

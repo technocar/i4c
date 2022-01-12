@@ -70,7 +70,7 @@ export class AuthenticationService {
     }
   }
 
-  hasPrivilige(endpoint: string, privilige: string): boolean {
+  hasPrivilige(endpoint: string, privilige?: string): boolean {
     if (!this.isAuthenticated())
       return false;
 

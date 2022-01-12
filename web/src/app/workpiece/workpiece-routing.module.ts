@@ -7,10 +7,13 @@ import { WorkpieceDetailResolver } from './workpiece-detail/workpiece-detail.res
 
 const routes: Routes = [
   { path: '',  children: [
-    { path: '', component: WorkPieceComponent, canActivate: [AuthGuard] },
+    { path: '', component: WorkPieceComponent, canActivate: [AuthGuard], data: { priv: "get/workpiece" } },
     { path: 'detail/:id', component: WorkpieceDetailComponent, canActivate: [AuthGuard],
       resolve: { workpiece: WorkpieceDetailResolver },
-      data: { breadcrumb: (data: any) => `${data.workpiece.id}` }
+      data: {
+        breadcrumb: (data: any) => `${data.workpiece.id}`,
+        data: { priv: "get/workpiece/{id}" }
+      }
     }],
     data: { breadcrumb: "Munkaszámok" }
   }

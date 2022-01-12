@@ -15,7 +15,14 @@ export class AuthGuard implements CanActivate, HttpInterceptor  {
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
     if (this.authenticationService.isAuthenticated()) {
-      return true;
+      if (!route.data.priv)
+        return true;
+
+      if (this.authenticationService.hasPrivilige(route.data.priv, undefined))
+        return true;
+
+      this.router.navigate(['/selector']);
+      return false;
     }
 
     // not logged in so redirect to login page with the return url

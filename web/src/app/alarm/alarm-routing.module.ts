@@ -11,19 +11,25 @@ import { AlarmSubscriptionComponent } from './subscription/subscription.componen
 const routes: Routes = [{
   path: '',
   children: [
-    { path: 'subscriptions', data: { breadcrumb: 'Feliratkozások' },
+    { path: 'subscriptions', data: { breadcrumb: 'Feliratkozások', priv: "get/alarm/subs" },
       children: [{
         path: ':user/:id', component: AlarmSubscriptionDetailComponent, canActivate: [AuthGuard],
         resolve: { data: AlarmSubscriptionDetailResolver },
-        data: { breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].address_name : "???"}` }
+        data: {
+          breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].address_name : "???"}`,
+          priv: "get/alarm/subs/{id}"
+       }
       },
-      { path: '', component: AlarmSubscriptionComponent, canActivate: [AuthGuard] }]
+      { path: '', component: AlarmSubscriptionComponent, canActivate: [AuthGuard], data: { priv: "get/alarm/subs" } }]
     },
     { path: ':name', component: AlarmDetailComponent, canActivate: [AuthGuard],
       resolve: { data: AlarmDetailResolver },
-      data: { breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].name : "???"}` }
+      data: {
+        breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].name : "???"}`,
+        priv: "get/alarm/defs/{name}"
+      }
     },
-    { path: '', component: AlarmComponent, canActivate: [AuthGuard] }
+    { path: '', component: AlarmComponent, canActivate: [AuthGuard], data: { priv: "get/alarm/defs" } }
   ],
   data: { breadcrumb: 'Riasztások' }
 }];

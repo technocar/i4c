@@ -1,6 +1,6 @@
 <div class="container">
   <div class="row row-cols-2 mt-4">
-    <div class="col p-2">
+    <div class="col p-2" *ngIf="access.dashboard">
       <div class="card bg-light dashboard">
         <a class="card-body" href="#" [routerLink]="'/dashboard'">
           <h5 class="card-title">
@@ -11,7 +11,7 @@
         </a>
       </div>
     </div>
-    <div class="col p-2">
+    <div class="col p-2" *ngIf="access.workpieces">
       <div class="card bg-light batch">
         <a class="card-body" href="#" [routerLink]="'/workpiece'">
           <h5 class="card-title">
@@ -22,7 +22,7 @@
         </a>
       </div>
     </div>
-    <div class="col p-2">
+    <div class="col p-2" *ngIf="access.projects">
       <div class="card bg-light install">
         <a class="card-body" href="#" [routerLink]="'/project'">
           <h5 class="card-title">
@@ -33,7 +33,7 @@
         </a>
       </div>
     </div>
-    <div class="col p-2">
+    <div class="col p-2" *ngIf="access.tools">
       <div class="card bg-light tools">
         <a class="card-body" href="#" [routerLink]="'/tools'">
           <h5 class="card-title">
@@ -44,7 +44,7 @@
         </a>
       </div>
     </div>
-    <div class="col p-2">
+    <div class="col p-2" *ngIf="access.analyses">
       <div class="card bg-light analyses">
         <a class="card-body" href="#" [routerLink]="'/analyses'">
           <h5 class="card-title">
@@ -55,7 +55,7 @@
         </a>
       </div>
     </div>
-    <div class="col p-2">
+    <div class="col p-2" *ngIf="access.alarms">
       <div class="card bg-light alarms">
         <a class="card-body" href="#" [routerLink]="'/alarms'">
           <h5 class="card-title">

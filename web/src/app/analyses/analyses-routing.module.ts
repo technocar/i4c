@@ -8,14 +8,20 @@ import { AnalysisResolver } from './analysis/analysis.resolver';
 const routes: Routes = [
   { path: '',
     children: [
-      { path: '', component: AnalysesComponent, canActivate: [AuthGuard] },
+      { path: '', component: AnalysesComponent, canActivate: [AuthGuard], data: { priv: "get/stat/def" } },
       { path: ':id', component: AnalysisComponent, canActivate: [AuthGuard],
         resolve: { data: AnalysisResolver },
-        data: { breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name ?? "Új elemzés" : "???"}` }
+        data: {
+          breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name ?? "Új elemzés" : "???"}`,
+          data: { priv: "get/stat/def/{id}" }
+        }
       },
       { path: ':id/:type', component: AnalysisComponent, canActivate: [AuthGuard],
         resolve: { data: AnalysisResolver },
-        data: { breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name ?? "Új elemzés" : "???"}` }
+        data: {
+          breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name ?? "Új elemzés" : "???"}`,
+          data: { priv: "get/stat/def/{id}" }
+        }
       }
     ],
     data: { breadcrumb: 'Adatelemzések' }
