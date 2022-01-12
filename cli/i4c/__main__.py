@@ -8,6 +8,7 @@ from .conn import I4CConnection, HTTPError
 from .outputproc import print_table, process_json, make_jinja_env
 from .inputproc import assemble_body
 from .tools import resolve_file
+from difflib import SequenceMatcher
 
 log = logging.getLogger("i4c")
 
@@ -340,7 +341,9 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
 
     if output_expr or output_template or raw:
         if schema:
-            obj = conn.api_def().content["components"]["schemas"][schema]
+            obj = conn.api_def().content["components"]["schemas"].get(schema, None)
+            if obj is None:
+                raise click.ClickException("Schema does not exist.")
         else:
             obj = conn.api_def().content
 
@@ -351,26 +354,38 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
         return
 
     if schema:
-        sch = conn.api_def().schema[schema]
+        sch = conn.api_def().schema.get(schema, None)
+        if sch is None:
+            click.echo("No such schema exists.")
+            similars = [f"  {k}" for k in conn.api_def().schema.keys() if SequenceMatcher(None, k, schema).ratio() > 0.6]
+            partials = [f"  {k}" for k in conn.api_def().schema.keys() if schema in k]
+            candidates = similars + partials
+            if candidates:
+                click.echo("Closest candidates are:")
+                click.echo("\n".join(candidates))
+            return
         click.echo(schema)
         click.echo()
         desc = sch.describe()
+        if sch.type == "object":
+            desc = desc + " Mandatory fields marked with\xa0*."
         desc = click.formatting.wrap_text(desc, preserve_paragraphs=True)
         click.echo(desc)
         click.echo()
         if sch.type == "object":
             # there is no way to preserve the order, because fastAPI already messes it up. sorting alphabetically.
-            table = [[k, v.type_desc(), v.describe(brief=True)] for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
+            table = [[("*" if v.required else "") + k, v.type_desc(), v.describe(brief=True)]
+                     for (k, v) in sorted(sch.properties.items(), key=lambda p: p[0])]
             click.echo("Fields:")
             print_table(table)
         elif sch.type_enum is not None:
-            desc = f"It is a {sch.data_type} with possible values:"
+            desc = f"It is a {sch.type} with possible values:"
             desc = click.formatting.wrap_text(desc, preserve_paragraphs=True)
             click.echo(desc)
             for op in sch.type_enum:
                 click.echo(f"  {op}")
         else:
-            click.echo(f"It is of type {sch.data_type}")
+            click.echo(f"It is of type {sch.type}")
     else:
         click.echo("Commands and paths:")
         paths = [[obj_name, act_name if len(obj.actions) > 1 else "", f"{act.method.upper()} {act.path}"]
