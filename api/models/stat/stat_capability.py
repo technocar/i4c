@@ -86,20 +86,20 @@ class StatCapabilityVisualSettings(I4cBaseModel):
 
 
     async def insert_or_update_db(self, id, conn):
-        exists = await conn.fetchrow("select id from stat_list_visual_setting where id = $1", id)
+        exists = await conn.fetchrow("select id from stat_capability_visual_setting where id = $1", id)
         if exists:
             sql = dedent("""\
-                update stat_list_visual_setting
+                update stat_capability_visual_setting
                 set
                   title = $2,
                   subtitle = $3,
                   plotdata = $4, 
-                  infoboxloc = $5,
+                  infoboxloc = $5
                 where id = $1
                 """)
         else:
             sql = dedent("""\
-                insert into stat_list_visual_setting (id, title, subtitle,
+                insert into stat_capability_visual_setting (id, title, subtitle,
                                                       plotdata, infoboxloc
                                                       ) values ($1, $2, $3,
                                                                 $4, $5)
@@ -123,7 +123,7 @@ class StatCapabilityDef(I4cBaseModel):
     ltl: float = Field(..., title="Ltl")
     ucl: Optional[float] = Field(None, title="Ucl")
     lcl: Optional[float] = Field(None, title="Lcl")
-    visualsettings: StatVisualSettings = Field(..., title="Chart settings.")
+    visualsettings: StatCapabilityVisualSettings = Field(..., title="Chart settings.")
 
     @validator('duration')
     def duration_validator(cls, v):
@@ -205,7 +205,6 @@ class StatCapabilityDef(I4cBaseModel):
                 raise I4cServerError("Missing id from StatCapabilityFilter")
             await conn.execute("delete from stat_capability_filter where id = $1", d.id)
 
-        # todo 1: ******
         await new_state.visualsettings.insert_or_update_db(stat_id, conn)
 
 
