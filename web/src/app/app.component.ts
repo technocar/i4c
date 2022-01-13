@@ -32,8 +32,8 @@ export class AppComponent {
     private authService: AuthenticationService,
     private breadcrumbService: BreadcrumbService
   ) {
-    this.access.subscriptions = authService.hasPrivilige("get/alarm/subs");
     authService.currentUser.subscribe(r => {
+      this.access.subscriptions = authService.hasPrivilige("get/alarm/subs");
       if (r && authService.isAuthenticated()) {
         this.loggedUserName$.next(r.username);
         this.isLoggedIn$.next(true);
