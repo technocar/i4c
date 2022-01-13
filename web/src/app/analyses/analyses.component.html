@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-12 mb-4 mt-4">
+  <div class="col-12 mb-4 mt-4" *ngIf="access.canCreate">
     <a href="#" [routerLink]="['-1', '0']" class="btn btn-primary mr-4" >
       <i class="bi bi-plus"></i>
       új idősoros...
@@ -62,7 +62,7 @@
         </tr>
       </ng-template>
       <ng-template [ngIf]="!(fetching$ | async)">
-        <tr *ngFor="let item of analysesOwn$ | async; index as i" class="{{getAnalaysisType(item)}}" [routerLink]="[item.id]">
+        <tr *ngFor="let item of analysesOwn$ | async; index as i" class="{{getAnalaysisType(item) + ' '+ (access.canRun ? 'runnable' : '')}}" [routerLink]="access.canRun ? [item.id] : []">
           <td>{{item.name}}</td>
           <td>{{getAnalsysTypeDesc(getAnalaysisType(item))}}</td>
           <td>{{item.modified | date:'yyyy.MM.dd HH:mm'}}</td>
@@ -99,7 +99,7 @@
         </tr>
       </ng-template>
       <ng-template [ngIf]="!(fetching$ | async)">
-        <tr *ngFor="let item of analysesOthers$ | async; index as i" class="{{getAnalaysisType(item)}}" [routerLink]="[item.id]">
+        <tr *ngFor="let item of analysesOthers$ | async; index as i" class="{{getAnalaysisType(item) + ' '+ (access.canRun ? 'runnable' : '')}}" [routerLink]="access.canRun ? [item.id] : []">
           <td>{{item.user?.name}}</td>
           <td>{{item.name}}</td>
           <td>{{getAnalsysTypeDesc(getAnalaysisType(item))}}</td>

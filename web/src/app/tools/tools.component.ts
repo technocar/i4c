@@ -1,9 +1,10 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { NgbDateStruct, NgbModal, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
+import { AuthenticationService } from '../services/auth.service';
 import { FiltersService } from '../services/filters.service';
 import { Device, Tool, ToolUsage } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
@@ -34,15 +35,27 @@ export class ToolsComponent implements OnInit {
 
   events: string[][] = [];
   selectedTool: Tool;
+  access = {
+    canDelete: false,
+    canUpdate: false
+  }
+  headerCount = 7;
 
   constructor(
     private apiService: ApiService,
     private router: Router,
     private route: ActivatedRoute,
     private modalService: NgbModal,
-    private filtersService: FiltersService
+    private filtersService: FiltersService,
+    private authService: AuthenticationService
   )
   {
+    this.access.canUpdate = authService.hasPrivilige("put/tools");
+    this.access.canDelete = authService.hasPrivilige("delete/tools");
+    if (!this.access.canUpdate)
+      this.headerCount--;
+    if (!this.access.canDelete)
+      this.headerCount--;
     var filters: ToolsFilters = { fdt: undefined, fd: undefined };
     filtersService.read("tools", filters);
     this.filterDate = filters.fdt;

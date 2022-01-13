@@ -47,6 +47,11 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     [AnalysisType.List, $localize `:@@analysis_type_list:Lista`]
   ]
 
+  access = {
+    canCreate: false,
+    canRun: false
+  }
+
   constructor(
     private apiService: ApiService,
     private router: Router,
@@ -54,6 +59,8 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     private cd: ChangeDetectorRef,
     private authService: AuthenticationService
   ) {
+    this.access.canCreate = authService.hasPrivilige("post/stat/def");
+    this.access.canRun = authService.hasPrivilige("get/stat/def/{id}");
     this._filterModified = route.snapshot.queryParamMap.get("fm");
     this._filterShared = parseInt(route.snapshot.queryParamMap.get("fs") ?? "-1");
     this.filterType = route.snapshot.queryParamMap.get("ft");

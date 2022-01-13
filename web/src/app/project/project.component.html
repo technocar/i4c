@@ -1,4 +1,4 @@
-<div id="toolbar" class="row align-items-end pb-2">
+<div id="toolbar" class="row align-items-end pb-2" *ngIf="access.canInstall">
   <div class="col-4 mr-2 form-group mb-0">
     <label for="selectable_projects">Projektek</label>
     <select id="selectable_projects" class="form-control" (change)="projectSelectionChanged()" [(ngModel)]="selectedProject">
@@ -22,7 +22,7 @@
     </button>
   </div>
 </div>
-<div id="list" class="row">
+<div id="list" class="row" *ngIf="access.canViewInstalled">
  <app-grid-tools class="col-12 p-0" (reload)="filter()"></app-grid-tools>
   <table class="table table-striped">
     <thead>

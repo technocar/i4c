@@ -43,7 +43,7 @@ import { environment } from 'src/environments/environment';
     QuillModule.forRoot(),
     RouterModule.forRoot([
       { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard], data: { priv: "get/workpiece" } },
-      { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard], data: { priv: "get/project" } },
+      { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard], data: { priv: "get/projects" } },
       { path: 'dashboard', loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule), canActivate: [AuthGuard], data: { priv: "get/log/snapshot" } },
       { path: 'tools', loadChildren: () => import('./tools/tools.module').then(m => m.ToolsModule), canActivate: [AuthGuard], data: { priv: "get/tools" } },
       { path: 'analyses', loadChildren: () => import('./analyses/analyses.module').then(m => m.AnalysesModule), canActivate: [AuthGuard], data: { priv: "get/stat/def" } },

@@ -11,23 +11,25 @@
             <option *ngFor="let device of devices$ | async" [value]="device.id">{{device.name}}</option>
           </select>
         </th>
-        <th colspan="6"></th>
+        <th colspan="4"></th>
+        <th *ngIf="access.canUpdate">&nbsp;</th>
+        <th *ngIf="access.canDelete">&nbsp;</th>
       </tr>
-      <tr>
+      <tr #header>
         <th scope="col">időpont</th>
         <th scope="col">gép</th>
         <th scope="col">esemény</th>
         <th scope="col">eszköz</th>
         <th scope="col">zseb</th>
         <th scope="col">típus</th>
-        <th scope="col">&nbsp;</th>
-        <th scope="col">&nbsp;</th>
+        <th scope="col" *ngIf="access.canUpdate">&nbsp;</th>
+        <th scope="col" *ngIf="access.canDelete">&nbsp;</th>
       </tr>
     </thead>
     <tbody>
       <ng-template [ngIf]="fetchingList$ | async">
         <tr>
-          <td colspan="7">
+          <td [colSpan]="headerCount">
             <div class="d-flex justify-content-center">
               <div class="spinner-border" role="status">
                 <span class="sr-only">Loading...</span>
@@ -44,8 +46,8 @@
           <td>{{tool.tool_id}}</td>
           <td>{{tool.slot_number}}</td>
           <td>{{tool.type}}</td>
-          <td><a href="#" [routerLink]="" (click)="select(tool)">Módosítás</a></td>
-          <td><a href="#" [routerLink]="" class="text-danger" (click)="askForDelete(tool)">Törlés</a></td>
+          <td *ngIf="access.canUpdate"><a href="#" [routerLink]="" (click)="select(tool)">Módosítás</a></td>
+          <td *ngIf="access.canDelete"><a href="#" [routerLink]="" class="text-danger" (click)="askForDelete(tool)">Törlés</a></td>
         </tr>
       </ng-template>
     </tbody>

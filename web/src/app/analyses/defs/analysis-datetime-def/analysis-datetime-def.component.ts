@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { AuthenticationService } from 'src/app/services/auth.service';
 import { StatDateTimeDef } from 'src/app/services/models/api';
 import { AnalysisDef } from '../../analyses.component';
 
@@ -24,8 +25,12 @@ export class AnalysisDatetimeDefComponent implements OnInit, AnalysisDef {
     ['Y', $localize `:@@datetime_year:év`]
   ];
   period: string;
+  access = {
+    canUpdate: false
+  }
 
-  constructor() {
+  constructor(private authService: AuthenticationService) {
+    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.timestamp = (new Date()).toISOString();
     this.direction = -1;
     this.count = 1;

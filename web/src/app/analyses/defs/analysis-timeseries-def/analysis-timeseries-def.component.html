@@ -14,31 +14,31 @@
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
           <td>
-            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" ></app-meta-selector>
+            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
           </td>
           <td>
-            <select class="form-control mr-2" [(ngModel)]="filter.rel">
+            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">
               <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" />
+            <input class="form-control mr-2" [(ngModel)]="filter.value" [disabled]="!access.canUpdate"/>
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" />
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" [disabled]="!access.canUpdate"/>
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" />
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" [disabled]="!access.canUpdate"/>
           </td>
           <td>
-            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)">
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="access.canUpdate">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
       </tbody>
     </table>
-    <button class="btn btn-primary mt-4" (click)="newFilter()">
+    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="access.canUpdate">
       <i class="bi bi-plus"></i>
       hozzadás...
     </button>
@@ -48,12 +48,12 @@
     <div class="row form-group">
       <label class="col-6">mérőszám</label>
       <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id"></app-meta-selector>
+        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
       </div>
     </div>
     <div class="row form-group">
       <label class="col">x tengely</label>
-      <select class="col form-control"  [(ngModel)]="def.xaxis">
+      <select class="col form-control"  [(ngModel)]="def.xaxis" [disabled]="!access.canUpdate">
         <option value="timestamp">dátum</option>
         <option value="sequence">szekvencia</option>
       </select>
@@ -63,12 +63,12 @@
         <div class="row form-group">
           <label class="col-6">elválasztó</label>
           <div class="col p-0">
-            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id"></app-meta-selector>
+            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
           </div>
         </div>
         <div class="row form-group">
           <label class="col">összesítés</label>
-          <select class="col form-control"  [(ngModel)]="def.agg_func">
+          <select class="col form-control"  [(ngModel)]="def.agg_func" [disabled]="!access.canUpdate">
             <option value="">nincs</option>
             <option *ngFor="let item of aggFuncs" [value]="item[0]">{{item[1]}}</option>
           </select>
@@ -77,14 +77,14 @@
     </div>
     <div class="row form-group">
       <label class="col">adatsor elnevezése</label>
-      <select class="col form-control" [(ngModel)]="def.series_name">
+      <select class="col form-control" [(ngModel)]="def.series_name" [disabled]="!access.canUpdate">
         <option *ngFor="let item of seriesNameTypes" [value]="item[0]">{{item[1]}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">görbe elválasztó</label>
       <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id"></app-meta-selector>
+        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
       </div>
     </div>
   </fieldset>
@@ -92,18 +92,18 @@
     <legend>grafikon beállítás</legend>
     <div class="row form-group">
       <label class="col">megnevezés</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.title" />
+      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!access.canUpdate"/>
     </div>
     <div class="row form-group">
       <label class="col">rövid magyarázat</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" />
+      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!access.canUpdate"/>
     </div>
     <fieldset class="row p-4 mt-4" *ngFor="let axis of ['x', 'y']">
       <legend>{{axis}} tengely</legend>
       <div class="col">
         <div class="row form-group">
           <label class="col">felirat</label>
-          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" />
+          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" [disabled]="!access.canUpdate"/>
         </div>
       </div>
     </fieldset>
@@ -112,13 +112,13 @@
       <div class="col">
         <div class="row form-group">
           <label class="col">pozició</label>
-          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position">
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position" [disabled]="!access.canUpdate">
             <option *ngFor="let p of labels.legend.positions" [value]="p[0]">{{p[1]}}</option>
           </select>
         </div>
         <div class="row form-group">
           <label class="col">igazítás</label>
-          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align">
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align" [disabled]="!access.canUpdate">
             <option *ngFor="let a of labels.legend.aligns" [value]="a[0]">{{a[1]}}</option>
           </select>
         </div>

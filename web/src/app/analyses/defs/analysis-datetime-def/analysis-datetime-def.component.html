@@ -2,19 +2,19 @@
   <fieldset class="col-12 p-4">
     <legend>időszak</legend>
     <div class="row m-0 justify-content-between">
-      <input type="datetime-local" class="form-control col-3" [ngModel]="timestamp | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="timestamp = $event" />
+      <input type="datetime-local" class="form-control col-3" [ngModel]="timestamp | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="timestamp = $event" [disabled]="!access.canUpdate"/>
       <div class="btn-group btn-group-toggle col-3" ngbRadioGroup name="radioBasic" [(ngModel)]="direction">
         <label ngbButtonLabel class="btn-primary">
-          <input ngbButton type="radio" [value]="1">követő
+          <input ngbButton type="radio" [value]="1" [disabled]="!access.canUpdate">követő
         </label>
         <label ngbButtonLabel class="btn-primary">
-          <input ngbButton type="radio" [value]="-1">megelőző
+          <input ngbButton type="radio" [value]="-1" [disabled]="!access.canUpdate">megelőző
         </label>
       </div>
       <div class="col-3">
         <div class="row">
-          <input type="number" class="form-control col" [(ngModel)]="count" />
-          <select class="form-control col" [(ngModel)]="period">
+          <input type="number" class="form-control col" [(ngModel)]="count" [disabled]="!access.canUpdate"/>
+          <select class="form-control col" [(ngModel)]="period" [disabled]="!access.canUpdate">
             <option *ngFor="let p of periods" [value]="p[0]">{{p[1]}}</option>
           </select>
         </div>

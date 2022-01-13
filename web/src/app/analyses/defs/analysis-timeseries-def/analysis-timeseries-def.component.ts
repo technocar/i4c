@@ -2,6 +2,7 @@ import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint, FontSpec } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
+import { AuthenticationService } from 'src/app/services/auth.service';
 import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatData, StatVisualSettingsChart } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
@@ -41,8 +42,16 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
 
   eventOps: string[][] = [];
 
-  constructor(private apiService: ApiService)
+  access = {
+    canUpdate: false
+  }
+
+  constructor(
+    private apiService: ApiService,
+    private authService: AuthenticationService
+  )
   {
+    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.eventOps = apiService.getEventOperations();
   }
 

@@ -4,6 +4,7 @@ import { NgbDate, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
+import { AuthenticationService } from '../services/auth.service';
 import { FiltersService } from '../services/filters.service';
 import { Project, ProjectInstall, ProjectInstallParams, ProjectInstallStatus, ProjectStatus } from '../services/models/api';
 import { NotificationService } from '../services/notification.service';
@@ -48,14 +49,21 @@ export class ProjectComponent implements OnInit {
     ["done", $localize `:@@install_status_done:Kész`],
     ["fail", $localize `:@@install_status_fail:Sikeretelen`]
   ];
+  access = {
+    canInstall: false,
+    canViewInstalled: false
+  }
 
   constructor(
     private apiService: ApiService,
     private notifService: NotificationService,
     private route: ActivatedRoute,
     private router: Router,
-    private filtersService: FiltersService
+    private filtersService: FiltersService,
+    private authService: AuthenticationService
   ) {
+    this.access.canInstall = authService.hasPrivilige("post/installations/{project}/{version}");
+    this.access.canViewInstalled = authService.hasPrivilige("get/installations", "noaudit");
     let now = new Date();
     this._filterFromDate = { year: now.getFullYear(), month: now.getMonth() + 1, day: 1 };
     now = new Date(now.getFullYear(), now.getMonth() + 1, 0);

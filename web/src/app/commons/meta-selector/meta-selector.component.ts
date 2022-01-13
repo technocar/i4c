@@ -20,6 +20,7 @@ export class MetaSelectorComponent implements OnInit {
 
   private _selectedMetaId: string;
 
+  @Input() disabled: boolean = false;
   @Input('metaList') metaList: Meta[];
   @Input('selectableTypes') selectableTypes: string[];
   @Input('selectedMetaId')

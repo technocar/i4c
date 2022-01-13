@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-12 mb-4">
+  <div class="col-12 mb-4" *ngIf="access.canUpdate">
     <div class="row align-items-center justify-content-between m-0">
       <button class="btn btn-primary col-auto mr-4" (click)="saveAs()" *ngIf="isOwn()">
         <i class="bi bi-save2"></i>
@@ -17,7 +17,7 @@
   </div>
   <div class="col-12">
     <ngb-accordion #settings="ngbAccordion" activeIds="{{isNew() ? 'analysis-settings' : ''}}" type="light" [destroyOnHide]="false" [animation]="true">
-      <ngb-panel title="Beállítások" cardClass="settings" id="analysis-settings">
+      <ngb-panel title="Paraméterek" cardClass="settings" id="analysis-settings">
         <ng-template ngbPanelContent>
           <app-analysis-timeseries-def #timeseries_def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>
           <app-analysis-xy-def #xy_def *ngIf="analysisType === '1'" [def]="def.xydef"></app-analysis-xy-def>
@@ -26,7 +26,7 @@
       </ngb-panel>
     </ngb-accordion>
   </div>
-  <div class="col-12 mt-4 mb-4 text-center">
+  <div class="col-12 mt-4 mb-4 text-center" *ngIf="access.canUpdate">
     <button class="btn btn-outline-success" (click)="getResult()">Adatok lekérdezése</button>
   </div>
   <div id="chart-container" class="col-12">

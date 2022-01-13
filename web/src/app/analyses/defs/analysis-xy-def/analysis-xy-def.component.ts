@@ -4,6 +4,7 @@ import { QuillEditorComponent } from 'ngx-quill';
 import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
+import { AuthenticationService } from 'src/app/services/auth.service';
 import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther, StatMetaObjectFieldType } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
@@ -52,10 +53,17 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   labels = Labels.analysis;
   _defaultTooltip = '<p>X: <span class="graphdata" contenteditable="false" spellcheck="false" id="1">{{X}}</span>  </p><p>Y: <span class="graphdata" contenteditable="false" spellcheck="false" id="2">{{Y}}</span></p>';
 
+  access = {
+    canUpdate: false
+  }
+
   constructor(
-    private apiService: ApiService
+    private apiService: ApiService,
+    private authService: AuthenticationService
   )
-  { }
+  {
+    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
+  }
 
   getDef(): StatXYDef {
     var pDef = this.period.getDef();
@@ -266,18 +274,19 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
         plugins: {
           tooltip: {
             enabled: false,
-
+            position: 'nearest',
               external: (context) => {
 
                 function getOrCreateTooltip(chart) {
-                  let tooltipEl = chart.canvas.parentNode.querySelector('div');
+                  let tooltipEl = chart.canvas.parentNode.querySelector('#tooltip') as HTMLDivElement;
 
                   if (!tooltipEl) {
                     tooltipEl = document.createElement('div');
+                    tooltipEl.id = "tooltip";
                     tooltipEl.style.background = 'rgba(0, 0, 0, 0.7)';
                     tooltipEl.style.borderRadius = '3px';
                     tooltipEl.style.color = 'white';
-                    tooltipEl.style.opacity = 1;
+                    tooltipEl.style.opacity = "1";
                     tooltipEl.style.pointerEvents = 'none';
                     tooltipEl.style.position = 'absolute';
                     tooltipEl.style.transform = 'translate(-50%, 0)';
@@ -287,6 +296,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
                     table.style.margin = '0px';
 
                     tooltipEl.appendChild(table);
+
                     chart.canvas.parentNode.appendChild(tooltipEl);
                   }
 
@@ -299,7 +309,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
                 // Hide if no tooltip
                 if (tooltip.opacity === 0) {
-                  tooltipEl.style.opacity = 0;
+                  tooltipEl.style.opacity = "0";
                   return;
                 }
 
@@ -344,7 +354,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
                   let dataPointIndex = context.tooltip.dataPoints[0].dataIndex;
                   let seriesIndex = context.tooltip.dataPoints[0].datasetIndex;
-                  let html =  this.def.visualsettings.tooltip.html;
+                  let html = this.def.visualsettings.tooltip.html ?? `${context.tooltip.dataPoints[0].label}<br/><br/>` + this._defaultTooltip;
                   html = html.replace(/{{X}}/gi, context.tooltip?.x?.toFixed(2));
                   html = html.replace(/{{Y}}/gi, context.tooltip?.y?.toFixed(2));
                   let shapeValue = undefined;
@@ -381,7 +391,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
                 const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
 
                 // Display, position, and set styles for font
-                tooltipEl.style.opacity = 1;
+                tooltipEl.style.opacity = "1";
                 tooltipEl.style.left = positionX + tooltip.caretX + 'px';
                 tooltipEl.style.top = positionY + tooltip.caretY + 'px';
                 tooltipEl.style.font = (tooltip.options.bodyFont as any).string;

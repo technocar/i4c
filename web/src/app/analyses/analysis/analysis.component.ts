@@ -43,6 +43,10 @@ export class AnalysisComponent implements OnInit {
   @ViewChild('chart', {static: false}) chart: ElementRef;
   @ViewChild('table', {static: false}) table: ElementRef<HTMLTableElement>;
 
+  access = {
+    canUpdate: false
+  }
+
   constructor(
     private route: ActivatedRoute,
     private authService: AuthenticationService,
@@ -50,6 +54,7 @@ export class AnalysisComponent implements OnInit {
     private apiService: ApiService,
     private router: Router
   ) {
+    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.analysisType = (route.snapshot.paramMap.get("type") ?? "0") as AnalysisType;
   }
 
@@ -60,6 +65,9 @@ export class AnalysisComponent implements OnInit {
       this.processDef();
       if (this.def)
         this.origDef = JSON.parse(JSON.stringify(this.def));
+
+      if (!this.access.canUpdate)
+        this.getResult();
     });
   }
 
@@ -105,22 +113,27 @@ export class AnalysisComponent implements OnInit {
   }
 
   getResult() {
-    this.buildDef();
-    if (this.hasChanges()) {
-      this.def.modified = (new Date()).toISOString();
-    }
-    var saving: Observable<boolean>;
-    if (this.isNew())
-      saving = this.askForName();
-    else
-      saving = this.save();
+    if (this.access.canUpdate) {
+      this.buildDef();
 
-    saving.subscribe(r => {
-      if (r)
-        this.getData();
-    }, (err) => {
-      this.showError(this.apiService.getErrorMsg(err).toString());
-    });
+      if (this.hasChanges()) {
+        this.def.modified = (new Date()).toISOString();
+      }
+      var saving: Observable<boolean>;
+      if (this.isNew())
+        saving = this.askForName();
+      else
+        saving = this.save();
+
+      saving.subscribe(r => {
+        if (r)
+          this.getData();
+      }, (err) => {
+        this.showError(this.apiService.getErrorMsg(err).toString());
+      });
+    } else {
+      this.getData();
+    }
   }
 
   getData() {

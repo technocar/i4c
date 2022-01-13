@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { AsyncSubject, BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
+import { AuthenticationService } from 'src/app/services/auth.service';
 import { NumberRelation, StatData, StatListDef, StatListVisualSettings, StatListVisualSettingsCol, StatXYDef, StatXYFilter, StatXYMeta, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisDef } from '../analyses.component';
@@ -44,8 +45,16 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     normal_fg: '#000000'
   };
   colors = Object.assign({}, this.defaultColors);
+  access = {
+    canUpdate: false
+  }
 
-  constructor(private apiService: ApiService) { }
+  constructor(
+    private apiService: ApiService,
+    private authService: AuthenticationService
+  ) {
+    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
+  }
 
   ngOnInit(): void {
     if (!this.def)
