@@ -9,6 +9,8 @@ from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.db_tools import get_user_customer
 from common.exceptions import I4cClientError, I4cClientNotFound
 from models.common import PatchResponse
+from .stat_capability import StatCapabilityDef, StatCapabilityFilter, StatCapabilityData, statdata_get_capability, \
+    StatCapabilityVisualSettings
 from .stat_common import StatObjectParam, StatObjectParamType
 from .stat_list import statdata_get_list, StatListDef, StatListOrderBy, StatListFilter, StatListVisualSettings
 from .stat_timeseries import StatTimeseriesDef, StatTimeseriesFilter, StatTimeseriesDataSeries, \
@@ -42,16 +44,19 @@ class StatDefIn(I4cBaseModel):
     name: str = Field(..., title="Name.")
     shared: bool = Field(..., title="If set, everyone can run.")
     timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
+    capabilitydef: Optional[StatCapabilityDef] = Field(None, title="Capability definition.")
     xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
     listdef: Optional[StatListDef] = Field(None, title="List query definition.")
 
 
     @root_validator
     def check_exclusive(cls, values):
-        timeseriesdef_s, xydef_s, listdef_s = values.get('timeseriesdef') is not None, values.get('xydef') is not None, \
-                                           values.get('listdef') is not None
-        if sum(int(x) for x in (timeseriesdef_s, xydef_s, listdef_s)) != 1:
-            raise ValueError('Exactly one of timeseriesdef, xydef, or listdef should be present')
+        timeseriesdef_s = values.get('timeseriesdef') is not None
+        capabilitydef_s = values.get('capabilitydef') is not None
+        xydef_s = values.get('xydef') is not None
+        listdef_s = values.get('listdef') is not None
+        if sum(int(x) for x in (timeseriesdef_s, capabilitydef_s, xydef_s, listdef_s)) != 1:
+            raise ValueError('Exactly one of timeseriesdef, capabilitydef, xydef, or listdef should be present')
         return values
 
 
@@ -83,20 +88,24 @@ class StatPatchChange(I4cBaseModel):
     """
     shared: Optional[bool] = Field(None, title="Set sharing.")
     timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
+    capabilitydef: Optional[StatCapabilityDef] = Field(None, title="Capability definition.")
     xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
     listdef: Optional[StatListDef] = Field(None, title="List query definition.")
 
     @root_validator
     def check_exclusive(cls, values):
-        timeseriesdef_s, xydef_s, listdef_s = values.get('timeseriesdef') is not None, values.get('xydef') is not None, \
-                                              values.get('listdef') is not None
-        if sum(int(x) for x in (timeseriesdef_s, xydef_s, listdef_s)) > 1:
-            raise ValueError('Timeseriesdef, xydef, or listdef are exclusive')
+        timeseriesdef_s = values.get('timeseriesdef') is not None
+        capabilitydef_s = values.get('capabilitydef') is not None
+        xydef_s = values.get('xydef') is not None
+        listdef_s = values.get('listdef') is not None
+        if sum(int(x) for x in (timeseriesdef_s, capabilitydef_s, xydef_s, listdef_s)) > 1:
+            raise ValueError('Timeseriesdef, capabilitydef_s, xydef, or listdef are exclusive')
         return values
 
     def is_empty(self):
         return (self.shared is None
                 and self.timeseriesdef is None
+                and self.capabilitydef is None
                 and self.xydef is None
                 and self.listdef is None)
 
@@ -130,6 +139,18 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                       st.series_sep_device as st_series_sep_device,
                       st.series_sep_data_id as st_series_sep_data_id,
                       st.xaxis as st_xaxis,
+                      
+                      sc.id as sc_id,
+                      sc.after as sc_after,
+                      sc.before as sc_before,
+                      sc.duration::varchar(200) as sc_duration,
+                      sc.metric_device as sc_metric_device,
+                      sc.metric_data_id as sc_metric_data_id,
+                      sc.nominal as sc_nominal,
+                      sc.utl as sc_utl,
+                      sc.ltl as sc_ltl,
+                      sc.ucl as sc_ucl,
+                      sc.lcl as sc_lcl,
 
                       sx.id as sx_id,
                       sx.object_name as sx_object_name,
@@ -157,6 +178,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                     from stat s
                     join "user" u on u.id = s."user"
                     left join "stat_timeseries" st on st."id" = s."id"
+                    left join "stat_capability" sc on sc."id" = s."id"
                     left join "stat_xy" sx on sx."id" = s."id"
                     left join "stat_list" sl on sl."id" = s."id"
                     left join "stat_visual_setting" vs on vs."id" = s."id"
@@ -195,10 +217,14 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
             for r in res_db:
                 d = dict(r)
                 d["user"] = StatUser.create_from_dict(d, 'u_')
-                timeseriesdef, xydef, listdef = None, None, None
+                timeseriesdef, capabilitydef, xydef, listdef = None, None, None, None
                 if d["st_id"] is not None:
                     d["st_filter"] = await StatTimeseriesFilter.load_filters(conn, d["st_id"])
                     timeseriesdef = StatTimeseriesDef.create_from_dict(d,'st_', ['vs_'])
+                if d["sc_id"] is not None:
+                    d["sc_filter"] = await StatCapabilityFilter.load_filters(conn, d["sc_id"])
+                    d["sc_visualsettings"] = await StatCapabilityVisualSettings.load_settings(conn, d["sc_id"])
+                    capabilitydef = StatCapabilityDef.create_from_dict(d,'sc_')
                 if d["sx_id"] is not None:
                     d["sx_object_param"] = await StatObjectParam.load_params(conn, d["sx_id"], StatObjectParamType.xy)
                     d["sx_other"], d["sx_other_internal"] = await StatXYOther.load_others(conn, d["sx_id"])
@@ -210,7 +236,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                     d["sl_filter"] = await StatListFilter.load_filters(conn, d["sl_id"])
                     d["sl_visualsettings"] = await StatListVisualSettings.load_settings(conn, d["sl_id"])
                     listdef = StatListDef.create_from_dict(d, 'sl_')
-                res.append(StatDef(**d, timeseriesdef=timeseriesdef, xydef=xydef, listdef=listdef))
+                res.append(StatDef(**d, timeseriesdef=timeseriesdef, capabilitydef=capabilitydef, xydef=xydef, listdef=listdef))
             return res
 
 
@@ -233,6 +259,9 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
             if stat.timeseriesdef is not None:
                 await stat.timeseriesdef.insert_to_db(stat_id, conn)
 
+            if stat.capabilitydef is not None:
+                await stat.capabilitydef.insert_to_db(stat_id, conn)
+
             if stat.xydef is not None:
                 await stat.xydef.insert_to_db(stat_id, conn)
 
@@ -245,6 +274,7 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
                            name=stat.name,
                            shared=stat.shared,
                            timeseriesdef=stat.timeseriesdef,
+                           capabilitydef=stat.capabilitydef,
                            xydef=stat.xydef,
                            listdef=stat.listdef)
 
@@ -302,6 +332,24 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
                 else:
                     await patch.change.timeseriesdef.insert_to_db(st.id, conn)
 
+                if st.capabilitydef is not None:
+                    await conn.execute('delete from stat_capability where "id" = $1', st.id)
+
+                if st.xydef is not None:
+                    await conn.execute('delete from stat_xy where "id" = $1', st.id)
+
+                if st.listdef is not None:
+                    await conn.execute('delete from stat_list where "id" = $1', st.id)
+
+            if patch.change.capabilitydef is not None:
+                if st.timeseriesdef is not None:
+                    await conn.execute('delete from stat_timeseries where "id" = $1', st.id)
+
+                if st.capabilitydef is not None:
+                    await st.capabilitydef.update_to_db(st.id, patch.change.capabilitydef, conn)
+                else:
+                    await patch.change.capabilitydef.insert_to_db(st.id, conn)
+
                 if st.xydef is not None:
                     await conn.execute('delete from stat_xy where "id" = $1', st.id)
                 if st.listdef is not None:
@@ -310,6 +358,9 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
             if patch.change.xydef is not None:
                 if st.timeseriesdef is not None:
                     await conn.execute('delete from stat_timeseries where "id" = $1', st.id)
+
+                if st.capabilitydef is not None:
+                    await conn.execute('delete from stat_capability where "id" = $1', st.id)
 
                 if st.xydef is not None:
                     await st.xydef.update_to_db(st.id, patch.change.xydef, conn)
@@ -322,6 +373,9 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
             if patch.change.listdef is not None:
                 if st.timeseriesdef is not None:
                     await conn.execute('delete from stat_timeseries where "id" = $1', st.id)
+
+                if st.capabilitydef is not None:
+                    await conn.execute('delete from stat_capability where "id" = $1', st.id)
 
                 if st.xydef is not None:
                     await conn.execute('delete from stat_xy where "id" = $1', st.id)
@@ -338,6 +392,7 @@ class StatData(I4cBaseModel):
     """Results of a query. Either timeseriesdata or xydata will be given."""
     stat_def: StatDef = Field(..., title="Definition of the query.")
     timeseriesdata: Optional[List[StatTimeseriesDataSeries]] = Field(None, title="Time series results.")
+    capabilitydata: Optional[StatCapabilityData] = Field(None, title="Capability results.")
     xydata: Optional[List[StatXYData]] = Field(None, title="XY query results.")
     listdata: Optional[List[Dict[str, Union[float, str, datetime, None]]]] = Field(None, title="XY query results.")
 
@@ -352,6 +407,8 @@ async def statdata_get(credentials, id) -> StatData:
             res = StatData(stat_def=st)
             if st.timeseriesdef is not None:
                 res.timeseriesdata = await statdata_get_timeseries(credentials, st.id, st.timeseriesdef, conn)
+            if st.capabilitydef is not None:
+                res.capabilitydata = await statdata_get_capability(credentials, st.id, st.capabilitydef, conn)
             elif st.xydef is not None:
                 res.xydata = await statdata_get_xy(credentials, st.id, st.xydef, conn)
             elif st.listdef is not None:

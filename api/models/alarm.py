@@ -10,7 +10,7 @@ from common.debug_helpers import debug_print
 from common.exceptions import I4cInputValidationError, I4cClientNotFound
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
 from common.tools import frac_index
-from models import CommonStatusEnum, AlarmCondEventRel
+from models import CommonStatusEnum, CondEventRel
 from models.common import PatchResponse
 
 
@@ -107,7 +107,7 @@ class AlarmCondEvent(I4cBaseModel):
     """Alarm condition for events."""
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Data type.")
-    rel: AlarmCondEventRel = Field(..., title="Relation")
+    rel: CondEventRel = Field(..., title="Relation")
     value: str = Field(..., title="Value.")
     age_min: Optional[float] = Field(None, title="Value persists for minimum, seconds.")
     age_max: Optional[float] = Field(None, title="Value persists for maximum, seconds.")

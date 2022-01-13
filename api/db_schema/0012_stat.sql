@@ -1,4 +1,8 @@
 /* 
+drop table "stat_capability_visual_setting";
+drop table "stat_capability_filter";
+drop table "stat_capability";
+
 drop table "stat_list_visual_setting_col";
 drop table "stat_list_visual_setting";
 drop table "stat_list_filter";
@@ -250,9 +254,61 @@ GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO aaa;
 GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO postgres;
 
+/* **************** stat_capability **************** */
 
+create table "stat_capability" (
+    id integer not null constraint fk_pv references "stat" on delete cascade PRIMARY KEY,
+    
+    after timestamp with time zone NULL,
+    before timestamp with time zone NULL,
+    duration interval null,
+    metric_device character varying (200) not null,
+    metric_data_id character varying (200) not null,
+    nominal double precision null,
+    utl double precision null,
+    ltl double precision null,
+    ucl double precision null,
+    lcl double precision null
+); 
+
+
+GRANT ALL ON TABLE public."stat_capability" TO aaa;
+GRANT ALL ON TABLE public."stat_capability" TO postgres;
+
+create table "stat_capability_filter" (
+    id SERIAL PRIMARY KEY,
+    capability integer not null constraint fk_pv references "stat_capability" on delete cascade,
+    
+    device character varying (200) not null,
+    data_id character varying (200) not null,
+    rel character varying (200) not null,
+    value character varying (200) not null
+);
+
+GRANT ALL ON TABLE "stat_capability_filter" TO aaa;
+GRANT USAGE, SELECT ON SEQUENCE stat_capability_filter_id_seq TO aaa;
+GRANT ALL ON TABLE "stat_capability_filter" TO postgres;
+GRANT USAGE, SELECT ON SEQUENCE stat_capability_filter_id_seq TO postgres;
+
+create table "stat_capability_visual_setting" (
+    id integer not null constraint fk_pv references "stat_capability" on delete cascade PRIMARY KEY,
+    
+    title character varying (200) null,
+    subtitle character varying (200) null,
+    
+    plotdata boolean NOT NULL default false,
+    infoboxloc character varying (200) null
+); 
+
+
+GRANT ALL ON TABLE public."stat_capability_visual_setting" TO aaa;
+GRANT ALL ON TABLE public."stat_capability_visual_setting" TO postgres;
 
 /*
+delete from "stat_capability" where id<0;
+delete from "stat_capability_filter" where id<0;
+delete from "stat_capability_visual_setting" where id<0;
+
 delete from "stat_list_visual_setting_col" where id<0;
 delete from "stat_list_visual_setting" where id<0;
 delete from "stat_list_filter" where id<0;
@@ -281,5 +337,8 @@ insert into "stat_xy" values (-3, 'mazakprogram', null, null, 'P1M'::interval, '
 insert into "stat" values (-4, 'stat-4', '1', false , now());
 insert into "stat_list" values (-4, 'mazakprogram', null, null, 'P1M'::interval); 
 
-
+insert into "stat" values (-6, 'stat-6', '1', false , now());
+insert into "stat_capability" values (-6, null, null, 'P1M'::interval, 'lathe', 'sl', 3, 5, 1, 4, 2);
+insert into "stat_capability_filter" values (-6, -6, 'lathe', 'pgm', '*', 'a');
+insert into "stat_capability_visual_setting" values (-6, 'title', 'subtitle', false, 'none');
 */

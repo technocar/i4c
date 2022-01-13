@@ -17,8 +17,8 @@ class DeviceAuto(str, Enum):
     robot = "robot"
 
 
-class AlarmCondEventRel(str, Enum):
-    """Relation for alarm condition, event data type."""
+class CondEventRel(str, Enum):
+    """Relation for condition, event data type."""
     eq = "="
     neq = "!="
     contains = "*"

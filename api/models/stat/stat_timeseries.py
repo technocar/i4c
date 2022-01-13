@@ -11,7 +11,7 @@ from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from common.tools import optimize_timestamp_label
-from models import AlarmCondEventRel, alarm
+from models import CondEventRel, alarm
 from models.alarm import prev_iterator
 from .stat_common import StatAggMethod, StatVisualSettings, resolve_time_period, calc_aggregate
 
@@ -21,7 +21,7 @@ class StatTimeseriesFilter(I4cBaseModel):
     id: Optional[int] = Field(None, hidden_from_schema=True)
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Event type.")
-    rel: AlarmCondEventRel = Field(..., title="Relation.")
+    rel: CondEventRel = Field(..., title="Relation.")
     value: str = Field(..., title="Value.")
     age_min: Optional[float] = Field(None, description="In effect for at least this many seconds.")
     age_max: Optional[float] = Field(None, description="In effect for at most this many seconds.")
