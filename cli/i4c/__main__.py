@@ -479,16 +479,18 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     --input-format attributes. If --input-format is not given, the following defaults will be used based on the
     extension (see the description of formatting options below):
 
+    \b
     csv -> sep.comma.noheaeder.table
     txt -> sep.tab.noheader.table
     json -> json
     xml -> xml
 
     The attributes can be written in any order, and can be dot-separated or given in separate options. If multiple
-    options are given, they will be combined. The attributes are:
+    options are given, they will be combined. The attributes are as follows.
 
     File type attributes:
 
+    \b
     sep -> separated tabular text file
     csv -> shorthand for sep.comma
     txt -> shorthand for sep.tab
@@ -498,6 +500,7 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
 
     For separated files, the following attributes can be used:
 
+    \b
     tab -> tab delimited
     comma -> comma delimited
     semicolon -> semicolon delimited
@@ -510,13 +513,14 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
 
     For tabular files, the following attributes can be used:
 
-    cr|lf|crlf|auto -> specifies the row separator
-    [no]header -> the first row contains or does not contain a header
-    [no]trimcells -> weather to strip each data cell from leading/trailing whitespace
-    enc<codepage> -> code page. e.g. enccp1252 or encansi. default is utf8
-    rows -> the file is processed into an array of rows, rows are json objects.
-    columns -> the file is processed into a json in which all columns are arrays.
-    table -> the file is processed into an array of arrays t[row, column].
+    \b
+    cr|lf|crlf|auto -> Specifies the row separator.
+    [no]header -> The first row contains or does not contain a header.
+    [no]trimcells -> Weather to strip each data cell from leading/trailing whitespace.
+    enc<codepage> -> Code page. E.g. enccp1252 or encansi. Default is utf8.
+    rows -> The file is processed into an array of rows, rows are json objects.
+    columns -> The file is processed into a json in which all columns are arrays.
+    table -> The file is processed into an array of arrays t[row][column].
 
     If omitted, attributes have defaults, which are:
 
@@ -526,6 +530,7 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     with the --input-place option. Multiple options can be specified, each will be executed in order. The format of
     the option is:
 
+    \b
     --input-placement "<place>=<path>"
     --input-placement "<place>"
 
@@ -537,13 +542,15 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
 
     Example 1
 
-    echo {"a":{"b":10}} | cli transform --body {"x":null}
-      --input-format json --input-file - --input-place "$.x=$.a"
+    \b
+    echo {"a":{"b":10}} | cli transform --body {\\"x\\":null}
+      --input-format json --input-file - --input-placement $.x=$.a
 
     {"x":{"b":10}}
 
     Example 2
 
+    \b
     file.txt:
     color,weight,price
     red,100,10
@@ -552,6 +559,7 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
 
     cli transform --input-file file.txt --input-format csv.header.rows
 
+    \b
     [{"color":"red", "weight":"100", "price":"10"},
      {"color":"blue", "weight":"100", "price":"10"},
      {"color":"green", "weight":"200", "price":"20"}]
