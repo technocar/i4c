@@ -1,7 +1,11 @@
+import os.path
+import re
 import sys
+import datetime
 from functools import wraps
 import json
-import logging
+import yaml
+import logging.config
 import click.globals
 from .apidef import I4CDef
 from .conn import I4CConnection, HTTPError
@@ -10,7 +14,7 @@ from .inputproc import assemble_body
 from .tools import resolve_file
 from difflib import SequenceMatcher
 
-log = logging.getLogger("i4c")
+log = None # will be set from main
 
 
 def stream_copy(src, dst):
@@ -60,6 +64,7 @@ def json_options(f):
 
 def callback(ctx, **args):
     # This is the main Click callback that performs the API call
+    log.debug(f"callback {args}")
 
     path = args.pop("path")
     method = args.pop("method")
@@ -138,14 +143,50 @@ def make_callback(**outer_args):
     return f
 
 
+class TZDateTime(click.ParamType):
+    name = "iso timestamp"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, str):
+            try:
+                m = re.fullmatch(r"(\d\d\d\d)-(\d\d)-(\d\d)(T(\d\d)(:(\d\d)(:(\d\d)(\.(\d{1,6}))?)?)?(Z|([+-])(\d\d)(:(\d\d))?)?)?", value)
+                if m is None:
+                    self.fail(f"Not recognized date format: {value}.", param=param, ctx=ctx)
+                y, m, d, _, h, _, n, _, s, _, us, zz, zsgn, zh, _, zm = m.groups()
+                y, m, d, h, n, s, zh, zm = (int(i) if i is not None else 0 for i in (y, m, d, h, n, s, zh, zm))
+                if us is not None:
+                    us = int(us.ljust(6, "0"))
+                else:
+                    us = 0
+                if zz == "Z" or zz == "z":
+                    tz = datetime.timezone.utc
+                elif zsgn is not None:
+                    if zm is None: zm = 0
+                    zsgn = -1 if zsgn == "-" else 1
+                    zh = zsgn * zh
+                    zm = zsgn * zm
+                    tz = datetime.timezone(datetime.timedelta(hours=zh, minutes=zm))
+                else:
+                    tz = None
+                value = datetime.datetime(y, m, d, h, n, s, microsecond=us, tzinfo=tz)
+            except Exception as e:
+                self.fail(f"{e}", param=param, ctx=ctx)
+
+        if isinstance(value, datetime.datetime) and value.tzinfo is None:
+            value = value.astimezone()
+
+        return value
+
+
 def make_commands(conn: I4CConnection):
     """
     Make click Groups and Commands based on command_mapping, which is derived from openapi.json
     """
-
+    log.debug(f"make_commands, get api")
     api_def = conn.api_def()
 
     for (obj_name, obj) in api_def.objects.items():
+        log.debug(f"make_commands, processing obj {obj_name}")
         if len(obj.actions) == 1:
             grp = top_grp
         else:
@@ -155,6 +196,7 @@ def make_commands(conn: I4CConnection):
             top_grp.add_command(grp)
 
         for (action_name, action) in obj.actions.items():
+            log.debug(f"make_commands, processing action {action_name}")
             params = []
             for param_name, param in action.params.items():
                 param_decl = "--" + param_name.replace("_", "-")
@@ -168,7 +210,7 @@ def make_commands(conn: I4CConnection):
                 elif param.type == "boolean":
                     attrs["type"] = click.BOOL
                 elif param.type == "string" and param.type_fmt == "date-time":
-                    attrs["type"] = click.DateTime()
+                    attrs["type"] = TZDateTime()
                 elif param.type_enum:
                     attrs["type"] = click.Choice(param.type_enum)
 
@@ -194,12 +236,18 @@ def make_commands(conn: I4CConnection):
 
                 params.append(click.Option(("--input-file",),
                     help="Points to a file which will be processed and inserted to the body according to the other "
-                        "--input-* options. Use - to read from stdin."))
+                         "--input-* options. Use - to read from stdin."))
+
+                params.append(click.Option(("--input-placement",), multiple=True,
+                    help="Specifies where the input should be placed into the body, and optionally what part of the "
+                         "input. If only a <jsonpath> is given, the input will be written at that location. If "
+                         "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
+                         "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1]."))
 
                 params.append(click.Option(("--input-format",), multiple=True,
                     help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
-                        "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
-                        "For a detailed explanation on data input and transformations, see the transform command."))
+                         "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
+                         "For a detailed explanation on data input and transformations, see the transform command."))
 
             if action.authentication == "basic":
                 params.append(click.Option(("--profile",), help="The name of the saved profile to use"))
@@ -233,17 +281,6 @@ def make_commands(conn: I4CConnection):
             grp.add_command(cmd)
 
 
-def redact_profile(prof):
-    "Remove sensitive information from profile before printing/exporting"
-    prof = prof.copy()
-    if "password" in prof:
-        prof["password"] = True
-    if "private-key" in prof:
-        pri = prof.pop("private-key")
-        prof["public-key"] = conn.public_key(pri)
-    return prof
-
-
 @top_grp.group("profile", help="Manage saved profiles")
 def profile():
     pass
@@ -253,21 +290,21 @@ def profile():
     "Sensitive fields are redacted.")
 @click.option("--name", help="The profile name to read")
 @json_options
-def profile_get(name, output_expr, output_file, output_template):
-    data = load_profile() or {}
-    default = data.get("default", None)
-
-    if not name:
-        name = default
-        if not name:
+@click.pass_context
+def profile_get(ctx, name, output_expr, output_file, output_template):
+    log.debug(f"profile_get")
+    conn = ctx.obj["connection"]
+    profiles = conn.profiles()
+    if name:
+        profile = next((profile for profile in profiles if profile["profile"] == name), None)
+        if profile is None:
+            raise click.ClickException("Profile does not exist")
+    else:
+        profile = next((profile for profile in profiles if profile["default"]), None)
+        if profile is None:
             raise click.ClickException("No default profile set up")
 
-    sect = data.get(name, None)
-    if sect is None:
-        raise click.ClickException("Profile does not exist")
-    sect = {"name": name, **sect, "is-default": name == default}
-    sect = {"profile": redact_profile(sect)}
-    process_json(sect, output_expr, output_file, output_template)
+    process_json(profile, output_expr, output_file, output_template)
 
 
 @profile.command("new-key", help="Creates a new key pair for the profile, and displays the public key")
@@ -275,6 +312,7 @@ def profile_get(name, output_expr, output_file, output_template):
 @click.option("--override", is_flag=True, help="If the profile has a key already, replace it. The old key is deleted.")
 @click.pass_context
 def profile_new_key(ctx, name, override):
+    log.debug(f"profile_new_key")
     conn = ctx.obj["connection"]
     pubkey = conn.profile_new_key(name, override)
     click.echo(pubkey)
@@ -293,6 +331,7 @@ def profile_new_key(ctx, name, override):
 @click.option("--make-default", is_flag=True, help="Make the profile default")
 @click.pass_context
 def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+    log.debug(f"profile_save")
     conn = ctx.obj["connection"]
     if password == ".":
         password = click.termui.prompt("Password", hide_input=True, confirmation_prompt=True)
@@ -303,12 +342,24 @@ def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, pass
 
 
 @profile.command("list", help="Gives back all existing profiles. Sensitive fields will be redacted.")
-# TODO do we want any filters?
+@click.option("--user-name", help="Filter by user name.")
+@click.option("--has-password", is_flag=True, help="Only password authenticated.")
+@click.option("--has-key", is_flag=True, help="Only public key authenticated.")
+@click.option("--base-url", help="Base URL contains substring.")
 @json_options
 @click.pass_context
-def profile_list(ctx, output_expr, output_file, output_template):
+def profile_list(ctx, user_name, has_password, has_key, base_url, output_expr, output_file, output_template):
+    log.debug(f"profile_list")
     conn = ctx.obj["connection"]
     data = conn.profiles()
+    if user_name:
+        data = [i for i in data if i["user"] == user_name]
+    if has_password:
+        data = [i for i in data if i["password"]]
+    if has_key:
+        data = [i for i in data if i["public-key"]]
+    if base_url:
+        data = [i for i in data if base_url in i.get("base-url", "")]
     process_json(data, output_expr, output_file, output_template)
 
 
@@ -316,6 +367,7 @@ def profile_list(ctx, output_expr, output_file, output_template):
 @click.option("--name", help="The profile name to delete.")
 @click.pass_context
 def profile_delete(ctx, name):
+    log.debug(f"profile_delete")
     if name == "default":
         raise click.ClickException("'default' is not valid profile name.")
     conn = ctx.obj["connection"]
@@ -337,6 +389,7 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
     If you want the raw format, use --raw or specify output-expr as $.
     """
 
+    log.debug(f"doc")
     conn = ctx.obj["connection"]
 
     if output_expr or output_template or raw:
@@ -398,12 +451,18 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
         schemas = click.formatting.wrap_text(schemas, preserve_paragraphs=True)
         click.echo(schemas)
 
-
 @top_grp.command("transform")
 @click.option("--body")
-@click.option("--input-file")
-@click.option("--input-format", multiple=True, help="")
-@click.option("--input-placement", multiple=True, help="")
+@click.option("--input-file", help="Points to a file which will be processed according to the other "
+    "--input-* options. Use - to read from stdin.")
+@click.option("--input-format", multiple=True, help=
+    "Specifies a format attribute. If omitted, the format will be derived from the file extension. "
+    "Attributes are separated by `.`, or you can specify multiple options, which will be combined.")
+@click.option("--input-placement", multiple=True, help=
+    "Specifies where the input should be placed into the body, and optionally what part of the "
+    "input. If only a <jsonpath> is given, the input will be written at that location. If "
+    "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
+    "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1].")
 @json_options
 def transform(body, input_file, input_format, input_placement, output_expr, output_file, output_template):
     """
@@ -454,6 +513,7 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     cr|lf|crlf|auto -> specifies the row separator
     [no]header -> the first row contains or does not contain a header
     [no]trimcells -> weather to strip each data cell from leading/trailing whitespace
+    enc<codepage> -> code page. e.g. enccp1252 or encansi. default is utf8
     rows -> the file is processed into an array of rows, rows are json objects.
     columns -> the file is processed into a json in which all columns are arrays.
     table -> the file is processed into an array of arrays t[row, column].
@@ -501,17 +561,23 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     # TODO data type conversions
     """
 
-    data = assemble_body(body, input_file, input_format, input_placement)
+    log.debug(f"transform")
+    try:
+        data = assemble_body(body, input_file, input_format, input_placement)
+    except Exception as e:
+        raise click.ClickException(f"{e}")
     process_json(data, output_expr, output_file, output_template)
 
 
 def read_log_cfg():
-    # TODO
-    pass
-
+    if os.path.isfile("logconfig.yaml"):
+        with open("logconfig.yaml") as f:
+            cfg = yaml.load(f, Loader=yaml.FullLoader)
+            logging.config.dictConfig(cfg)
 
 try:
     read_log_cfg()
+    log = logging.getLogger("i4c")
     connection = I4CConnection()
     make_commands(connection)
     top_grp(obj={"connection": connection}, prog_name="i4c")

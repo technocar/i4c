@@ -11,6 +11,7 @@ log = logging.getLogger("i4c")
 class InputFormat:
     fmt = "tabular"
     tabular_type = "sep"
+    encoding = "utf-8"
     sep = "tab"
     row_sep = "auto"
     col_names = []
@@ -27,8 +28,6 @@ def load_table(f, fmt):
     :param fmt: InputFormat configured to tabular
     :return: json-compatible array or dict
     """
-
-    # TODO row_sep is now ignored, we use file iteration
 
     def split_line_fix(ln):
         return [ln[f:t] for (f,t) in col_slices]
@@ -87,8 +86,11 @@ def load_table(f, fmt):
         data = []
         add_line = add_line_table
 
+    f.reconfigure(newline={"cr": "\n", "lf": "\r", "crlf": "\n\r", "auto": None}[fmt.row_sep], encoding=fmt.encoding)
+
     for ln in f:
-        if ln.endswith("\n"): ln = ln[:-len("\n")]   # TODO if we ever implement row_sep, this needs to be removed
+        if ln.endswith("\n"): ln = ln[:-1]
+        if ln.endswith("\r"): ln = ln[:-1]
         row = split_line(ln)
         for i, t in enumerate(fmt.col_types):
             if t == "i": row[i] = int(row[i])
@@ -141,6 +143,8 @@ def format_attrs(s):
                 f.header = False
             elif e in ("cr", "lf", "crlf", "auto"):
                 f.row_sep = e
+            elif e.startswith("enc"):
+                f.encoding = e[3:]
             elif e in ("rows", "columns", "table"):
                 f.table_fmt = e
             elif e == "trimcells":

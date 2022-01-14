@@ -47,6 +47,7 @@ ctrlchars = ["nul", "soh", "stx", "etx", "eot", "enq", "ack", "bel",
 
 
 def process_json(response, outexpr, outfile, template):
+    log.debug(f"process_json")
     if outexpr:
         log.debug(f"search jsonpath")
         outexpr = jsonpath_ng.ext.parse(outexpr)
@@ -82,6 +83,7 @@ def process_json(response, outexpr, outfile, template):
                 item_str = jsonify(item, indent=2)
             else:
                 item_str = str(item)
+            item_str = item_str + "\n"
 
         if not outfile:
             sys.stdout.write(item_str)
@@ -120,5 +122,3 @@ def print_table(table):
             click.echo(line)
         if len(lastcellrows) > 1:
             click.echo()
-
-
