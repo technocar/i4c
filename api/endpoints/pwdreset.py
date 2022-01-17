@@ -1,6 +1,8 @@
 from typing import List
 from fastapi import Depends, Body
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import Response
+
 import models.pwdreset
 from I4cAPI import I4cApiRouter
 import common
@@ -9,13 +11,12 @@ import models.users
 router = I4cApiRouter(include_path="/pwdreset")
 
 
-# TODO this thing still advertises json response
-@router.post("/init", status_code=201, tags=["user"], operation_id="pwdreset_init", summary="Initiate password reset.")
+@router.post("/init", status_code=201, response_class=Response, tags=["user"], operation_id="pwdreset_init", summary="Initiate password reset.")
 async def init(
         loginname: models.pwdreset.LoginNameModel = Body(...)
         ):
     "Initiates password reset. Creates token for sending by email."
-    return await models.pwdreset.init(loginname.loginname)
+    await models.pwdreset.init(loginname.loginname)
 
 
 @router.post("/setpass", response_model=models.users.LoginUserResponse, tags=["user"], operation_id="pwdreset_set_pass",
