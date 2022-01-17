@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Query, Body
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import Response
+
 import models.log
 import common
 from I4cAPI import I4cApiRouter
@@ -50,12 +52,12 @@ async def meta(credentials: HTTPBasicCredentials = Depends(common.security_check
     return await models.log.get_meta(credentials)
 
 
-@router.post("", status_code=201, operation_id="log_write", allow_log=False, summary="Write log.")
+@router.post("", status_code=201, response_class=Response, operation_id="log_write", allow_log=False, summary="Write log.")
 async def log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/log")),
         datapoints: List[models.log.DataPoint] = Body(...)):
     """Submit data to the log."""
-    return await models.log.put_log_write(credentials, datapoints)
+    await models.log.put_log_write(credentials, datapoints)
 
 
 @router.get("/last_instance", response_model=models.log.LastInstance, operation_id="log_lastinstance",

@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
+from starlette.responses import Response
+
 import common
 import models.stat
 import models.common
@@ -47,14 +49,14 @@ async def stat_post(
     return await models.stat.stat_post(credentials, stat)
 
 
-@router.delete("/def/{id}", status_code=200, operation_id="stat_delete", features=['delete any'],
+@router.delete("/def/{id}", status_code=204, response_class=Response, operation_id="stat_delete", features=['delete any'],
                summary="Delete query.")
 async def stat_delete(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/stat/def/{id}", ask_features=['delete any'])),
     id: int = Path(...)
 ):
     """Delete a saved query."""
-    return await models.stat.stat_delete(credentials, id)
+    await models.stat.stat_delete(credentials, id)
 
 
 @router.patch("/def/{id}", response_model=models.common.PatchResponse, operation_id="stat_update",

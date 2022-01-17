@@ -35,7 +35,7 @@ async def intfiles_get(
     return await models.intfiles.intfiles_get(credentials, ver, path)
 
 
-@router.put("/v/{ver}/{path:path}", status_code=201, operation_id="intfile_upload", summary="Upload internal file.")
+@router.put("/v/{ver}/{path:path}", status_code=201, response_class=Response, operation_id="intfile_upload", summary="Upload internal file.")
 async def intfiles_put(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(..., title="Version."),
@@ -43,7 +43,7 @@ async def intfiles_put(
     data: bytes = Body(..., media_type="application/octet-stream")
 ):
     """Upload an internal file."""
-    return await models.intfiles.intfiles_put(credentials, ver, path, data)
+    await models.intfiles.intfiles_put(credentials, ver, path, data)
 
 
 @router.delete("/v/{ver}/{path:path}", status_code=204, response_class=Response, operation_id="intfile_delete", summary="Delete internal file.")

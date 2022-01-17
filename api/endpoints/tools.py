@@ -15,7 +15,7 @@ from models import Device
 router = I4cApiRouter(include_path="/tools")
 
 
-@router.put("", status_code=201, operation_id="tool_record", summary="Record tool change.")
+@router.put("", status_code=201, response_class=Response, operation_id="tool_record", summary="Record tool change.")
 async def tools_log_write(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("put/tools")),
         datapoint: models.tools.ToolDataPoint = Body(...)):
@@ -28,7 +28,7 @@ async def tools_log_write(
                              data_id=datapoint.data_id,
                              value_text=datapoint.tool_id,
                              value_extra=datapoint.slot_number)
-    return await models.log.put_log_write(credentials, [d], override=True)
+    await models.log.put_log_write(credentials, [d], override=True)
 
 
 @router.delete("", status_code=204, response_class=Response, operation_id="tool_delete", summary="Delete tool change.")

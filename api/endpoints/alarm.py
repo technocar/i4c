@@ -8,7 +8,8 @@ import common
 import models.alarm
 import models.common
 from I4cAPI import I4cApiRouter
-from common.exceptions import I4cClientNotFound
+from common import CredentialsAndFeatures
+from common.exceptions import I4cClientNotFound, I4cClientError
 from models import CommonStatusEnum
 import pytz
 
@@ -111,9 +112,9 @@ async def subsgroup_delete(
 
 
 @router.get("/subs", response_model=List[models.alarm.AlarmSub], operation_id="alarm_subscribers",
-            summary="List subscribers.")
+            summary="List subscribers.", features=["any user"])
 async def alarmsub_list(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs")),
+        credentials: CredentialsAndFeatures = Depends(common.security_checker("get/alarm/subs", ask_features=["any user"])),
         id: Optional[str] = Query(None, title="Identifier."),
         group: Optional[str] = Query(None, title="Member of the group."),
         group_mask: Optional[List[str]] = Query(None, title="Search phrase for a group name."),
@@ -126,44 +127,43 @@ async def alarmsub_list(
         address_mask: Optional[List[str]] = Query(None, title="Search phrase for address."),
         alarm: Optional[str] = Query(None, title="Subscribes to this alarm.")):
     """Get the list of subscribers"""
-    # TODO feature to list subs of other users
     return await models.alarm.alarmsub_list(credentials, id, group, group_mask, user, user_name, user_name_mask,
                                             method, status, address, address_mask, alarm)
 
 
 @router.get("/subs/{id}", response_model=models.alarm.AlarmSub, operation_id="alarm_subscriber",
-            summary="Retrieve subscriber.")
+            summary="Retrieve subscriber.", features=["any user"])
 async def alarmsub_get(
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subs/{id}")),
+        credentials: CredentialsAndFeatures = Depends(common.security_checker("get/alarm/subs/{id}", ask_features=["any user"])),
         id: int = Path(...)):
     """Retrieve an alarm subscriber."""
-    # TODO feature to list subs of other users
     res = await models.alarm.alarmsub_list(credentials, id=id)
     if len(res) > 0:
-        return res[0]
+        res = res[0]
+        if (credentials.user_id != res.user) and ("any user" not in credentials.info_features):
+            raise I4cClientError("Unauthorized to access other users' subscriptions.")
+        return res
     raise I4cClientNotFound("No record found")
 
 
 @router.post("/subs", response_model=models.alarm.AlarmSub, operation_id="alarm_subscribe",
-             summary="Create subscriber.")
+             summary="Create subscriber.", features=["any user"])
 async def post_alarmsub(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/subs")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("post/alarm/subs", ask_features=["any user"])),
     alarmsub: models.alarm.AlarmSubIn = Body(...),
 ):
     """Create a subscriber that can receive alarm notifications."""
-    # TODO feature to list subs of other users
     return await models.alarm.post_alarmsub(credentials, alarmsub)
 
 
 @router.patch("/subs/{id}", response_model=models.common.PatchResponse, operation_id="alarm_subscription_update",
-              summary="Update subscriber.")
+              summary="Update subscriber.", features=["any user"])
 async def patch_alarmsub(
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/alarm/subs/{id}")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("patch/alarm/subs/{id}", ask_features=["any user"])),
     id: int = Path(...),
     patch: models.alarm.AlarmSubPatchBody = Body(...),
 ):
     """Change a subscriber if conditions are met."""
-    # TODO feature to list subs of other users
     return await models.alarm.patch_alarmsub(credentials, id, patch)
 
 

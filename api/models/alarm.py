@@ -406,6 +406,9 @@ class AlarmRecipPatchBody(I4cBaseModel):
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
+    if (user is not None) and (credentials.user_id != user) and ("any user" not in credentials.info_features):
+        raise I4cClientError("Unauthorized to access other users' subscriptions.")
+
     sql = dedent("""\
             with
                 res as (
@@ -717,6 +720,9 @@ async def subsgroup_delete(credentials, name, forced, *, pconn=None):
 
 
 async def post_alarmsub(credentials, alarmsub:AlarmSubIn) -> AlarmSub:
+    if (credentials.user_id != alarmsub.user) and ("any user" not in credentials.info_features):
+        raise I4cClientError("Unauthorized to access other users' subscriptions.")
+
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             sql_mod = "insert into alarm_sub (groups, \"user\", method, address, address_name, status)\n" \
@@ -736,6 +742,9 @@ async def patch_alarmsub(credentials, id, patch: AlarmSubPatchBody):
             if len(al) == 0:
                 raise I4cClientNotFound("No record found")
             al = al[0]
+
+            if (credentials.user_id != al.user) and ("any user" not in credentials.info_features):
+                raise I4cClientError("Unauthorized to access other users' subscriptions.")
 
             match = True
             for cond in patch.conditions:
