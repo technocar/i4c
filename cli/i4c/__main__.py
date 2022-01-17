@@ -337,7 +337,7 @@ def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, pass
     try:
         conn.write_profile(name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default)
     except Exception as e:
-        raise click.ClickException(e.message)
+        raise click.ClickException(f"{e}")
 
 
 @profile.command("list", help="Gives back all existing profiles. Sensitive fields will be redacted.")
