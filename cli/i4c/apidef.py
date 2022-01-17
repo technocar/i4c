@@ -317,11 +317,11 @@ class I4CDef:
                 sec = [[self.content["components"]["securitySchemes"][k] for k in s.keys()] for s in sec]
                 sec = [_proc_auth(a) for a in sec]
                 if "noauth" in sec:
-                    action.security = 'noauth'
+                    action.authentication = 'noauth'
                 elif "basic" in sec:
-                    action.security = 'basic'
+                    action.authentication = 'basic'
                 else:
-                    action.security = 'unknown'
+                    action.authentication = 'unknown'
 
                 action.params = {}
                 for p in info.get("parameters", []):

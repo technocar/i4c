@@ -9,6 +9,7 @@ import models.users
 router = I4cApiRouter(include_path="/pwdreset")
 
 
+# TODO this thing still advertises json response
 @router.post("/init", status_code=201, tags=["user"], operation_id="pwdreset_init", summary="Initiate password reset.")
 async def init(
         loginname: models.pwdreset.LoginNameModel = Body(...)
