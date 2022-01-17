@@ -54,6 +54,8 @@ class UserPatchChange(I4cBaseModel):
     del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")
     # TODO implement this:
     status: Optional[bool] = Field(None, title="Set status.")
+    # TODO add email
+    # TODO add customer
 
     @root_validator
     def check_exclusive(cls, values):
