@@ -274,7 +274,10 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
                  .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else "")
         write_debug_sql("get_projects.sql", sql, *params)
         res = await conn.fetch(sql, *params)
-        res = [{k: (v if k != "extra" else json.loads(v)) for (k, v) in row.items()} for row in res] # TODO how pathetic is that? why does it return a string?
+
+        # TODO 5: okosabban? how pathetic is that? why does it return a string?
+        res = [{k: (v if k != "extra" else json.loads(v)) for (k, v) in row.items()} for row in res]
+
         res = [Project(**d) for d in res]
         return res
 
@@ -321,7 +324,7 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
                 sql += f"{sep}\"status\"=${len(params)}"
                 sep = ",\n"
             if patch.change.extra:
-                params.append(json.dumps(patch.change.extra))    # TODO pathetic vol 2: why do we need dumps
+                params.append(json.dumps(patch.change.extra))    # TODO 5: okosabban? pathetic vol 2: why do we need dumps
                 sql += f"{sep}\"extra\"=${len(params)}"
                 sep = ",\n"
             sql += "\nwhere name = $1"

@@ -124,12 +124,12 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
 
 async def get_find(credentials, device, timestamp=None, sequence=None, before_count=None, after_count=None, categ=None,
-                   name=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
+                   data_id=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
     if sequence is not None and timestamp is None:
         raise I4cClientError("sequence allowed only when timestamp is not empty")
 
     params = [device]
-    sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+    sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, data_id, val, extra, rel)
     write_debug_sql('get_find.sql', sql, *params)
 
     async with DatabaseConnection(pconn) as conn:

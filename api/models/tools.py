@@ -82,8 +82,8 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
         for t in types_db:
             types[t["id"]] = t["type"]
 
-        logs_inst = await models.log.get_find(credentials, device, timestamp, sequence, name=ToolDataId.install_tool, after_count=max_count, pconn=conn)
-        logs_del = await models.log.get_find(credentials, device, timestamp, sequence, name=ToolDataId.remove_tool, after_count=max_count, pconn=conn)
+        logs_inst = await models.log.get_find(credentials, device, timestamp, sequence, data_id=ToolDataId.install_tool, after_count=max_count, pconn=conn)
+        logs_del = await models.log.get_find(credentials, device, timestamp, sequence, data_id=ToolDataId.remove_tool, after_count=max_count, pconn=conn)
         res = []
 
         def merge(iterable1, iterable2, f):

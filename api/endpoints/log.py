@@ -32,13 +32,13 @@ async def find(
         before_count: Optional[int] = Query(None, title="Number of log records before the timestamp."),
         after_count: Optional[int] = Query(None, description="Number of log records after the timestamp. Defaults to 1 if before is omitted, 0 otherwise."),
         categ: Optional[models.log.MetaCategory] = Query(None, title="Log data category."),
-        name: Optional[str] = Query(None, title="Log data type."), # TODO rename this to data_id, everywhere else it is data_id
+        data_id: Optional[str] = Query(None, title="Log data type."),
         val: Optional[List[str]] = Query(None, title="Value of the log item."),
         extra: Optional[str] = Query(None, title="Extra of the log item."),
-        rel: Optional[str] = Query(None, title="Relation for the val or extra.") # TODO for the what? extra uses it?
+        rel: Optional[str] = Query(None, title="Relation for the val or extra.")
 ):
     """List log entries."""
-    rs = await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+    rs = await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, data_id, val, extra, rel)
     if rs is None:
         raise I4cClientNotFound("No log record found")
     return rs
