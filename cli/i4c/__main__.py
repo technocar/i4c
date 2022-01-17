@@ -84,7 +84,7 @@ def callback(ctx, **args):
     if args.get("print_curl", False):
         raise Exception("Not implemented") # TODO
 
-    response = action.invoke(**args, body=None)
+    response = action.invoke(**args, body=body)
 
     output_file = args.get("output_file", None)
     output_expr = args.get("output_expr", None)
