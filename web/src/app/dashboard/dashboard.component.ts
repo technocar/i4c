@@ -306,7 +306,7 @@ export class DashboardComponent implements OnInit {
       category: model.metricType,
       relation: model.relation,
       value: (model.value ?? "").toString().split('|'),
-      name: model.metricId,
+      data_id: model.metricId,
       extra: model.extra,
       timestamp: new Date(this.timestamp)
     };

@@ -101,7 +101,7 @@ export interface FindParams {
   beforeCount?: number,
   afterCount?: number,
   category?: string,
-  name?: string,
+  data_id?: string,
   value?: string | string[],
   extra?: string,
   relation?: string,

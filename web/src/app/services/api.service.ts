@@ -163,8 +163,8 @@ export class ApiService {
       params = params.append("after_count", request.afterCount.toString());
     if (request.category)
       params = params.append("categ", request.category);
-    if (request.name)
-      params = params.append("name", request.name);
+    if (request.data_id)
+      params = params.append("data_id", request.data_id);
     if (request.value) {
       for (let v of request.value as Array<string>)
         params = params.append("val", v);
