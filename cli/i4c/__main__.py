@@ -222,7 +222,6 @@ def make_commands(conn: I4CConnection):
                 params.append(click.Option((param_decl,), **attrs))
 
             if action.body:
-                param_decl = "--body"
                 attrs = {}
                 attrs["required"] = action.body.required
 
@@ -232,7 +231,7 @@ def make_commands(conn: I4CConnection):
                 helpstr = helpstr + "Use - to read from stdin, or @filename to read from file."
                 attrs["help"] = helpstr
 
-                params.append(click.Option((param_decl,), **attrs))
+                params.append(click.Option(("--body",), **attrs))
 
                 params.append(click.Option(("--input-file",),
                     help="Points to a file which will be processed and inserted to the body according to the other "
