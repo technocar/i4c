@@ -317,7 +317,8 @@ export interface StatDef {
   modified: string,
   timeseriesdef: StatTimeSeriesDef,
   xydef: StatXYDef,
-  listdef: StatListDef
+  listdef: StatListDef,
+  capabilitydef: StatCapabilityDef
 }
 
 export interface StatDefBase {
@@ -410,7 +411,8 @@ export interface StatData {
   stat_def: StatDef,
   timeseriesdata: StatDataTimeSeries[],
   xydata: StatDataXY[],
-  listdata: any[]
+  listdata: any[],
+  capabilitydata: StatCapabilityData
 }
 
 export interface StatXYMeta {
@@ -504,6 +506,45 @@ export interface StatListVisualSettingsCol {
   field: string,
   caption: string,
   width: number
+}
+
+export interface StatCapabilityDef extends StatDateTimeDef {
+  filter: StatCapabilityFilter[],
+  metric: StatCapabilityDefMetric,
+  nominal: number,
+  utl: number,
+  ltl: number,
+  ucl: number,
+  lcl: number,
+  visualsettings: StatCapabilityDefVisualSettings
+}
+
+
+export interface StatCapabilityFilter {
+  id: number,
+  device: DeviceType,
+  data_id: string,
+  rel: string,
+  value: any
+}
+
+export enum StatCapabilityDefVisualSettingsInfoBoxLocation { None = 'none', Left = 'left', Right = 'right', Bottom = 'bottom', Top = 'top' }
+export interface StatCapabilityDefVisualSettings extends StatVisualSettings {
+  plotdata: boolean,
+  infoboxloc: StatCapabilityDefVisualSettingsInfoBoxLocation
+}
+
+export interface StatCapabilityDefMetric {
+  device: string,
+  data_id: string
+}
+
+export interface StatCapabilityData {
+  points: number[],
+  mean: number,
+  sigma: number,
+  c: number,
+  ck: number
 }
 
 export interface Alarm {

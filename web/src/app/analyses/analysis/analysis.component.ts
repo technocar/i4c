@@ -13,8 +13,9 @@ import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/mod
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
-import { AnalysisListDefComponent } from '../analysis-list-def/analysis-list-def.component';
+import { AnalysisListDefComponent } from '../defs/analysis-list-def/analysis-list-def.component';
 import * as Excel from "exceljs";
+import { AnalysisCapabilityDefComponent } from '../defs/analysis-capability-def/analysis-capability-def.component';
 
 Chart.register(...registerables);
 
@@ -39,6 +40,7 @@ export class AnalysisComponent implements OnInit {
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
   @ViewChild('list_def')  listDef: AnalysisListDefComponent;
+  @ViewChild('capability_def')  capabilityDef: AnalysisCapabilityDefComponent;
   @ViewChild('new_dialog') newDialog;
   @ViewChild('chart', {static: false}) chart: ElementRef;
   @ViewChild('table', {static: false}) table: ElementRef<HTMLTableElement>;
@@ -80,7 +82,9 @@ export class AnalysisComponent implements OnInit {
       };
     } else {
       this.analysisType = this.def.timeseriesdef ? AnalysisType.TimeSeries :
-        this.def.xydef ? AnalysisType.XY : AnalysisType.List;
+        this.def.xydef ? AnalysisType.XY :
+        this.def.listdef ? AnalysisType.List :
+        AnalysisType.Capability;
     }
   }
 
@@ -108,6 +112,9 @@ export class AnalysisComponent implements OnInit {
         break;
       case AnalysisType.List:
         this.def.listdef = this.listDef.getDef();
+        break;
+      case AnalysisType.Capability:
+        this.def.capabilitydef = this.capabilityDef.getDef();
         break;
     }
   }
@@ -220,6 +227,8 @@ export class AnalysisComponent implements OnInit {
         options = this.buildTimeSeriesChart(result);
       else if (result.xydata)
         options = this.buildXYChart(result);
+      else if (result.capabilitydata)
+        options = this.buildCapabilityChart(result);
 
       this._chartInstance = new Chart(ctx, options);
     }
@@ -242,6 +251,13 @@ export class AnalysisComponent implements OnInit {
       throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
 
     return this.timeseriesDef.getChartConfiguration(result);
+  }
+
+  buildCapabilityChart(result: StatData): ChartConfiguration {
+    if (!result?.capabilitydata)
+      throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+
+    return this.capabilityDef.getChartConfiguration(result);
   }
 
   save(): Observable<boolean> {

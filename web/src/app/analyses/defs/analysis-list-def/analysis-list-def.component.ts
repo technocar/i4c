@@ -1,11 +1,11 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { AsyncSubject, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { NumberRelation, StatData, StatListDef, StatListVisualSettings, StatListVisualSettingsCol, StatXYDef, StatXYFilter, StatXYMeta, StatXYMetaObjectField, StatXYObjectType } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
-import { AnalysisDef } from '../analyses.component';
-import { AnalysisDatetimeDefComponent } from '../defs/analysis-datetime-def/analysis-datetime-def.component';
+import { AnalysisDef } from '../../analyses.component';
+import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
 interface Filter extends StatXYFilter {
   _id: number,

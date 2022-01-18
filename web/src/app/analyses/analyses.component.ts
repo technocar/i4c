@@ -15,7 +15,7 @@ export interface AnalysisChart {
   getChartConfiguration(data: StatData): ChartConfiguration
 }
 
-export enum AnalysisType { TimeSeries = '0', XY = '1', List = '2' }
+export enum AnalysisType { TimeSeries = '0', XY = '1', List = '2', Capability = '3' }
 
 @Component({
   selector: 'app-analyses',
@@ -43,8 +43,9 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   analysesOthers$: BehaviorSubject<StatDef[]> = new BehaviorSubject([]);
   analysisTypes: string[][] = [
     [AnalysisType.TimeSeries, $localize `:@@analysis_type_timeseries:idősoros`],
-    [AnalysisType.XY, $localize `:@@analysis_type_xy:XY`],
-    [AnalysisType.List, $localize `:@@analysis_type_list:Lista`]
+    [AnalysisType.XY, $localize `:@@analysis_type_xy:xy`],
+    [AnalysisType.List, $localize `:@@analysis_type_list:lista`],
+    [AnalysisType.Capability, $localize `:@@analysis_type_capability:capability`]
   ]
 
   access = {
@@ -106,7 +107,11 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   }
 
   getAnalaysisType(analysis: StatDef): AnalysisType {
-    return analysis.timeseriesdef ? AnalysisType.TimeSeries : analysis.xydef ? AnalysisType.XY : AnalysisType.List;
+    return analysis.timeseriesdef ? AnalysisType.TimeSeries :
+      analysis.xydef ? AnalysisType.XY :
+      analysis.listdef ? AnalysisType.List :
+      analysis.capabilitydef ? AnalysisType.Capability :
+      AnalysisType.TimeSeries;
   }
 
   getAnalsysTypeDesc(code: AnalysisType): string {

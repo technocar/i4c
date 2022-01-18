@@ -340,19 +340,7 @@ export class ApiService {
   }
 
   getStatDef(id: string): Observable<StatDef> {
-    if (id == "-1")
-      return of({
-        id: -1,
-        modified: (new Date()).toISOString(),
-        name: "új elemzés",
-        shared: false,
-        timeseriesdef: undefined,
-        xydef: undefined,
-        listdef: undefined,
-        user: undefined
-      });
-    else
-      return this.http.get<StatDef>(`${this._apiUrl}/stat/def/${id}`);
+    return this.http.get<StatDef>(`${this._apiUrl}/stat/def/${id}`);
   }
 
   addNewStatDef(def: StatDef): Observable<StatDef> {
@@ -375,33 +363,58 @@ export class ApiService {
   }
 
   //This method for resolver of analsysis module to download data for selected analysis
-  getAnalysisData(id: string): Observable<[StatDef, Meta[]]> {
+  getAnalysisData(id: string, type: string): Observable<[StatDef, Meta[]]> {
     return new Observable<[StatDef, Meta[]]>((observer) => {
       var result: [StatDef, Meta[]] = [undefined, undefined];
       //Get analysis definition...
-      this.getStatDef(id).subscribe(def => {
-        result[0] = def;
-        if (!def) {
-          //If there is no definition then we are done.
-          observer.next(result);
-          observer.complete();
-        } else {
-          if (def.timeseriesdef)
-            //If it's timeseries then gets meta list...
-            this.getMeta().subscribe(meta => {
-              result[1] = meta;
-              observer.next(result);
-              observer.complete();
-            },
-            (err) => { observer.error(err); observer.complete(); });
-          else {
-            //If it's not timeseries we are done.
+      if (id === "-1") {
+        result[0] = {
+          id: -1,
+          modified: (new Date()).toISOString(),
+          name: "új elemzés",
+          shared: false,
+          timeseriesdef: undefined,
+          xydef: undefined,
+          listdef: undefined,
+          capabilitydef: undefined,
+          user: undefined
+        };
+        if (["0", "3"].indexOf(type) > -1)
+          this.getMeta().subscribe(meta => {
+            result[1] = meta;
             observer.next(result);
             observer.complete();
-          }
+          },
+          (err) => { observer.error(err); observer.complete(); });
+        else {
+          observer.next(result);
+          observer.complete();
         }
-      },
-      (err) => { observer.error(err); observer.complete(); });
+      } else {
+        this.getStatDef(id).subscribe(def => {
+          result[0] = def;
+          if (!def) {
+            //If there is no definition then we are done.
+            observer.next(result);
+            observer.complete();
+          } else {
+            if (def.timeseriesdef || def.capabilitydef)
+              //If it's timeseries then gets meta list...
+              this.getMeta().subscribe(meta => {
+                result[1] = meta;
+                observer.next(result);
+                observer.complete();
+              },
+              (err) => { observer.error(err); observer.complete(); });
+            else {
+              //If it's not timeseries we are done.
+              observer.next(result);
+              observer.complete();
+            }
+          }
+        },
+        (err) => { observer.error(err); observer.complete(); });
+      }
 
       return {
         unsubscribe() {

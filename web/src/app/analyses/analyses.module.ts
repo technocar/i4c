@@ -11,7 +11,8 @@ import { AnalysisTimeseriesDefComponent } from './defs/analysis-timeseries-def/a
 import { AnalysisComponent } from './analysis/analysis.component';
 import { AnalysisXyDefComponent } from './defs/analysis-xy-def/analysis-xy-def.component';
 import { QuillModule } from 'ngx-quill';
-import { AnalysisListDefComponent } from './analysis-list-def/analysis-list-def.component';
+import { AnalysisListDefComponent } from './defs/analysis-list-def/analysis-list-def.component';
+import { AnalysisCapabilityDefComponent } from './defs/analysis-capability-def/analysis-capability-def.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { AnalysisListDefComponent } from './analysis-list-def/analysis-list-def.
     AnalysisTimeseriesDefComponent,
     AnalysisComponent,
     AnalysisXyDefComponent,
-    AnalysisListDefComponent
+    AnalysisListDefComponent,
+    AnalysisCapabilityDefComponent
   ],
   imports: [
     CommonModule,
