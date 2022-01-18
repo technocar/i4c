@@ -45,8 +45,7 @@ class ToolDataPoint(I4cBaseModel):
     slot_number: Optional[str]
 
 
-# TODO this name is not really representative of the function
-class ToolDataPointType(ToolDataPoint):
+class ToolDataPointWithType(ToolDataPoint):
     """Tool change event with extended fields."""
     type: Optional[str] = Field(None, title="Type of the tool.")
 
@@ -123,7 +122,7 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
             return 1
 
         for l in merge(logs_inst, logs_del, f):
-            res.append(ToolDataPointType(
+            res.append(ToolDataPointWithType(
                 timestamp=l.timestamp,
                 sequence=l.sequence,
                 device=l.device,
@@ -134,8 +133,6 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
         return res
 
 
-# TODO don't use "public" in sqls. marking it here, but applies everywhere
-# it is because if we decide to use a schema, we can set search_path for connections
 async def tool_list_usage(credentials):
     async with DatabaseConnection() as conn:
         sql = dedent("""\
@@ -143,7 +140,7 @@ async def tool_list_usage(credentials):
                   l.value_text "tool_id",
                   t.type,
                   count(*) "count"
-                from public.log l
+                from log l
                 left join tools t on t.id = l.value_text
                 where
                   l.timestamp >= $1::timestamp with time zone -- */ '2021-08-23 07:56:00.957133+02'::timestamp with time zone

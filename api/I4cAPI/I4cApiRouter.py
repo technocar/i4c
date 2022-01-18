@@ -30,14 +30,15 @@ class I4cApiRouter(APIRouter):
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def func_extra(func, path: str, rest_method: str = None, allow_log: bool = True):
+    def func_extra(func, path: str, rest_method: str = None, allow_log: bool = True, operation_id: str = None):
         @functools.wraps(func)
         def log_decorator(f) -> DecoratedCallable:
             @functools.wraps(f)
             async def log_result(*a, **b):
                 if allow_log:
                     params = ', '.join((str(x) for x in a))
-                    bmasked = deepdict(b, json_compat=True, hide_bytes=True)
+                    bmasked = {k:v for k,v in b.items() if k != 'request'}
+                    bmasked = deepdict(bmasked, json_compat=True, hide_bytes=True)
                     user = ""
                     noaudit = ("noaudit" in bmasked) and bmasked["noaudit"]
                     noaudit_priv = False
@@ -50,13 +51,16 @@ class I4cApiRouter(APIRouter):
                         raise I4cClientError("""Missing "noaudit" privilege.""")
                     if not noaudit:
                         try:
+                            ip = f"{b['request'].client.host}:{b['request'].client.port}" if 'request' in b else None
                             kwparams = ', '.join((f"{x}= \"{y}\"" for x,y in bmasked.items()))
-                            log_str = f"{rest_method} - {path}{' - '+params if params else ''} - {kwparams}"
+                            log_str = f"{ip} - {rest_method} - {path} - {operation_id}{' - '+params if params else ''} - {kwparams}"
                             log.info(log_str)
 
-                            d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit', data_id=f"{rest_method}{path}",
+                            d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit',
+                                          data_id=operation_id,
                                           value_text=user,
-                                          value_add=json.dumps({k:v for (k, v) in bmasked.items() if k != "credentials"}))
+                                          value_extra=ip,
+                                          value_add={k:v for (k, v) in bmasked.items() if k != "credentials"})
                             await put_log_write(None, [d])
                         except Exception as e:
                             raise I4cClientError(f"Error while logging: {e}")
@@ -78,52 +82,56 @@ class I4cApiRouter(APIRouter):
         allow_log = True
         if "allow_log" in kwargs:
             allow_log = kwargs.pop("allow_log")
+        operation_id = None
+        if "operation_id" in kwargs:
+            operation_id = kwargs["operation_id"]
         features = []
         if "features" in kwargs:
             features = kwargs.pop("features")
         self.path_list.append(I4cApiRouterPath(method + self.calc_full_path(path), features))
-        return allow_log, kwargs
+        spec_params = dict(allow_log=allow_log, operation_id=operation_id)
+        return spec_params, kwargs
 
 
     def get(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('get',path,kwargs)
+        spec_params, kwargs = self.proc_special('get',path,kwargs)
         func = super().get(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'GET', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'GET', **spec_params)
 
     def put(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('put',path,kwargs)
+        spec_params, kwargs = self.proc_special('put',path,kwargs)
         func = super().put(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'PUT', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'PUT', **spec_params)
 
     def post(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('post',path,kwargs)
+        spec_params, kwargs = self.proc_special('post',path,kwargs)
         func = super().post(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'POST', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'POST', **spec_params)
 
     def delete(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('delete',path,kwargs)
+        spec_params, kwargs = self.proc_special('delete',path,kwargs)
         func = super().delete(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'DELETE', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'DELETE', **spec_params)
 
     def options(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('options',path,kwargs)
+        spec_params, kwargs = self.proc_special('options',path,kwargs)
         func = super().options(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'OPTIONS', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'OPTIONS', **spec_params)
 
     def head(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('head',path,kwargs)
+        spec_params, kwargs = self.proc_special('head',path,kwargs)
         func = super().head(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'HEAD', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'HEAD', **spec_params)
 
     def patch(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('patch',path,kwargs)
+        spec_params, kwargs = self.proc_special('patch',path,kwargs)
         func = super().patch(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'PATCH', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'PATCH', **spec_params)
 
     def trace(self, path: str, *args, **kwargs):
-        allow_log, kwargs = self.proc_special('trace',path,kwargs)
+        spec_params, kwargs = self.proc_special('trace',path,kwargs)
         func = super().trace(path, *args, **kwargs)
-        return self.func_extra(func, self.calc_full_path(path), 'TRACE', allow_log=allow_log)
+        return self.func_extra(func, self.calc_full_path(path), 'TRACE', **spec_params)
 
     def include_router(self, router, *args, **kwargs):
         self.check_router_add()

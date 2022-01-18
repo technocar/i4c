@@ -1,5 +1,4 @@
 import datetime
-import json
 from pydantic.schema import datetime
 
 
@@ -25,7 +24,7 @@ def spec_attr(node):
         if k not in ("dataItemId", "timestamp", "sequence", "name", "subType", "type")}
     if len(attrs) == 0:
         return None
-    return json.dumps(attrs)
+    return attrs
 
 
 class db_row:

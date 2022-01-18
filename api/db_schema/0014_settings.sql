@@ -7,8 +7,8 @@ create table "settings" (
     value text null
 );
 
-GRANT ALL ON TABLE public."settings" TO aaa;
-GRANT ALL ON TABLE public."settings" TO postgres;
+GRANT ALL ON TABLE "settings" TO aaa;
+GRANT ALL ON TABLE "settings" TO postgres;
 
 alter table "settings"
 add column "public" boolean NOT NULL default false;

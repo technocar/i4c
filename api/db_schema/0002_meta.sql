@@ -1,8 +1,8 @@
--- Table: public.meta
+-- Table: meta
 
--- DROP TABLE public.meta;
+-- DROP TABLE meta;
 
-CREATE TABLE IF NOT EXISTS public.meta
+CREATE TABLE IF NOT EXISTS meta
 (
     device character varying(200) COLLATE pg_catalog."default" NOT NULL,
     data_id character varying(200) COLLATE pg_catalog."default" NOT NULL,
@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS public.meta
 
 TABLESPACE pg_default;
 
-ALTER TABLE public.meta
+ALTER TABLE meta
     OWNER to postgres;
 
-GRANT ALL ON TABLE public.meta TO aaa;
+GRANT ALL ON TABLE meta TO aaa;
 
-GRANT ALL ON TABLE public.meta TO postgres;
+GRANT ALL ON TABLE meta TO postgres;

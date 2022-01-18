@@ -16,9 +16,9 @@ create table "alarm" (
     subsgroup character varying (200) not null
 ); 
 
-GRANT ALL ON TABLE public."alarm" TO aaa;
+GRANT ALL ON TABLE "alarm" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE alarm_id_seq TO aaa;
-GRANT ALL ON TABLE public."alarm" TO postgres;
+GRANT ALL ON TABLE "alarm" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE alarm_id_seq TO postgres;
 
 create table "alarm_cond" (
@@ -38,9 +38,9 @@ create table "alarm_cond" (
     age_max double precision null
 ); 
 
-GRANT ALL ON TABLE public."alarm_cond" TO aaa;
+GRANT ALL ON TABLE "alarm_cond" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE alarm_cond_id_seq TO aaa;
-GRANT ALL ON TABLE public."alarm_cond" TO postgres;
+GRANT ALL ON TABLE "alarm_cond" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE alarm_cond_id_seq TO postgres;
 
 

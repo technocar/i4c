@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import Field
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
+from common.db_tools import asyncpg_rows_process_json
 from common.exceptions import I4cClientError
 
 view_find_sql = open("models/log/find.sql").read()
@@ -26,7 +27,7 @@ class DataPoint(I4cBaseModel):
     value_num: Optional[float] = Field(None, title="Numeric value")
     value_text: Optional[str] = Field(None, title="Text value")
     value_extra: Optional[str] = Field(None, title="Additional text value")
-    value_add: Optional[str] = Field(None, title="Other information") # TODO this should not be str
+    value_add: Optional[Dict[str,Any]] = Field(None, title="Other information")
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,
@@ -136,4 +137,4 @@ async def get_find(credentials, device, timestamp=None, sequence=None, before_co
         log.debug('before sql run')
         rs = await conn.fetch(sql,*params)
         log.debug('after sql run')
-    return [DataPoint(**dict(r)) for r in rs]
+    return [DataPoint(**r) for r in asyncpg_rows_process_json(rs, 'value_add')]

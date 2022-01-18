@@ -10,8 +10,8 @@ create table "batch" (
     status character varying (200) not null
 );
 
-GRANT ALL ON TABLE public."batch" TO aaa;
-GRANT ALL ON TABLE public."batch" TO postgres;
+GRANT ALL ON TABLE "batch" TO aaa;
+GRANT ALL ON TABLE "batch" TO postgres;
 
 /*
 

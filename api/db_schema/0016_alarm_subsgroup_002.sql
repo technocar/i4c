@@ -6,8 +6,8 @@ create table alarm_subsgroup (
   primary key ("group")
 );
 
-GRANT ALL ON TABLE public.alarm_subsgroup TO aaa;
-GRANT ALL ON TABLE public.alarm_subsgroup TO postgres;
+GRANT ALL ON TABLE alarm_subsgroup TO aaa;
+GRANT ALL ON TABLE alarm_subsgroup TO postgres;
 
 insert into alarm_subsgroup ("group")
 select distinct "group" from alarm_subsgroup_map;

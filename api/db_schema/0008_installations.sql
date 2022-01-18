@@ -13,9 +13,9 @@ create table "installation" (
     status character varying (200) not null,
     status_msg character varying (200) null
 );
-GRANT ALL ON TABLE public."installation" TO aaa;
+GRANT ALL ON TABLE "installation" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE installation_id_seq TO aaa;
-GRANT ALL ON TABLE public."installation" TO postgres;
+GRANT ALL ON TABLE "installation" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE installation_id_seq TO postgres;
 
 create table "installation_file" (
@@ -24,7 +24,7 @@ create table "installation_file" (
     savepath character varying (2000) not null
 );
 
-GRANT ALL ON TABLE public."installation_file" TO aaa;
+GRANT ALL ON TABLE "installation_file" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE installation_file_id_seq TO aaa;
-GRANT ALL ON TABLE public."installation_file" TO postgres;
+GRANT ALL ON TABLE "installation_file" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE installation_file_id_seq TO postgres;

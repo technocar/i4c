@@ -1,2 +1,2 @@
 select * 
-from public.meta
+from meta
