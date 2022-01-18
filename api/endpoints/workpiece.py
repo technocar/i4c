@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Query, Path, Body
+from starlette.requests import Request
 import models.workpiece
 import models.common
 import common
@@ -15,6 +16,7 @@ router = I4cApiRouter(include_path="/workpiece")
 @router.get("/{id}", response_model=models.workpiece.Workpiece, operation_id="workpiece_get",
             summary="Retrieve workpiece.")
 async def get_workpiece(
+    request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece/{id}")),
     id: str = Path(...),
     with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
@@ -29,6 +31,7 @@ async def get_workpiece(
 @router.get("", response_model=List[models.workpiece.Workpiece], operation_id="workpiece_list",
             summary="List workpieces.")
 async def list_workpiece(
+    request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece")),
     before: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
     after: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
@@ -56,6 +59,7 @@ async def list_workpiece(
 @router.patch("/{id}", response_model=models.common.PatchResponse, operation_id="workpiece_patch",
               summary="Update workpiece.")
 async def patch_workpiece(
+    request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("patch/workpiece/{id}")),
     id: str = Path(...),
     patch: models.workpiece.WorkpiecePatchBody = Body(...),

@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
+from starlette.requests import Request
 from starlette.responses import Response
-
 import common
 import models.stat
 import models.common
@@ -17,6 +17,7 @@ router = I4cApiRouter(include_path="/stat")
 @router.get("/def", response_model=List[models.stat.StatDef], operation_id="stat_list",
             summary="List saved queries.")
 async def stat_list(
+        request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def")),
         id: Optional[int] = Query(None),
         user_id: Optional[str] = Query(None),
@@ -30,6 +31,7 @@ async def stat_list(
 @router.get("/def/{id}", response_model=models.stat.StatDef, operation_id="stat_get",
             summary="Retrieve saved query.")
 async def stat_get(
+    request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def/{id}")),
     id: int = Path(...),
 ):
@@ -42,6 +44,7 @@ async def stat_get(
 
 @router.post("/def", response_model=models.stat.StatDef, operation_id="stat_save", summary="Save query.")
 async def stat_post(
+    request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("post/stat/def")),
     stat: models.stat.StatDefIn = Body(...),
 ):
@@ -52,6 +55,7 @@ async def stat_post(
 @router.delete("/def/{id}", status_code=204, response_class=Response, operation_id="stat_delete", features=['delete any'],
                summary="Delete query.")
 async def stat_delete(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/stat/def/{id}", ask_features=['delete any'])),
     id: int = Path(...)
 ):
@@ -62,6 +66,7 @@ async def stat_delete(
 @router.patch("/def/{id}", response_model=models.common.PatchResponse, operation_id="stat_update",
               summary="Update query.", features=['patch any'])
 async def stat_patch(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/stat/def/{id}", ask_features=['patch any'])),
     id: int = Path(...),
     patch: models.stat.StatPatchBody = Body(...),
@@ -72,6 +77,7 @@ async def stat_patch(
 
 @router.get("/data/{id}", response_model=models.stat.StatData, operation_id="stat_run", summary="Run query.")
 async def stat_data_get(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/data/{id}")),
     id: int = Path(...),
 ):
@@ -82,6 +88,7 @@ async def stat_data_get(
 @router.get("/objmeta", response_model=List[models.stat.StatMetaObject], operation_id="stat_objmeta",
             summary="Metadata for chart objects.")
 async def get_objmeta(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/objmeta")),
     after: Optional[datetime] = Query(None, title="timestamp", description="Iso format, defaults to last year."),
 ):
