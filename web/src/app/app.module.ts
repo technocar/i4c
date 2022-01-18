@@ -48,6 +48,7 @@ import { environment } from 'src/environments/environment';
       { path: 'tools', loadChildren: () => import('./tools/tools.module').then(m => m.ToolsModule), canActivate: [AuthGuard], data: { priv: "get/tools" } },
       { path: 'analyses', loadChildren: () => import('./analyses/analyses.module').then(m => m.AnalysesModule), canActivate: [AuthGuard], data: { priv: "get/stat/def" } },
       { path: 'alarms', loadChildren: () => import('./alarm/alarm.module').then(m => m.AlarmModule), canActivate: [AuthGuard] },
+      { path: 'profile', loadChildren: () => import('./profile/profile.module').then(m => m.ProfileModule) },
       { path: 'selector', component: SelectorComponent, canActivate: [AuthGuard], data: { breadcrumb: "Kezdőlap" } },
       { path: 'login', component: LoginComponent },
       { path: '', redirectTo: 'selector', pathMatch: "full" }

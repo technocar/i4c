@@ -130,6 +130,14 @@ export class ApiService {
     });
   }
 
+  requestNewPassword(username: string): Observable<string> {
+    return this.http.post<string>(`${this._apiUrl}/pwdreset/init`, { loginname: username });
+  }
+
+  setNewPassword(username: string, token: string, password: string): Observable<User> {
+    return this.http.post<User>(`${this._apiUrl}/pwdreset/setpass`, { loginname: username, token: token, password: password });
+  }
+
   getDevices(): Observable<Device[]> {
     return of([
       { id: DeviceType.Lathe, name: $localize `:@@device_lathe_name:Eszterga` },
