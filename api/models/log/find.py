@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from pydantic import Field
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 from common.db_tools import asyncpg_rows_process_json
@@ -27,7 +27,7 @@ class DataPoint(I4cBaseModel):
     value_num: Optional[float] = Field(None, title="Numeric value")
     value_text: Optional[str] = Field(None, title="Text value")
     value_extra: Optional[str] = Field(None, title="Additional text value")
-    value_add: Optional[Dict[str,str]] = Field(None, title="Other information")
+    value_add: Optional[Dict[str,Any]] = Field(None, title="Other information")
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,

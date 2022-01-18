@@ -56,7 +56,7 @@ class I4cApiRouter(APIRouter):
 
                             d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit', data_id=f"{rest_method}{path}",
                                           value_text=user,
-                                          value_add=json.dumps({k:v for (k, v) in bmasked.items() if k != "credentials"}))
+                                          value_add={k:v for (k, v) in bmasked.items() if k != "credentials"})
                             await put_log_write(None, [d])
                         except Exception as e:
                             raise I4cClientError(f"Error while logging: {e}")
