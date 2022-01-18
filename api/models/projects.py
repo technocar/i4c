@@ -39,11 +39,15 @@ class ProjectPatchCondition(I4cBaseModel):
 class ProjectPatchChange(I4cBaseModel):
     """Change to a project."""
     status: Optional[ProjectStatusEnum] = Field(None, title="Set the status.")
-    extra: Optional[Dict[str,str]] = Field(None, title="Add extra values.")
-    # TODO set_extra del_extra
+    extra: Optional[Dict[str,str]] = Field(None, title="Set extra values.")
+    add_extra: Optional[Dict[str, str]] = Field(None, title="Add or update extra values.")
+    del_extra: Optional[List[str]] = Field(None, title="Delete extra values.")
 
     def is_empty(self):
-        return self.status is None and self.extra is None
+        return self.status is None \
+               and self.extra is None \
+               and self.add_extra is None \
+               and self.del_extra is None
 
 
 class ProjectPatchBody(I4cBaseModel):
@@ -226,7 +230,7 @@ class GetProjectsVersions(Enum):
 
 
 async def get_projects(credentials, name=None, name_mask=None, status=None, file=None, *, pconn=None,
-                       versions:GetProjectsVersions = GetProjectsVersions.all):
+                       versions:GetProjectsVersions = GetProjectsVersions.all) -> List[Project]:
     sql = dedent("""\
             with pv as (
                 select project, ARRAY_AGG(ver::"varchar"(200)) versions
@@ -320,8 +324,14 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
                 params.append(patch.change.status)
                 sql += f"{sep}\"status\"=${len(params)}"
                 sep = ",\n"
-            if patch.change.extra:
-                params.append(dict2asyncpg_param(patch.change.extra))
+            if patch.change.extra or patch.change.add_extra or patch.change.del_extra:
+                new_extra = patch.change.extra if patch.change.extra else project.extra
+                if patch.change.add_extra:
+                    new_extra.update(patch.change.add_extra)
+                if patch.change.del_extra:
+                    for d in patch.change.del_extra:
+                        new_extra.pop(d, None)
+                params.append(dict2asyncpg_param(new_extra))
                 sql += f"{sep}\"extra\"=${len(params)}"
                 sep = ",\n"
             sql += "\nwhere name = $1"
