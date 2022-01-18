@@ -46,10 +46,9 @@ class UserPatchChange(I4cBaseModel):
     del_password: Optional[bool] = Field(None, title="If set, removes the password.")
     public_key: Optional[str] = Field(None, title="Public key.")
     del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")
-    # TODO implement this:
-    status: Optional[bool] = Field(None, title="Set status.")
-    # TODO add email
-    # TODO add customer
+    status: Optional[UserStatusEnum] = Field(None, title="Set status.")
+    customer: Optional[str] = Field(None, nullable=True, title="Set customer.")
+    email: Optional[str] = Field(None, nullable=True, title="Set email.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -61,7 +60,10 @@ class UserPatchChange(I4cBaseModel):
         return ( self.password is None
                  and (self.del_password is None or not self.del_password)
                  and self.public_key is None
-                 and (self.del_public_key is None or not self.del_public_key))
+                 and (self.del_public_key is None or not self.del_public_key)
+                 and self.status is None
+                 and self.customer is None
+                 and self.email is None)
 
 
 class UserPatchBody(I4cBaseModel):
@@ -262,6 +264,15 @@ async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBod
             fields.append(f"public_key = ${len(params)}")
         if patch.change.del_public_key:
             fields.append(f"public_key = null")
+        if patch.change.status is not None:
+            params.append(patch.change.status)
+            fields.append(f""""status" = ${len(params)}""")
+        if patch.change.customer is not None:
+            params.append(patch.change.customer)
+            fields.append(f""""customer" = ${len(params)}""")
+        if patch.change.email is not None:
+            params.append(patch.change.email)
+            fields.append(f""""email" = ${len(params)}""")
         sql = sql.replace("<fields>", ',\n'.join(fields))
         await conn.execute(sql, *params)
         return PatchResponse(changed=True)
