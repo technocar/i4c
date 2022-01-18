@@ -58,7 +58,7 @@ async def patch_tools(
     return await models.tools.patch_tool(credentials, tool_id, patch)
 
 
-@router.get("", response_model=List[models.tools.ToolDataPointType], operation_id="tool_list",
+@router.get("", response_model=List[models.tools.ToolDataPointWithType], operation_id="tool_list",
             summary="List tool changes.")
 async def tool_list(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools")),

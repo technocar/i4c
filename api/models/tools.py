@@ -45,8 +45,7 @@ class ToolDataPoint(I4cBaseModel):
     slot_number: Optional[str]
 
 
-# TODO this name is not really representative of the function
-class ToolDataPointType(ToolDataPoint):
+class ToolDataPointWithType(ToolDataPoint):
     """Tool change event with extended fields."""
     type: Optional[str] = Field(None, title="Type of the tool.")
 
@@ -123,7 +122,7 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
             return 1
 
         for l in merge(logs_inst, logs_del, f):
-            res.append(ToolDataPointType(
+            res.append(ToolDataPointWithType(
                 timestamp=l.timestamp,
                 sequence=l.sequence,
                 device=l.device,
