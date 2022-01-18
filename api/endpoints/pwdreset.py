@@ -35,6 +35,7 @@ async def get_outbox_list(
     return await models.pwdreset.get_outbox_list(credentials)
 
 
+# TODO this thing still advertises json response
 @router.post("/sent", status_code=201, tags=["user"], operation_id="pwdreset_mark_sent", summary="Mark token as sent.")
 async def sent(
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/pwdreset/sent")),
