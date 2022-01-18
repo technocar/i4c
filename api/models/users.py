@@ -40,12 +40,6 @@ class UserWithPrivs(User):
     privs: List[Priv]
 
 
-# TODO why is this?
-class LoginUserResponse(I4cBaseModel):
-    """Response of login."""
-    user: UserWithPrivs
-
-
 class UserPatchChange(I4cBaseModel):
     """Change in a user update."""
     password: Optional[str] = Field(None, title="Set password.")
