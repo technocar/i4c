@@ -29,7 +29,7 @@ async def put_log_write(credentials, datapoints: List[DataPoint], *, override=Fa
                      value_aux = EXCLUDED.value_aux
                    """
     sql = dedent(f"""\
-                 insert into public.log
+                 insert into log
                  (
                     device,
                     instance,

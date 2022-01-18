@@ -1,8 +1,8 @@
--- Table: public.log
+-- Table: log
 
--- DROP TABLE public.log;
+-- DROP TABLE log;
 
-CREATE TABLE IF NOT EXISTS public.log
+CREATE TABLE IF NOT EXISTS log
 (
     device character varying(200) COLLATE pg_catalog."default" NOT NULL,
     instance character varying(200) COLLATE pg_catalog."default",
@@ -17,35 +17,35 @@ CREATE TABLE IF NOT EXISTS public.log
 
 TABLESPACE pg_default;
 
-ALTER TABLE public.log
+ALTER TABLE log
     OWNER to postgres;
 
-GRANT ALL ON TABLE public.log TO aaa;
+GRANT ALL ON TABLE log TO aaa;
 
-GRANT ALL ON TABLE public.log TO postgres;
+GRANT ALL ON TABLE log TO postgres;
 
-COMMENT ON COLUMN public.log.device
+COMMENT ON COLUMN log.device
     IS 'Mill, Lathe';
 -- Index: idx_ts
 
--- DROP INDEX public.idx_ts;
+-- DROP INDEX idx_ts;
 
 CREATE UNIQUE INDEX idx_ts
-    ON public.log USING btree
+    ON log USING btree
     (device COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;
     
 CREATE INDEX idx_dts
-    ON public.log USING btree
+    ON log USING btree
     (device COLLATE pg_catalog."default" ASC NULLS LAST, data_id COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;
 
 CREATE UNIQUE INDEX idx_ts_wo_device
-    ON public.log USING btree
+    ON log USING btree
     ("timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;
     
 CREATE INDEX idx_dts_wo_device
-    ON public.log USING btree
+    ON log USING btree
     (data_id COLLATE pg_catalog."default" ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST)
     TABLESPACE pg_default;

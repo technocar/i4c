@@ -1,6 +1,6 @@
-ALTER TABLE public.meta ALTER COLUMN name DROP NOT NULL;
+ALTER TABLE meta ALTER COLUMN name DROP NOT NULL;
 
-update public.meta
+update meta
 set 
   device = nullif(device,''),
   data_id = nullif(data_id,''),

@@ -5,7 +5,7 @@ from models.log import DataPointKey
 
 async def delete_log(credentials, datapoint: DataPointKey, *, pconn=None):
     sql = dedent("""\
-                 delete from public.log
+                 delete from log
                  where 
                     device = $1
                     and "timestamp" = $2

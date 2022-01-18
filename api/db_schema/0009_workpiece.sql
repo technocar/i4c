@@ -8,8 +8,8 @@ create table "workpiece" (
     batch character varying (200) null,
     manual_status character varying (200) null
 );
-GRANT ALL ON TABLE public."workpiece" TO aaa;
-GRANT ALL ON TABLE public."workpiece" TO postgres;
+GRANT ALL ON TABLE "workpiece" TO aaa;
+GRANT ALL ON TABLE "workpiece" TO postgres;
 
 
 create table "workpiece_note" (
@@ -21,9 +21,9 @@ create table "workpiece_note" (
     deleted boolean NOT NULL default false
 );
 
-GRANT ALL ON TABLE public."workpiece_note" TO aaa;
+GRANT ALL ON TABLE "workpiece_note" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE workpiece_note_id_seq TO aaa;
-GRANT ALL ON TABLE public."workpiece_note" TO postgres;
+GRANT ALL ON TABLE "workpiece_note" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE workpiece_note_id_seq TO postgres;
 
 /*

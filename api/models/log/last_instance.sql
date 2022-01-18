@@ -1,5 +1,5 @@
 select l.instance, l.sequence 
-from public.log l 
+from log l 
 where 
   l.instance is not null
   and l.device = $1
