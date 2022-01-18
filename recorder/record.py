@@ -2,7 +2,7 @@
 #   http://karatnetsrv:5012/sample
 # replay start>
 #   curl "karatnetsrv:5012/script?id=recorded" -d "0 .spawn recorded"
-
+import json
 import sys
 import datetime
 import time
@@ -145,7 +145,7 @@ def main():
         i4c_conn.invoke_url("log", jsondata=dx)
 
         data_line = [f"{d.sequence}\t{d.timestamp}\t{d.data_id}\t{value_esc(d.value_text)}\t{str(d.value_num)}" 
-                     f"\t{value_esc(d.value_extra)}\t{value_esc(d.value_add)}\n" for d in data]
+                     f"\t{value_esc(d.value_extra)}\t{value_esc(json.dumps(d.value_add))}\n" for d in data]
         sys.stdout.writelines(data_line)
 
         start = stats["next"]
