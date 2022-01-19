@@ -9,7 +9,7 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
-import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
+import { Meta, StatCapabilityDefVisualSettingsInfoBoxLocation, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
@@ -42,7 +42,8 @@ export class AnalysisComponent implements OnInit {
   @ViewChild('list_def')  listDef: AnalysisListDefComponent;
   @ViewChild('capability_def')  capabilityDef: AnalysisCapabilityDefComponent;
   @ViewChild('new_dialog') newDialog;
-  @ViewChild('chart', {static: false}) chart: ElementRef;
+  @ViewChild('chart_place', {static: false}) chart_place: ElementRef<HTMLDivElement>;
+  @ViewChild('chart', {static: false}) chart: ElementRef<HTMLCanvasElement>;
   @ViewChild('table', {static: false}) table: ElementRef<HTMLTableElement>;
 
   access = {
@@ -256,6 +257,31 @@ export class AnalysisComponent implements OnInit {
   buildCapabilityChart(result: StatData): ChartConfiguration {
     if (!result?.capabilitydata)
       throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+
+    var cont = this.chart_place.nativeElement.querySelector('.cont');
+    if (cont)
+      cont.remove();
+    var infoBox = this.capabilityDef.buildInfoBox(result);
+    if (infoBox) {
+      cont = document.createElement('div');
+      cont.classList.add("cont");
+      cont.append(infoBox)
+      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Top
+        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left)
+        this.chart_place.nativeElement.prepend(cont);
+      else
+        this.chart_place.nativeElement.append(cont);
+
+      this.chart.nativeElement.classList.remove(...['col', 'col-8']);
+      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Right
+        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left) {
+        cont.classList.add("col");
+        this.chart.nativeElement.classList.add("col-9")
+      } else {
+        cont.classList.add("col-12");
+        this.chart.nativeElement.classList.add("col");
+      }
+    }
 
     return this.capabilityDef.getChartConfiguration(result);
   }

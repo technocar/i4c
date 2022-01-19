@@ -34,7 +34,9 @@
     <div *ngIf="error" class="alert alert-danger text-center" role="alert">
       {{errorMsg}}
     </div>
-    <canvas #chart class="chart"></canvas>
+    <div #chart_place class="row">
+      <canvas #chart class="col chart"></canvas>
+    </div>
     <div *ngIf="showResult" class="mb-4">
       <button class="btn btn-outline-success mr-4" (click)="exportToExcel()">
         <i class="bi bi-file-earmark-excel-fill"></i>
