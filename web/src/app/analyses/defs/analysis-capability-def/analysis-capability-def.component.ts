@@ -1,9 +1,9 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint } from 'chart.js';
+import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoint, Tick } from 'chart.js';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
-import { Meta, NumberRelation, StatCapabilityDef, StatCapabilityDefVisualSettings, StatCapabilityDefVisualSettingsInfoBoxLocation, StatCapabilityFilter, StatData, StatXYFilter, StatXYMeta, StatXYMetaObjectField } from 'src/app/services/models/api';
+import { Device, Meta, NumberRelation, StatCapabilityDef, StatCapabilityDefVisualSettings, StatCapabilityDefVisualSettingsInfoBoxLocation, StatCapabilityFilter, StatData, StatXYFilter, StatXYMeta, StatXYMetaObjectField } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
@@ -21,6 +21,7 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
   @Input("metaList") metaList: Meta[];
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
 
+  selectableMetas: Meta[] = [];
   filters$: BehaviorSubject<StatCapabilityFilter[]> = new BehaviorSubject([]);
   eventOps: string[][] = [];
 
@@ -35,6 +36,8 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
   access = {
     canUpdate: false
   }
+  devices: Device[] = [];
+  device: string;
 
   constructor(
     private apiService: ApiService,
@@ -42,6 +45,15 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
   ) {
     this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.eventOps = apiService.getEventOperations();
+    apiService.getDevices()
+      .subscribe(r => {
+        this.devices = r;
+        this.device = this.devices[0].id;
+      });
+  }
+
+  filterMeta() {
+    this.selectableMetas = this.metaList.filter(m => m.device === this.device);
   }
 
   ngOnInit(): void {
@@ -60,9 +72,11 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
         visualsettings: undefined
       };
     else {
+      this.device = this.def.metric?.device ?? this.device;
       this.filters$.next(this.def.filter ?? []);
     }
 
+    this.filterMeta();
     this.setDefualtVisualSettings();
   }
 
@@ -123,6 +137,11 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
     }
   }
 
+  changeDevice(deviceId: string) {
+    this.device = deviceId;
+    this.filterMeta();
+  }
+
   getChartConfiguration(data: StatData): ChartConfiguration {
 
     function normalDistribution(x: number): number {
@@ -132,34 +151,43 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
       return dividend / divisor;
     }
 
-    var ticks: [string, number][] = [
-      [ "", data.capabilitydata.mean ],
-      [ "lcl", data.stat_def.capabilitydef.lcl ],
-      [ "ltl", data.stat_def.capabilitydef.ltl ],
-      [ "ucl", data.stat_def.capabilitydef.ucl ],
-      [ "utl", data.stat_def.capabilitydef.utl ]
+    var ticks: Tick[] = [
+      { label: data.capabilitydata.mean?.toFixed(3), value: data.capabilitydata.mean, major: true  },
+      { label: data.stat_def.capabilitydef.lcl?.toFixed(3), value: data.stat_def.capabilitydef.lcl, major: true  },
+      { label: data.stat_def.capabilitydef.ltl?.toFixed(3), value: data.stat_def.capabilitydef.ltl, major: true  },
+      { label: data.stat_def.capabilitydef.ucl?.toFixed(3), value: data.stat_def.capabilitydef.ucl, major: true  },
+      { label: data.stat_def.capabilitydef.utl?.toFixed(3), value: data.stat_def.capabilitydef.utl, major: true  },
+      { label: (data.capabilitydata.mean - 3*data.capabilitydata.sigma)?.toFixed(4), value: data.capabilitydata.mean - 3*data.capabilitydata.sigma, major: true  },
+      { label: (data.capabilitydata.mean - data.capabilitydata.sigma)?.toFixed(4), value: data.capabilitydata.mean - data.capabilitydata.sigma, major: true  },
+      { label: (data.capabilitydata.mean + data.capabilitydata.sigma)?.toFixed(4), value: data.capabilitydata.mean + data.capabilitydata.sigma, major: true  },
+      { label: (data.capabilitydata.mean + 3*data.capabilitydata.sigma)?.toFixed(4), value: data.capabilitydata.mean + 3*data.capabilitydata.sigma, major: true  }
     ];
 
     if (data.stat_def.capabilitydef.visualsettings.plotdata)
       ticks.push(...(data.capabilitydata.points ?? []).map(p => {
-        return <[string, number]>["", p]
+        return <Tick>{
+          label: "",
+          value: p,
+          major: false
+        }
       }));
 
     ticks = ticks.sort((a, b) => {
-      if (a[1] < b[1])
+      if (a.value < b.value)
         return -1;
-      if (a[1] > b[1])
+      if (a.value > b.value)
         return 1;
       return 0;
     });
-    ticks = ticks.filter((t, i) => ticks.findIndex(t2 => t2[1] === t[1]) === i);
+    ticks = ticks.filter((t, i) => ticks.findIndex(t2 => t2.value === t.value) === i);
 
-    var range = (data.capabilitydata.mean + data.capabilitydata.sigma * 4) * 2;
+    var range = data.capabilitydata.sigma * 4 * 2;
     var start = data.capabilitydata.mean - data.capabilitydata.sigma * 4;
     console.log(range);
     var points: number[] = [];
-    for (let i = 0; i < 100; i++)
-      points.push(range * Math.random() + start);
+    for (let i = 0; i < 100; i++) {
+      points.push(range * i / 100 + start);
+    }
 
     console.log(points);
 
@@ -235,17 +263,26 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
                   return 2;
                 } else if (context.tick.value === data.capabilitydata.mean) {
                   return 2;
+                } else if (context.tick.value === data.capabilitydata.mean - data.capabilitydata.sigma
+                  || context.tick.value === data.capabilitydata.mean - 3*data.capabilitydata.sigma
+                  || context.tick.value === data.capabilitydata.mean + data.capabilitydata.sigma
+                  || context.tick.value === data.capabilitydata.mean + 3*data.capabilitydata.sigma) {
+                  return 2;
                 }
                 return 1;
               },
               color: function(context) {
-                console.log(context);
                 if (context.tick.value === data.stat_def.capabilitydef.utl || context.tick.value === data.stat_def.capabilitydef.ltl) {
-                  return '#00A3FF'
+                  return '#CC2936'
                 } else if (context.tick.value === data.stat_def.capabilitydef.ucl || context.tick.value === data.stat_def.capabilitydef.lcl) {
-                  return '#CC2936';
+                  return '#00A3FF';
                 } else if (context.tick.value === data.capabilitydata.mean) {
                   return '#000';
+                } else if (context.tick.value === data.capabilitydata.mean - data.capabilitydata.sigma
+                  || context.tick.value === data.capabilitydata.mean - 3*data.capabilitydata.sigma
+                  || context.tick.value === data.capabilitydata.mean + data.capabilitydata.sigma
+                  || context.tick.value === data.capabilitydata.mean + 3*data.capabilitydata.sigma) {
+                  return '#eed2aa';
                 }
 
                 return '#ddd';
@@ -256,25 +293,19 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
               major: {
                 enabled: true
               },
+              minRotation: 45,
               callback: (value, index, ticks) => {
                 return ticks[index].label;
               }
             },
             bounds: "ticks",
             afterBuildTicks: (axis) => {
-              axis.ticks = ticks.map(t => {
-                return {
-                  value: t[1],
-                  label: t[0],
-                  major: true
-                }
-              });
+              axis.ticks.push(...ticks);
             }
           }
         }
       }
     };
-    console.log(options);
     return options;
   }
 
@@ -294,8 +325,11 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
     ];
     var measuredData: [string, string][] = [
       [$localize `:@@analysis_capability_infobox_mean:középérték`, data.capabilitydata.mean?.toFixed(3)],
-      [$localize `:@@analysis_capability_infobox_sigma:σ`, '±' + data.capabilitydata.sigma?.toFixed(3)],
-      [$localize `:@@analysis_capability_infobox_3sigma:3σ`, '±' + (data.capabilitydata.sigma * 3)?.toFixed(3)],
+      [$localize `:@@analysis_capability_infobox_count:darab`, data.capabilitydata.count?.toFixed(0)],
+      [$localize `:@@analysis_capability_infobox_min:min`, data.capabilitydata.min?.toFixed(3)],
+      [$localize `:@@analysis_capability_infobox_min:max`, data.capabilitydata.max?.toFixed(3)],
+      [$localize `:@@analysis_capability_infobox_sigma:σ`, '±' + data.capabilitydata.sigma?.toFixed(4)],
+      [$localize `:@@analysis_capability_infobox_3sigma:3σ`, '±' + (data.capabilitydata.sigma * 3)?.toFixed(4)],
       [$localize `:@@analysis_capability_infobox_c:C`, data.capabilitydata.c?.toFixed(3)],
       [$localize `:@@analysis_capability_infobox_ck:Ck`, data.capabilitydata.ck?.toFixed(3)]
     ];
@@ -323,7 +357,7 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
       if (css)
         col.classList.add(css);
       col.classList.add("col");
-      col.innerText = d;
+      col.innerText = d ?? "";
       row.append(col);
     }
     return row;
