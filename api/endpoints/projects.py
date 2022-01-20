@@ -69,8 +69,6 @@ async def get_projects_version(
     ver: str = Path(None, description="Version or label. `latest` for latest version.")
 ):
     """Retrieve a project version."""
-    if ver.lower() == 'latest':
-        ver = None
     res, _ = await models.projects.get_projects_version(credentials, name, ver)
     return res
 

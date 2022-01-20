@@ -632,6 +632,10 @@ async def get_real_project_version(project, version, *, pconn=None):
         from project_version v
         where v.project = $1
         """)
+
+    if version.lower() == 'latest':
+        version = None
+
     if version is None:
         async with DatabaseConnection(pconn) as conn:
             res = await conn.fetchrow(sql_project_version_last, project)
