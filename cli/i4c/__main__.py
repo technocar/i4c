@@ -326,16 +326,27 @@ def profile_new_key(ctx, name, override):
 @click.option("--password", help="The value of the password for authentication or . to prompt.")
 @click.option("--del-password", is_flag=True, help="If provided, the password will be removed from the profile.")
 @click.option("--del-private-key", is_flag=True, help="If provided, the private key will be removed from the profile.")
+@click.option("--clear-extra", is_flag=True, help="If provided, all extra information will be removed.")
+@click.option("--extra", multiple=True, help="Add/merge extra information. Extra information has name=value format, and"
+                                             "it is stored with the profile, but otherwise not used. If value is"
+                                             "omitted, the information is deleted. Multiple instances allowed.")
 @click.option("--override", is_flag=True, help="If the profile exists, it will be modified.")
 @click.option("--make-default", is_flag=True, help="Make the profile default")
 @click.pass_context
-def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key,
+                 clear_extra, extra, override, make_default):
     log.debug(f"profile_save")
     conn = ctx.obj["connection"]
     if password == ".":
         password = click.termui.prompt("Password", hide_input=True, confirmation_prompt=True)
     try:
-        conn.write_profile(name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default)
+        if extra is not None:
+            extra = dict((lambda x: (x[0], x[2] or None))(i.partition("=")) for i in extra)
+
+        conn.write_profile(name=name, base_url=base_url, api_def_file=api_def_file, del_api_def_file=del_api_def_file,
+                           user=user, password=password, del_password=del_password, del_private_key=del_private_key,
+                           clear_extra=clear_extra, extra=extra,
+                           override=override, make_default=make_default)
     except Exception as e:
         raise click.ClickException(f"{e}")
 
