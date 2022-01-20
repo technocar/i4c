@@ -1319,8 +1319,7 @@
 					"name": "debug",
 					"request": {
 						"method": "GET",
-						"header": [],
-						"url": null
+						"header": []
 					},
 					"response": []
 				}
@@ -2431,6 +2430,39 @@
 							"path": [
 								"settings",
 								"push_priv_key"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "audit",
+			"item": [
+				{
+					"name": "audit list",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/audit?after=2022-01-14T07:54:00.957133Z&count=1000",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"audit"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "2022-01-14T07:54:00.957133Z"
+								},
+								{
+									"key": "count",
+									"value": "1000"
+								}
 							]
 						}
 					},
