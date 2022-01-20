@@ -66,13 +66,11 @@ async def get_projects_version(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
     name: str = Path(...),
-    ver: int = Path(...)
+    ver: str = Path(None, description="Version or label. `latest` for latest version.")
 ):
     """Retrieve a project version."""
-    # TODO allow ver to be str, meaning label
-    #   this assumes label can't be numeric, which is actually a good idea of not yet so
-    # TODO allow ver to be None, meaning latest
-    #   is this even possible?
+    if ver.lower() == 'latest':
+        ver = None
     res, _ = await models.projects.get_projects_version(credentials, name, ver)
     return res
 
