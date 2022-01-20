@@ -400,6 +400,7 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
             where pv.project = $1 and pv.ver = $2::int
           """)
     async with DatabaseConnection(pconn) as conn:
+        ver = await get_real_project_version(project, ver, pconn=conn)
         res = await conn.fetch(sql, project, ver)
         if len(res) == 0:
             raise I4cClientError("Project version not found")
@@ -615,3 +616,42 @@ async def files_list(credentials, proj_name, projver, save_path, save_path_mask,
                 d["file_int"] = IntFile(name=r["int_name"], ver=r["int_ver"])
             res.append(FileWithProjInfo(**d))
         return res
+
+
+async def get_real_project_version(project, version, *, pconn=None):
+    sql_project_version_label = dedent("""\
+        select v.ver
+        from project_version v
+        join project_label l on l.project_ver = v.id
+        where 
+          v.project = $1 
+          and l.label = $2
+        """)
+    sql_project_version_last = dedent("""\
+        select max(v.ver)
+        from project_version v
+        where v.project = $1
+        """)
+
+    if version.lower() == 'latest':
+        version = None
+
+    if version is None:
+        async with DatabaseConnection(pconn) as conn:
+            res = await conn.fetchrow(sql_project_version_last, project)
+            if res:
+                return res[0]
+            else:
+                raise I4cClientError("No project version found")
+
+    try:
+        return int(version)
+    except ValueError:
+        pass
+
+    async with DatabaseConnection(pconn) as conn:
+        db_project_version = await conn.fetchrow(sql_project_version_label, project, version)
+        if db_project_version:
+            return db_project_version[0]
+        else:
+            raise I4cClientError("No matching project label found")
