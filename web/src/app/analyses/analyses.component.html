@@ -93,22 +93,6 @@
           </select>
         </th>
         <th><input type="datetime-local" class="form-control" [ngModel]="filterModified | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="filterModified = $event" /></th>
-        <th>
-          <div class="btn-group btn-group-toggle d-none" ngbRadioGroup [(ngModel)]="filterShared">
-            <label class="btn-primary" ngbButtonLabel title="csak megosztottak">
-              <input type="radio" ngbButton [value]="1">
-              <i class="bi bi-check-square"></i>
-            </label>
-            <label class="btn-primary" ngbButtonLabel title="csak a nem megosztottak">
-              <input type="radio" ngbButton [value]="0">
-              <i class="bi bi-square"></i>
-            </label>
-            <label class="btn-primary" ngbButtonLabel title="összes">
-              <input type="radio" ngbButton [value]="-1">
-              <i class="bi bi-dash-square"></i>
-            </label>
-          </div>
-        </th>
       </tr>
       <tr>
         <th scope="col">készítő</th>
