@@ -166,6 +166,14 @@ async def login(credentials: HTTPBasicCredentials, *, pconn=None):
     return res
 
 
+async def customer_list(credentials: HTTPBasicCredentials, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        sql = """select distinct "customer" from "user" where "customer" is not null order by 1"""
+        res = await conn.fetch(sql)
+        res = [r[0] for r in res]
+        return res
+
+
 async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\

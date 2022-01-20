@@ -247,7 +247,7 @@ export interface WorkPieceParams {
 export interface WorkPieceUpdateCondition {
   flipped: boolean,
   batch?: string,
-  empty_batch?: boolean,
+  has_batch?: boolean,
   status?: WorkPieceStatus[]
 }
 
@@ -256,7 +256,8 @@ export interface WorkPieceUpdateChange {
   delete_batch?: boolean,
   status?: WorkPieceStatus,
   add_note?: Note[],
-  delete_note?: number[]
+  delete_note?: number[],
+  remove_status?: boolean
 }
 
 export interface WorkPieceUpdate {
@@ -544,7 +545,10 @@ export interface StatCapabilityData {
   mean: number,
   sigma: number,
   c: number,
-  ck: number
+  ck: number,
+  min: number,
+  max: number,
+  count: number
 }
 
 export interface Alarm {
