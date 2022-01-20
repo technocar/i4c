@@ -57,14 +57,13 @@ class WorkpiecePatchCondition(I4cBaseModel):
     """Conditions to check before a change is carried out to a workpiece."""
     flipped: Optional[bool] = Field(False, title="Pass if the condition does not hold.")
     batch: Optional[str] = Field(None, title="Assigned to batch.")
-    # TODO next is stupid, it should be has_batch
-    empty_batch: Optional[bool] = Field(None, title="Not assigned to any batches.")
+    has_batch: Optional[bool] = Field(None, title="Not assigned to any batches.")
     status: Optional[List[WorkpieceStatusEnum]] = Field(None, title="Has any of the statuses.")
 
     def match(self, workpiece:Workpiece):
         r = (
                 ((self.batch is None) or (self.batch == workpiece.batch))
-                and ((self.empty_batch is None) or ((workpiece.batch is None) == self.empty_batch))
+                and ((self.has_batch is None) or ((workpiece.batch is None) != self.has_batch))
                 and ((self.status is None) or (workpiece.status in self.status))
         )
         if self.flipped is None or not self.flipped:
