@@ -61,7 +61,7 @@ async def alarmdef_list(
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
-@router.get("/subsgroupusage", response_model=List[models.alarm.SubsGroupsUser], operation_id="alarm_subsgroupusage",
+@router.get("/subsgroupusage", response_model=List[models.alarm.SubsGroupsUser], operation_id="alarm_subsgroup_usage",
             summary="List subscription user memberships.", features=["any user"])
 async def subsgroupsusage_list(
         request: Request,
@@ -71,7 +71,7 @@ async def subsgroupsusage_list(
     return await models.alarm.subsgroupsusage_list(credentials, user)
 
 
-@router.get("/subsgroups/{name}", response_model=models.alarm.SubsGroups, operation_id="alarm_subsgroup_members_get",
+@router.get("/subsgroups/{name}", response_model=models.alarm.SubsGroups, operation_id="alarm_subsgroup",
             summary="Get subscription group with members.")
 async def subsgroup_members_get(
         request: Request,
@@ -84,7 +84,7 @@ async def subsgroup_members_get(
     raise I4cClientNotFound("No record found")
 
 
-@router.get("/subsgroups", response_model=List[models.alarm.SubsGroups], operation_id="alarm_subsgroup_members_list",
+@router.get("/subsgroups", response_model=List[models.alarm.SubsGroups], operation_id="alarm_subsgroups",
             summary="List subscription groups.")
 async def subsgroup_members_list(
         request: Request,
@@ -95,7 +95,7 @@ async def subsgroup_members_list(
     return await models.alarm.subsgroup_members(credentials, user, group)
 
 
-@router.put("/subsgroups/{name}", status_code=201, response_class=Response, operation_id="alarm_subsgroup_members_put",
+@router.put("/subsgroups/{name}", status_code=201, response_class=Response, operation_id="alarm_subsgroup_set",
             summary="Update alarm subgroup member definition.")
 async def subsgroup_members_put(
     request: Request,
