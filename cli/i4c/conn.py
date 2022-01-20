@@ -148,7 +148,7 @@ class I4CConnection:
             if not api_def_file:
                 api_def_file = p.get("api-def-file")
 
-        if base_url.endswith("/"):
+        if base_url and base_url.endswith("/"):
             base_url = base_url[:-1]
 
         self._api_def = api_def
