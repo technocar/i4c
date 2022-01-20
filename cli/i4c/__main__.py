@@ -600,7 +600,7 @@ try:
     # yeah, this is ugly. we do a sneak peek for --profile
     # because we need it to get for the api def
     profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
-    log.debug(f"using profile {f}")
+    log.debug(f"using profile {profile}")
     connection = I4CConnection(profile=profile)
     make_commands(connection)
     top_grp(obj={"connection": connection}, prog_name="i4c")
