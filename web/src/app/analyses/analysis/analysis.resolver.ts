@@ -13,11 +13,11 @@ import { AnalysisType } from '../analyses.component';
 @Injectable({
   providedIn: 'root'
 })
-export class AnalysisResolver implements Resolve<[StatDef, Meta[]]> {
+export class AnalysisResolver implements Resolve<[StatDef, Meta[], string[]]> {
   constructor(
     private apiService: ApiService) {}
 
-  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[StatDef, Meta[]]> {
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[StatDef, Meta[], string[]]> {
     return this.apiService.getAnalysisData(route.paramMap.get("id"), route.paramMap.get("type"));
   }
 }

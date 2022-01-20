@@ -27,12 +27,14 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   private _filterName: string;
   private _filterModified: string;
   private _filterShared: number;
+  private _filterType: string;
 
   @ViewChild('filterNameCtrl') filterNameCtrl: FilterControlComponent;
 
   get filterName(): string { return this._filterName; }
   set filterName(value: string) { this._filterName = value; this.filter(); }
-  filterType: string;
+  get filterType(): string { return this._filterType; }
+  set filterType(value: string) { this._filterType = value; this.filter(); }
   get filterModified(): string { return this._filterModified; }
   set filterModified(value: string) { this._filterModified = new Date(value).toISOString(); this.filter(); }
   get filterShared(): number { return this._filterShared; }
@@ -64,7 +66,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     this.access.canRun = authService.hasPrivilige("get/stat/def/{id}");
     this._filterModified = route.snapshot.queryParamMap.get("fm");
     this._filterShared = parseInt(route.snapshot.queryParamMap.get("fs") ?? "-1");
-    this.filterType = route.snapshot.queryParamMap.get("ft");
+    this._filterType = route.snapshot.queryParamMap.get("ft");
   }
 
   ngOnInit(): void {
@@ -81,7 +83,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     this.apiService.getStatDefs({
       name: !this.filterNameCtrl.mask ? this.filterName : undefined,
       name_mask: this.filterNameCtrl.mask ? this.filterName : undefined,
-      type: (this.filterType ?? "") === "" ? undefined : this.filterType
+      type: (this.filterType ?? "") === "" ? undefined : this.getApiAnalysisType(this.filterType as AnalysisType)
     }).subscribe(r => {
       r = r ?? [];
       this.analysesOwn$.next(r.filter((i) => i.user?.id == this.authService.currentUserValue.id));
@@ -120,5 +122,20 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
       return type[1];
     else
       return code;
+  }
+
+  getApiAnalysisType(type: AnalysisType): string {
+    switch (type) {
+      case "0":
+        return "timeseries";
+      case "1":
+        return "xy";
+      case "2":
+        return "list";
+      case "3":
+        return "capability";
+      default:
+        return undefined;
+    }
   }
 }

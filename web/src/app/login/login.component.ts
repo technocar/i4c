@@ -60,16 +60,16 @@ export class LoginComponent implements OnInit {
     }
 
     this.loading = true;
-    this.authenticationService.login(this.f.username.value, this.f.password.value)
-      .subscribe(
-        user => {
-          this.router.navigateByUrl(this.returnUrl);
-        },
-        error => {
-          this.error = this.apiService.getErrorMsg(error).toString();
-          this.loading = false;
-          this.authenticationService.removeUser();
-        });
+    this.apiService.login(this.f.username.value, this.f.password.value)
+      .subscribe(user => {
+        this.authenticationService.login(this.f.username.value, this.f.password.value, user);
+        this.router.navigateByUrl(this.returnUrl);
+      },
+      error => {
+        this.error = this.apiService.getErrorMsg(error).toString();
+        this.loading = false;
+        this.authenticationService.removeUser();
+      });
   }
 
   showNewPasswordDialog() {

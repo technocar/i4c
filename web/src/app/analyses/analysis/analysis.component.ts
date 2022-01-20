@@ -36,6 +36,7 @@ export class AnalysisComponent implements OnInit {
   error: boolean = false;
   errorMsg: string = "";
   showResult: boolean = false;
+  customers: string[] = [];
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
@@ -57,6 +58,7 @@ export class AnalysisComponent implements OnInit {
     private apiService: ApiService,
     private router: Router
   ) {
+
     this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.analysisType = (route.snapshot.paramMap.get("type") ?? "0") as AnalysisType;
   }
@@ -65,6 +67,7 @@ export class AnalysisComponent implements OnInit {
     this.route.data.subscribe(r => {
       this.metaList = r.data[1];
       this.def = r.data[0];
+      this.customers = r.data[2];
       this.processDef();
       if (this.def)
         this.origDef = JSON.parse(JSON.stringify(this.def));
@@ -148,6 +151,12 @@ export class AnalysisComponent implements OnInit {
     this.showResult = false;
     this.error = false;
     this.errorMsg = "";
+
+    if (this.chart_place) {
+      let cont = this.chart_place.nativeElement.querySelector('div');
+      if (cont)
+        cont.remove();
+    }
 
     if (this._chartInstance)
       this._chartInstance.destroy();
@@ -440,5 +449,14 @@ export class AnalysisComponent implements OnInit {
     a.click();
     window.URL.revokeObjectURL(url);
     a.remove();
+  }
+
+  changeCustomer(customer: string) {
+    this.def.customer = customer === "" ? undefined : customer;
+    if (!this.isNew())
+      this.apiService.updateStatDef(this.def.id, {
+        conditions: [],
+        change: this.def
+      }).subscribe();
   }
 }

@@ -315,6 +315,7 @@ export interface StatDef {
   name: string,
   user: User,
   shared: boolean,
+  customer: string,
   modified: string,
   timeseriesdef: StatTimeSeriesDef,
   xydef: StatXYDef,
@@ -385,7 +386,8 @@ export interface StatVisualSettings {
 
 export interface StatDefUpdateConditions {
   flipped?: boolean,
-  shared?: boolean
+  shared?: boolean,
+  customer: string
 }
 
 export interface StatDefUpdate {

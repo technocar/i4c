@@ -39,7 +39,7 @@
     <legend>paraméterek</legend>
     <div class="row form-group">
       <label class="col">eszköz</label>
-      <select #devvice_selector class="col form-control" [ngModel]="device" (change)="changeDevice(devvice_selector.value)">
+      <select #devvice_selector class="col form-control" [ngModel]="device" (change)="changeDevice(devvice_selector.value)" [disabled]="!access.canUpdate">
         <option *ngFor="let device of devices" [value]="device.id">{{device.name}}</option>
       </select>
     </div>
