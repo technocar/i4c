@@ -78,12 +78,13 @@ class WorkpiecePatchChange(I4cBaseModel):
     batch: Optional[str] = Field(None, title="Assign to batch.")
     delete_batch: Optional[bool] = Field(None, title="Remove from batch.")
     status: Optional[WorkpieceStatusEnum] = Field(None, title="Set status.")
-    # TODO remove status (back to default)
+    remove_status: Optional[bool] = Field(False, title="remove manual status.")
     add_note: Optional[List[NoteAdd]] = Field(None, title="Add notes.")
     delete_note: Optional[List[int]] = Field(None, title="Mark notes deleted.")
 
     def is_empty(self):
         return (self.status is None
+                and (self.remove_status is None or not self.remove_status)
                 and self.batch is None
                 and self.delete_batch is None
                 and not self.add_note
@@ -230,7 +231,7 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
             if patch.change.is_empty():
                 return PatchResponse(changed=True)
 
-            if patch.change.status or patch.change.batch or patch.change.delete_batch:
+            if patch.change.status or patch.change.batch or patch.change.delete_batch or patch.change.remove_status:
                 sql_check_db = "select * from workpiece where id = $1"
                 dbr = await conn.fetchrow(sql_check_db, id)
                 params = [id]
@@ -238,8 +239,9 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
                 sql_insert_fields = "id"
                 sql_insert_params = "$1"
                 sep = ""
-                if patch.change.status:
-                    params.append(patch.change.status)
+                if patch.change.status or patch.change.remove_status:
+                    new_status = patch.change.status if patch.change.status else None
+                    params.append(new_status)
                     sql_update += f"{sep}\"manual_status\"=${len(params)}"
                     sql_insert_fields += ", manual_status"
                     sql_insert_params += f", ${len(params)}"
