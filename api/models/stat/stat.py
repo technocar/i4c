@@ -37,6 +37,7 @@ class StatType(str, Enum):
     timeseries = "timeseries"
     xy = "xy"
     list = "list"
+    capability = "capability"
 
 
 class StatDefIn(I4cBaseModel):
@@ -216,8 +217,10 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
                     sql += f"and res.st_id is not null\n"
                 elif type == StatType.xy:
                     sql += f"and res.sx_id is not null\n"
-                elif type == StatType.xy:
+                elif type == StatType.list:
                     sql += f"and res.sl_id is not null\n"
+                elif type == StatType.capability:
+                    sql += f"and res.sc_id is not null\n"
             res_db = await conn.fetch(sql, *params)
             res = []
             for r in res_db:
