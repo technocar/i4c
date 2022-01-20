@@ -43,6 +43,7 @@ class StatDefIn(I4cBaseModel):
     """Query definition. Input. Exactly one of timeseriesdef or xydef must be given."""
     name: str = Field(..., title="Name.")
     shared: bool = Field(..., title="If set, everyone can run.")
+    customer: Optional[str] = Field(None, title="Customer.")
     timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
     capabilitydef: Optional[StatCapabilityDef] = Field(None, title="Capability definition.")
     xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
@@ -71,9 +72,12 @@ class StatPatchCondition(I4cBaseModel):
     """Condition for a query definition update."""
     flipped: Optional[bool] = Field(False, title="Pass if the condition is not met.")
     shared: Optional[bool] = Field(None, title="Is shared.")
+    customer: Optional[str] = Field(None, title="Customer.")
 
     def match(self, stat:StatDef):
-        r = ((self.shared is None) or (stat.shared == self.shared))
+        r = ( ((self.shared is None) or (stat.shared == self.shared))
+              and ((self.customer is None) or (stat.customer == self.customer))
+              )
 
         if self.flipped is None or not self.flipped:
             return r
@@ -87,6 +91,7 @@ class StatPatchChange(I4cBaseModel):
     possible to change a query from one type to another.
     """
     shared: Optional[bool] = Field(None, title="Set sharing.")
+    customer: Optional[str] = Field(None, title="Customer.")
     timeseriesdef: Optional[StatTimeseriesDef] = Field(None, title="Time series definition.")
     capabilitydef: Optional[StatCapabilityDef] = Field(None, title="Capability definition.")
     xydef: Optional[StatXYDef] = Field(None, title="XY query definition.")
@@ -104,6 +109,7 @@ class StatPatchChange(I4cBaseModel):
 
     def is_empty(self):
         return (self.shared is None
+                and self.customer is None
                 and self.timeseriesdef is None
                 and self.capabilitydef is None
                 and self.xydef is None
@@ -249,10 +255,10 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
                 raise I4cClientError("Name already in use")
 
             sql_insert = dedent("""\
-                insert into stat (name, "user", shared, modified) values ($1, $2, $3, now())
+                insert into stat (name, "user", shared, customer, modified) values ($1, $2, $3, $4, now())
                 returning id
             """)
-            stat_id = (await conn.fetchrow(sql_insert, stat.name, credentials.user_id, stat.shared))[0]
+            stat_id = (await conn.fetchrow(sql_insert, stat.name, credentials.user_id, stat.shared, stat.customer))[0]
             sql_user_name = "select \"name\" from \"user\" where id = $1"
             user_display_name = (await conn.fetchrow(sql_user_name, credentials.user_id))[0]
 
@@ -273,6 +279,7 @@ async def stat_post(credentials:CredentialsAndFeatures, stat: StatDefIn) -> Stat
                            modified=datetime.now(timezone.utc),
                            name=stat.name,
                            shared=stat.shared,
+                           customer=stat.customer,
                            timeseriesdef=stat.timeseriesdef,
                            capabilitydef=stat.capabilitydef,
                            xydef=stat.xydef,
@@ -323,6 +330,9 @@ async def stat_patch(credentials, id, patch:StatPatchBody):
             if patch.change.shared is not None:
                 params.append(patch.change.shared)
                 sql += f",\nshared = ${len(params)}::boolean"
+            if patch.change.customer is not None:
+                params.append(patch.change.customer)
+                sql += f",\ncustomer = ${len(params)}"
             sql += "\nwhere id = $1"
             await conn.execute(sql, *params)
 
