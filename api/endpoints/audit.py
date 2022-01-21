@@ -10,7 +10,6 @@ from I4cAPI import I4cApiRouter
 router = I4cApiRouter(include_path="/audit")
 
 
-# todo 1: ****************
 @router.get("", response_model=List[models.audit.AuditListItem], operation_id="audit_list", summary="List audites.")
 async def audit_list(
         request: Request,
