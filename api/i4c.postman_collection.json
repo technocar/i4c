@@ -1482,6 +1482,61 @@
 						"method": "GET",
 						"header": [],
 						"url": {
+							"raw": "localhost:5000/batch",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"batch"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "2021-10-15T15:53:11.123456Z",
+									"disabled": true
+								},
+								{
+									"key": "project",
+									"value": "proj1",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "closed",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "batch list - limited user",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "3a",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "tripla",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
 							"raw": "localhost:5000/batch?status=active&status=closed",
 							"host": [
 								"localhost"

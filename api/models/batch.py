@@ -5,6 +5,8 @@ from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 from enum import Enum
 
+from common.db_tools import get_user_customer
+
 
 class BatchStatus(str, Enum):
     planned = "planned"
@@ -36,7 +38,8 @@ batch_list_sql = open("models/batch_list.sql").read()
 
 async def batch_list(credentials, project, status, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
-        return await conn.fetch(batch_list_sql, project, status)
+        customer = await get_user_customer(credentials.user_id, pconn=conn)
+        return await conn.fetch(batch_list_sql, project, status, customer)
 
 
 async def batch_put(credentials, id, batch, *, pconn=None):
