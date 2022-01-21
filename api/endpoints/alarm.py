@@ -95,6 +95,8 @@ async def subsgroup_members_list(
     return await models.alarm.subsgroup_members(credentials, user, group)
 
 
+# TODO give back 200 and {grp}
+# i don't know why was it defined to give 201, prolly oversight. other PUTs give back the obj, so should this.
 @router.put("/subsgroups/{name}", status_code=201, response_class=Response, operation_id="alarm_subsgroup_set",
             summary="Update alarm subgroup member definition.")
 async def subsgroup_members_put(
