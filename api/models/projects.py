@@ -205,7 +205,8 @@ class ProjectVersionPatchChange(I4cBaseModel):
     """Change to a project version. Unset members are ignored."""
     status: Optional[ProjectVersionStatusEnum] = Field(None, title="New status.")
     clear_label: Optional[List[str]] = Field(None, title="Remove the labels.")
-    set_label: Optional[List[str]] = Field(None, title="Set the labels.")
+    set_label: Optional[List[str]] = Field(None, title="Set the labels. Label must start with a letter, and `latest` "
+                                                       "is not allowed.")
     add_file: Optional[List[ProjFile]] = Field(None, title="Add files.")
     del_file: Optional[List[str]] = Field(None, title="Remove files.")
 
@@ -435,6 +436,8 @@ async def post_projects_version(credentials, project_name, ver, files):
 
 
 async def patch_project_version(credentials, project_name, ver, patch: ProjectVersionPatchBody):
+    if patch.change.set_label and "latest" in patch.change.set_label:
+        raise I4cClientError("Illegal label `latest`.")
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             pv, pv_id = await get_projects_version(credentials, project_name, ver, pconn=conn)
@@ -633,7 +636,7 @@ async def get_real_project_version(project, version, *, pconn=None):
         where v.project = $1
         """)
 
-    if version.lower() == 'latest':
+    if version == 'latest':
         version = None
 
     if version is None:

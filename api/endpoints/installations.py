@@ -18,8 +18,8 @@ router = I4cApiRouter(include_path="/installations")
 async def new_installation(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/installations/{project}/{version}")),
-    project: str = Path(..., title="The installed project."),
-    version: str = Path(..., title="The installed version."),
+    project: str = Path(..., title="The project to install."),
+    version: str = Path(..., title="The version to install. Can be a number, a label or `latest`."),
     statuses: Optional[List[ProjectVersionStatusEnum]] = Query(None, title="Check project status. If omitted, only final projects are allowed.")
 ):
     """
