@@ -5,6 +5,14 @@ import functools
 import datetime
 import logging
 
+# TODO some bug:
+# echo x|i4c user update --id jason --body "{\"change\":{\"password\":null}}" --input-file - --input-placement "$.change.password=$[0][0]" --input-format txt
+# this does not set the password to x, but leaves null
+
+# TODO figure out how to input a single string
+# see above example. $[0][0] is super ugly.
+# refer to entire row or entire input
+
 log = logging.getLogger("i4c")
 
 
