@@ -90,7 +90,7 @@ def callback(ctx, **args):
     output_expr = args.get("output_expr", None)
     output_template = args.get("output_template", None)
 
-    if action.response.content_type == "application/json":
+    if action.response and action.response.content_type == "application/json":
         process_json(response, output_expr, output_file, output_template)
     else:
         origin_file_name = response.headers.get_filename()
