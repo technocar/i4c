@@ -436,6 +436,8 @@ async def post_projects_version(credentials, project_name, ver, files):
 
 
 async def patch_project_version(credentials, project_name, ver, patch: ProjectVersionPatchBody):
+    if patch.change.set_label and "latest" in patch.change.set_label:
+        raise I4cClientError("Illegal label `latest`.")
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             pv, pv_id = await get_projects_version(credentials, project_name, ver, pconn=conn)
