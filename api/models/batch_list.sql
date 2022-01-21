@@ -47,6 +47,7 @@ from batch b
 cross join p
 left join batch_max bm on bm.id = b.id
 where 
-  (p."status" is null or (b."status" = any(p."status")))
+  (p.project is null or b.project = p.project)
+  and (p."status" is null or (b."status" = any(p."status")))
   and (p.customer is null or (p.customer = b.customer))
 order by bm.last desc
