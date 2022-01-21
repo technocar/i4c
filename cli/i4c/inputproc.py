@@ -135,7 +135,7 @@ def format_attrs(s):
                 else:
                     t = w[first_alpha:]
                     w = w[:first_alpha]
-                f.col_widths.append(w)
+                f.col_widths.append(int(w))
                 f.col_types.append(t)
             elif e == "header":
                 f.header = True
