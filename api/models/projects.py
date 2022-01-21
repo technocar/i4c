@@ -205,7 +205,8 @@ class ProjectVersionPatchChange(I4cBaseModel):
     """Change to a project version. Unset members are ignored."""
     status: Optional[ProjectVersionStatusEnum] = Field(None, title="New status.")
     clear_label: Optional[List[str]] = Field(None, title="Remove the labels.")
-    set_label: Optional[List[str]] = Field(None, title="Set the labels.")
+    set_label: Optional[List[str]] = Field(None, title="Set the labels. Label must start with a letter, and `latest` "
+                                                       "is not allowed.")
     add_file: Optional[List[ProjFile]] = Field(None, title="Add files.")
     del_file: Optional[List[str]] = Field(None, title="Remove files.")
 

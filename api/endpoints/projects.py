@@ -61,12 +61,12 @@ async def patch_project(
     return await models.projects.patch_project(credentials, name, patch)
 
 
-@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, operation_id="project_ver_get")
+@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, operation_id="project_ver")
 async def get_projects_version(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
     name: str = Path(...),
-    ver: str = Path(None, description="Version or label. `latest` for latest version.")
+    ver: str = Path(None, description="Version number, label, or `latest`.")
 ):
     """Retrieve a project version."""
     res, _ = await models.projects.get_projects_version(credentials, name, ver)
