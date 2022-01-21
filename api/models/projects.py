@@ -636,7 +636,7 @@ async def get_real_project_version(project, version, *, pconn=None):
         where v.project = $1
         """)
 
-    if version.lower() == 'latest':
+    if version == 'latest':
         version = None
 
     if version is None:
