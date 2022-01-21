@@ -84,7 +84,7 @@ def callback(ctx, **args):
     if args.get("print_curl", False):
         raise Exception("Not implemented") # TODO
 
-    response = action.invoke(**args, body=None)
+    response = action.invoke(**args, body=body)
 
     output_file = args.get("output_file", None)
     output_expr = args.get("output_expr", None)
@@ -183,6 +183,7 @@ def make_commands(conn: I4CConnection):
     Make click Groups and Commands based on command_mapping, which is derived from openapi.json
     """
     log.debug(f"make_commands, get api")
+
     api_def = conn.api_def()
 
     for (obj_name, obj) in api_def.objects.items():
@@ -222,7 +223,6 @@ def make_commands(conn: I4CConnection):
                 params.append(click.Option((param_decl,), **attrs))
 
             if action.body:
-                param_decl = "--body"
                 attrs = {}
                 attrs["required"] = action.body.required
 
@@ -232,7 +232,7 @@ def make_commands(conn: I4CConnection):
                 helpstr = helpstr + "Use - to read from stdin, or @filename to read from file."
                 attrs["help"] = helpstr
 
-                params.append(click.Option((param_decl,), **attrs))
+                params.append(click.Option(("--body",), **attrs))
 
                 params.append(click.Option(("--input-file",),
                     help="Points to a file which will be processed and inserted to the body according to the other "
@@ -327,18 +327,29 @@ def profile_new_key(ctx, name, override):
 @click.option("--password", help="The value of the password for authentication or . to prompt.")
 @click.option("--del-password", is_flag=True, help="If provided, the password will be removed from the profile.")
 @click.option("--del-private-key", is_flag=True, help="If provided, the private key will be removed from the profile.")
+@click.option("--clear-extra", is_flag=True, help="If provided, all extra information will be removed.")
+@click.option("--extra", multiple=True, help="Add/merge extra information. Extra information has name=value format, and"
+                                             "it is stored with the profile, but otherwise not used. If value is"
+                                             "omitted, the information is deleted. Multiple instances allowed.")
 @click.option("--override", is_flag=True, help="If the profile exists, it will be modified.")
 @click.option("--make-default", is_flag=True, help="Make the profile default")
 @click.pass_context
-def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+def profile_save(ctx, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key,
+                 clear_extra, extra, override, make_default):
     log.debug(f"profile_save")
     conn = ctx.obj["connection"]
     if password == ".":
         password = click.termui.prompt("Password", hide_input=True, confirmation_prompt=True)
     try:
-        conn.write_profile(name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default)
+        if extra is not None:
+            extra = dict((lambda x: (x[0], x[2] or None))(i.partition("=")) for i in extra)
+
+        conn.write_profile(name=name, base_url=base_url, api_def_file=api_def_file, del_api_def_file=del_api_def_file,
+                           user=user, password=password, del_password=del_password, del_private_key=del_private_key,
+                           clear_extra=clear_extra, extra=extra,
+                           override=override, make_default=make_default)
     except Exception as e:
-        raise click.ClickException(e.message)
+        raise click.ClickException(f"{e}")
 
 
 @profile.command("list", help="Gives back all existing profiles. Sensitive fields will be redacted.")
@@ -598,7 +609,11 @@ def read_log_cfg():
 try:
     read_log_cfg()
     log = logging.getLogger("i4c")
-    connection = I4CConnection()
+    # yeah, this is ugly. we do a sneak peek for --profile
+    # because we need it to get for the api def
+    profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
+    log.debug(f"using profile {profile}")
+    connection = I4CConnection(profile=profile)
     make_commands(connection)
     top_grp(obj={"connection": connection}, prog_name="i4c")
 except click.ClickException as e:

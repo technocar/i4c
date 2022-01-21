@@ -1,13 +1,13 @@
-delete from  public.meta
+delete from  meta
 where data_id = 'connect';
 
-delete from  public.log
+delete from  log
 where data_id = 'connect';
 
-insert into public.meta (device, data_id, name, category, "type") values ('lathe', 'connect', 'connect', 'CONDITION', 'CONDITION');
-insert into public.meta (device, data_id, name, category, "type") values ('mill', 'connect', 'connect', 'CONDITION', 'CONDITION');
+insert into meta (device, data_id, name, category, "type") values ('lathe', 'connect', 'connect', 'CONDITION', 'CONDITION');
+insert into meta (device, data_id, name, category, "type") values ('mill', 'connect', 'connect', 'CONDITION', 'CONDITION');
 
-insert into public.log (device, instance, timestamp, sequence, "data_id", value_text)
+insert into log (device, instance, timestamp, sequence, "data_id", value_text)
 select
   a.device, 
   a.instance,
@@ -21,6 +21,6 @@ from (
     instance,
     timestamp, 
     rank() over (partition by device, instance order by timestamp, sequence) "#r"
-  from public.log
+  from log
 ) a
 where a."#r" = 1

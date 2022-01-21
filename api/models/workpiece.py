@@ -57,14 +57,13 @@ class WorkpiecePatchCondition(I4cBaseModel):
     """Conditions to check before a change is carried out to a workpiece."""
     flipped: Optional[bool] = Field(False, title="Pass if the condition does not hold.")
     batch: Optional[str] = Field(None, title="Assigned to batch.")
-    # TODO next is stupid, it should be has_batch
-    empty_batch: Optional[bool] = Field(None, title="Not assigned to any batches.")
+    has_batch: Optional[bool] = Field(None, title="Not assigned to any batches.")
     status: Optional[List[WorkpieceStatusEnum]] = Field(None, title="Has any of the statuses.")
 
     def match(self, workpiece:Workpiece):
         r = (
                 ((self.batch is None) or (self.batch == workpiece.batch))
-                and ((self.empty_batch is None) or ((workpiece.batch is None) == self.empty_batch))
+                and ((self.has_batch is None) or ((workpiece.batch is None) != self.has_batch))
                 and ((self.status is None) or (workpiece.status in self.status))
         )
         if self.flipped is None or not self.flipped:
@@ -78,12 +77,13 @@ class WorkpiecePatchChange(I4cBaseModel):
     batch: Optional[str] = Field(None, title="Assign to batch.")
     delete_batch: Optional[bool] = Field(None, title="Remove from batch.")
     status: Optional[WorkpieceStatusEnum] = Field(None, title="Set status.")
-    # TODO remove status (back to default)
+    remove_status: Optional[bool] = Field(False, title="remove manual status.")
     add_note: Optional[List[NoteAdd]] = Field(None, title="Add notes.")
     delete_note: Optional[List[int]] = Field(None, title="Mark notes deleted.")
 
     def is_empty(self):
         return (self.status is None
+                and (self.remove_status is None or not self.remove_status)
                 and self.batch is None
                 and self.delete_batch is None
                 and not self.add_note
@@ -159,7 +159,7 @@ async def list_workpiece(credentials: CredentialsAndFeatures,
                          note_before=None, note_after=None, with_details=True, with_deleted=False, *, pconn=None):
     sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
-        customer = await get_user_customer(credentials.user_id)
+        customer = await get_user_customer(credentials.user_id, pconn=conn)
         params = [before, after]
         if id is not None:
             sql = workpiece_list_log_sql_id
@@ -230,7 +230,7 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
             if patch.change.is_empty():
                 return PatchResponse(changed=True)
 
-            if patch.change.status or patch.change.batch or patch.change.delete_batch:
+            if patch.change.status or patch.change.batch or patch.change.delete_batch or patch.change.remove_status:
                 sql_check_db = "select * from workpiece where id = $1"
                 dbr = await conn.fetchrow(sql_check_db, id)
                 params = [id]
@@ -238,8 +238,9 @@ async def patch_workpiece(credentials, id, patch: WorkpiecePatchBody):
                 sql_insert_fields = "id"
                 sql_insert_params = "$1"
                 sep = ""
-                if patch.change.status:
-                    params.append(patch.change.status)
+                if patch.change.status or patch.change.remove_status:
+                    new_status = patch.change.status if patch.change.status else None
+                    params.append(new_status)
                     sql_update += f"{sep}\"manual_status\"=${len(params)}"
                     sql_insert_fields += ", manual_status"
                     sql_insert_params += f", ${len(params)}"

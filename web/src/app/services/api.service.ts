@@ -1,8 +1,9 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { AuthenticationService } from './auth.service';
 import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate, AlarmGroup } from './models/api';
 import { DeviceType } from './models/constants';
 
@@ -91,7 +92,8 @@ export class ApiService {
   ];
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    private auth: AuthenticationService
   ) {
     this._apiUrl = environment.apiPath;
     console.log(this._apiUrl);
@@ -130,6 +132,14 @@ export class ApiService {
     });
   }
 
+  requestNewPassword(username: string): Observable<string> {
+    return this.http.post<string>(`${this._apiUrl}/pwdreset/init`, { loginname: username });
+  }
+
+  setNewPassword(username: string, token: string, password: string): Observable<User> {
+    return this.http.post<User>(`${this._apiUrl}/pwdreset/setpass`, { loginname: username, token: token, password: password });
+  }
+
   getDevices(): Observable<Device[]> {
     return of([
       { id: DeviceType.Lathe, name: $localize `:@@device_lathe_name:Eszterga` },
@@ -163,8 +173,8 @@ export class ApiService {
       params = params.append("after_count", request.afterCount.toString());
     if (request.category)
       params = params.append("categ", request.category);
-    if (request.name)
-      params = params.append("name", request.name);
+    if (request.data_id)
+      params = params.append("data_id", request.data_id);
     if (request.value) {
       for (let v of request.value as Array<string>)
         params = params.append("val", v);
@@ -182,7 +192,10 @@ export class ApiService {
   }
 
   getMeta(): Observable<Meta[]> {
-    return this.http.get<Meta[]>(`${this._apiUrl}/log/meta`);
+    if (this.auth.hasPrivilige('get/log/meta'))
+      return this.http.get<Meta[]>(`${this._apiUrl}/log/meta`);
+    else
+      return of([]);
   }
 
   getEventValues(device: DeviceType): Observable<EventValues[]> {
@@ -332,19 +345,7 @@ export class ApiService {
   }
 
   getStatDef(id: string): Observable<StatDef> {
-    if (id == "-1")
-      return of({
-        id: -1,
-        modified: (new Date()).toISOString(),
-        name: "új elemzés",
-        shared: false,
-        timeseriesdef: undefined,
-        xydef: undefined,
-        listdef: undefined,
-        user: undefined
-      });
-    else
-      return this.http.get<StatDef>(`${this._apiUrl}/stat/def/${id}`);
+    return this.http.get<StatDef>(`${this._apiUrl}/stat/def/${id}`);
   }
 
   addNewStatDef(def: StatDef): Observable<StatDef> {
@@ -367,18 +368,45 @@ export class ApiService {
   }
 
   //This method for resolver of analsysis module to download data for selected analysis
-  getAnalysisData(id: string): Observable<[StatDef, Meta[]]> {
-    return new Observable<[StatDef, Meta[]]>((observer) => {
-      var result: [StatDef, Meta[]] = [undefined, undefined];
+  getAnalysisData(id: string, type: string): Observable<[StatDef, Meta[], string[]]> {
+    return new Observable<[StatDef, Meta[], string[]]>((observer) => {
+      var result: [StatDef, Meta[], string[]] = [undefined, undefined, undefined];
+      var reqs: Observable<any>[] = [];
+      reqs.push( this.getCustomers());
       //Get analysis definition...
-      this.getStatDef(id).subscribe(def => {
-        result[0] = def;
-        if (!def) {
-          //If there is no definition then we are done.
+      if (id === "-1") {
+        result[0] = {
+          id: -1,
+          modified: (new Date()).toISOString(),
+          name: "új elemzés",
+          shared: false,
+          customer: undefined,
+          timeseriesdef: undefined,
+          xydef: undefined,
+          listdef: undefined,
+          capabilitydef: undefined,
+          user: undefined
+        };
+        if (["0", "3"].indexOf(type) > -1)
+          reqs.push(this.getMeta());
+        else
+          reqs.push(of(undefined));
+
+        forkJoin(reqs).subscribe(results => {
+          result[1] = results[1];
+          result[2] = results[0];
           observer.next(result);
           observer.complete();
-        } else {
-          if (def.timeseriesdef)
+        }, err => {
+          observer.error(err); observer.complete();
+        });
+      } else {
+        reqs.push(this.getStatDef(id));
+        forkJoin(reqs).subscribe(results => {
+          result[2] = results[0];
+          var def = results[1];
+          result[0] = def;
+          if (def?.timeseriesdef || def?.capabilitydef) {
             //If it's timeseries then gets meta list...
             this.getMeta().subscribe(meta => {
               result[1] = meta;
@@ -386,14 +414,15 @@ export class ApiService {
               observer.complete();
             },
             (err) => { observer.error(err); observer.complete(); });
-          else {
+          } else {
             //If it's not timeseries we are done.
             observer.next(result);
             observer.complete();
           }
-        }
-      },
-      (err) => { observer.error(err); observer.complete(); });
+        }, err => {
+          observer.error(err); observer.complete();
+        });
+      }
 
       return {
         unsubscribe() {
@@ -447,5 +476,12 @@ export class ApiService {
 
   getSetting(key: string): Observable<string> {
     return this.http.get<string>(`${this._apiUrl}/settings/${key}`);
+  }
+
+  getCustomers(): Observable<string[]> {
+    if (this.auth.hasPrivilige("get/customers"))
+      return this.http.get<string[]>(`${this._apiUrl}/customers`);
+    else
+      return of([]);
   }
 }

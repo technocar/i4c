@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import List, Dict, Optional
 from pydantic import Field, validator
 from common import DatabaseConnection, I4cBaseModel, write_debug_sql
+from common.db_tools import dict2asyncpg_param, asyncpg_rows_process_json
 from common.exceptions import I4cInputValidationError, I4cClientError
 from models import ProjectStatusEnum, ProjectVersionStatusEnum
 from models.common import PatchResponse
@@ -23,7 +24,7 @@ class ProjectPatchCondition(I4cBaseModel):
     flipped: Optional[bool] = Field(None, title="Pass if the condition is not met.")
     status: Optional[List[ProjectStatusEnum]] = Field(None, title="Has any of the listed statuses.")
     extra: Optional[Dict[str, str]] = Field(None, title="All the listed extra values are set and match.")
-    has_extra: List[str] = Field(None, title="Has the listed extra values.")  # TODO check if all keys exist
+    has_extra: List[str] = Field(None, title="Has the listed extra values.")
 
     def match(self, project:Project):
         r = ( ((self.status is None) or (project.status in self.status))
@@ -38,11 +39,15 @@ class ProjectPatchCondition(I4cBaseModel):
 class ProjectPatchChange(I4cBaseModel):
     """Change to a project."""
     status: Optional[ProjectStatusEnum] = Field(None, title="Set the status.")
-    extra: Optional[Dict[str,str]] = Field(None, title="Add extra values.")
-    # TODO set_extra del_extra
+    extra: Optional[Dict[str,str]] = Field(None, title="Set extra values.")
+    add_extra: Optional[Dict[str, str]] = Field(None, title="Add or update extra values.")
+    del_extra: Optional[List[str]] = Field(None, title="Delete extra values.")
 
     def is_empty(self):
-        return self.status is None and self.extra is None
+        return self.status is None \
+               and self.extra is None \
+               and self.add_extra is None \
+               and self.del_extra is None
 
 
 class ProjectPatchBody(I4cBaseModel):
@@ -55,8 +60,7 @@ class ProjectIn(I4cBaseModel):
     """Collection of programs needed for machining a product. Input."""
     name: str
     status: ProjectStatusEnum = Field("active")
-    # todo 5: This should be Optional[Dict[str,str]] insted of json data.
-    extra: Optional[str]
+    extra: Optional[Dict[str,str]]
 
 
 class GitFile(I4cBaseModel):
@@ -201,7 +205,8 @@ class ProjectVersionPatchChange(I4cBaseModel):
     """Change to a project version. Unset members are ignored."""
     status: Optional[ProjectVersionStatusEnum] = Field(None, title="New status.")
     clear_label: Optional[List[str]] = Field(None, title="Remove the labels.")
-    set_label: Optional[List[str]] = Field(None, title="Set the labels.")
+    set_label: Optional[List[str]] = Field(None, title="Set the labels. Label must start with a letter, and `latest` "
+                                                       "is not allowed.")
     add_file: Optional[List[ProjFile]] = Field(None, title="Add files.")
     del_file: Optional[List[str]] = Field(None, title="Remove files.")
 
@@ -226,7 +231,7 @@ class GetProjectsVersions(Enum):
 
 
 async def get_projects(credentials, name=None, name_mask=None, status=None, file=None, *, pconn=None,
-                       versions:GetProjectsVersions = GetProjectsVersions.all):
+                       versions:GetProjectsVersions = GetProjectsVersions.all) -> List[Project]:
     sql = dedent("""\
             with pv as (
                 select project, ARRAY_AGG(ver::"varchar"(200)) versions
@@ -274,12 +279,12 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
                  .replace("<versions_only>", "where False" if versions == GetProjectsVersions.versions_only else "")
         write_debug_sql("get_projects.sql", sql, *params)
         res = await conn.fetch(sql, *params)
-        res = [{k: (v if k != "extra" else json.loads(v)) for (k, v) in row.items()} for row in res] # TODO how pathetic is that? why does it return a string?
+        res = asyncpg_rows_process_json(res, "extra")
         res = [Project(**d) for d in res]
         return res
 
 
-async def new_project(credentials, project):
+async def new_project(credentials, project: ProjectIn):
     if len(await get_projects(credentials, project.name)) > 0:
         raise I4cClientError("Project name is not unique")
 
@@ -291,7 +296,7 @@ async def new_project(credentials, project):
     if project.status is None:
         project.status = ProjectStatusEnum.active
     async with DatabaseConnection() as conn:
-        await conn.execute(sql_insert_project, project.name, project.status, project.extra)
+        await conn.execute(sql_insert_project, project.name, project.status, dict2asyncpg_param(project.extra))
         return (await get_projects(credentials, project.name, pconn=conn))[0]
 
 
@@ -320,8 +325,14 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
                 params.append(patch.change.status)
                 sql += f"{sep}\"status\"=${len(params)}"
                 sep = ",\n"
-            if patch.change.extra:
-                params.append(json.dumps(patch.change.extra))    # TODO pathetic vol 2: why do we need dumps
+            if patch.change.extra or patch.change.add_extra or patch.change.del_extra:
+                new_extra = patch.change.extra if patch.change.extra else project.extra
+                if patch.change.add_extra:
+                    new_extra.update(patch.change.add_extra)
+                if patch.change.del_extra:
+                    for d in patch.change.del_extra:
+                        new_extra.pop(d, None)
+                params.append(dict2asyncpg_param(new_extra))
                 sql += f"{sep}\"extra\"=${len(params)}"
                 sep = ",\n"
             sql += "\nwhere name = $1"
@@ -390,6 +401,7 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
             where pv.project = $1 and pv.ver = $2::int
           """)
     async with DatabaseConnection(pconn) as conn:
+        ver = await get_real_project_version(project, ver, pconn=conn)
         res = await conn.fetch(sql, project, ver)
         if len(res) == 0:
             raise I4cClientError("Project version not found")
@@ -424,6 +436,8 @@ async def post_projects_version(credentials, project_name, ver, files):
 
 
 async def patch_project_version(credentials, project_name, ver, patch: ProjectVersionPatchBody):
+    if patch.change.set_label and "latest" in patch.change.set_label:
+        raise I4cClientError("Illegal label `latest`.")
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
             pv, pv_id = await get_projects_version(credentials, project_name, ver, pconn=conn)
@@ -605,3 +619,42 @@ async def files_list(credentials, proj_name, projver, save_path, save_path_mask,
                 d["file_int"] = IntFile(name=r["int_name"], ver=r["int_ver"])
             res.append(FileWithProjInfo(**d))
         return res
+
+
+async def get_real_project_version(project, version, *, pconn=None):
+    sql_project_version_label = dedent("""\
+        select v.ver
+        from project_version v
+        join project_label l on l.project_ver = v.id
+        where 
+          v.project = $1 
+          and l.label = $2
+        """)
+    sql_project_version_last = dedent("""\
+        select max(v.ver)
+        from project_version v
+        where v.project = $1
+        """)
+
+    if version == 'latest':
+        version = None
+
+    if version is None:
+        async with DatabaseConnection(pconn) as conn:
+            res = await conn.fetchrow(sql_project_version_last, project)
+            if res:
+                return res[0]
+            else:
+                raise I4cClientError("No project version found")
+
+    try:
+        return int(version)
+    except ValueError:
+        pass
+
+    async with DatabaseConnection(pconn) as conn:
+        db_project_version = await conn.fetchrow(sql_project_version_label, project, version)
+        if db_project_version:
+            return db_project_version[0]
+        else:
+            raise I4cClientError("No matching project label found")

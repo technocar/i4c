@@ -1,6 +1,7 @@
 from typing import Optional, List
 from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
+from starlette.requests import Request
 import models.projects
 import models.common
 import common
@@ -13,6 +14,7 @@ router = I4cApiRouter(include_path="/projects")
 
 @router.get("", response_model=List[models.projects.Project], operation_id="project_list", summary="List projects.")
 async def list_projects(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects")),
     name: Optional[str] = Query(None, title="Exact name."),
     name_mask: Optional[List[str]] = Query(None, title="Name search expression."),
@@ -26,6 +28,7 @@ async def list_projects(
 
 @router.get("/{name}", response_model=models.projects.Project, operation_id="project_get", summary="Retrieve project.")
 async def get_project(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}")),
     name: str = Path(...),
 ):
@@ -38,6 +41,7 @@ async def get_project(
 
 @router.post("", response_model=models.projects.Project, operation_id="project_new", summary="Create project.")
 async def new_project(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects")),
     project: models.projects.ProjectIn = Body(...),
 ):
@@ -48,6 +52,7 @@ async def new_project(
 @router.patch("/{name}", response_model=models.common.PatchResponse, operation_id="project_update",
               summary="Update project.")
 async def patch_project(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}")),
     name: str = Path(...),
     patch: models.projects.ProjectPatchBody = Body(...),
@@ -55,17 +60,15 @@ async def patch_project(
     """Change a project if conditions are met."""
     return await models.projects.patch_project(credentials, name, patch)
 
-@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, operation_id="project_ver_get")
+
+@router.get("/{name}/v/{ver}", response_model=models.projects.ProjectVersion, operation_id="project_ver")
 async def get_projects_version(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/projects/{name}/v/{ver}")),
     name: str = Path(...),
-    ver: int = Path(...)
+    ver: str = Path(None, description="Version number, label, or `latest`.")
 ):
     """Retrieve a project version."""
-    # TODO allow ver to be str, meaning label
-    #   this assumes label can't be numeric, which is actually a good idea of not yet so
-    # TODO allow ver to be None, meaning latest
-    #   is this even possible?
     res, _ = await models.projects.get_projects_version(credentials, name, ver)
     return res
 
@@ -73,6 +76,7 @@ async def get_projects_version(
 @router.post("/{name}/v", response_model=models.projects.ProjectVersion, operation_id="project_ver_new",
              summary="New project version.")
 async def post_projects_version(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/projects/{name}/v")),
     name: str = Path(...),
     ver: Optional[int] = Query(None, title="A version number. Must not exist. If omitted, the next number is allocated."),
@@ -85,6 +89,7 @@ async def post_projects_version(
 @router.patch("/{name}/v/{ver}", response_model=models.common.PatchResponse, operation_id="project_ver_update",
               summary="Update project version.")
 async def patch_project_version(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}/v/{ver}")),
     name: str = Path(...),
     ver: int = Path(...),

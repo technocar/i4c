@@ -101,7 +101,7 @@ export interface FindParams {
   beforeCount?: number,
   afterCount?: number,
   category?: string,
-  name?: string,
+  data_id?: string,
   value?: string | string[],
   extra?: string,
   relation?: string,
@@ -247,7 +247,7 @@ export interface WorkPieceParams {
 export interface WorkPieceUpdateCondition {
   flipped: boolean,
   batch?: string,
-  empty_batch?: boolean,
+  has_batch?: boolean,
   status?: WorkPieceStatus[]
 }
 
@@ -256,7 +256,8 @@ export interface WorkPieceUpdateChange {
   delete_batch?: boolean,
   status?: WorkPieceStatus,
   add_note?: Note[],
-  delete_note?: number[]
+  delete_note?: number[],
+  remove_status?: boolean
 }
 
 export interface WorkPieceUpdate {
@@ -314,10 +315,12 @@ export interface StatDef {
   name: string,
   user: User,
   shared: boolean,
+  customer: string,
   modified: string,
   timeseriesdef: StatTimeSeriesDef,
   xydef: StatXYDef,
-  listdef: StatListDef
+  listdef: StatListDef,
+  capabilitydef: StatCapabilityDef
 }
 
 export interface StatDefBase {
@@ -383,7 +386,8 @@ export interface StatVisualSettings {
 
 export interface StatDefUpdateConditions {
   flipped?: boolean,
-  shared?: boolean
+  shared?: boolean,
+  customer: string
 }
 
 export interface StatDefUpdate {
@@ -410,7 +414,8 @@ export interface StatData {
   stat_def: StatDef,
   timeseriesdata: StatDataTimeSeries[],
   xydata: StatDataXY[],
-  listdata: any[]
+  listdata: any[],
+  capabilitydata: StatCapabilityData
 }
 
 export interface StatXYMeta {
@@ -504,6 +509,48 @@ export interface StatListVisualSettingsCol {
   field: string,
   caption: string,
   width: number
+}
+
+export interface StatCapabilityDef extends StatDateTimeDef {
+  filter: StatCapabilityFilter[],
+  metric: StatCapabilityDefMetric,
+  nominal: number,
+  utl: number,
+  ltl: number,
+  ucl: number,
+  lcl: number,
+  visualsettings: StatCapabilityDefVisualSettings
+}
+
+
+export interface StatCapabilityFilter {
+  id: number,
+  device: DeviceType,
+  data_id: string,
+  rel: string,
+  value: any
+}
+
+export enum StatCapabilityDefVisualSettingsInfoBoxLocation { None = 'none', Left = 'left', Right = 'right', Bottom = 'bottom', Top = 'top' }
+export interface StatCapabilityDefVisualSettings extends StatVisualSettings {
+  plotdata: boolean,
+  infoboxloc: StatCapabilityDefVisualSettingsInfoBoxLocation
+}
+
+export interface StatCapabilityDefMetric {
+  device: string,
+  data_id: string
+}
+
+export interface StatCapabilityData {
+  points: number[],
+  mean: number,
+  sigma: number,
+  c: number,
+  ck: number,
+  min: number,
+  max: number,
+  count: number
 }
 
 export interface Alarm {

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
+from starlette.requests import Request
 import models.installations
 import common
 import models.common
@@ -15,9 +16,10 @@ router = I4cApiRouter(include_path="/installations")
 @router.post("/{project}/{version}", response_model=models.installations.Installation,
              operation_id="installation_start", summary="New installation.")
 async def new_installation(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/installations/{project}/{version}")),
-    project: str = Path(..., title="The installed project."),
-    version: str = Path(..., title="The installed version."),
+    project: str = Path(..., title="The project to install."),
+    version: str = Path(..., title="The version to install. Can be a number, a label or `latest`."),
     statuses: Optional[List[ProjectVersionStatusEnum]] = Query(None, title="Check project status. If omitted, only final projects are allowed.")
 ):
     """
@@ -30,6 +32,7 @@ async def new_installation(
 @router.get("", response_model=List[models.installations.Installation], operation_id="installation_list",
             summary="List installations.", features=['noaudit'])
 async def list_installation(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations", ask_features=['noaudit'])),
     id: Optional[int] = Query(None),
     status: Optional[InstallationStatusEnum] = Query(None),
@@ -49,6 +52,7 @@ async def list_installation(
 @router.patch("/{id}", response_model=models.common.PatchResponse, operation_id="installation_update",
               summary="Update installation.")
 async def patch_installation(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/installations/{id}")),
     id: int = Path(...),
     patch: models.installations.InstallationPatchBody = Body(...),
@@ -61,6 +65,7 @@ async def patch_installation(
 
 @router.get("/{id}/{savepath:path}", operation_id="installation_file", summary="Download a file.")
 async def installation_get_file(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations/{id}/{savepath:path}")),
     id: int = Path(...),
     savepath: str = Path(...),

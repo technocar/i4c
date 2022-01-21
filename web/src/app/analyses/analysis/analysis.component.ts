@@ -9,12 +9,13 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
-import { Meta, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
+import { Meta, StatCapabilityDefVisualSettingsInfoBoxLocation, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
 import { AnalysisType } from '../analyses.component';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
-import { AnalysisListDefComponent } from '../analysis-list-def/analysis-list-def.component';
+import { AnalysisListDefComponent } from '../defs/analysis-list-def/analysis-list-def.component';
 import * as Excel from "exceljs";
+import { AnalysisCapabilityDefComponent } from '../defs/analysis-capability-def/analysis-capability-def.component';
 
 Chart.register(...registerables);
 
@@ -35,12 +36,15 @@ export class AnalysisComponent implements OnInit {
   error: boolean = false;
   errorMsg: string = "";
   showResult: boolean = false;
+  customers: string[] = [];
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
   @ViewChild('list_def')  listDef: AnalysisListDefComponent;
+  @ViewChild('capability_def')  capabilityDef: AnalysisCapabilityDefComponent;
   @ViewChild('new_dialog') newDialog;
-  @ViewChild('chart', {static: false}) chart: ElementRef;
+  @ViewChild('chart_place', {static: false}) chart_place: ElementRef<HTMLDivElement>;
+  @ViewChild('chart', {static: false}) chart: ElementRef<HTMLCanvasElement>;
   @ViewChild('table', {static: false}) table: ElementRef<HTMLTableElement>;
 
   access = {
@@ -54,6 +58,7 @@ export class AnalysisComponent implements OnInit {
     private apiService: ApiService,
     private router: Router
   ) {
+
     this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.analysisType = (route.snapshot.paramMap.get("type") ?? "0") as AnalysisType;
   }
@@ -62,6 +67,7 @@ export class AnalysisComponent implements OnInit {
     this.route.data.subscribe(r => {
       this.metaList = r.data[1];
       this.def = r.data[0];
+      this.customers = r.data[2];
       this.processDef();
       if (this.def)
         this.origDef = JSON.parse(JSON.stringify(this.def));
@@ -80,7 +86,9 @@ export class AnalysisComponent implements OnInit {
       };
     } else {
       this.analysisType = this.def.timeseriesdef ? AnalysisType.TimeSeries :
-        this.def.xydef ? AnalysisType.XY : AnalysisType.List;
+        this.def.xydef ? AnalysisType.XY :
+        this.def.listdef ? AnalysisType.List :
+        AnalysisType.Capability;
     }
   }
 
@@ -108,6 +116,9 @@ export class AnalysisComponent implements OnInit {
         break;
       case AnalysisType.List:
         this.def.listdef = this.listDef.getDef();
+        break;
+      case AnalysisType.Capability:
+        this.def.capabilitydef = this.capabilityDef.getDef();
         break;
     }
   }
@@ -140,6 +151,12 @@ export class AnalysisComponent implements OnInit {
     this.showResult = false;
     this.error = false;
     this.errorMsg = "";
+
+    if (this.chart_place) {
+      let cont = this.chart_place.nativeElement.querySelector('div');
+      if (cont)
+        cont.remove();
+    }
 
     if (this._chartInstance)
       this._chartInstance.destroy();
@@ -220,6 +237,8 @@ export class AnalysisComponent implements OnInit {
         options = this.buildTimeSeriesChart(result);
       else if (result.xydata)
         options = this.buildXYChart(result);
+      else if (result.capabilitydata)
+        options = this.buildCapabilityChart(result);
 
       this._chartInstance = new Chart(ctx, options);
     }
@@ -242,6 +261,38 @@ export class AnalysisComponent implements OnInit {
       throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
 
     return this.timeseriesDef.getChartConfiguration(result);
+  }
+
+  buildCapabilityChart(result: StatData): ChartConfiguration {
+    if (!result?.capabilitydata)
+      throw ($localize `:@@chart_no_data:Nincs megjeleníthető adat!`);
+
+    var cont = this.chart_place.nativeElement.querySelector('.cont');
+    if (cont)
+      cont.remove();
+    var infoBox = this.capabilityDef.buildInfoBox(result);
+    if (infoBox) {
+      cont = document.createElement('div');
+      cont.classList.add("cont");
+      cont.append(infoBox)
+      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Top
+        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left)
+        this.chart_place.nativeElement.prepend(cont);
+      else
+        this.chart_place.nativeElement.append(cont);
+
+      this.chart.nativeElement.classList.remove(...['col', 'col-8']);
+      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Right
+        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left) {
+        cont.classList.add("col");
+        this.chart.nativeElement.classList.add("col-9")
+      } else {
+        cont.classList.add("col-12");
+        this.chart.nativeElement.classList.add("col");
+      }
+    }
+
+    return this.capabilityDef.getChartConfiguration(result);
   }
 
   save(): Observable<boolean> {
@@ -398,5 +449,14 @@ export class AnalysisComponent implements OnInit {
     a.click();
     window.URL.revokeObjectURL(url);
     a.remove();
+  }
+
+  changeCustomer(customer: string) {
+    this.def.customer = customer === "" ? undefined : customer;
+    if (!this.isNew())
+      this.apiService.updateStatDef(this.def.id, {
+        conditions: [],
+        change: this.def
+      }).subscribe();
   }
 }

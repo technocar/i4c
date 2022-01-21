@@ -1,7 +1,7 @@
 from typing import Optional, List
-
 from fastapi import Depends, Query
 from fastapi.security import HTTPBasicCredentials
+from starlette.requests import Request
 import common
 import models.projects
 import models.users
@@ -15,6 +15,7 @@ router = I4cApiRouter()
 @router.get("/login", response_model=models.users.UserWithPrivs, tags=["user"], operation_id="user_login",
             summary="Login.")
 async def login(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/login"))):
     "Get user info based on login name."
     return await models.users.login(credentials)
@@ -23,15 +24,26 @@ async def login(
 @router.get("/privs", response_model=List[models.roles.Priv], tags=["roles"], operation_id="priv_list",
             summary="List privileges.")
 async def privs(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/privs"))):
     "List available privileges."
     return await models.roles.get_priv(credentials)
+
+
+@router.get("/customers", response_model=List[str], tags=["users"], operation_id="customer_list",
+            summary="List customers.")
+async def customer_list(
+        request: Request,
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/customers"))):
+    "List available privileges."
+    return await models.users.customer_list(credentials)
 
 
 # logically it belongs to projects. it is here because its path does not start with "/projects".
 @router.get("/files", response_model=List[models.projects.FileWithProjInfo], tags=["files"],
             operation_id="project_search_file", summary="Global file search.")
 async def files(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/files")),
         proj_name: Optional[str] = Query(None),
         projver: Optional[int] = Query(None),

@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import List, Optional
-
 from fastapi import Depends, Body, Path, Query
 from fastapi.security import HTTPBasicCredentials
+from starlette.requests import Request
 from starlette.responses import Response
-
 import common
 import models.log
 import models.tools
@@ -15,8 +14,9 @@ from models import Device
 router = I4cApiRouter(include_path="/tools")
 
 
-@router.put("", status_code=201, operation_id="tool_record", summary="Record tool change.")
+@router.put("", status_code=201, response_class=Response, operation_id="tool_record", summary="Record tool change.")
 async def tools_log_write(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("put/tools")),
         datapoint: models.tools.ToolDataPoint = Body(...)):
     """
@@ -28,11 +28,12 @@ async def tools_log_write(
                              data_id=datapoint.data_id,
                              value_text=datapoint.tool_id,
                              value_extra=datapoint.slot_number)
-    return await models.log.put_log_write(credentials, [d], override=True)
+    await models.log.put_log_write(credentials, [d], override=True)
 
 
 @router.delete("", status_code=204, response_class=Response, operation_id="tool_delete", summary="Delete tool change.")
 async def tools_log_delete(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/tools")),
         datapointkey: models.tools.ToolDataPointKey = Body(...)):
     """
@@ -48,6 +49,7 @@ async def tools_log_delete(
 @router.patch("/{tool_id}", response_model=models.common.PatchResponse, operation_id="tool_update",
               summary="Update or create tool.")
 async def patch_tools(
+    request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/tools/{tool_id}")),
     tool_id: str = Path(...),
     patch: models.tools.ToolsPatchBody = Body(...),
@@ -58,9 +60,10 @@ async def patch_tools(
     return await models.tools.patch_tool(credentials, tool_id, patch)
 
 
-@router.get("", response_model=List[models.tools.ToolDataPointType], operation_id="tool_list",
+@router.get("", response_model=List[models.tools.ToolDataPointWithType], operation_id="tool_list",
             summary="List tool changes.")
 async def tool_list(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools")),
         device: Device = Query(..., title="device"),
         timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
@@ -73,6 +76,7 @@ async def tool_list(
 @router.get("/list_usage", response_model=List[models.tools.ToolItem], operation_id="tool_usage",
             summary="List tools.")
 async def tool_list_usage(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list_usage"))):
     """List tools and some statistics on their usage."""
     return await models.tools.tool_list_usage(credentials)

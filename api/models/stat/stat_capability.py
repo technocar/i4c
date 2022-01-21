@@ -230,11 +230,14 @@ class StatCapabilityData(I4cBaseModel):
     """
     Result for capability query.
     """
-    points: Optional[List[float]] = Field(None, title="Values")
-    mean: Optional[float] = Field(None, title="Mean")
-    sigma: Optional[float] = Field(None, title="Sigma")
-    c: Optional[float] = Field(None, title="C")
-    ck: Optional[float] = Field(None, title="Ck")
+    points: Optional[List[float]] = Field(None, title="Values.")
+    count: int = Field(None, title="Count.")
+    min: Optional[float] = Field(None, title="Min.")
+    max: Optional[float] = Field(None, title="Max.")
+    mean: Optional[float] = Field(None, title="Mean.")
+    sigma: Optional[float] = Field(None, title="Sigma.")
+    c: Optional[float] = Field(None, title="C.")
+    ck: Optional[float] = Field(None, title="Ck.")
 
 
 async def statdata_get_capability(credentials, st_id:int, st_capabilitydef: StatCapabilityDef, conn) -> StatCapabilityData:
@@ -270,7 +273,10 @@ async def statdata_get_capability(credentials, st_id:int, st_capabilitydef: Stat
             if md_prev["value_num"] is not None:
                 res["points"].append(md_prev["value_num"])
 
-        if len(res["points"]) > 0:
+        res["count"] = len(res["points"])
+        if res["count"] > 0:
+            res["min"] = min(res["points"])
+            res["max"] = max(res["points"])
             res["mean"] = sum(res["points"]) / len(res["points"])
             res["sigma"] = (sum((i - res["mean"]) ** 2 for i in res["points"]) / (len(res["points"]) - 1)) ** (1 / 2) \
                 if len(res["points"]) > 1 else 0

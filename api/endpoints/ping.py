@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any
 from fastapi import Depends, Query, Body, HTTPException
 from fastapi.security import HTTPBasicCredentials, HTTPBasic
 from pydantic import BaseModel
+from starlette.requests import Request
 import common
 from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
@@ -17,6 +18,7 @@ class Pong(BaseModel):
 @router.get("/noop", response_model=Pong, operation_id="ping_noop",
             summary="Test API availability.")
 async def noop_get(
+        request: Request,
         data: Optional[str] = Query(None, title="Will be given back in the response")):
     """Test API availability."""
     return {"data": data}
@@ -25,6 +27,7 @@ async def noop_get(
 @router.post("/noop", response_model=Dict[Any, Any], operation_id="ping_post",
             summary="Test API POST.")
 async def noop_post(
+        request: Request,
         data: Optional[Dict[Any, Any]] = Body(None, title="Will be given back as the response")):
     """Test POST method and json transport."""
     if data is None:
@@ -35,6 +38,7 @@ async def noop_post(
 @router.get("/pwd", response_model=Pong, operation_id="ping_pwd",
             summary="Test API password auth.")
 async def pwd_get(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
     """Test password authentication. User "goodname" with password "goodpass" will be accepted."""
@@ -46,6 +50,7 @@ async def pwd_get(
 @router.get("/sign", response_model=Pong, operation_id="ping_sign",
             summary="Test API signature auth.")
 async def sign_get(
+        request: Request,
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
     """
@@ -66,6 +71,7 @@ async def sign_get(
 @router.get("/db", response_model=Pong, operation_id="ping_db",
             summary="Test API db backend auth.")
 async def db_get(
+        request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/ping/db")),
         data: Optional[str] = Query(None, title="Will be given back in the response")):
     """Test real authentication and backend database access."""

@@ -148,7 +148,7 @@ class I4CConnection:
             if not api_def_file:
                 api_def_file = p.get("api-def-file")
 
-        if base_url.endswith("/"):
+        if base_url and base_url.endswith("/"):
             base_url = base_url[:-1]
 
         self._api_def = api_def
@@ -286,6 +286,11 @@ class I4CConnection:
         return self.invoke_url(url, method, bindata=body, data_content_type=content_type)
 
     def profiles(self):
+        """
+        List of stored profiles. The password is redacted, only its existence is indicated. The private key is redacted,
+        the derived public key is returned instead.
+        :return: list of dict.
+        """
         p = _load_profile(self.profile_file, require_exist=False)
         p = p or {}
         dp = p.pop("default") if "default" in p else None
@@ -295,11 +300,33 @@ class I4CConnection:
                "user": v.get("user", k),
                "password": ("password" in v),
                "public-key": public_key(v.get("private-key", None)),
-               "default": (dp == k)}
+               "default": (dp == k),
+               "extra": v.get("extra", None)}
               for (k, v) in p.items()]
         return ps
 
-    def write_profile(self, name, base_url, api_def_file, del_api_def_file, user, password, del_password, del_private_key, override, make_default):
+    def write_profile(self, *, name, base_url, api_def_file, del_api_def_file, user, password, del_password,
+                      del_private_key, clear_extra, extra, override, make_default):
+        """
+        Save or update a profile. If the profile exists, you must specify the override flag.
+
+        :param name: the name of the profile. If omitted, the default profile will be assumed.
+        :param base_url: base URL of the server, can have protocol, host, port and prefix.
+        :param api_def_file: optional, path to the json file with OpenAPI definition. If omitted, will be downloaded.
+        :param del_api_def_file: if True, remove the OpenAPI file path from the profile.
+        :param user: optional user name to use for authentication. If omitted, profile name will be used.
+        :param password: optional password for authentication.
+        :param del_password: if True, remove the password from the profile.
+        :param del_private_key: if True, remove the private key from the profile. Note that you can't set the key here.
+            New key can be created using the `profile_new_key` method.
+        :param clear_extra: if True, removes all extra information. See `extra`.
+        :param extra: a Dict[str, str] with extra information. Extra information will be stored with the profile, but
+            otherwise not used. Information provided here will be merged into the existing set on update. The value
+            will be converted to str.
+        :param override: if True, enables overriding an existing profile.
+        :param make_default: if True, the profile is marked as default. If there is a default profile already, it's
+            default status is revoked.
+        """
         if name == "default":
             raise Exception("Invalid profile name.")
         if name is None:
@@ -325,12 +352,30 @@ class I4CConnection:
         if password: sect["password"] = password
         if del_password and "password" in sect: del sect["password"]
         if del_private_key and "private-key" in sect: del sect["private-key"]
+        if clear_extra:
+            del sect["extra"]
+        if extra is not None:
+            if "extra" not in sect:
+                sect["extra"] = {}
+            for n, v in extra.items():
+                if v:
+                    sect["extra"][n] = str(v)
+                else:
+                    del sect["extra"][n]
+            if not sect["extra"]:
+                del sect["extra"]
         if make_default:
             p["default"] = name
 
         _save_profile(self.profile_file, p)
 
     def profile_new_key(self, name, override):
+        """
+        Creates a new key pair, saves the private key to the profile, and returns the public key.
+        :param name: profile name. If omitted, the default profile will be used.
+        :param override: if True, enables overriding existing private key.
+        :return: the public key to be registered in the API.
+        """
         if name == "default":
             raise Exception("Invalid profile name.")
         if name is None:
@@ -342,6 +387,9 @@ class I4CConnection:
         sect = p and p.get(name, None)
         if sect is None:
             raise Exception("No such profile exists.")
+
+        if "private-key" in sect and not override:
+            raise Exception("The profile already has a private key.")
 
         pri, pub = keypair_create()
         sect["private-key"] = pri

@@ -8,6 +8,6 @@ create table alarm_subsgroup (
   primary key ("user", "group")
 )
 
-GRANT ALL ON TABLE public.alarm_subsgroup TO aaa;
-GRANT ALL ON TABLE public.alarm_subsgroup TO postgres;
+GRANT ALL ON TABLE alarm_subsgroup TO aaa;
+GRANT ALL ON TABLE alarm_subsgroup TO postgres;
 

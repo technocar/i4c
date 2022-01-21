@@ -1,6 +1,7 @@
 from typing import List
 from textwrap import dedent
 from common import DatabaseConnection
+from common.db_tools import dict2asyncpg_param
 from common.exceptions import I4cClientError
 from models.log import DataPoint
 
@@ -28,7 +29,7 @@ async def put_log_write(credentials, datapoints: List[DataPoint], *, override=Fa
                      value_aux = EXCLUDED.value_aux
                    """
     sql = dedent(f"""\
-                 insert into public.log
+                 insert into log
                  (
                     device,
                     instance,
@@ -53,4 +54,4 @@ async def put_log_write(credentials, datapoints: List[DataPoint], *, override=Fa
                 await conn.execute(sql,
                                d.device, d.instance, d.timestamp,
                                d.sequence, d.data_id, d.value_num,
-                               d.value_text, d.value_extra, d.value_add)
+                               d.value_text, d.value_extra, dict2asyncpg_param(d.value_add))

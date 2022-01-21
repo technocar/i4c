@@ -22,7 +22,7 @@ with
       l.value_text "tool_id",
       l.value_extra "slot_id",
       t.type
-    from public.log l
+    from log l
     cross join p
     left join tools t on t.id = l.value_text
     where

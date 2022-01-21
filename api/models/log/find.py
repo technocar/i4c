@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import Field
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
+from common.db_tools import asyncpg_rows_process_json
 from common.exceptions import I4cClientError
 
 view_find_sql = open("models/log/find.sql").read()
@@ -26,7 +27,7 @@ class DataPoint(I4cBaseModel):
     value_num: Optional[float] = Field(None, title="Numeric value")
     value_text: Optional[str] = Field(None, title="Text value")
     value_extra: Optional[str] = Field(None, title="Additional text value")
-    value_add: Optional[str] = Field(None, title="Other information") # TODO this should not be str
+    value_add: Optional[Dict[str,Any]] = Field(None, title="Other information")
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,
@@ -124,16 +125,16 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
 
 async def get_find(credentials, device, timestamp=None, sequence=None, before_count=None, after_count=None, categ=None,
-                   name=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
+                   data_id=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
     if sequence is not None and timestamp is None:
         raise I4cClientError("sequence allowed only when timestamp is not empty")
 
     params = [device]
-    sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel)
+    sql = get_find_sql(params, timestamp, sequence, before_count, after_count, categ, data_id, val, extra, rel)
     write_debug_sql('get_find.sql', sql, *params)
 
     async with DatabaseConnection(pconn) as conn:
         log.debug('before sql run')
         rs = await conn.fetch(sql,*params)
         log.debug('after sql run')
-    return [DataPoint(**dict(r)) for r in rs]
+    return [DataPoint(**r) for r in asyncpg_rows_process_json(rs, 'value_add')]

@@ -11,6 +11,7 @@ from common.exceptions import I4cClientError, I4cClientNotFound
 from models import ProjectVersionStatusEnum, InstallationStatusEnum, ProjectStatusEnum
 from models.common import PatchResponse
 from models.intfiles import get_internal_file_name
+from models.projects import get_real_project_version
 
 
 class Installation(I4cBaseModel):
@@ -68,14 +69,6 @@ async def new_installation(credentials, project, version,
           v.project = $1 
           and v.ver = $2
         """)
-    sql_project_version_label = dedent("""\
-        select v.ver
-        from project_version v
-        join project_label l on l.project_ver = v.id
-        where 
-          v.project = $1 
-          and l.label = $2
-        """)
     sql_project_files = dedent("""\
         select pf.savepath
         from project_file pf
@@ -91,14 +84,7 @@ async def new_installation(credentials, project, version,
                 i = dict(project=project, invoked_version=version)
                 if db_proj["status"] != ProjectStatusEnum.active:
                     raise I4cClientError("Not active project")
-                try:
-                    i["real_version"] = int(version)
-                except ValueError:
-                    db_project_version = await conn.fetchrow(sql_project_version_label, project, version)
-                    if db_project_version:
-                        i["real_version"] = db_project_version[0]
-                    else:
-                        raise I4cClientError("No matching project label found")
+                i["real_version"] = await get_real_project_version(project, version, pconn=conn)
 
                 db_project_version = await conn.fetchrow(sql_project_version, project, i["real_version"])
                 if db_project_version:

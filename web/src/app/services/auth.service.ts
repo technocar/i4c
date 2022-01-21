@@ -3,10 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Router } from '@angular/router';
-import { ApiService, LoginResponse } from './api.service';
-import { DeviceType } from './models/constants';
+import { ApiService } from './api.service';
 import { User, UserPrivilige } from './models/api';
-import { map, tap } from 'rxjs/operators';
 
 export class AuthenticatedUser {
   id: string;
@@ -21,7 +19,7 @@ export class AuthenticationService {
   private currentUserSubject: BehaviorSubject<AuthenticatedUser>;
   public currentUser: Observable<AuthenticatedUser>;
 
-  constructor(private http: HttpClient, private router: Router, private api: ApiService) {
+  constructor(private http: HttpClient, private router: Router) {
     this.currentUserSubject = new BehaviorSubject<AuthenticatedUser>(JSON.parse(localStorage.getItem('current_user')));
     this.currentUser = this.currentUserSubject.asObservable();
   }
@@ -34,18 +32,15 @@ export class AuthenticationService {
     return !!this.currentUserValue && !!this.currentUserValue.expires && this.currentUserValue.expires > Date.now();
   }
 
-  login(username: string, password: string): Observable<User> {
-    return this.api.login(username, password).pipe(
-      tap(user => {
-        this.storeUser({
-          id: user.id,
-          username: user.login_name,
-          expires: Date.now() + (1000 * 60 * 45),
-          token: `${window.btoa(username + ':' + password)}`,
-          privs: user.privs ?? []
-        });
-      })
-    );
+  login(username: string, password: string, user: User): User {
+    this.storeUser({
+      id: user.id,
+      username: user.login_name,
+      expires: Date.now() + (1000 * 60 * 45),
+      token: `${window.btoa(username + ':' + password)}`,
+      privs: user.privs ?? []
+    });
+    return user;
   }
 
   removeUser() {

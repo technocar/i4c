@@ -5,13 +5,26 @@
         <i class="bi bi-save2"></i>
         Mentés másként...
       </button>
-      <div class="btn-group btn-group-toggle col-auto pr-0" ngbRadioGroup name="radioBasic" [(ngModel)]="def.shared" *ngIf="isOwn()">
-        <label ngbButtonLabel class="{{!def.shared ? 'btn-outline-success' : 'btn-success'}}" title="{{def.shared ? 'megosztva' : 'megosztás'}}">
-          <input ngbButton type="radio" [value]="true" (change)="shareChanged()"><i class="bi bi-people"></i>
-        </label>
-        <label ngbButtonLabel class="{{def.shared ? 'btn-outline-warning' : 'btn-warning'}}" title="{{def.shared ? 'ne legyen megosztva' : 'nincs megosztva'}}">
-          <input ngbButton type="radio" [value]="false" (change)="shareChanged()"><i class="bi bi-person"></i>
-        </label>
+      <div class="col-5">
+        <div class="row">
+          <div class="col">
+            <div class="form-group mb-0 row align-items-center">
+              <label class="col-auto mb-0">ügyfél</label>
+              <select #customer class="form-control col" [ngModel]="def.customer" [disabled]="!access.canUpdate" (change)="changeCustomer(customer.value)">
+                <option [value]="''">--nincs megosztva--</option>
+                <option *ngFor="let customer of customers" [value]="customer">{{customer}}</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-group btn-group-toggle col-auto pr-0" ngbRadioGroup name="radioBasic" [(ngModel)]="def.shared" *ngIf="isOwn()">
+            <label ngbButtonLabel class="{{!def.shared ? 'btn-outline-success' : 'btn-success'}}" title="{{def.shared ? 'megosztva' : 'megosztás'}}">
+              <input ngbButton type="radio" [value]="true" (change)="shareChanged()"><i class="bi bi-people"></i>
+            </label>
+            <label ngbButtonLabel class="{{def.shared ? 'btn-outline-warning' : 'btn-warning'}}" title="{{def.shared ? 'ne legyen megosztva' : 'nincs megosztva'}}">
+              <input ngbButton type="radio" [value]="false" (change)="shareChanged()"><i class="bi bi-person"></i>
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -22,6 +35,7 @@
           <app-analysis-timeseries-def #timeseries_def *ngIf="analysisType === '0'" [metaList]="metaList" [def]="def.timeseriesdef"></app-analysis-timeseries-def>
           <app-analysis-xy-def #xy_def *ngIf="analysisType === '1'" [def]="def.xydef"></app-analysis-xy-def>
           <app-analysis-list-def #list_def *ngIf="analysisType === '2'" [def]="def.listdef"></app-analysis-list-def>
+          <app-analysis-capability-def #capability_def *ngIf="analysisType === '3'" [def]="def.capabilitydef" [metaList]="metaList"></app-analysis-capability-def>
         </ng-template>
       </ngb-panel>
     </ngb-accordion>
@@ -33,7 +47,14 @@
     <div *ngIf="error" class="alert alert-danger text-center" role="alert">
       {{errorMsg}}
     </div>
-    <canvas #chart class="chart"></canvas>
+    <div *ngIf="loading$ | async" class="loading-indicator text-center">
+      <div class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+    <div #chart_place class="row">
+      <canvas #chart class="col chart"></canvas>
+    </div>
     <div *ngIf="showResult" class="mb-4">
       <button class="btn btn-outline-success mr-4" (click)="exportToExcel()">
         <i class="bi bi-file-earmark-excel-fill"></i>
@@ -49,11 +70,6 @@
       </button>
     </div>
     <div #table></div>
-    <div *ngIf="loading$ | async" class="loading-indicator text-center">
-      <div class="spinner-border" role="status">
-        <span class="sr-only">Loading...</span>
-      </div>
-    </div>
   </div>
 </div>
 

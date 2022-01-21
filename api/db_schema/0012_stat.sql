@@ -35,9 +35,9 @@ add column customer VARCHAR(200) null;
 
 CREATE UNIQUE INDEX idx_name_user ON "stat" (name, "user");
 
-GRANT ALL ON TABLE public."stat" TO aaa;
+GRANT ALL ON TABLE "stat" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE stat_id_seq TO aaa;
-GRANT ALL ON TABLE public."stat" TO postgres;
+GRANT ALL ON TABLE "stat" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_id_seq TO postgres;
 
 create table "stat_visual_setting" (
@@ -57,8 +57,8 @@ alter table "stat_visual_setting"
 add column tooltip_html text null;
 
 
-GRANT ALL ON TABLE public."stat_visual_setting" TO aaa;
-GRANT ALL ON TABLE public."stat_visual_setting" TO postgres;
+GRANT ALL ON TABLE "stat_visual_setting" TO aaa;
+GRANT ALL ON TABLE "stat_visual_setting" TO postgres;
 
 /* **************** stat_timeseries **************** */
 
@@ -80,8 +80,8 @@ create table "stat_timeseries" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_timeseries" TO aaa;
-GRANT ALL ON TABLE public."stat_timeseries" TO postgres;
+GRANT ALL ON TABLE "stat_timeseries" TO aaa;
+GRANT ALL ON TABLE "stat_timeseries" TO postgres;
 
 create table "stat_timeseries_filter" (
     id SERIAL PRIMARY KEY,
@@ -118,8 +118,8 @@ create table "stat_xy" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_xy" TO aaa;
-GRANT ALL ON TABLE public."stat_xy" TO postgres;
+GRANT ALL ON TABLE "stat_xy" TO aaa;
+GRANT ALL ON TABLE "stat_xy" TO postgres;
 
 create table "stat_xy_object_params" (
     id SERIAL PRIMARY KEY,
@@ -175,8 +175,8 @@ create table "stat_list" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_list" TO aaa;
-GRANT ALL ON TABLE public."stat_list" TO postgres;
+GRANT ALL ON TABLE "stat_list" TO aaa;
+GRANT ALL ON TABLE "stat_list" TO postgres;
 
 create table "stat_list_object_params" (
     id SERIAL PRIMARY KEY,
@@ -235,8 +235,8 @@ create table "stat_list_visual_setting" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_list_visual_setting" TO aaa;
-GRANT ALL ON TABLE public."stat_list_visual_setting" TO postgres;
+GRANT ALL ON TABLE "stat_list_visual_setting" TO aaa;
+GRANT ALL ON TABLE "stat_list_visual_setting" TO postgres;
 
 create table "stat_list_visual_setting_col" (
     id SERIAL PRIMARY KEY,
@@ -249,9 +249,9 @@ create table "stat_list_visual_setting_col" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO aaa;
+GRANT ALL ON TABLE "stat_list_visual_setting_col" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO aaa;
-GRANT ALL ON TABLE public."stat_list_visual_setting_col" TO postgres;
+GRANT ALL ON TABLE "stat_list_visual_setting_col" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE stat_list_visual_setting_col_id_seq TO postgres;
 
 /* **************** stat_capability **************** */
@@ -272,8 +272,8 @@ create table "stat_capability" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_capability" TO aaa;
-GRANT ALL ON TABLE public."stat_capability" TO postgres;
+GRANT ALL ON TABLE "stat_capability" TO aaa;
+GRANT ALL ON TABLE "stat_capability" TO postgres;
 
 create table "stat_capability_filter" (
     id SERIAL PRIMARY KEY,
@@ -301,8 +301,8 @@ create table "stat_capability_visual_setting" (
 ); 
 
 
-GRANT ALL ON TABLE public."stat_capability_visual_setting" TO aaa;
-GRANT ALL ON TABLE public."stat_capability_visual_setting" TO postgres;
+GRANT ALL ON TABLE "stat_capability_visual_setting" TO aaa;
+GRANT ALL ON TABLE "stat_capability_visual_setting" TO postgres;
 
 /*
 delete from "stat_capability" where id<0;

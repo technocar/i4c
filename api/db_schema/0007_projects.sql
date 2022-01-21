@@ -15,8 +15,8 @@ create table "projects" (
     extra json null
 );
 
-GRANT ALL ON TABLE public."projects" TO aaa;
-GRANT ALL ON TABLE public."projects" TO postgres;
+GRANT ALL ON TABLE "projects" TO aaa;
+GRANT ALL ON TABLE "projects" TO postgres;
 
 create table "project_version" (
     id SERIAL PRIMARY KEY,
@@ -27,9 +27,9 @@ create table "project_version" (
 
 CREATE UNIQUE INDEX idx_project_ver ON "project_version" (project, ver);
 
-GRANT ALL ON TABLE public."project_version" TO aaa;
+GRANT ALL ON TABLE "project_version" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE project_version_id_seq TO aaa;
-GRANT ALL ON TABLE public."project_version" TO postgres;
+GRANT ALL ON TABLE "project_version" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE project_version_id_seq TO postgres;
 
 create table "project_label" (
@@ -37,8 +37,8 @@ create table "project_label" (
     label character varying (200) null
 );
 
-GRANT ALL ON TABLE public."project_label" TO aaa;
-GRANT ALL ON TABLE public."project_label" TO postgres;
+GRANT ALL ON TABLE "project_label" TO aaa;
+GRANT ALL ON TABLE "project_label" TO postgres;
 
 
 
@@ -48,18 +48,18 @@ create table "file_git" (
     name character varying (200) not null,
     commit character varying (200) not null
 );
-GRANT ALL ON TABLE public."file_git" TO aaa;
+GRANT ALL ON TABLE "file_git" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE file_git_id_seq TO aaa;
-GRANT ALL ON TABLE public."file_git" TO postgres;
+GRANT ALL ON TABLE "file_git" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE file_git_id_seq TO postgres;
 
 create table "file_unc" (
     id SERIAL PRIMARY KEY,
     name character varying (200) not null
 );
-GRANT ALL ON TABLE public."file_unc" TO aaa;
+GRANT ALL ON TABLE "file_unc" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE file_unc_id_seq TO aaa;
-GRANT ALL ON TABLE public."file_unc" TO postgres;
+GRANT ALL ON TABLE "file_unc" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE file_unc_id_seq TO postgres;
 
 create table "file_int" (
@@ -69,9 +69,9 @@ create table "file_int" (
     content_hash character varying (200) not null
 );
 CREATE UNIQUE INDEX idx_file_int_name_ver ON "file_int" (name, ver);
-GRANT ALL ON TABLE public."file_int" TO aaa;
+GRANT ALL ON TABLE "file_int" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE file_int_id_seq TO aaa;
-GRANT ALL ON TABLE public."file_int" TO postgres;
+GRANT ALL ON TABLE "file_int" TO postgres;
 GRANT USAGE, SELECT ON SEQUENCE file_int_id_seq TO postgres;
 
 create table "project_file" (
@@ -83,8 +83,8 @@ create table "project_file" (
     primary key (project_ver, savepath)
 );
 
-GRANT ALL ON TABLE public."project_file" TO aaa;
-GRANT ALL ON TABLE public."project_file" TO postgres;
+GRANT ALL ON TABLE "project_file" TO aaa;
+GRANT ALL ON TABLE "project_file" TO postgres;
 
 /* 
 truncate table "projects", "project_version", "project_label", "project_file" cascade;

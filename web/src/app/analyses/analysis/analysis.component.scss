@@ -34,3 +34,28 @@
     float: right;
   }
 }
+
+::ng-deep .cont {
+  margin-bottom: 1rem;
+
+  .infobox {
+    margin: 0 1rem;
+    .title {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .box {
+      margin: 0.5rem;
+      border: 1px solid $color-gray;
+      border-radius: 5px;
+      .row:nth-child(2n) {
+        background-color: $color-light-blue;
+      }
+
+      .row > .col:nth-child(2) {
+        text-align: right;
+      }
+    }
+  }
+}

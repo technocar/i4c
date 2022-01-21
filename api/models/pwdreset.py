@@ -9,7 +9,7 @@ from common import I4cBaseModel, DatabaseConnection
 from common.exceptions import I4cClientError
 
 
-class LoginNameModel(I4cBaseModel):   # TODO why 'model' in the name?
+class LoginName(I4cBaseModel):
     loginname: str
 
 
@@ -71,7 +71,7 @@ async def setpass(loginname, token, password, *, pconn=None):
             new_password_verifier = common.create_password(password)
             await conn.execute(sql_update, loginname, new_password_verifier)
 
-            return {"user": await models.users.get_user(login_name=loginname, with_privs=True) }
+            return await models.users.get_user(login_name=loginname, with_privs=True)
 
 
 class PwdresetOutboxItem(I4cBaseModel):

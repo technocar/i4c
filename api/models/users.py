@@ -40,20 +40,15 @@ class UserWithPrivs(User):
     privs: List[Priv]
 
 
-# TODO why is this?
-class LoginUserResponse(I4cBaseModel):
-    """Response of login."""
-    user: UserWithPrivs
-
-
 class UserPatchChange(I4cBaseModel):
     """Change in a user update."""
     password: Optional[str] = Field(None, title="Set password.")
     del_password: Optional[bool] = Field(None, title="If set, removes the password.")
     public_key: Optional[str] = Field(None, title="Public key.")
     del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")
-    # TODO implement this:
-    status: Optional[bool] = Field(None, title="Set status.")
+    status: Optional[UserStatusEnum] = Field(None, title="Set status.")
+    customer: Optional[str] = Field(None, nullable=True, title="Set customer.")
+    email: Optional[str] = Field(None, nullable=True, title="Set email.")
 
     @root_validator
     def check_exclusive(cls, values):
@@ -65,7 +60,10 @@ class UserPatchChange(I4cBaseModel):
         return ( self.password is None
                  and (self.del_password is None or not self.del_password)
                  and self.public_key is None
-                 and (self.del_public_key is None or not self.del_public_key))
+                 and (self.del_public_key is None or not self.del_public_key)
+                 and self.status is None
+                 and self.customer is None
+                 and self.email is None)
 
 
 class UserPatchBody(I4cBaseModel):
@@ -168,6 +166,14 @@ async def login(credentials: HTTPBasicCredentials, *, pconn=None):
     return res
 
 
+async def customer_list(credentials: HTTPBasicCredentials, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        sql = """select distinct "customer" from "user" where "customer" is not null order by 1"""
+        res = await conn.fetch(sql)
+        res = [r[0] for r in res]
+        return res
+
+
 async def get_users(credentials, login_name=None, *, active_only=True, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\
@@ -266,6 +272,15 @@ async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBod
             fields.append(f"public_key = ${len(params)}")
         if patch.change.del_public_key:
             fields.append(f"public_key = null")
+        if patch.change.status is not None:
+            params.append(patch.change.status)
+            fields.append(f""""status" = ${len(params)}""")
+        if patch.change.customer is not None:
+            params.append(patch.change.customer)
+            fields.append(f""""customer" = ${len(params)}""")
+        if patch.change.email is not None:
+            params.append(patch.change.email)
+            fields.append(f""""email" = ${len(params)}""")
         sql = sql.replace("<fields>", ',\n'.join(fields))
         await conn.execute(sql, *params)
         return PatchResponse(changed=True)
