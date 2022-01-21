@@ -507,9 +507,20 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     space -> space delimited, every space is a delimiter
     spaces -> space delimited, consecutive spaces are considered as one
 
-    For fixed width files, the column widths are defined with:
+    For fixed width files, the column widths are defined with attributes of
+    format:
 
-    # TODO
+    [name]=width[type] where name and type can be omitted. The type can be
+    `i` for integer, `f` for float, `isodt` for timestapm. Otherwise it is
+    text.
+
+    \b
+    Example 1: only widths are given.
+    =2.=8.=8.=3
+
+    \b
+    Example 2: names and types too.
+    id=4i.name=20.status=1i
 
     For tabular files, the following attributes can be used:
 
@@ -531,14 +542,17 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     the option is:
 
     \b
-    --input-placement "<place>=<path>"
     --input-placement "<place>"
+    --input-placement "<place>=<path>"
+    --input-placement "<place>*=<path>"
 
     The <place> is a jsonpath that points to a location in the skeleton. The skeleton root can be simply referred to
     as "$". If the jsonpath refers to multiple locations (i.e. contains *), all of them will be targets.
 
     The <path> is a jsonpath or xpath, depending on the input type. Xml inputs only accept xpath, the other types only
-    accept jsonpath. Jsonpath can be omitted, in which case $ will be used.
+    accept jsonpath. Jsonpath can be omitted, in which case $ will be used. If the path evaluates to a single entity,
+    it will be unwrapped. If not, it will be packed into an array. It might be surprising if wildcards are used, but
+    there happens to be one element. In order to keep the result as an array, use *=.
 
     Example 1
 
@@ -565,8 +579,6 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
      {"color":"green", "weight":"200", "price":"20"}]
 
     # TODO consider: if we use wildcard on both sides, what happens
-
-    # TODO data type conversions
     """
 
     log.debug(f"transform")
