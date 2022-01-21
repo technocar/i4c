@@ -196,7 +196,7 @@ async def stat_list(credentials: CredentialsAndFeatures, id=None, user_id=None, 
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction():
             await conn.execute("SET LOCAL intervalstyle = 'iso_8601';")
-            customer = await get_user_customer(credentials.user_id)
+            customer = await get_user_customer(credentials.user_id, pconn=conn)
             params = [credentials.user_id]
             if id is not None:
                 params.append(id)
