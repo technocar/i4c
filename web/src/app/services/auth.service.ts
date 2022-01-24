@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Router } from '@angular/router';
-import { ApiService } from './api.service';
 import { User, UserPrivilige } from './models/api';
 
 export class AuthenticatedUser {

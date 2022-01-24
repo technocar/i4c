@@ -8,7 +8,7 @@
     </div>
     <div class="row align-items-center mb-4">
       <div class="col form-group p-0 mb-0">
-        <input #name="ngModel" class="form-control" name="name" [(ngModel)]="def.name" placeholder="riasztás neve" pattern="^$|^[A-Za-z0-9]+" required />
+        <input #name="ngModel" class="form-control" name="name" [(ngModel)]="def.name" placeholder="riasztás neve" pattern="^[^:/\\?&+=\x22]*$" required />
         <div *ngIf="name.invalid" class="invalid-feedback">
           <div *ngIf="name.errors?.required">név megadása kötelező</div>
           <div *ngIf="name.errors?.pattern">csak alfanumerikus lehet</div>

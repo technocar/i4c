@@ -7,7 +7,7 @@
 <div class="row mb-4">
   <div class="form-group col-3">
     <label for="subs_users">felhasználók</label>
-    <select id="subs_users" class="form-control" [(ngModel)]="selectedUser">
+    <select id="subs_users" class="form-control" [(ngModel)]="selectedUser" (change)="getSubscriptions()">
       <option *ngFor="let user of users$ | async" [value]="user[0]">{{user[1]}}</option>
     </select>
   </div>
