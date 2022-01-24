@@ -3,7 +3,9 @@ with
           $1::varchar(200) -- */ 'A7080'::varchar(200)
               as project, 
           coalesce($2::varchar(200)[]) -- */ array['active', 'closed']::varchar(200)[]
-              as "status"
+              as "status",
+          coalesce($3::varchar(200)) -- */ 'aaa'::varchar(200)
+              as "customer"          
   ),
   workpiece_id as (
     select l.value_text as "id", l.timestamp, l.sequence
@@ -44,5 +46,8 @@ select
 from batch b
 cross join p
 left join batch_max bm on bm.id = b.id
-where p."status" is null or (b."status" = any(p."status"))
+where 
+  (p.project is null or b.project = p.project)
+  and (p."status" is null or (b."status" = any(p."status")))
+  and (p.customer is null or (p.customer = b.customer))
 order by bm.last desc

@@ -159,7 +159,7 @@ async def list_workpiece(credentials: CredentialsAndFeatures,
                          note_before=None, note_after=None, with_details=True, with_deleted=False, *, pconn=None):
     sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
-        customer = await get_user_customer(credentials.user_id)
+        customer = await get_user_customer(credentials.user_id, pconn=conn)
         params = [before, after]
         if id is not None:
             sql = workpiece_list_log_sql_id
