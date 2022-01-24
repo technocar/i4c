@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Dict, Any
 from fastapi import Depends, Query, Body, HTTPException
 from fastapi.security import HTTPBasicCredentials, HTTPBasic
@@ -22,6 +23,13 @@ async def noop_get(
         data: Optional[str] = Query(None, title="Will be given back in the response")):
     """Test API availability."""
     return {"data": data}
+
+
+@router.get("/datetime", operation_id="ping_datetime",)
+async def get_datetime(
+    dt: Optional[datetime] = Query(None, title="Around timestamp, iso format.")
+):
+    return dt
 
 
 @router.post("/noop", response_model=Dict[Any, Any], operation_id="ping_post",
