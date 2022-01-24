@@ -66,9 +66,10 @@ def callback(ctx, **args):
     # This is the main Click callback that performs the API call
     log.debug(f"callback {args}")
 
-    path = args.pop("path")
-    method = args.pop("method")
-    action = args.pop("action")
+    ep = args.pop("_ep")
+    path = ep["path"]
+    method = ep["method"]
+    action = ep["action"]
 
     # process body
     if "body" in args:
@@ -115,7 +116,7 @@ def make_callback(**outer_args):
     """
     def f(**args):
         try:
-            res = callback(click.globals.get_current_context(), **outer_args, **args)
+            res = callback(click.globals.get_current_context(), _ep=outer_args, **args)
         except click.ClickException as e:
             raise
         except HTTPError as e:
