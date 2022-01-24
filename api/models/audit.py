@@ -19,11 +19,6 @@ class AuditListItem(I4cBaseModel):
     extra: Optional[Dict[str,Any]] = Field(None, title="Other information")
 
 
-# todo 1: ****************
-audit_list_sql = ""
-
-
-# todo 1: ****************
 async def audit_list(
         credentials: HTTPBasicCredentials,
         before: Optional[datetime],
