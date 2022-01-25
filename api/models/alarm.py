@@ -636,16 +636,20 @@ async def alarmdef_list(credentials, name_mask, report_after,
 
 
 async def subsgroupsusage_list(credentials, user, *, pconn=None):
-    if credentials.user_id != user and "any user" not in credentials.info_features:
-        raise I4cClientError("Unauthorized to access other users' subscriptions.")
-
     sql = dedent("""\
             select "user", array_agg("group") as groups
-            from alarm_subsgroup_map where "user" = $1 or $1 is null
+            from alarm_subsgroup_map 
+            where 
+              ("user" = $1 or $1 is null)
+              and ("user" = $2 or $2 is null)
             group by "user" 
             """)
     async with DatabaseConnection(pconn) as conn:
-        res = await conn.fetch(sql, user)
+        self_filter = None
+        if "any user" not in credentials.info_features:
+            self_filter = credentials.user_id
+
+        res = await conn.fetch(sql, user, self_filter)
         res = [{"user":r["user"], "groups":r["groups"]} for r in res]
         return res
 

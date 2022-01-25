@@ -66,7 +66,7 @@ async def alarmdef_list(
 async def subsgroupsusage_list(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroupusage", ask_features=["any user"])),
-        user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):
+        user: Optional[str] = Query(None, title="Filter for this user. If not self then special privilege required.")):
     """List subscription groups."""
     return await models.alarm.subsgroupsusage_list(credentials, user)
 
