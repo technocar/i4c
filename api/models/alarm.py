@@ -695,6 +695,7 @@ async def subsgroup_members_put(credentials, name, sub_groups_in: SubsGroupsIn, 
             for d in found_user - needed_user:
                 sql_delete_member = """delete from alarm_subsgroup_map where "user" = $1 and "group" = $2"""
                 await conn.execute(sql_delete_member, d, name)
+    return SubsGroups(name=name, users=sub_groups_in.users)
 
 
 async def subsgroup_delete(credentials, name, forced, *, pconn=None):
