@@ -13,7 +13,7 @@ from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from models import CondEventRel, alarm
 from models.alarm import prev_iterator
-from .stat_common import StatVisualSettings, resolve_time_period
+from .stat_common import resolve_time_period
 
 
 class StatCapabilityFilter(I4cBaseModel):
