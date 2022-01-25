@@ -24,11 +24,6 @@ class UserData(I4cBaseModel):
     email: Optional[str] = Field(None, nullable=True)
 
 
-class UserIn(UserData):
-    """Real person or automated account. Input."""
-    password: Optional[str] = Field(None)
-
-
 class User(UserData):
     """Real person or automated account."""
     id: str = Field(..., title="User's identifier")
@@ -196,7 +191,7 @@ async def get_users(credentials, login_name=None, *, active_only=True, pconn=Non
         return res
 
 
-async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pconn=None):
+async def user_put(credentials: CredentialsAndFeatures, id, user: UserData, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction(isolation='repeatable_read'):
             if id != credentials.user_id:
@@ -208,20 +203,19 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserIn, *, pco
                 old_roles = []
                 sql = dedent("""\
                     insert into "user"
-                        (id, name, "status", login_name, password_verifier, customer, email)
+                        (id, name, "status", login_name, customer, email)
                     values
-                        ($1, $2, $3,         $4, $5, $6,                              $7)""")
+                        ($1, $2, $3,         $4, $5, $6)""")
             else:
                 old_roles = old.roles
                 sql = dedent("""\
                         update "user"
                         set
-                            name = $2, "status" = $3, login_name = $4, password_verifier = $5, customer = $6, email = $7
+                            name = $2, "status" = $3, login_name = $4, customer = $5, email = $6
                         where id = $1""")
             try:
-                verif = common.create_password(user.password) if user.password is not None else None
                 await conn.fetchrow(sql, id, user.name, user.status, user.login_name,
-                                    verif, user.customer, user.email)
+                                    user.customer, user.email)
             except UniqueViolationError as e:
                 if hasattr(e, 'constraint_name'):
                     if e.constraint_name == 'uq_user_login':
