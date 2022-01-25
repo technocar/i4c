@@ -406,9 +406,6 @@ class AlarmRecipPatchBody(I4cBaseModel):
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
-    if (user is not None) and (credentials.user_id != user) and ("any user" not in credentials.info_features):
-        raise I4cClientError("Unauthorized to access other users' subscriptions.")
-
     sql = dedent("""\
             with
                 res as (
@@ -443,6 +440,9 @@ async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=
             sql += "and exists (select * from unnest(res.groups) where " + common.db_helpers.filter2sql(group_mask, "unnest", params) + ")"
         if user is not None:
             params.append(user)
+            sql += f"and res.user = ${len(params)}\n"
+        if "any user" not in credentials.info_features:
+            params.append(credentials.user_id)
             sql += f"and res.user = ${len(params)}\n"
         if user_name is not None:
             params.append(user_name)
