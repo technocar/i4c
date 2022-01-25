@@ -1,7 +1,7 @@
 <app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
 <div id="analysing_data" class="row form-group m-0 mb-4 align-items-center">
   <label class="col">Elemezendő adat</label>
-  <select class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(def.obj?.type)" [disabled]="!access.canUpdate">
+  <select #objects class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(objects.value)" [disabled]="!access.canUpdate">
     <option *ngFor="let obj of objects$ | async" [value]="obj.name">{{obj.displayname}}</option>
   </select>
 </div>
@@ -14,6 +14,7 @@
           <td>
             <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!access.canUpdate">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+              <option *ngIf="validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
             </select>
           </td>
           <td>
@@ -46,24 +47,28 @@
       <label class="col-6">x</label>
       <select class="col form-control" [(ngModel)]="def.x" [disabled]="!access.canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="validNumField(def.x)" [value]="def.x">{{def.x}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">y</label>
       <select class="col form-control" [(ngModel)]="def.y" [disabled]="!access.canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="validNumField(def.y)" [value]="def.y">{{def.y}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">forma</label>
       <select class="col form-control" [(ngModel)]="def.shape" [disabled]="!access.canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="validNumField(def.shape)" [value]="def.shape">{{def.shape}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">szín</label>
       <select class="col form-control" [(ngModel)]="def.color" [disabled]="!access.canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="validNumField(def.color)" [value]="def.color">{{def.color}}</option>
       </select>
     </div>
     <fieldset class="row p-4">

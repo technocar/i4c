@@ -149,6 +149,13 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     this.fields$.next(obj.length > 0 ? obj[0].fields : []);
   }
 
+  validField(selection: string): boolean {
+    if (selection ?? "" === "")
+      return true;
+    else
+      return this.fields$.value.findIndex(f => f.name === selection) > -1;
+  }
+
   deleteFilter(filter: Filter) {
     var filters = this.filters$.value;
     var idx = filters.findIndex((f) => f._id === filter._id);

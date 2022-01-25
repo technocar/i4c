@@ -225,6 +225,20 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     console.log(value);
   }
 
+  validField(selection: string): boolean {
+    if (selection ?? "" === "")
+      return true;
+    else
+      return this.fields$.value.findIndex(f => f.name === selection) > -1;
+  }
+
+  validNumField(selection: string): boolean {
+    if (selection ?? "" === "")
+      return true;
+    else
+      return this.numFields$.value.findIndex(f => f.name === selection) > -1;
+  }
+
   getChartConfiguration(data: StatData): ChartConfiguration {
     var shapes = ['circle', 'triangle', 'rect', 'star', 'cross'];
     var shapeFieldValues = this.getFieldValues(data.stat_def.xydef.shape);
