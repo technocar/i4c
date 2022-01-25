@@ -66,9 +66,10 @@ def callback(ctx, **args):
     # This is the main Click callback that performs the API call
     log.debug(f"callback {args}")
 
-    path = args.pop("path")
-    method = args.pop("method")
-    action = args.pop("action")
+    ep = args.pop("_ep")
+    path = ep["path"]
+    method = ep["method"]
+    action = ep["action"]
 
     # process body
     if "body" in args:
@@ -90,7 +91,7 @@ def callback(ctx, **args):
     output_expr = args.get("output_expr", None)
     output_template = args.get("output_template", None)
 
-    if action.response.content_type == "application/json":
+    if action.response and action.response.content_type == "application/json":
         process_json(response, output_expr, output_file, output_template)
     else:
         origin_file_name = response.headers.get_filename()
@@ -115,7 +116,7 @@ def make_callback(**outer_args):
     """
     def f(**args):
         try:
-            res = callback(click.globals.get_current_context(), **outer_args, **args)
+            res = callback(click.globals.get_current_context(), _ep=outer_args, **args)
         except click.ClickException as e:
             raise
         except HTTPError as e:

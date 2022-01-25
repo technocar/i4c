@@ -453,7 +453,10 @@ export class ApiService {
   }
 
   getAlarmUserGroups(user: string): Observable<AlarmSubscriptionGroupGrant[]> {
-    return this.http.get<AlarmSubscriptionGroupGrant[]>(`${this._apiUrl}/alarm/subsgroupusage`, { params: { user } });
+    var params = new RequestParams();
+    if ((user ?? "") !== "")
+      params.add("user", user);
+    return this.http.get<AlarmSubscriptionGroupGrant[]>(`${this._apiUrl}/alarm/subsgroupusage`, { params: params.getAll() });
   }
 
   getAlarmSubscriptions(parameters: AlarmSubscriptionRequestParams): Observable<AlarmSubscription[]> {
@@ -482,6 +485,17 @@ export class ApiService {
     if (this.auth.hasPrivilige("get/customers"))
       return this.http.get<string[]>(`${this._apiUrl}/customers`);
     else
+      return of([]);
+  }
+
+  getUsers(activeOnly: boolean): Observable<User[]> {
+    var params = new RequestParams();
+    if (this.auth.hasPrivilige("get/users")) {
+      params.add("active_only", activeOnly)
+      return this.http.get<User[]>(`${this._apiUrl}/users`, { params: params.getAll() });
+    } else if (this.auth.hasPrivilige("get/users/{id}")) {
+      return this.http.get<User>(`${this._apiUrl}/users/${this.auth.currentUserValue.id}`).pipe(map(u => [u]));
+    } else
       return of([]);
   }
 }

@@ -115,6 +115,9 @@ class Action:
                 value = kwargs[pn]
                 if not isinstance(value, str) and not isinstance(value, bytes):
                     value = str(value)
+                illegal = "".join(c for c in ":/\\?&+=\"" if c in value)
+                if illegal:
+                    raise Exception(f"Illegal character '{illegal}' in path parameter.")
                 value = urllib.parse.quote(value)
                 url = url.replace("{" + pn + "}", value)
 
@@ -132,7 +135,7 @@ class Action:
                             i = isodate.duration_isoformat(i)
                         elif not isinstance(i, str) and not isinstance(i, bytes):
                             i = str(i)
-                        i = urllib.parse.quote(i)
+                        i = urllib.parse.quote(i, safe="")
                         queries.append(pn + "=" + i)
         if queries:
             url = url + "?" + "&".join(queries)
