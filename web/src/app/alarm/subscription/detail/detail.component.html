@@ -8,9 +8,9 @@
   </div>
   <div class="w-100"></div>
   <div class="col">
-    <div class="form-group" *ngIf="!own">
+    <div class="form-group user" *ngIf="!own">
       <label>felhasználó</label>
-      <label>{{subs.user_name}}</label>
+      <label class="ml-2 font-weight-bold">{{subs.user_name}}</label>
     </div>
     <div class="form-group">
       <div class="btn-group btn-group-toggle" ngbRadioGroup name="status" [ngModel]="subs.status" (ngModelChange)="statusChange($event)">
