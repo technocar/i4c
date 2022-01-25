@@ -69,6 +69,6 @@ export class AuthenticationService {
       return false;
 
     var privs = this.currentUserValue?.privs ?? [];
-    return (privs.find((p) => p.endpoint === endpoint && ((p.features ?? []).length === 0 || p.features.indexOf(privilige) > -1 ))) !== undefined;
+    return (privs.find((p) => p.endpoint === endpoint && ((p.features ?? []).length === 0 || !privilige || p.features.indexOf(privilige) > -1 ))) !== undefined;
   }
 }
