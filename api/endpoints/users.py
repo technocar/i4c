@@ -45,6 +45,9 @@ async def get_user(
     return res
 
 
+# TODO i don't like that i need to provide a password if i want to change anything
+#   remove the password from UserIn (essentially UserData at this point)
+#   password can only be set via pwdreset or patch
 @router.put("/{id}", response_model=models.users.User, operation_id="user_set",
             summary="Create or update user.", features=['modify others', 'modify role'])
 async def user_put(
