@@ -124,7 +124,7 @@ async def subsgroup_delete(
 async def alarmsub_list(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/alarm/subs", ask_features=["any user"])),
-        id: Optional[str] = Query(None, title="Identifier."),
+        id: Optional[int] = Query(None, title="Identifier."),
         group: Optional[str] = Query(None, title="Member of the group."),
         group_mask: Optional[List[str]] = Query(None, title="Search phrase for a group name."),
         user: Optional[str] = Query(None, title="Identifier of the user."),
