@@ -4,10 +4,10 @@
     <div class="row m-0 justify-content-between">
       <input type="datetime-local" class="form-control col-3" [ngModel]="timestamp | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="timestamp = $event" [disabled]="!access.canUpdate"/>
       <div class="btn-group btn-group-toggle col-3" ngbRadioGroup name="radioBasic" [(ngModel)]="direction">
-        <label ngbButtonLabel class="btn-primary">
+        <label ngbButtonLabel class="btn-outline-primary">
           <input ngbButton type="radio" [value]="1" [disabled]="!access.canUpdate">követő
         </label>
-        <label ngbButtonLabel class="btn-primary">
+        <label ngbButtonLabel class="btn-outline-primary">
           <input ngbButton type="radio" [value]="-1" [disabled]="!access.canUpdate">megelőző
         </label>
       </div>
