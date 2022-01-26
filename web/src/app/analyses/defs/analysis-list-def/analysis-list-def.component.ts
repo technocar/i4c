@@ -150,7 +150,7 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
   }
 
   validField(selection: string): boolean {
-    if (selection ?? "" === "")
+    if ((selection ?? "") === "")
       return true;
     else
       return this.fields$.value.findIndex(f => f.name === selection) > -1;
