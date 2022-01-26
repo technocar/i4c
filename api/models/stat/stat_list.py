@@ -10,7 +10,7 @@ from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from .stat_common import StatObject, resolve_time_period, StatObjectParamType
-from .stat_virt_obj import StatVirtObjFilterRel, statdata_virt_obj_fields
+from .stat_virt_obj import statdata_virt_obj_fields, StatVirtObjFilter, statdata_virt_obj_filter
 from functools import total_ordering
 
 
@@ -42,13 +42,8 @@ class StatListOrderBy(I4cBaseModel):
                  )
 
 
-class StatListFilter(I4cBaseModel):
+class StatListFilter(StatVirtObjFilter):
     """List query filter."""
-    id: Optional[int] = Field(None, hidden_from_schema=True)
-    field: str = Field(..., title="Field.")
-    rel: StatVirtObjFilterRel = Field("=", title="Relation.")
-    value: str = Field(..., title="Value.")
-
     @classmethod
     async def load_filters(cls, conn, list_id):
         sql = """select * from stat_list_filter where "list" = $1"""
@@ -295,6 +290,9 @@ async def statdata_get_list(credentials, st_id: int, st_listdef: StatListDef, co
 
     grid = []
     agg_measures = {}
+
+    db_objs = await statdata_virt_obj_filter(db_objs, get_field_value, agg_measures, st_listdef.filter)
+
     for dbo in db_objs:
         co = result_row({}, [])
         for c in st_listdef.visualsettings.cols:

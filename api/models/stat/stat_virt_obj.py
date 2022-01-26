@@ -254,6 +254,36 @@ class StatVirtObjFilterRel(str, Enum):
     geq = ">="
 
 
+class StatVirtObjFilter(I4cBaseModel):
+    """Virtual object filter."""
+    id: Optional[int] = Field(None, hidden_from_schema=True)
+    field: str = Field(..., title="Field.")
+    rel: StatVirtObjFilterRel = Field("=", title="Relation.")
+    value: str = Field(..., title="Value.")
+
+    def match(self, current_value):
+        if current_value is None:
+            return False
+        left = self.value
+        if isinstance(current_value, float):
+            left = float(left)
+        if isinstance(current_value, int):
+            left = int(left)
+        if self.rel == "=":
+            return left == current_value
+        if self.rel == "!=":
+            return left != current_value
+        if self.rel == "<":
+            return left < current_value
+        if self.rel == "<=":
+            return left <= current_value
+        if self.rel == ">":
+            return left > current_value
+        if self.rel == ">=":
+            return left >= current_value
+        return False
+
+
 async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObject, conn):
     meta = await get_objmeta(credentials, after, pconn=conn)
 
@@ -341,3 +371,15 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
         return max(workpiece_measure, key=lambda x:x.timestamp).value_num
 
     return db_objs, get_field_value
+
+
+async def statdata_virt_obj_filter(db_objs, get_field_value, agg_measures, filter: List[StatVirtObjFilter]):
+    res = []
+    for d in db_objs:
+        for f in filter:
+            val = await get_field_value(d, f.field, agg_measures)
+            if not f.match(val):
+                break
+        else:
+            res.append(d)
+    return res
