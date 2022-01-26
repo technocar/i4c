@@ -226,14 +226,14 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   }
 
   validField(selection: string): boolean {
-    if (selection ?? "" === "")
+    if ((selection ?? "") === "")
       return true;
     else
       return this.fields$.value.findIndex(f => f.name === selection) > -1;
   }
 
   validNumField(selection: string): boolean {
-    if (selection ?? "" === "")
+    if ((selection ?? "") === "")
       return true;
     else
       return this.numFields$.value.findIndex(f => f.name === selection) > -1;
