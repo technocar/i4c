@@ -14,7 +14,7 @@
           <td>
             <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!access.canUpdate">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
-              <option *ngIf="validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
+              <option *ngIf="!validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
             </select>
           </td>
           <td>
