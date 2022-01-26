@@ -52,10 +52,10 @@
         <span class="sr-only">Loading...</span>
       </div>
     </div>
-    <div #chart_place class="row">
+    <div *ngIf="showChart" #chart_place class="row">
       <canvas #chart class="col chart"></canvas>
     </div>
-    <div *ngIf="showResult" class="mb-4">
+    <div *ngIf="showTable" class="mb-4">
       <button class="btn btn-outline-success mr-4" (click)="exportToExcel()">
         <i class="bi bi-file-earmark-excel-fill"></i>
         Excel export
@@ -69,7 +69,7 @@
         HTML export
       </button>
     </div>
-    <div #table></div>
+    <div *ngIf="showTable" #table></div>
   </div>
 </div>
 

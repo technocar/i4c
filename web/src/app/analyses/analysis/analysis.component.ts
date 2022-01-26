@@ -35,7 +35,8 @@ export class AnalysisComponent implements OnInit {
   loading$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   error: boolean = false;
   errorMsg: string = "";
-  showResult: boolean = false;
+  showTable: boolean = false;
+  showChart: boolean = false;
   customers: string[] = [];
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
@@ -109,15 +110,19 @@ export class AnalysisComponent implements OnInit {
   buildDef() {
     switch (this.analysisType) {
       case AnalysisType.TimeSeries:
+        this.showChart = true;
         this.def.timeseriesdef = this.timeseriesDef.getDef() as StatTimeSeriesDef;
         break;
       case AnalysisType.XY:
+        this.showChart = true;
         this.def.xydef = this.xyDef.getDef();
         break;
       case AnalysisType.List:
+        this.showTable = true;
         this.def.listdef = this.listDef.getDef();
         break;
       case AnalysisType.Capability:
+        this.showChart = true;
         this.def.capabilitydef = this.capabilityDef.getDef();
         break;
     }
@@ -148,7 +153,6 @@ export class AnalysisComponent implements OnInit {
   }
 
   getData() {
-    this.showResult = false;
     this.error = false;
     this.errorMsg = "";
 
@@ -186,7 +190,7 @@ export class AnalysisComponent implements OnInit {
     try {
       if (result.listdata) {
         this.table.nativeElement.append(this.buildListTable(result));
-        this.showResult = true;
+        this.showTable = true;
       }
     }
     catch(err) {
