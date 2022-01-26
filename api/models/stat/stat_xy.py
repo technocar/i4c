@@ -223,8 +223,8 @@ async def statdata_get_xy(credentials, st_id: int, st_xydef: StatXYDef, conn) ->
     after, before = resolve_time_period(st_xydef.after, st_xydef.before, st_xydef.duration)
     db_objs, get_field_value = await statdata_virt_obj_fields(credentials, after, before, st_xydef.obj, conn)
 
+    agg_measures = {}
     for dbo in db_objs:
-        agg_measures = {}
         cox = await get_field_value(dbo, st_xydef.x, agg_measures)
         co = StatXYData(x=cox, others=[])
         if st_xydef.y:

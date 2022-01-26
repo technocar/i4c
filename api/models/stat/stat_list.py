@@ -294,8 +294,8 @@ async def statdata_get_list(credentials, st_id: int, st_listdef: StatListDef, co
     result_row = namedtuple('result_row', ['content', 'order'])
 
     grid = []
+    agg_measures = {}
     for dbo in db_objs:
-        agg_measures = {}
         co = result_row({}, [])
         for c in st_listdef.visualsettings.cols:
             co.content[c.field] = await get_field_value(dbo, c.field, agg_measures)
