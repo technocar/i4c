@@ -75,8 +75,11 @@ def callback(ctx, **args):
     if "body" in args:
         body = args.pop("body")
         body = resolve_file(body)
-        if isinstance(body, dict):
-            body = jsonify(body).encode("utf-8")
+
+        input_data = args.get("input_data", None)
+        input_format = args.get("input_format", None)
+        input_placement = args.get("input_placement", None)
+        body = assemble_body(body, input_data, input_format, input_placement)
         if isinstance(body, str):
             body = body.encode("utf-8")
     else:
@@ -230,14 +233,14 @@ def make_commands(conn: I4CConnection):
                 helpstr = ""
                 if action.body.sch_obj:
                     helpstr = f"Use the `doc {action.body.sch_obj}` command to get the definition. "
-                helpstr = helpstr + "Use - to read from stdin, or @filename to read from file."
+                helpstr = helpstr + "Use @filename to read from a file, or @- to read from stdin."
                 attrs["help"] = helpstr
 
                 params.append(click.Option(("--body",), **attrs))
 
-                params.append(click.Option(("--input-file",),
-                    help="Points to a file which will be processed and inserted to the body according to the other "
-                         "--input-* options. Use - to read from stdin."))
+                params.append(click.Option(("--input-data",),
+                    help="The data which will be processed and inserted to the body according to the other "
+                         "--input-* options. Use @filename to read from a file, or @- to read from stdin."))
 
                 params.append(click.Option(("--input-placement",), multiple=True,
                     help="Specifies where the input should be placed into the body, and optionally what part of the "
@@ -465,8 +468,8 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
 
 @top_grp.command("transform")
 @click.option("--body")
-@click.option("--input-file", help="Points to a file which will be processed according to the other "
-    "--input-* options. Use - to read from stdin.")
+@click.option("--input-data", help="The data which will be processed according to the other "
+    "--input-* options. Use @filename to read from a file, or @- to read from stdin.")
 @click.option("--input-format", multiple=True, help=
     "Specifies a format attribute. If omitted, the format will be derived from the file extension. "
     "Attributes are separated by `.`, or you can specify multiple options, which will be combined.")
@@ -476,7 +479,7 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
     "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
     "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1].")
 @json_options
-def transform(body, input_file, input_format, input_placement, output_expr, output_file, output_template):
+def transform(body, input_data, input_format, input_placement, output_expr, output_file, output_template):
     """
     Short circuited data input-output command. Data will be read and processed the same way as for all commands with a
     --body option. Then the assembled data package will be formatted for output like a json response. This can be used
@@ -507,8 +510,9 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     csv -> shorthand for sep.comma
     txt -> shorthand for sep.tab
     fix -> fixed width tabular text file
-    json -> canonical json file
-    xml -> xml file
+    json -> json
+    xml -> xml
+    str -> a single string value
 
     For separated files, the following attributes can be used:
 
@@ -519,11 +523,11 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     space -> space delimited, every space is a delimiter
     spaces -> space delimited, consecutive spaces are considered as one
 
-    For fixed width files, the column widths are defined with:
+    For fixed width data, the column widths are defined with:
 
     # TODO
 
-    For tabular files, the following attributes can be used:
+    For tabular data, the following attributes can be used:
 
     \b
     cr|lf|crlf|auto -> Specifies the row separator.
@@ -531,12 +535,16 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
     [no]trimcells -> Weather to strip each data cell from leading/trailing whitespace.
     enc<codepage> -> Code page. E.g. enccp1252 or encansi. Default is utf8.
     rows -> The file is processed into an array of rows, rows are json objects.
+    row1 -> The first row will be returned as an array of values. The rest is ignored.
     columns -> The file is processed into a json in which all columns are arrays.
+    column1 -> The first column of each row is collected to an array. The rest of the row is ignored.
     table -> The file is processed into an array of arrays t[row][column].
 
-    If omitted, attributes have defaults, which are:
+    If omitted, attributes have defaults. If the input is a file or stdin, the default is:
 
     sep.tab.auto.noheader.notrimcells.table
+
+    If the input is direct, the default is `str`.
 
     Once the data is loaded processed, elements of it can be inserted into the body skeleton. The insertion is done
     with the --input-place option. Multiple options can be specified, each will be executed in order. The format of
@@ -583,7 +591,8 @@ def transform(body, input_file, input_format, input_placement, output_expr, outp
 
     log.debug(f"transform")
     try:
-        data = assemble_body(body, input_file, input_format, input_placement)
+        body = resolve_file(body)
+        data = assemble_body(body, input_data, input_format, input_placement)
     except Exception as e:
         raise click.ClickException(f"{e}")
     process_json(data, output_expr, output_file, output_template)

@@ -25,7 +25,7 @@ def resolve_file(fn):
     Resolves filename parameter. @<file> will be read from file, - will read from stdin, otherwise the
     parameter itself is returned.
     """
-    if fn == "-":
+    if fn == "@-":
         return sys.stdin.read()
     if fn is not None and fn.startswith("@"):
         with open(fn[1:], "r") as f:
