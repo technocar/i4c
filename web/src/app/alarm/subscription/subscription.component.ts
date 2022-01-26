@@ -17,6 +17,7 @@ export class AlarmSubscriptionComponent implements OnInit {
   loading$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   users$: BehaviorSubject<[string, string][]> = new BehaviorSubject([]);
   selectedUser: string;
+  user: string;
 
   constructor(
     private apiService: ApiService,
@@ -24,6 +25,7 @@ export class AlarmSubscriptionComponent implements OnInit {
     private authService: AuthenticationService) { }
 
   ngOnInit(): void {
+    this.user = this.authService.currentUserValue.id;
     this.apiService.getUsers(false)
       .subscribe(users => {
         this.users$.next(users.map(u => <[string, string]>[u.id, u.name]));

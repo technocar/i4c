@@ -1,7 +1,7 @@
 <app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
 <div id="analysing_data" class="row form-group m-0 mb-4 align-items-center">
   <label class="col">Elemezendő adat</label>
-  <select class="col form-control" [ngModel]="def.obj?.type" (change)="objectChanged(def.obj.type)" [disabled]="!access.canUpdate">
+  <select #objects class="col form-control" [ngModel]="def.obj?.type" (change)="objectChanged(objects.value)" [disabled]="!access.canUpdate">
     <option *ngFor="let obj of objects$ | async" [value]="obj.name">{{obj.displayname}}</option>
   </select>
 </div>
@@ -14,6 +14,7 @@
           <td>
             <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!access.canUpdate">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+              <option *ngIf="validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
             </select>
           </td>
           <td>
