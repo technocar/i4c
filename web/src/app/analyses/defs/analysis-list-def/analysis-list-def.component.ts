@@ -250,6 +250,32 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     }
   }
 
+  changeColumnPosition(direction: number, position: number) {
+    var columns = this.columns$.value ?? [];
+    if (columns.length === 0)
+      return;
+
+    if (position < 0 || position >= columns.length)
+      return;
+
+    var newPos = position + direction;
+    if (newPos < 0 || newPos > columns.length)
+      return;
+
+    var column = columns[position];
+    if (direction < 0 ) {
+      columns.splice(newPos, 0, column);
+      position++;
+    }
+    else if (newPos === columns.length)
+      columns.push(column);
+    else
+      columns.splice(newPos + 1, 0, column);
+
+    columns.splice(position, 1);
+    this.columns$.next(columns);
+  }
+
   buildTable(result: StatData): HTMLTableElement {
     var table: HTMLTableElement = document.createElement('table');
     var thead = document.createElement('thead');
