@@ -275,6 +275,21 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     });
   }
 
+  confirmStatusUpdate(dialog, status: string[], item: WorkPieceItem = null) {
+    this.modalService.open(dialog).result.then(result => {
+      if (result === "ok") {
+        this.apiService.updateWorkPiece(item.id, {
+          conditions: [],
+          change: {
+            status: status[0] as WorkPieceStatus
+          }
+        }).subscribe(r => {
+          this.getWorkPieces();
+        })
+      }
+    });
+  }
+
   getStatusDesc(code: string): string {
     var status = this.statuses.find((s) => { return s[0] === code; });
     return status ? status[1] : code;
