@@ -203,19 +203,19 @@ async def user_put(credentials: CredentialsAndFeatures, id, user: UserData, *, p
                 old_roles = []
                 sql = dedent("""\
                     insert into "user"
-                        (id, name, "status", login_name, customer, email)
+                        (id, name, "status", login_name, customer, email, public_key)
                     values
-                        ($1, $2, $3,         $4, $5, $6)""")
+                        ($1, $2, $3,         $4, $5, $6,                  $7 )""")
             else:
                 old_roles = old.roles
                 sql = dedent("""\
                         update "user"
                         set
-                            name = $2, "status" = $3, login_name = $4, customer = $5, email = $6
+                            name = $2, "status" = $3, login_name = $4, customer = $5, email = $6, public_key = $7
                         where id = $1""")
             try:
                 await conn.fetchrow(sql, id, user.name, user.status, user.login_name,
-                                    user.customer, user.email)
+                                    user.customer, user.email, user.public_key)
             except UniqueViolationError as e:
                 if hasattr(e, 'constraint_name'):
                     if e.constraint_name == 'uq_user_login':
