@@ -10,7 +10,7 @@ import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
-import QuillGraphData from './quill-graph-data';
+import QuillGraphData, { GraphDataBlot } from './quill-graph-data';
 
 Quill.register('modules/graphdata', QuillGraphData);
 
@@ -55,6 +55,16 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
   access = {
     canUpdate: false
+  }
+
+  quillEvents = {
+    enter: {
+      key: 13,
+      handler: function(range, context) {
+        console.log(range, context);
+        this.quill.insertText(range.index, '\n');
+      }
+    }
   }
 
   constructor(
@@ -103,6 +113,13 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   }
 
   ngAfterViewInit() {
+    console.log(this.quill);
+    this.quill.onEditorCreated.subscribe(() => {
+      this.quill.quillEditor.keyboard.addBinding({ key: "enter" }, function(range, context) {
+        console.log(range, context);
+        this.quill.format('list', false);
+      });
+    });
   }
 
   setDefualtVisualSettings() {
@@ -219,6 +236,20 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       field_name: undefined
     });
     this.others$.next(others);
+  }
+
+  updateOther() {
+    var others = this.others$.value;
+    var list = [
+      ["X", "X"],
+      ["Y", "Y"],
+      ["SHAPE", "forma"],
+      ["COLOR", "szín"]
+    ];
+    for (let other of others)
+      list.push([other.field_name, this.fields$.value.find(f => f.name === other.field_name)?.displayname ?? other.field_name]);
+
+    (this.quill.quillEditor.getModule("graphdata") as QuillGraphData).reloadList(list);
   }
 
   editorGraphDataChanged(value) {
@@ -369,8 +400,9 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
                   let dataPointIndex = context.tooltip.dataPoints[0].dataIndex;
                   let seriesIndex = context.tooltip.dataPoints[0].datasetIndex;
                   let html = this.def.visualsettings.tooltip.html ?? `${context.tooltip.dataPoints[0].label}<br/><br/>` + this._defaultTooltip;
-                  html = html.replace(/{{X}}/gi, context.tooltip?.x?.toFixed(2));
-                  html = html.replace(/{{Y}}/gi, context.tooltip?.y?.toFixed(2));
+                  console.log(context.tooltip);
+                  html = html.replace(/{{X}}/gi, context.tooltip.dataPoints[0]?.parsed?.x?.toFixed(3));
+                  html = html.replace(/{{Y}}/gi, context.tooltip.dataPoints[0]?.parsed?.y?.toFixed(3));
                   let shapeValue = undefined;
                   let colorValue = undefined;
                   if (context.tooltip.dataPoints?.length > 0) {
@@ -381,7 +413,9 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
                   html = html.replace(/{{COLOR}}/gi, colorValue);
                   if (othersByDataPointIndex.length > dataPointIndex)
                     this.def.other.forEach((o, i) => {
-                      html = html.replace(new RegExp(`{{${o}}}`, 'gi'), data.xydata[dataPointIndex].others[i]);
+                      var value = data.xydata[dataPointIndex].others[i];
+                      html = html.replace(new RegExp(`{{${o}}}`, 'gi'),
+                        typeof value === "number" ? value.toFixed(3) : value );
                     });
                   const text = document.createElement('span');
                   text.innerHTML = html;
@@ -436,7 +470,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
             title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.xaxis?.caption),
             ticks: {
               callback: function(value, index, values) {
-                  return xIsCategory ? xLabels[value] : value;
+                  return xIsCategory ? xLabels[value] : (typeof value === "number" ? value.toFixed(1) : value);
               }
             }
           },

@@ -75,7 +75,7 @@
       <legend>egyéb adatok</legend>
       <div class="col-12" *ngFor="let other of others$ | async">
         <div class="row mb-2">
-          <select class="col form-control mr-2" [(ngModel)]="other.field_name" [disabled]="!access.canUpdate">
+          <select class="col form-control mr-2" [(ngModel)]="other.field_name" [disabled]="!access.canUpdate" (change)="updateOther()">
             <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
           </select>
           <button class="btn btn-outline-danger" title="törlés" (click)="deleteOther(other.id)" *ngIf="access.canUpdate">
@@ -125,14 +125,17 @@
         </div>
       </div>
     </fieldset>
-    <fieldset class="row p-4 mt-4 overflow-auto">
+    <fieldset id="tooltip" class="p-4 mt-4 overflow-auto">
       <legend>tooltip</legend>
-      <quill-view class="col" *ngIf="!access.canUpdate"
+      <quill-view *ngIf="!access.canUpdate"
         [content]="def.visualsettings.tooltip.html"
       ></quill-view>
-      <quill-editor class="col" *ngIf="access.canUpdate"
+      <quill-editor *ngIf="access.canUpdate"
         [(ngModel)]="def.visualsettings.tooltip.html"
         [modules]="{
+          keyboard: {
+            bindings: quillEvents
+          },
           graphdata: { container: '#graphs_data' }
         }"
       >
@@ -164,9 +167,9 @@
             <select class="ql-color"></select>
             <select class="ql-background"></select>
           </span>
-          <span class="ql-formats">
+          <span class="ql-formats w-100">
             <div id="graphs_data">
-              <select class="quill-custom-select" title="Grafikon adatok">
+              <select class="quill-custom-select graphdata" title="Grafikon adatok">
                 <option value="X">X</option>
                 <option value="Y">Y</option>
                 <option value="SHAPE">forma</option>
