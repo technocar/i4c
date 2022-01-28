@@ -24,7 +24,11 @@ export default class QuillGraphData {
       var selection = this._quill.getSelection(true);
       if (selection.length > 0)
         this._quill.deleteText(selection.index, selection.length);
-      this._quill.insertEmbed(selection.index, 'graphdata', `${this._list.value}`);
+      var delta: DeltaStatic = this._quill.insertEmbed(selection.index, 'graphdata', `${this._list.value}`, 'user');
+      this._quill.insertText(selection.index + 1, ' ', "user");
+      this._quill.updateContents(delta, 'user');
+      this._quill.focus();
+      console.log(delta);
     });
     this._list.addEventListener('change', (e) => {
       this.updateCaption();
@@ -37,6 +41,43 @@ export default class QuillGraphData {
         this._quillSelector.prepend(caption);
       else
         this._quillSelector.childNodes.item(0).textContent = caption;
+  }
+
+  reloadList(items: string[][]) {
+    const contianer = document.querySelector(this._options.container);
+    var list = contianer.querySelector('.quill-custom-select');
+    var select = list.querySelector(".ql-picker-options");
+    select.innerHTML = "";
+    var selection = list.querySelector(".ql-picker-label") as HTMLSpanElement;
+    var f = document.createDocumentFragment();
+    for (let item of items) {
+      var span = document.createElement("span");
+      span.tabIndex = 0;
+      span.setAttribute("role", "button");
+      span.classList.add("ql-picker-item");
+      if (f.children.length === 0)
+        span.classList.add("ql-selected");
+      span.setAttribute("data-value", item[0]);
+      span.setAttribute("data-label", item[1]);
+      span.addEventListener("click", function(e) {
+        var spans = select.querySelectorAll("span");
+        var index = -1;
+        spans.forEach((s, i) => {
+          s.classList.remove("ql-selected");
+          if (s.getAttribute("data-value") === this.getAttribute("data-value"))
+            index = i;
+        });
+        this.classList.add("ql-selected");
+        list.classList.remove("ql-expanded");
+        selection.setAttribute("data-value", this.getAttribute("data-value"));
+        selection.setAttribute("data-label", this.getAttribute("data-label"));
+        selection.childNodes[0].nodeValue = this.getAttribute("data-label");
+        var htmlSelect = contianer.querySelector("select") as HTMLSelectElement;
+        htmlSelect.selectedIndex = index;
+      });
+      f.append(span);
+    }
+    select.append(f);
   }
 }
 
@@ -63,14 +104,21 @@ export class GraphDataBlot extends Inline {
     if (value !== GraphDataBlot.blotName) {
       (node as HTMLSpanElement).innerText = `{{${value}}}`;
     }
-    node.addEventListener('click', function(e) {
+    node.addEventListener('mousedown', function(e) {
       let blot = Quill.find(node) as GraphDataBlot;
       console.log(blot);
       let range = document.createRange();
       range.selectNodeContents(blot.domNode);
+      console.log(range);
       var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
+    });
+    node.addEventListener('keydown', function(e) {
+      if (e.keyCode === "13") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     });
     console.log(node);
     return node;
@@ -113,6 +161,16 @@ export class GraphDataBlot extends Inline {
         span.classList.add(`ql-size-${value}`);
       }
     }
+  }
+
+  optimize(context: any) {
+    // Never optimize/merge these
+  }
+
+  insertAt(index: number, embed: string, value: any) {
+    console.log(index);
+    console.log(embed);
+    console.log(value);
   }
 }
 GraphDataBlot.blotName = 'graphdata';

@@ -117,7 +117,8 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
         for axis in StatObjMazakAxis:
             for agg in StatAggMethod:
                 mazak_fields.append(
-                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatObjMateFieldType.numeric))
+                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{axis} terhelés {agg}", type=StatObjMateFieldType.numeric))
+        # TODO {agg} needs human readable version
 
         mazakprogram = StatMetaObject(
             name=StatObjectType.mazakprogram,
@@ -254,6 +255,36 @@ class StatVirtObjFilterRel(str, Enum):
     geq = ">="
 
 
+class StatVirtObjFilter(I4cBaseModel):
+    """Virtual object filter."""
+    id: Optional[int] = Field(None, hidden_from_schema=True)
+    field: str = Field(..., title="Field.")
+    rel: StatVirtObjFilterRel = Field("=", title="Relation.")
+    value: str = Field(..., title="Value.")
+
+    def match(self, current_value):
+        if current_value is None:
+            return False
+        left = self.value
+        if isinstance(current_value, float):
+            left = float(left)
+        if isinstance(current_value, int):
+            left = int(left)
+        if self.rel == "=":
+            return left == current_value
+        if self.rel == "!=":
+            return left != current_value
+        if self.rel == "<":
+            return left < current_value
+        if self.rel == "<=":
+            return left <= current_value
+        if self.rel == ">":
+            return left > current_value
+        if self.rel == ">=":
+            return left >= current_value
+        return False
+
+
 async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObject, conn):
     meta = await get_objmeta(credentials, after, pconn=conn)
 
@@ -312,7 +343,7 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
         age_max = timedelta(seconds=float(age_max[0])) if age_max else None
         prod_measure = [x.value_num for x in prods_measure
                         if (mf_start + age_min <= x.timestamp < mf_end
-                            and x.timestamp < mf_start + age_max if age_max is not None else True)]
+                            and (x.timestamp < mf_start + age_max if age_max is not None else True))]
         return calc_aggregate(agg, prod_measure, from_record=False)
 
     async def get_detail_field_workpiece(dbo, field_name, agg_measures):
@@ -341,3 +372,15 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
         return max(workpiece_measure, key=lambda x:x.timestamp).value_num
 
     return db_objs, get_field_value
+
+
+async def statdata_virt_obj_filter(db_objs, get_field_value, agg_measures, filter: List[StatVirtObjFilter]):
+    res = []
+    for d in db_objs:
+        for f in filter:
+            val = await get_field_value(d, f.field, agg_measures)
+            if not f.match(val):
+                break
+        else:
+            res.append(d)
+    return res

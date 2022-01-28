@@ -9,7 +9,7 @@ from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from .stat_common import StatObject, StatVisualSettings, resolve_time_period, StatObjectParamType
-from .stat_virt_obj import StatVirtObjFilterRel, statdata_virt_obj_fields
+from .stat_virt_obj import statdata_virt_obj_fields, StatVirtObjFilter, statdata_virt_obj_filter
 
 
 class StatXYOther(I4cBaseModel):
@@ -38,13 +38,8 @@ class StatXYOther(I4cBaseModel):
         return self.field_name == other.field_name
 
 
-class StatXYFilter(I4cBaseModel):
+class StatXYFilter(StatVirtObjFilter):
     """XY query filter."""
-    id: Optional[int] = Field(None, hidden_from_schema=True)
-    field: str
-    rel: StatVirtObjFilterRel
-    value: str
-
     @classmethod
     async def load_filters(cls, conn, xy_id):
         sql = "select * from stat_xy_filter where xy = $1"
@@ -223,8 +218,11 @@ async def statdata_get_xy(credentials, st_id: int, st_xydef: StatXYDef, conn) ->
     after, before = resolve_time_period(st_xydef.after, st_xydef.before, st_xydef.duration)
     db_objs, get_field_value = await statdata_virt_obj_fields(credentials, after, before, st_xydef.obj, conn)
 
+    agg_measures = {}
+
+    db_objs = await statdata_virt_obj_filter(db_objs, get_field_value, agg_measures, st_xydef.filter)
+
     for dbo in db_objs:
-        agg_measures = {}
         cox = await get_field_value(dbo, st_xydef.x, agg_measures)
         co = StatXYData(x=cox, others=[])
         if st_xydef.y:

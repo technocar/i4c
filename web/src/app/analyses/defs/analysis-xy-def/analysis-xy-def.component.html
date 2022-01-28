@@ -1,7 +1,7 @@
 <app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
 <div id="analysing_data" class="row form-group m-0 mb-4 align-items-center">
   <label class="col">Elemezendő adat</label>
-  <select class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(def.obj?.type)" [disabled]="!access.canUpdate">
+  <select #objects class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(objects.value)" [disabled]="!access.canUpdate">
     <option *ngFor="let obj of objects$ | async" [value]="obj.name">{{obj.displayname}}</option>
   </select>
 </div>
@@ -14,6 +14,7 @@
           <td>
             <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!access.canUpdate">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+              <option *ngIf="!validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
             </select>
           </td>
           <td>
@@ -46,31 +47,35 @@
       <label class="col-6">x</label>
       <select class="col form-control" [(ngModel)]="def.x" [disabled]="!access.canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="!validNumField(def.x)" [value]="def.x">{{def.x}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">y</label>
       <select class="col form-control" [(ngModel)]="def.y" [disabled]="!access.canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="!validNumField(def.y)" [value]="def.y">{{def.y}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">forma</label>
       <select class="col form-control" [(ngModel)]="def.shape" [disabled]="!access.canUpdate">
-        <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="!validField(def.shape)" [value]="def.shape">{{def.shape}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">szín</label>
       <select class="col form-control" [(ngModel)]="def.color" [disabled]="!access.canUpdate">
-        <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
+        <option *ngIf="!validField(def.color)" [value]="def.color">{{def.color}}</option>
       </select>
     </div>
     <fieldset class="row p-4">
       <legend>egyéb adatok</legend>
       <div class="col-12" *ngFor="let other of others$ | async">
         <div class="row mb-2">
-          <select class="col form-control mr-2" [(ngModel)]="other.field_name" [disabled]="!access.canUpdate">
+          <select class="col form-control mr-2" [(ngModel)]="other.field_name" [disabled]="!access.canUpdate" (change)="updateOther()">
             <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
           </select>
           <button class="btn btn-outline-danger" title="törlés" (click)="deleteOther(other.id)" *ngIf="access.canUpdate">
@@ -120,14 +125,17 @@
         </div>
       </div>
     </fieldset>
-    <fieldset class="row p-4 mt-4 overflow-auto">
+    <fieldset id="tooltip" class="p-4 mt-4 overflow-auto">
       <legend>tooltip</legend>
-      <quill-view class="col" *ngIf="!access.canUpdate"
+      <quill-view *ngIf="!access.canUpdate"
         [content]="def.visualsettings.tooltip.html"
       ></quill-view>
-      <quill-editor class="col" *ngIf="access.canUpdate"
+      <quill-editor *ngIf="access.canUpdate"
         [(ngModel)]="def.visualsettings.tooltip.html"
         [modules]="{
+          keyboard: {
+            bindings: quillEvents
+          },
           graphdata: { container: '#graphs_data' }
         }"
       >
@@ -159,9 +167,9 @@
             <select class="ql-color"></select>
             <select class="ql-background"></select>
           </span>
-          <span class="ql-formats">
+          <span class="ql-formats w-100">
             <div id="graphs_data">
-              <select class="quill-custom-select" title="Grafikon adatok">
+              <select class="quill-custom-select graphdata" title="Grafikon adatok">
                 <option value="X">X</option>
                 <option value="Y">Y</option>
                 <option value="SHAPE">forma</option>

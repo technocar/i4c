@@ -1,9 +1,18 @@
 import sys
+import io
 import json
 import jsonpath_ng
 import functools
 import datetime
 import logging
+
+# TODO some bug:
+# echo x|i4c user update --id jason --body "{\"change\":{\"password\":null}}" --input-file - --input-placement "$.change.password=$[0][0]" --input-format txt
+# this does not set the password to x, but leaves null
+
+# TODO figure out how to input a single string
+# see above example. $[0][0] is super ugly.
+# refer to entire row or entire input
 
 log = logging.getLogger("i4c")
 
@@ -69,9 +78,16 @@ def load_table(f, fmt):
     def add_line_rows(row, data):
         data.append({n: v for (n, v) in zip(col_names, row)})
 
+    def add_line_row1(row, data):
+        if len(data) == 0:
+            data.extend(row)
+
     def add_line_columns(row, data):
         for i, c in enumerate(col_names):
             data[c].append(row[i])
+
+    def add_line_column1(row, data):
+        data.append(row[0])
 
     def add_line_table(row, data):
         data.append(row)
@@ -79,9 +95,15 @@ def load_table(f, fmt):
     if fmt.table_fmt == "rows":
         data = []
         add_line = add_line_rows
+    elif fmt.table_fmt == "row1":
+        data = []
+        add_line = add_line_row1
     elif fmt.table_fmt == "columns":
         data = {c:[] for c in col_names}
         add_line = add_line_columns
+    elif fmt.table_fmt == "column1":
+        data = []
+        add_line = add_line_column1
     else:
         data = []
         add_line = add_line_table
@@ -101,14 +123,15 @@ def load_table(f, fmt):
     return data
 
 
-def format_attrs(s):
+def format_attrs(s, default: InputFormat = None):
     """
     Takes a format definition string or list of strings, and returns format object.
 
     :param s: String or string list, with dot-separated format descriptors
+    :param default: a prototype object which will be overwritten and returned.
     :return: an InputFormat object with all the fields filled in
     """
-    f = InputFormat()
+    f = default or InputFormat()
     if isinstance(s, str):
         s = [s]
     for i in s:
@@ -145,7 +168,7 @@ def format_attrs(s):
                 f.row_sep = e
             elif e.startswith("enc"):
                 f.encoding = e[3:]
-            elif e in ("rows", "columns", "table"):
+            elif e in ("rows", "columns", "table", "row1", "column1"):
                 f.table_fmt = e
             elif e == "trimcells":
                 f.trim_cells = True
@@ -193,7 +216,7 @@ def parse_assignment(expr):
         return expr, "=", None
 
 
-def assemble_body(body, input_file, input_format, input_placement):
+def assemble_body(body, input_data, input_format, input_placement):
     if body is None:
         body = {}
     elif isinstance(body, str):
@@ -201,27 +224,48 @@ def assemble_body(body, input_file, input_format, input_placement):
     else:
         body = dict(body)
 
-    attr = format_attrs(input_format)
+    d = InputFormat()
+    if input_data and not input_data.startswith("@"):
+        d.fmt = "str"
+    attr = format_attrs(input_format, default=d)
 
-    if input_file == "-":
+    if input_data == "@-":
         if attr.fmt == "xml":
             raise Exception("Not implemented") # TODO we need to pick a module. etree is kinda shit
         elif attr.fmt == "json":
             ext = json.load(sys.stdin)
         elif attr.fmt == "tabular":
             ext = load_table(sys.stdin, attr)
-    elif input_file is not None:
+        elif attr.fmt == "str":
+            ext = sys.stdin.read()
+    elif input_data is not None and input_data.startswith("@"):
+        input_data = input_data[1:]
         if attr.fmt == "xml":
             raise Exception("Not implemented") # TODO we need to pick a module. etree is kinda shit
         elif attr.fmt == "json":
-            with open(input_file, "r") as f:
+            with open(input_data, "r") as f:
                 ext = json.load(f)
         elif attr.fmt == "tabular":
-            with open(input_file, "r") as f:
+            with open(input_data, "r") as f:
                 ext = load_table(f, attr)
+        elif attr.fmt == "str":
+            with open(input_data, "r") as f:
+                ext = f.read()
+    elif input_data is not None:
+        if attr.fmt == "xml":
+            raise Exception("Not implemented") # TODO we need to pick a module. etree is kinda shit
+        elif attr.fmt == "json":
+            ext = json.loads(input_data)
+        elif attr.fmt == "tabular":
+            with io.TextIOWrapper(io.BytesIO(input_data.encode())) as f:
+                ext = load_table(f, attr)
+        elif attr.fmt == "str":
+            ext = input_data
 
-    if not input_placement and input_file:
+    if not input_placement and input_data:
         input_placement = ["$"]
+
+    input_placement = input_placement or []
 
     for p in input_placement:
         placement, op, expr = parse_assignment(p)

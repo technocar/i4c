@@ -66,7 +66,7 @@ async def alarmdef_list(
 async def subsgroupsusage_list(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/subsgroupusage", ask_features=["any user"])),
-        user: Optional[str] = Query(None, title="Filter for this user. If not self or not specified, special privilege required.")):
+        user: Optional[str] = Query(None, title="Filter for this user. If not self then special privilege required.")):
     """List subscription groups."""
     return await models.alarm.subsgroupsusage_list(credentials, user)
 
@@ -95,7 +95,7 @@ async def subsgroup_members_list(
     return await models.alarm.subsgroup_members(credentials, user, group)
 
 
-@router.put("/subsgroups/{name}", status_code=201, response_class=Response, operation_id="alarm_subsgroup_set",
+@router.put("/subsgroups/{name}", response_model=models.alarm.SubsGroups, operation_id="alarm_subsgroup_set",
             summary="Update alarm subgroup member definition.")
 async def subsgroup_members_put(
     request: Request,
@@ -104,7 +104,7 @@ async def subsgroup_members_put(
     sub_groups_in: models.alarm.SubsGroupsIn = Body(...),
 ):
     """Update alarm subgroup member definition."""
-    await models.alarm.subsgroup_members_put(credentials, name, sub_groups_in)
+    return await models.alarm.subsgroup_members_put(credentials, name, sub_groups_in)
 
 
 @router.delete("/subsgroups/{name}", status_code=204, response_class=Response, operation_id="alarm_subsgroup_delete",
@@ -124,7 +124,7 @@ async def subsgroup_delete(
 async def alarmsub_list(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/alarm/subs", ask_features=["any user"])),
-        id: Optional[str] = Query(None, title="Identifier."),
+        id: Optional[int] = Query(None, title="Identifier."),
         group: Optional[str] = Query(None, title="Member of the group."),
         group_mask: Optional[List[str]] = Query(None, title="Search phrase for a group name."),
         user: Optional[str] = Query(None, title="Identifier of the user."),

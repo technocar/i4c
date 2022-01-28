@@ -406,9 +406,6 @@ class AlarmRecipPatchBody(I4cBaseModel):
 async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=None,
                         user_name=None, user_name_mask=None, method=None, status=None, address=None,
                         address_mask=None, alarm:str = None, *, pconn=None) -> List[AlarmSub]:
-    if (user is not None) and (credentials.user_id != user) and ("any user" not in credentials.info_features):
-        raise I4cClientError("Unauthorized to access other users' subscriptions.")
-
     sql = dedent("""\
             with
                 res as (
@@ -443,6 +440,9 @@ async def alarmsub_list(credentials, id=None, group=None, group_mask=None, user=
             sql += "and exists (select * from unnest(res.groups) where " + common.db_helpers.filter2sql(group_mask, "unnest", params) + ")"
         if user is not None:
             params.append(user)
+            sql += f"and res.user = ${len(params)}\n"
+        if "any user" not in credentials.info_features:
+            params.append(credentials.user_id)
             sql += f"and res.user = ${len(params)}\n"
         if user_name is not None:
             params.append(user_name)
@@ -636,16 +636,20 @@ async def alarmdef_list(credentials, name_mask, report_after,
 
 
 async def subsgroupsusage_list(credentials, user, *, pconn=None):
-    if credentials.user_id != user and "any user" not in credentials.info_features:
-        raise I4cClientError("Unauthorized to access other users' subscriptions.")
-
     sql = dedent("""\
             select "user", array_agg("group") as groups
-            from alarm_subsgroup_map where "user" = $1 or $1 is null
+            from alarm_subsgroup_map 
+            where 
+              ("user" = $1 or $1 is null)
+              and ("user" = $2 or $2 is null)
             group by "user" 
             """)
     async with DatabaseConnection(pconn) as conn:
-        res = await conn.fetch(sql, user)
+        self_filter = None
+        if "any user" not in credentials.info_features:
+            self_filter = credentials.user_id
+
+        res = await conn.fetch(sql, user, self_filter)
         res = [{"user":r["user"], "groups":r["groups"]} for r in res]
         return res
 
@@ -695,6 +699,7 @@ async def subsgroup_members_put(credentials, name, sub_groups_in: SubsGroupsIn, 
             for d in found_user - needed_user:
                 sql_delete_member = """delete from alarm_subsgroup_map where "user" = $1 and "group" = $2"""
                 await conn.execute(sql_delete_member, d, name)
+    return SubsGroups(name=name, users=sub_groups_in.users)
 
 
 async def subsgroup_delete(credentials, name, forced, *, pconn=None):

@@ -10,7 +10,7 @@ from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from .stat_common import StatObject, resolve_time_period, StatObjectParamType
-from .stat_virt_obj import StatVirtObjFilterRel, statdata_virt_obj_fields
+from .stat_virt_obj import statdata_virt_obj_fields, StatVirtObjFilter, statdata_virt_obj_filter
 from functools import total_ordering
 
 
@@ -20,9 +20,9 @@ class StatListOrderBy(I4cBaseModel):
     ascending: Optional[bool] = Field(True, title="Sort from lowest to highest.")
 
     @classmethod
-    async def load_order_by(cls, conn, xy_id):
+    async def load_order_by(cls, conn, list_id):
         sql = """select id, field, ascending from stat_list_order_by where "list" = $1 order by sortorder"""
-        res = await conn.fetch(sql, xy_id)
+        res = await conn.fetch(sql, list_id)
         res = [StatListOrderBy(**r) for r in res]
         return res
 
@@ -42,13 +42,8 @@ class StatListOrderBy(I4cBaseModel):
                  )
 
 
-class StatListFilter(I4cBaseModel):
+class StatListFilter(StatVirtObjFilter):
     """List query filter."""
-    id: Optional[int] = Field(None, hidden_from_schema=True)
-    field: str = Field(..., title="Field.")
-    rel: StatVirtObjFilterRel = Field("=", title="Relation.")
-    value: str = Field(..., title="Value.")
-
     @classmethod
     async def load_filters(cls, conn, list_id):
         sql = """select * from stat_list_filter where "list" = $1"""
@@ -217,12 +212,12 @@ class StatListDef(I4cBaseModel):
     async def update_to_db(self, stat_id, new_state, conn):
         """
         :param stat_id:
-        :param new_state: StatXYDef
+        :param new_state: StatListDef
         :param conn:
         :return:
         """
         sql_update = dedent("""\
-            update stat_xy
+            update stat_list
             set
               object_name=$2,
               after=$3,
@@ -238,7 +233,7 @@ class StatListDef(I4cBaseModel):
             await f.insert_to_db(stat_id, conn, StatObjectParamType.list)
         for d in delete:
             if d.id is None:
-                raise I4cServerError("Missing id from StatXYObjectParam")
+                raise I4cServerError("Missing id from StatListObjectParam")
             await conn.execute("delete from stat_list_object_params where id = $1", d.id)
 
         insert, delete, _, _ = cmp_list(enumerate(self.order_by, start=1),
@@ -294,8 +289,11 @@ async def statdata_get_list(credentials, st_id: int, st_listdef: StatListDef, co
     result_row = namedtuple('result_row', ['content', 'order'])
 
     grid = []
+    agg_measures = {}
+
+    db_objs = await statdata_virt_obj_filter(db_objs, get_field_value, agg_measures, st_listdef.filter)
+
     for dbo in db_objs:
-        agg_measures = {}
         co = result_row({}, [])
         for c in st_listdef.visualsettings.cols:
             co.content[c.field] = await get_field_value(dbo, c.field, agg_measures)

@@ -149,6 +149,13 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     this.fields$.next(obj.length > 0 ? obj[0].fields : []);
   }
 
+  validField(selection: string): boolean {
+    if ((selection ?? "") === "")
+      return true;
+    else
+      return this.fields$.value.findIndex(f => f.name === selection) > -1;
+  }
+
   deleteFilter(filter: Filter) {
     var filters = this.filters$.value;
     var idx = filters.findIndex((f) => f._id === filter._id);
@@ -241,6 +248,32 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
         field: field
       });
     }
+  }
+
+  changeColumnPosition(direction: number, position: number) {
+    var columns = this.columns$.value ?? [];
+    if (columns.length === 0)
+      return;
+
+    if (position < 0 || position >= columns.length)
+      return;
+
+    var newPos = position + direction;
+    if (newPos < 0 || newPos > columns.length)
+      return;
+
+    var column = columns[position];
+    if (direction < 0 ) {
+      columns.splice(newPos, 0, column);
+      position++;
+    }
+    else if (newPos === columns.length)
+      columns.push(column);
+    else
+      columns.splice(newPos + 1, 0, column);
+
+    columns.splice(position, 1);
+    this.columns$.next(columns);
   }
 
   buildTable(result: StatData): HTMLTableElement {

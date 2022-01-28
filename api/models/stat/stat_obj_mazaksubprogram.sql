@@ -121,7 +121,7 @@ with
         where
           w.device = wb.device
           and ( w.timestamp > wb.timestamp
-                or (w.timestamp = wb.timestamp and w.sequence >= wb.sequence)    
+                or (w.timestamp = wb.timestamp and w.sequence > wb.sequence)    
                )
       ) a
       where a.r = 1) spgm_next on True

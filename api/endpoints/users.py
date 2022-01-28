@@ -51,7 +51,7 @@ async def user_put(
     request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("put/users/{id}", ask_features=['modify others', 'modify role'])),
     id: str = Path(...),
-    user: models.users.UserIn = Body(...),
+    user: models.users.UserData = Body(...),
 ):
     """Create or update a user."""
     return await models.users.user_put(credentials, id, user)

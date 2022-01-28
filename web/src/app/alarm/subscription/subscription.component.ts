@@ -17,6 +17,7 @@ export class AlarmSubscriptionComponent implements OnInit {
   loading$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   users$: BehaviorSubject<[string, string][]> = new BehaviorSubject([]);
   selectedUser: string;
+  user: string;
 
   constructor(
     private apiService: ApiService,
@@ -24,19 +25,23 @@ export class AlarmSubscriptionComponent implements OnInit {
     private authService: AuthenticationService) { }
 
   ngOnInit(): void {
-    this.selectedUser = this.authService.currentUserValue.id;
-    this.getSubscriptions();
+    this.user = this.authService.currentUserValue.id;
+    this.apiService.getUsers(false)
+      .subscribe(users => {
+        this.users$.next(users.map(u => <[string, string]>[u.id, u.name]));
+        this.selectedUser = this.authService.currentUserValue.id;
+        this.getSubscriptions();
+      })
   }
 
   getSubscriptions() {
     this.loading$.next(true);
     try {
-    this.apiService.getAlarmSubscriptions(undefined)
+    this.apiService.getAlarmSubscriptions({
+      user: (this.selectedUser ?? "") === "" ? this.authService.currentUserValue.id : this.selectedUser
+    })
       .subscribe(r => {
         this.subs$.next(r);
-        //getting distinct user list...
-        var users = r.filter((s, i) => r.findIndex((s2) => s2.user === s.user) === i).map((s) => <[string, string]>[s.user, s.user_name]);
-        this.users$.next(users);
       },
       err => {
         this.notifService.sendAppNotif(AppNotifType.Error, this.apiService.getErrorMsg(err).toString());

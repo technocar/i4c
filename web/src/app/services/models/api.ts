@@ -632,17 +632,17 @@ export interface AlarmSubscriptionGroupGrant {
 }
 
 export interface AlarmSubscriptionRequestParams {
-  id: string,
-  group: string,
-  group_mask: string,
-  user: string,
-  user_name: string,
-  user_name_mask: string,
-  method: AlarmNotificationType,
-  status: StatusType,
-  address: string,
-  address_mask: string,
-  alarm: string
+  id?: string,
+  group?: string,
+  group_mask?: string,
+  user?: string,
+  user_name?: string,
+  user_name_mask?: string,
+  method?: AlarmNotificationType,
+  status?: StatusType,
+  address?: string,
+  address_mask?: string,
+  alarm?: string
 }
 
 export interface AlarmSubscriptionChange {

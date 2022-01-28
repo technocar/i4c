@@ -25,6 +25,7 @@ export class AlarmDetailComponent implements OnInit {
   devices: Device[] = [];
   metaList: Meta[];
   groups: string[];
+  pattern: '^$|^[^:/?&+=a]+$';
 
   constructor(
     private route: ActivatedRoute,
@@ -160,7 +161,7 @@ export class AlarmDetailComponent implements OnInit {
     if (form.invalid)
       return;
 
-    this.apiService.setAlarm(this.origDef.name, this.def)
+    this.apiService.setAlarm(encodeURIComponent(this.origDef.name), this.def)
       .subscribe(r => {
         this.router.navigate([r.name], { relativeTo: this.route.parent, replaceUrl: true });
         this.notifService.sendAppNotif(AppNotifType.Success, $localize `:@@save_success:Sikeres mentés!`);

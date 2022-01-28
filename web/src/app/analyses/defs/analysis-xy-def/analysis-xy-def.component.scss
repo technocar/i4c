@@ -12,3 +12,35 @@
   border: 1px solid $color-light-blue;
   border-radius: 5px;
 }
+
+::ng-deep #tooltip {
+  margin-right: -15px;
+  margin-left: -15px;
+
+  .ql-container {
+    .ql-toolbar {
+      #graphs_data {
+        display: block;
+      }
+    }
+
+    .graphdata {
+      border-radius: 5px;
+      border: 2px dotted $color-gray;
+      margin: 0 0.25rem;
+    }
+
+    .ql-editor {
+      height: 400px;
+
+      .graphdata {
+        padding: 0.25rem;
+        cursor: default;
+      }
+
+      p {
+        line-height: 250%;
+      }
+    }
+  }
+}
