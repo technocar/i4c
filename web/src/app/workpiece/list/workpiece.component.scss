@@ -8,19 +8,23 @@
   background-color: #e4f1ff;
 }
 
-.batch {
+.menu {
   color: $color-button;
   text-decoration: none;
   cursor: pointer;
+  position: relative;
 }
 
-.batch:hover {
+.menu:hover {
   color: $color-button;
 }
 
-.batch:hover::after {
+.menu:hover::after {
   content: "▼";
-  float: right;
+  position: absolute;
+  //float: right;
+  right: 0;
+  margin-left: 0.5rem;
 }
 
 .good {
