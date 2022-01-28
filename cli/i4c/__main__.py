@@ -608,7 +608,7 @@ try:
     read_log_cfg()
     log = logging.getLogger("i4c")
     # yeah, this is ugly. we do a sneak peek for --profile
-    # because we need it to get for the api def
+    # because we need it to get the api def
     profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
     log.debug(f"using profile {profile}")
     connection = I4CConnection(profile=profile)
