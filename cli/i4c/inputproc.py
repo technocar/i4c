@@ -225,7 +225,7 @@ def assemble_body(body, input_data, input_format, input_placement):
         body = dict(body)
 
     d = InputFormat()
-    if not input_data.startswith("@"):
+    if input_data and not input_data.startswith("@"):
         d.fmt = "str"
     attr = format_attrs(input_format, default=d)
 

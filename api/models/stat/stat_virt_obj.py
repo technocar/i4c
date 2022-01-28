@@ -117,7 +117,8 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
         for axis in StatObjMazakAxis:
             for agg in StatAggMethod:
                 mazak_fields.append(
-                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{agg}_{axis}_load", type=StatObjMateFieldType.numeric))
+                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{axis} terhelés {agg}", type=StatObjMateFieldType.numeric))
+        # TODO {agg} needs human readable version
 
         mazakprogram = StatMetaObject(
             name=StatObjectType.mazakprogram,

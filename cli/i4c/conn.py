@@ -130,23 +130,24 @@ class I4CConnection:
             profile_file = os.path.expanduser("~") + "/.i4c/profiles"
         self.profile_file = profile_file
 
-        if not user_name or not (password or private_key) or not base_url or not profile:
-            p = _load_profile(profile_file, require_exist=True)
-            if not profile:
-                profile = p.get("default", None)
-            if not profile:
-                raise Exception("Authentication is incomplete, and no profile is given")
-            p = p.get(profile, {})
-            if not user_name:
-                user_name = p.get("user", profile)
-            if not password:
-                password = p.get("password", None)
-            if not private_key:
-                private_key = p.get("private-key", None)
-            if not base_url:
-                base_url = p.get("base-url")
-            if not api_def_file:
-                api_def_file = p.get("api-def-file")
+        need_profile = not user_name or not (password or private_key) or not base_url or not profile
+        p = _load_profile(profile_file, require_exist=need_profile)
+        if not profile:
+            profile = p.get("default", None)
+        if not profile:
+            raise Exception("Authentication is incomplete, and no profile is given")
+        p = p.get(profile, {})
+        if not user_name:
+            user_name = p.get("user", profile)
+        if not password:
+            password = p.get("password", None)
+        if not private_key:
+            private_key = p.get("private-key", None)
+        if not base_url:
+            base_url = p.get("base-url")
+        if not api_def_file:
+            api_def_file = p.get("api-def-file")
+        self.profile_data = p
 
         if base_url and base_url.endswith("/"):
             base_url = base_url[:-1]
