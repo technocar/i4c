@@ -70,7 +70,7 @@ def _load_profile(profile_file, require_exist=True):
         if require_exist:
             raise Exception("Unable to read profile information")
         else:
-            return None
+            return {}
 
     # on linux, check file attrs
     if os.name == "posix":
@@ -130,11 +130,11 @@ class I4CConnection:
             profile_file = os.path.expanduser("~") + "/.i4c/profiles"
         self.profile_file = profile_file
 
-        need_profile = not user_name or not (password or private_key) or not base_url or not profile
+        need_profile = not user_name or not (password or private_key) or not base_url # or not profile
         p = _load_profile(profile_file, require_exist=need_profile)
         if not profile:
             profile = p.get("default", None)
-        if not profile:
+        if need_profile and not profile:
             raise Exception("Authentication is incomplete, and no profile is given")
         p = p.get(profile, {})
         if not user_name:

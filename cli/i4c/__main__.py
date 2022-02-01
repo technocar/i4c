@@ -254,10 +254,11 @@ def make_commands(conn: I4CConnection):
                          "For a detailed explanation on data input and transformations, see the transform command."))
 
             if action.authentication == "basic":
-                params.append(click.Option(("--profile",), help="The name of the saved profile to use"))
-                params.append(click.Option(("--auth-user",), help="User name for authentication"))
-                params.append(click.Option(("--auth-pwd",), help="Password for basic authentication"))
-                params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication"))
+                params.append(click.Option(("--profile",), help="The name of the saved profile to use."))
+                params.append(click.Option(("--auth-user",), help="User name for authentication."))
+                params.append(click.Option(("--auth-pwd",), help="Password for basic authentication. Use a '.' to be prompted."))
+                params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication."))
+                params.append(click.Option(("--base-url",), help="Server URL."))
 
             # params.append(click.Option(("--print-curl",), is_flag=True,
             #    help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
@@ -619,12 +620,24 @@ def read_log_cfg():
 try:
     read_log_cfg()
     log = logging.getLogger("i4c")
-    # yeah, this is ugly. we do a sneak peek for --profile
-    # because we need it to get the api def
-    profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
-    log.debug(f"using profile {profile}")
-    connection = I4CConnection(profile=profile)
+
+    # yeah, this is ugly. we do a sneak peek for authentication parameters
+    # because we need it to set up the connection
+    params = ("--auth-user", "--auth-pwd", "--auth-key", "--profile", "--base-url")
+    params = {opt:opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt in params}
+    profile = params.get("--profile", None)
+    user = params.get("--auth-user", None)
+    pwd = params.get("--auth-pwd", None)
+    key = params.get("--auth-key", None)
+    url = params.get("--base-url", None)
+    if pwd == ".":
+        pwd = click.termui.prompt("Password", hide_input=True)
+    log.debug(f"using profile {profile} url {url} user {user} password {bool(pwd)} key {bool(key)}")
+
+    connection = I4CConnection(profile=profile, base_url=url, user_name=user, password=pwd, private_key=key)
+
     make_commands(connection)
+
     top_grp(obj={"connection": connection}, prog_name="i4c")
 except click.ClickException as e:
     click.echo(e.message)
