@@ -23,7 +23,7 @@ async def init(loginname):
             raise I4cClientError("No registered email address for login name")
 
         token = secrets.token_bytes(18)
-        token = base64.b64encode(token).decode('ascii')
+        token = base64.urlsafe_b64encode(token).decode('ascii')
         sql_update = dedent("""\
             update "user"
             set 
