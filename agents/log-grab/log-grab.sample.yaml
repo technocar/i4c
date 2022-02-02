@@ -1,0 +1,27 @@
+profile: bot
+robot:
+  source-path: sources\robot
+  archive-path: archive\robot
+GOM:
+  source-path: sources\gom
+  archive-path: archive\gom
+log:
+  version: 1
+  formatters:
+    brief:
+      format: '%(message)s'
+    long:
+      format: '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: brief
+      level: DEBUG
+      stream: ext://sys.stdout
+  loggers:
+      __main__:
+          level: DEBUG
+  root:
+      level: DEBUG
+      handlers: [console]
