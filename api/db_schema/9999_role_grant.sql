@@ -80,6 +80,7 @@ insert into role_grant values ('aaa', 'patch/users/{id}', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/pwdreset', array[]::varchar[]);
 insert into role_grant values ('aaa', 'post/pwdreset/sent', array[]::varchar[]);
+insert into role_grant values ('aaa', 'post/pwdreset/fail', array[]::varchar[]);
 
 insert into role_grant values ('aaa', 'get/settings/{key}', array[]::varchar[]);
 insert into role_grant values ('aaa', 'put/settings/{key}', array[]::varchar[]);

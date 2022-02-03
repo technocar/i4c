@@ -97,14 +97,14 @@ async def get_outbox_list(credentials):
         return await conn.fetch(sql)
 
 
-async def sent(credentials, loginname):
+async def set_outbox_status(credentials, loginname, new_status):
     async with DatabaseConnection() as conn:
         sql_update = dedent("""\
             update "user"
             set 
-              pwd_reset_token_status = 'sent'                                           
+              pwd_reset_token_status = $2
             where 
               login_name = $1
               and pwd_reset_token_status = 'outbox'
             """)
-        await conn.execute(sql_update, loginname)
+        await conn.execute(sql_update, loginname, new_status)

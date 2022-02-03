@@ -47,4 +47,15 @@ async def sent(
         loginname: models.pwdreset.LoginName = Body(...)
 ):
     """Mark password reset token sent."""
-    return await models.pwdreset.sent(credentials, loginname.loginname)
+    return await models.pwdreset.set_outbox_status(credentials, loginname.loginname, 'sent')
+
+
+@router.post("/fail", status_code=201, response_class=Response, tags=["user"],
+             operation_id="pwdreset_mark_fail", summary="Mark token as fail.")
+async def sent(
+        request: Request,
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("post/pwdreset/fail")),
+        loginname: models.pwdreset.LoginName = Body(...)
+):
+    """Mark password reset token sent."""
+    return await models.pwdreset.set_outbox_status(credentials, loginname.loginname, 'fail')
