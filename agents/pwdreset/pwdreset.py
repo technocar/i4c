@@ -1,6 +1,8 @@
 import os
+import re
 import sys
 import base64
+import time
 import yaml
 import logging.config
 import smtplib
@@ -33,10 +35,18 @@ def main():
     log = logging.getLogger()
     log.debug("start")
 
-    profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
-    if not profile and "profile" in conf:
-        profile = conf["profile"]
-    log.debug(f"profile: {profile}")
+    poll = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--poll"), None)
+    if not poll and "poll" in conf:
+        profile = conf["poll"]
+    log.debug(f"poll: {poll}")
+
+    if poll:
+        m = re.fullmatch(r"0*([1-9]\d*)\s*(m?s)", poll)
+        if not m:
+            fail(f"Poll must be positive integer seconds (5s) or milliseconds (200ms). {poll} was given.")
+        poll = int(m[1])
+        if m[2] == "ms":
+            poll = poll / 1000.0
 
     svr = conf.get("smtp-server", None)
     port = conf.get("smtp-port", None)
@@ -44,6 +54,11 @@ def main():
     pwd = conf.get("smtp-password", None)
     sender = conf.get("smtp-from", None)
     protocol = conf.get("smtp-protocol", "starttls")
+
+    profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
+    if not profile and "profile" in conf:
+        profile = conf["profile"]
+    log.debug(f"profile: {profile}")
 
     log.debug("accessing profile")
     conn = i4c.I4CConnection(profile=profile)
@@ -73,49 +88,65 @@ def main():
     env = jinja2.Environment()
     tmpl = env.from_string(tmpl)
 
-    log.debug("getting pwdreset list")
-    try:
-        resets = conn.pwdreset.list()
-    except Exception as e:
-        fail(e)
-
-    sep = base64.urlsafe_b64encode(os.urandom(15)).decode()
-
-    log.debug(f"got {len(resets)} items")
-    for r in resets:
-        email = r["email"]
-        token = r["token"]
-        login = r["loginname"]
-        log.info(f"sending to {email} for {login}")
-
-        log.debug("rendering")
-        mail_body = tmpl.render(email=email, token=token, login=login, sep=sep, sender=sender)
-        mail_body = mail_body.encode("utf-8")
-
+    while True:
+        log.debug("getting pwdreset list")
         try:
-            log.debug("connecting")
-            if protocol == "ssl":
-                mailer = smtplib.SMTP_SSL(svr, port=port)
-            elif protocol == "starttls":
-                mailer = smtplib.SMTP(svr, port=port)
-                mailer.starttls()
-            else:
-                mailer = smtplib.SMTP(svr, port=port)
-            if uid:
-                log.debug("authenticating")
-                mailer.login(uid, pwd)
+            resets = conn.pwdreset.list()
+        except Exception as e:
+            log.error(f"Error reading pwdreset list: {e}")
 
-            log.debug("sending")
-            mailer.sendmail(sender, [email], mail_body)
+        sep = base64.urlsafe_b64encode(os.urandom(15)).decode()
+
+        log.debug(f"got {len(resets)} items")
+        for r in resets:
+            email = r["email"]
+            token = r["token"]
+            login = r["loginname"]
+            log.info(f"sending to {email} for {login}")
+
+            log.debug("rendering")
+            mail_body = tmpl.render(email=email, token=token, login=login, sep=sep, sender=sender)
+            mail_body = mail_body.encode("utf-8")
 
             try:
-                log.debug("marking as sent")
-                conn.pwdreset.mark_sent(body={"loginname": login})
-            except Exception as e:
-                log.error(f"Failed to mark {login} as sent: {e}")
+                log.debug("connecting")
+                if protocol == "ssl":
+                    mailer = smtplib.SMTP_SSL(svr, port=port)
+                elif protocol == "starttls":
+                    mailer = smtplib.SMTP(svr, port=port)
+                    mailer.starttls()
+                else:
+                    mailer = smtplib.SMTP(svr, port=port)
+                if uid:
+                    log.debug("authenticating")
+                    mailer.login(uid, pwd)
 
-        except Exception as e:
-            log.error(f"failed mailing to {email} for {login}: {e}")
+                log.debug("sending")
+                mailer.sendmail(sender, [email], mail_body)
+
+                try:
+                    log.debug("marking as sent")
+                    conn.pwdreset.mark_sent(body={"loginname": login})
+                except Exception as e:
+                    log.error(f"failed to mark {login} as sent: {e}")
+
+            except smtplib.SMTPRecipientsRefused as e:
+                try:
+                    log.debug("marking as fail")
+                    conn.pwdreset.mark_fail(body={"loginname": login})
+                except Exception as e2:
+                    log.error(f"failed to mark as failed: {e2}")
+
+                log.error(f"failed mailing for {login}: {e}")
+
+            except Exception as e:
+                log.error(f"failed mailing for {login}: {type(e)} {e}")
+
+        if not poll:
+            break
+
+        log.debug("waiting")
+        time.sleep(poll)
 
     log.debug("finished")
 
