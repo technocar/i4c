@@ -37,9 +37,7 @@ def main():
 
     poll = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--poll"), None)
     if not poll and "poll" in conf:
-        profile = conf["poll"]
-    log.debug(f"poll: {poll}")
-
+        poll = conf["poll"]
     if poll:
         m = re.fullmatch(r"0*([1-9]\d*)\s*(m?s)", poll)
         if not m:
@@ -47,6 +45,7 @@ def main():
         poll = int(m[1])
         if m[2] == "ms":
             poll = poll / 1000.0
+    log.debug(f"poll: {poll}")
 
     svr = conf.get("smtp-server", None)
     port = conf.get("smtp-port", None)
