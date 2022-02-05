@@ -5,6 +5,7 @@ import jsonpath_ng
 import functools
 import datetime
 import logging
+from click import ClickException
 
 # TODO some bug:
 # echo x|i4c user update --id jason --body "{\"change\":{\"password\":null}}" --input-file - --input-placement "$.change.password=$[0][0]" --input-format txt
@@ -51,10 +52,20 @@ def load_table(f, fmt):
         if fmt.sep == "spaces":
             split_line = split_line_sep_spaces
         else:
-            split_char = {"tab":"\t", "space":" ", "comma": ",", "semicolon": ";"}[fmt.sep]
-            split_line = split_line_sep_char
+            if fmt.sep == "none":
+                split_line = (lambda ln: [ln])
+            else:
+                split_char = {"tab":"\t", "space":" ", "comma": ",", "semicolon": ";"}[fmt.sep]
+                split_line = split_line_sep_char
     else:
-        col_bounds = functools.reduce(lambda a, x: a + [a[-1] + x], fmt.col_widths, [0])
+        if None in fmt.col_widths:
+            none_pos = fmt.col_widths.index(None)
+            col_bounds = \
+                [sum(fmt.col_widths[:n]) for n in range(0, none_pos+1)] + \
+                [-sum(fmt.col_widths[n:]) for n in range(none_pos+1, len(fmt.col_widths))] + \
+                [None]
+        else:
+            col_bounds = [sum(fmt.col_widths[:n]) for n in range(len(fmt.col_widths)+1)]
         col_slices = list(zip(col_bounds[:-1], col_bounds[1:]))
         split_line = split_line_fix
 
@@ -125,7 +136,7 @@ def load_table(f, fmt):
 
 def format_attrs(s, default: InputFormat = None):
     """
-    Takes a format definition string or list of strings, and returns format object.
+    Takes a format definition string or enumerable of strings, and returns format object.
 
     :param s: String or string list, with dot-separated format descriptors
     :param default: a prototype object which will be overwritten and returned.
@@ -133,32 +144,40 @@ def format_attrs(s, default: InputFormat = None):
     """
     f = default or InputFormat()
     if isinstance(s, str):
-        s = [s]
+        s = (s,)
     for i in s:
         for e in i.split("."):
             if e == "csv":
                 f.fmt = "tabular"
                 f.tabular_type = "sep"
                 f.sep = "comma"
+            elif e == "str":
+                f.fmt = "str"
+            elif e == "lines":
+                f.fmt = "tabular"
+                f.tabular_type = "sep"
+                f.sep = "none"
+                f.table_fmt = "column1"
             elif e == "sep" or e == "fix":
                 f.fmt = "tabular"
                 f.tabular_type = e
             elif e == "json" or e == "xml":
                 f.fmt = e
-            elif e in ("comma", "tab", "semicolon", "space", "spaces"):
+            elif e in ("comma", "tab", "semicolon", "space", "spaces", "none"):
                 f.sep = e
             elif "=" in e:
                 (n, _, w) = e.partition("=")
                 if n == "": n = None
                 if w == "": w = None
                 f.col_names.append(n)
-                first_alpha = next((i[0] for i in enumerate(w) if not i[1].isnumeric()), None)
+                first_alpha = w and next((i[0] for i in enumerate(w) if not i[1].isnumeric()), None)
                 if first_alpha is None:
                     t = None
                 else:
                     t = w[first_alpha:]
                     w = w[:first_alpha]
-                f.col_widths.append(int(w))
+                w = w and int(w)
+                f.col_widths.append(w)
                 f.col_types.append(t)
             elif e == "header":
                 f.header = True
@@ -174,6 +193,12 @@ def format_attrs(s, default: InputFormat = None):
                 f.trim_cells = True
             elif e == "notrimcells":
                 f.trim_cells = False
+
+    if f.fmt == "tabular" and f.tabular_type == "fix":
+        if len(f.col_names) == 0:
+            raise ClickException("No columns specified for fixed text format.")
+        if len([_ for w in f.col_widths if w is None]) > 1:
+            raise ClickException("Only one column can have flexible width for fixed text format.")
     return f
 
 
@@ -238,6 +263,8 @@ def assemble_body(body, input_data, input_format, input_placement):
             ext = load_table(sys.stdin, attr)
         elif attr.fmt == "str":
             ext = sys.stdin.read()
+            if ext.endswith("\n"):
+                ext = ext[:-1]
     elif input_data is not None and input_data.startswith("@"):
         input_data = input_data[1:]
         if attr.fmt == "xml":
@@ -251,6 +278,8 @@ def assemble_body(body, input_data, input_format, input_placement):
         elif attr.fmt == "str":
             with open(input_data, "r") as f:
                 ext = f.read()
+            if ext.endswith("\n"):
+                ext = ext[:-1]
     elif input_data is not None:
         if attr.fmt == "xml":
             raise Exception("Not implemented") # TODO we need to pick a module. etree is kinda shit

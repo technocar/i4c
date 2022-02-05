@@ -523,13 +523,15 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     semicolon -> semicolon delimited
     space -> space delimited, every space is a delimiter
     spaces -> space delimited, consecutive spaces are considered as one
+    none -> no separator, the entire line is one columns
 
     For fixed width data, the columns are defined with attributes, one per
     column:
 
     [name]=width[type] where name and type can be omitted. The type can be
-    `i` for integer, `f` for float, `isodt` for timestapm. Otherwise it is
-    text.
+    `i` for integer, `f` for float, `isodt` for timestamp. Otherwise it is
+    text. You can also omit at most one width, in which case that column will
+    take up as much as it can.
 
     \b
     Example 1: only widths are given.
@@ -551,6 +553,7 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     columns -> The file is processed into a json in which all columns are arrays.
     column1 -> The first column of each row is collected to an array. The rest of the row is ignored.
     table -> The file is processed into an array of arrays t[row][column].
+    lines -> shorthand for sep.none.column1
 
     If omitted, attributes have defaults. If the input is a file or stdin, the default is:
 
