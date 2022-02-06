@@ -482,27 +482,36 @@ def doc(ctx, schema, raw, output_expr, output_file, output_template):
 @json_options
 def transform(body, input_data, input_format, input_placement, output_expr, output_file, output_template):
     """
-    Short circuited data input-output command. Data will be read and processed the same way as for all commands with a
-    --body option. Then the assembled data package will be formatted for output like a json response. This can be used
-    to test input transformations, or to pre-process real data into files or piping. The command is executed locally,
-    no data is transmitted to the API.
+    Short circuited data input-output command. Data will be read and processed
+    the same way as for all commands with a --body option. Then the assembled
+    data package will be formatted for output like a json response. This can be
+    used to test input transformations, or to pre-process real data into files
+    or piping. The command is executed locally, no data is transmitted.
 
-    The input formatting works as follows. The base or skeleton of the resulting data structure is given in --body.
-    The format is json. Raw value can be given in-place, a file can be referred as @filename, or stdin can be used
-    by specifying a single `-` character.
+    The input formatting works as follows. The base or skeleton of the final
+    data structure is given in --body. The format is json. Raw value can be
+    given in-place, a file can be referred as @filename, or stdin can be used
+    by specifying @-.
 
-    The input file can be json, xml or a tabular text file that is processed into a json object according to the
-    --input-format attributes. If --input-format is not given, the following defaults will be used based on the
-    extension (see the description of formatting options below):
+    Data to be processed and inserted is defined in --input-data. It can be
+    in-place, or a file reference using @filename or stdin specifying @-.
+
+    The input data can be json, xml or a tabular text file that is processed
+    into a json object according to the --input-format attributes. If no
+    --input-format is given, the following defaults will be used based on
+    the extension (see the description of formatting options below):
 
     \b
-    csv -> sep.comma.noheaeder.table
-    txt -> sep.tab.noheader.table
-    json -> json
-    xml -> xml
+    *.csv -> sep.comma.noheaeder.table
+    *.txt -> sep.tab.noheader.table
+    *.json -> json
+    *.xml -> xml
+    stdin -> same as txt
+    in-place data -> str
 
-    The attributes can be written in any order, and can be dot-separated or given in separate options. If multiple
-    options are given, they will be combined. The attributes are as follows.
+    The attributes can be written in any order, and can be dot-separated or
+    given in separate options. If multiple options are given, they will be
+    combined. The attributes are as follows.
 
     File type attributes:
 
@@ -511,9 +520,12 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     csv -> shorthand for sep.comma
     txt -> shorthand for sep.tab
     fix -> fixed width tabular text file
+    lines -> shorthand for sep.none.column1
     json -> json
     xml -> xml
     str -> a single string value
+    cr|lf|crlf|auto -> Specifies the row separator.
+    enc<codepage> -> Code page. E.g. enccp1252 or encansi. Default is utf8.
 
     For separated files, the following attributes can be used:
 
@@ -523,10 +535,12 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     semicolon -> semicolon delimited
     space -> space delimited, every space is a delimiter
     spaces -> space delimited, consecutive spaces are considered as one
-    none -> no separator, the entire line is one columns
+    none -> no separator, the entire line is one column
 
     For fixed width data, the columns are defined with attributes, one per
-    column:
+    column. For separated data, columns are required only for the `rows` and
+    `columns` result formats (see later), but always can be used to define
+    types and names. Widths will be ignored. A column definition is:
 
     [name]=width[type] where name and type can be omitted. The type can be
     `i` for integer, `f` for float, `isodt` for timestamp. Otherwise it is
@@ -541,48 +555,51 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     Example 2: names and types specified.
     id=4i.name=20.status=1i
 
+    \b
+    Example 3: types and names for a csv
+    csv.c1=i.c2=f.c3=.c4=.rows
+
     For tabular data, the following attributes can be used:
 
     \b
-    cr|lf|crlf|auto -> Specifies the row separator.
     [no]header -> The first row contains or does not contain a header.
-    [no]trimcells -> Weather to strip each data cell from leading/trailing whitespace.
-    enc<codepage> -> Code page. E.g. enccp1252 or encansi. Default is utf8.
+    [no]trimcells -> Strip each data cell from leading/trailing whitespace.
+
+    For tabular data, the result can be formatted in one of the following ways.
+
+    \b
     rows -> The file is processed into an array of rows, rows are json objects.
-    row1 -> The first row will be returned as an array of values. The rest is ignored.
-    columns -> The file is processed into a json in which all columns are arrays.
-    column1 -> The first column of each row is collected to an array. The rest of the row is ignored.
-    table -> The file is processed into an array of arrays t[row][column].
-    lines -> shorthand for sep.none.column1
+    row1 -> The first row as an array of values, the rest is ignored.
+    columns -> The file is processed into a json with columns as arrays.
+    column1 -> The first column of each row is collected to an array.
+    table -> The file is processed into an array of arrays [row][column].
 
-    If omitted, attributes have defaults. If the input is a file or stdin, the default is:
-
-    sep.tab.auto.noheader.notrimcells.table
-
-    If the input is direct, the default is `str`.
-
-    Once the data is loaded processed, elements of it can be inserted into the body skeleton. The insertion is done
-    with the --input-place option. Multiple options can be specified, each will be executed in order. The format of
-    the option is:
+    Once the data is loaded processed, elements of it can be inserted into the
+    body skeleton. The insertion is defined with the --input-place option.
+    Multiple options can be specified, each will be executed in order. The
+    format of the option is:
 
     \b
     --input-placement "<place>"
     --input-placement "<place>=<path>"
     --input-placement "<place>*=<path>"
 
-    The <place> is a jsonpath that points to a location in the skeleton. The skeleton root can be simply referred to
-    as "$". If the jsonpath refers to multiple locations (i.e. contains *), all of them will be targets.
+    The <place> is a jsonpath that points to a location in the skeleton. The
+    skeleton root can be simply referred to as "$". If the jsonpath refers to
+    multiple locations (i.e. contains *), all of them will be targets.
 
-    The <path> is a jsonpath or xpath, depending on the input type. Xml inputs only accept xpath, the other types only
-    accept jsonpath. Jsonpath can be omitted, in which case $ will be used. If the path evaluates to a single entity,
-    it will be unwrapped. If not, it will be packed into an array. It might be surprising if wildcards are used, but
-    there happens to be one element. In order to keep the result as an array, use *=.
+    The <path> is a jsonpath or xpath, depending on the input type. Xml inputs
+    only accept xpath, the other types only  accept jsonpath. Jsonpath can be
+    omitted, in which case $ will be used. If the path evaluates to a single
+    entity, it will be unwrapped. If not, it will be packed into an array. It
+    might be surprising if wildcards are used, but there happens to be one
+    element. In order to force the result to be an array, use *=.
 
     Example 1
 
     \b
     echo {"a":{"b":10}} | cli transform --body {\\"x\\":null}
-      --input-format json --input-file - --input-placement $.x=$.a
+      --input-format json --input-data @- --input-placement $.x=$.a
 
     {"x":{"b":10}}
 
@@ -595,7 +612,7 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     blue,100,10
     green,200,20
 
-    cli transform --input-file file.txt --input-format csv.header.rows
+    cli transform --input-data @file.txt --input-format csv.header.rows
 
     \b
     [{"color":"red", "weight":"100", "price":"10"},

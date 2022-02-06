@@ -1,4 +1,5 @@
 import sys
+import os
 import io
 import json
 import jsonpath_ng
@@ -250,8 +251,15 @@ def assemble_body(body, input_data, input_format, input_placement):
         body = dict(body)
 
     d = InputFormat()
-    if input_data and not input_data.startswith("@"):
-        d.fmt = "str"
+    if input_data:
+        if not input_data.startswith("@"):
+            d.fmt = "str"
+        else:
+            _, ext = os.path.splitext(input_data[1:])
+            if ext == ".csv":
+                d.separator = "comma"
+            elif ext.lower() in (".json", ".xml"):
+                d.fmt == ext.lower()
     attr = format_attrs(input_format, default=d)
 
     if input_data == "@-":
