@@ -2,7 +2,7 @@ import sys
 import os
 import io
 import json
-import jsonpath_ng
+import jsonpath_ng.ext
 import functools
 import datetime
 import logging
