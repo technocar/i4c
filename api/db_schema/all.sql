@@ -1,3 +1,4 @@
+-- TODO review all grants, allow only DML
 
 CREATE ROLE i4capi WITH
 	LOGIN
@@ -11,6 +12,8 @@ COMMENT ON ROLE i4capi IS 'I4C server API';
 
 
 CREATE SCHEMA i4c;
+
+GRANT USAGE ON SCHEMA i4c TO i4capi;
 
 ALTER USER i4capi SET search_path to i4c,public;
 
@@ -215,7 +218,8 @@ insert into role_grant values ('admin', 'get/ping/sign', array[]::varchar[]);
 insert into role_grant values ('admin', 'get/ping/db', array[]::varchar[]);
 insert into role_grant values ('admin', 'get/audit', array[]::varchar[]);
 
-insert into "user" (id, name, status, login_name, public_key) values ('admin', 'Admin', 'active', 'admin', ''); -- TODO pubkey
+insert into "user" (id, name, status, login_name, public_key)
+  values ('admin', 'Admin', 'active', 'admin', 'UnkAezftneExNf8W5Py14LiOH4HQLRzbi6c0NY90sSI=');
 insert into "user_role" values ('admin', 'admin');
 
 
