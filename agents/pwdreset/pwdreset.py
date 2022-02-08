@@ -52,7 +52,7 @@ def main():
     uid = conf.get("smtp-user", None)
     pwd = conf.get("smtp-password", None)
     sender = conf.get("smtp-from", None)
-    protocol = conf.get("smtp-protocol", "starttls")
+    protocol = conf.get("smtp-protocol", None)
 
     profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
     if not profile and "profile" in conf:
@@ -67,12 +67,12 @@ def main():
     uid = uid or extra.get("smtp-user", None)
     pwd = pwd or extra.get("smtp-password", None)
     sender = sender or extra.get("smtp-from", None)
-    protocol = protocol or extra.get("smtp-protocol", None)
+    protocol = protocol or extra.get("smtp-protocol", "starttls")
 
     if svr is None:
         log.debug("no server is given, falling back to localhost")
         svr = "127.0.0.1"
-    
+
     if protocol not in ("ssl", "starttls", "plain"):
         fail(f"Smtp protocol must be tls, starttls or plain. '{protocol}' was given.")
 
