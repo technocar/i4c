@@ -26,5 +26,7 @@ async def audit_list(
     c = sum(int(x) for x in (before_s, after_s, count_s))
     if c < 2:
         raise ValueError('Invalid (before, after, count) configuration.')
+        # TODO this is not good, gives status 500, and no message
+        #   it should give some 4xx and proper message in the body
 
     return await models.audit.audit_list(credentials, before, after, count, object, action)
