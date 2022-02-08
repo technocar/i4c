@@ -26,6 +26,14 @@ for r in routers:
 models.roles.path_list = [x for r in routers for x in r[0].router.path_list]
 
 
+@app.exception_handler(ValueError)
+async def unicorn_exception_handler(request: Request, exc: ValueError):
+    return JSONResponse(
+        status_code=422,
+        content={"message": str(exc)},
+    )
+
+
 @app.exception_handler(I4cInputValidationError)
 async def unicorn_exception_handler(request: Request, exc: I4cInputValidationError):
     return JSONResponse(

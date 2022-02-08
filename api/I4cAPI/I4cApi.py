@@ -10,17 +10,6 @@ class I4cApi(FastAPI):
         self.openapi_extra = []
         super().__init__(*args, **kwargs)
 
-    def openapi(self):
-        res = super().openapi()
-        paths = res["paths"]
-        for (m, p, xtra) in self.openapi_extra:
-            for (k, v) in xtra.items():
-                # eg.: /intfiles/v/{ver}/{path:path} => /intfiles/v/{ver}/{path}
-                p = re.sub(r"(?P<b>{[^:}]*):[^}]*}", r"\g<b>}", p)
-                
-                paths[p][m][f"x-{k}"] = v
-        return res
-
     def get(self, path: str, *args, **kwargs):
         raise Exception("use I4cApiRouter")
 

@@ -114,11 +114,16 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
                              value_list=good_bad_list),
             StatObjMetaField(name="runtime", displayname="futásidő", type=StatObjMateFieldType.numeric, unit=StatObjMetaFieldUnit.second)
         ]
+        agg_desc = { StatAggMethod.avg: "átlag",
+                     StatAggMethod.median: "medián",
+                     StatAggMethod.q1st: "első kvintilis",
+                     StatAggMethod.q4th: "negyedik kvintilis",
+                     StatAggMethod.min: "minimum",
+                     StatAggMethod.max: "maximum" }
         for axis in StatObjMazakAxis:
             for agg in StatAggMethod:
                 mazak_fields.append(
-                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{axis} terhelés {agg}", type=StatObjMateFieldType.numeric))
-        # TODO {agg} needs human readable version
+                    StatObjMetaField(name=f"{agg}_{axis}_load", displayname=f"{axis} terhelés {agg_desc[agg]}", type=StatObjMateFieldType.numeric))
 
         mazakprogram = StatMetaObject(
             name=StatObjectType.mazakprogram,
