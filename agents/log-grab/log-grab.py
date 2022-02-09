@@ -1,3 +1,4 @@
+
 import os
 import csv
 import shutil
@@ -8,7 +9,7 @@ import yaml
 import i4c
 
 # TODO workpiece id should be taken from the file name
-#   and writte to the log as data_id = "wkpcid"
+#   and written to the log as data_id = "wkpcid"
 
 robot_actions = {
     "Darab beérkezett": "spotted",
@@ -164,9 +165,7 @@ def process_GOM(section):
     src_path = params["source-path"]
 
     files = [f for f in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, f))
-             and (f.upper().endswith(".CSV")
-                  or f.upper().endswith(".ATOS")
-                  or f.upper().endswith(".PDF"))]
+             and any(f.upper().endswith(ext) for ext in (".CSV", ".ATOS" ".PDF")) ]
     if len(files) == 0:
         log.debug("no files to load")
         return
