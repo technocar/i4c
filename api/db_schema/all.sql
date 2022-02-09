@@ -36,7 +36,7 @@ GRANT ALL ON TABLE log TO i4capi;
 CREATE UNIQUE INDEX idx_ts
     ON log USING btree
     (device ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST);
-    
+
 CREATE INDEX idx_dts
     ON log USING btree
     (device ASC NULLS LAST, data_id ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST);
@@ -44,7 +44,7 @@ CREATE INDEX idx_dts
 CREATE UNIQUE INDEX idx_ts_wo_device
     ON log USING btree
     ("timestamp" ASC NULLS LAST, sequence ASC NULLS LAST);
-    
+
 CREATE INDEX idx_dts_wo_device
     ON log USING btree
     (data_id ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST);
@@ -221,8 +221,8 @@ insert into "user" (id, name, status, login_name, public_key)
 insert into "user_role" values ('admin', 'admin');
 
 
+insert into role values ('customer', 'active');
 -- TODO "customer" role + grants, no user
-
 
 
 insert into role values ('pwdresetbot', 'active');
@@ -230,6 +230,11 @@ insert into role values ('pwdresetbot', 'active');
 insert into role_grant values ('pwdresetbot', 'get/pwdreset', array[]::varchar[]);
 insert into role_grant values ('pwdresetbot', 'post/pwdreset/sent', array[]::varchar[]);
 insert into role_grant values ('pwdresetbot', 'post/pwdreset/fail', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'get/ping/db', array[]::varchar[]);
 
 insert into "user" (id, name, status, login_name) values ('pwdresetbot', 'pwdresetbot', 'active', 'pwdresetbot');
 insert into "user_role" values ('pwdresetbot', 'pwdresetbot');
@@ -240,18 +245,56 @@ insert into role values ('logwriter', 'active');
 insert into role_grant values ('logwriter', 'post/log', array[]::varchar[]);
 insert into role_grant values ('logwriter', 'get/log/last_instance', array[]::varchar[]);
 insert into role_grant values ('logwriter', 'put/intfiles/v/{ver}/{path:path}', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'get/ping/db', array[]::varchar[]);
 
 insert into "user" (id, name, status, login_name) values ('logwriter', 'logwriter', 'active', 'logwriter');
 insert into "user_role" values ('logwriter', 'logwriter');
 
 
--- TODO alarm checker
+insert into role values ('alarmchecker', 'active');
 
--- TODO alarm push sender
+insert into role_grant values ('alarmchecker', 'post/alarm/events/check', array[]::varchar[]);
+insert into role_grant values ('alarmchecker', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmchecker', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('alarmchecker', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmchecker', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('alarmchecker', 'get/ping/db', array[]::varchar[]);
 
--- TODO alarm email sender
+insert into "user" (id, name, status, login_name) values ('alarmchecker', 'alarmchecker', 'active', 'alarmchecker');
+insert into "user_role" values ('alarmchecker', 'alarmchecker');
 
 
+insert into role values ('alarmpusher', 'active');
+
+insert into role_grant values ('alarmpusher', 'get/alarm/recips', array[]::varchar[]);
+insert into role_grant values ('alarmpusher', 'patch/alarm/recips/{id}', array[]::varchar[]);
+insert into role_grant values ('alarmpusher', 'get/settings/{key}', array['access private']::varchar[]);
+insert into role_grant values ('alarmpusher', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmpusher', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('alarmpusher', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmpusher', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('alarmpusher', 'get/ping/db', array[]::varchar[]);
+
+insert into "user" (id, name, status, login_name) values ('alarmpusher', 'alarmpusher', 'active', 'alarmpusher');
+insert into "user_role" values ('alarmpusher', 'alarmpusher');
+
+
+insert into role values ('alarmemailer', 'active');
+
+insert into role_grant values ('alarmemailer', 'get/alarm/recips', array[]::varchar[]);
+insert into role_grant values ('alarmemailer', 'patch/alarm/recips/{id}', array[]::varchar[]);
+insert into role_grant values ('alarmemailer', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmemailer', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('alarmemailer', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmemailer', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('alarmemailer', 'get/ping/db', array[]::varchar[]);
+
+insert into "user" (id, name, status, login_name) values ('alarmemailer', 'alarmemailer', 'active', 'alarmemailer');
+insert into "user_role" values ('alarmemailer', 'alarmemailer');
 
 
 create table "projects" (
@@ -320,8 +363,8 @@ GRANT USAGE, SELECT ON SEQUENCE file_int_id_seq TO i4capi;
 create table "project_file" (
     project_ver integer not null constraint pv references "project_version",
     savepath character varying (2000) not null,
-    file_git integer null constraint fk_git references "file_git", 
-    file_unc integer null constraint fk_unc references "file_unc",  
+    file_git integer null constraint fk_git references "file_git",
+    file_unc integer null constraint fk_unc references "file_unc",
     file_int integer null constraint fk_int references "file_int",
     primary key (project_ver, savepath)
 );
@@ -364,7 +407,7 @@ GRANT ALL ON TABLE "workpiece" TO i4capi;
 create table "workpiece_note" (
     id SERIAL PRIMARY KEY,
     workpiece character varying (200) not null,
-    "user" character varying (200) not null constraint fk_userrole_user references "user", 
+    "user" character varying (200) not null constraint fk_userrole_user references "user",
     "timestamp" timestamp with time zone NOT NULL,
     "text" text NOT NULL,
     deleted boolean NOT NULL default false
@@ -393,12 +436,12 @@ GRANT ALL ON TABLE alarm_subsgroup TO i4capi;
 create table "alarm" (
     id SERIAL PRIMARY KEY,
     name character varying (200) not null constraint uq_alarm_name unique,
-    "window" double precision null, 
+    "window" double precision null,
     max_freq double precision null,
     last_check timestamp with time zone not NULL,
     last_report timestamp with time zone NULL,
     subsgroup character varying (200) not null CONSTRAINT fk_alarm__alarm_subsgroup REFERENCES alarm_subsgroup ("group")
-); 
+);
 
 GRANT ALL ON TABLE "alarm" TO i4capi;
 GRANT USAGE, SELECT ON SEQUENCE alarm_id_seq TO i4capi;
@@ -418,7 +461,7 @@ create table "alarm_cond" (
     value_text character varying (200) null,
     age_min double precision null,
     age_max double precision null
-); 
+);
 
 GRANT ALL ON TABLE "alarm_cond" TO i4capi;
 GRANT USAGE, SELECT ON SEQUENCE alarm_cond_id_seq TO i4capi;
@@ -453,7 +496,7 @@ GRANT USAGE, SELECT ON SEQUENCE alarm_event_id_seq TO i4capi;
 create table "alarm_recipient" (
     id SERIAL PRIMARY KEY,
     event integer not null constraint fk_event references "alarm_event",
-    "user" character varying (200) null constraint fk_alarm_sub_user references "user", 
+    "user" character varying (200) null constraint fk_alarm_sub_user references "user",
     method character varying (200) not null,
     address text null,
     address_name character varying (200) null,
@@ -467,11 +510,11 @@ GRANT USAGE, SELECT ON SEQUENCE alarm_recipient_id_seq TO i4capi;
 create table "stat" (
     id SERIAL PRIMARY KEY,
     name character varying (200) not null,
-    "user" character varying (200) not null constraint fk_stat_timeseries_filter_user references "user", 
+    "user" character varying (200) not null constraint fk_stat_timeseries_filter_user references "user",
     shared boolean NOT NULL default false,
     modified timestamp with time zone not NULL,
     customer VARCHAR(200) null
-); 
+);
 
 CREATE UNIQUE INDEX idx_name_user ON "stat" (name, "user");
 
@@ -488,7 +531,7 @@ create table "stat_visual_setting" (
     legend_position character varying (200) null,
     legend_align character varying (200) null,
     tooltip_html text null
-); 
+);
 
 GRANT ALL ON TABLE "stat_visual_setting" TO i4capi;
 
@@ -507,7 +550,7 @@ create table "stat_timeseries" (
     series_sep_device character varying (200) null,
     series_sep_data_id character varying (200) null,
     xaxis character varying (200) not null
-); 
+);
 
 GRANT ALL ON TABLE "stat_timeseries" TO i4capi;
 
@@ -520,7 +563,7 @@ create table "stat_timeseries_filter" (
     rel character varying (200) not null,
     value character varying (200) not null,
     age_min double precision null,
-    age_max double precision null    
+    age_max double precision null
 );
 
 GRANT ALL ON TABLE "stat_timeseries_filter" TO i4capi;
@@ -537,7 +580,7 @@ create table "stat_xy" (
     y_field character varying (200) null,
     shape character varying (200) null,
     color character varying (200) null
-); 
+);
 
 GRANT ALL ON TABLE "stat_xy" TO i4capi;
 
@@ -581,7 +624,7 @@ create table "stat_list" (
     after timestamp with time zone NULL,
     before timestamp with time zone NULL,
     duration interval null
-); 
+);
 
 GRANT ALL ON TABLE "stat_list" TO i4capi;
 
@@ -589,7 +632,7 @@ GRANT ALL ON TABLE "stat_list" TO i4capi;
 create table "stat_list_object_params" (
     id SERIAL PRIMARY KEY,
     list integer not null constraint fk_pv references "stat_list" on delete cascade,
-    
+
     key character varying (200) not null,
     value character varying (200) null
 );
@@ -603,7 +646,7 @@ create table "stat_list_order_by" (
     list integer not null constraint fk_pv references "stat_list" on delete cascade,
     field character varying (200) not null,
     ascending bool not null default true,
-    sortorder integer not null 
+    sortorder integer not null
 );
 
 GRANT ALL ON TABLE "stat_list_order_by" TO i4capi;
@@ -632,7 +675,7 @@ create table "stat_list_visual_setting" (
     normal_fg character varying (200) null,
     even_bg character varying (200) null,
     even_fg character varying (200) null
-); 
+);
 
 GRANT ALL ON TABLE "stat_list_visual_setting" TO i4capi;
 
@@ -644,7 +687,7 @@ create table "stat_list_visual_setting_col" (
     caption character varying (200) null,
     width integer null,
     sortorder integer not null
-); 
+);
 
 
 GRANT ALL ON TABLE "stat_list_visual_setting_col" TO i4capi;
@@ -663,7 +706,7 @@ create table "stat_capability" (
     ltl double precision null,
     ucl double precision null,
     lcl double precision null
-); 
+);
 
 GRANT ALL ON TABLE "stat_capability" TO i4capi;
 
@@ -687,7 +730,7 @@ create table "stat_capability_visual_setting" (
     subtitle character varying (200) null,
     plotdata boolean NOT NULL default false,
     infoboxloc character varying (200) null
-); 
+);
 
 GRANT ALL ON TABLE "stat_capability_visual_setting" TO i4capi;
 
@@ -719,4 +762,3 @@ create table alarm_subsgroup_map (
 );
 
 GRANT ALL ON TABLE alarm_subsgroup_map TO i4capi;
-
