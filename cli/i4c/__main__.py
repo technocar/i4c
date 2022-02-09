@@ -128,6 +128,8 @@ def make_callback(**outer_args):
                 body = json.loads(body)
                 if "detail" in body:
                     body = body["detail"]
+                elif "message" in body:
+                    body = body["message"]
             if body:
                 if isinstance(body, bytes):
                     body = body.decode()
