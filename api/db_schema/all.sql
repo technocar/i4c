@@ -1,5 +1,3 @@
--- TODO review all grants, allow only DML
-
 CREATE ROLE i4capi WITH
 	LOGIN
 	NOSUPERUSER
@@ -221,6 +219,39 @@ insert into role_grant values ('admin', 'get/audit', array[]::varchar[]);
 insert into "user" (id, name, status, login_name, public_key)
   values ('admin', 'Admin', 'active', 'admin', 'UnkAezftneExNf8W5Py14LiOH4HQLRzbi6c0NY90sSI=');
 insert into "user_role" values ('admin', 'admin');
+
+
+-- TODO "customer" role + grants, no user
+
+
+
+insert into role values ('pwdresetbot', 'active');
+
+insert into role_grant values ('pwdresetbot', 'get/pwdreset', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'post/pwdreset/sent', array[]::varchar[]);
+insert into role_grant values ('pwdresetbot', 'post/pwdreset/fail', array[]::varchar[]);
+
+insert into "user" (id, name, status, login_name) values ('pwdresetbot', 'pwdresetbot', 'active', 'pwdresetbot');
+insert into "user_role" values ('pwdresetbot', 'pwdresetbot');
+
+
+insert into role values ('logwriter', 'active');
+
+insert into role_grant values ('logwriter', 'post/log', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'get/log/last_instance', array[]::varchar[]);
+insert into role_grant values ('logwriter', 'put/intfiles/v/{ver}/{path:path}', array[]::varchar[]);
+
+insert into "user" (id, name, status, login_name) values ('logwriter', 'logwriter', 'active', 'logwriter');
+insert into "user_role" values ('logwriter', 'logwriter');
+
+
+-- TODO alarm checker
+
+-- TODO alarm push sender
+
+-- TODO alarm email sender
+
+
 
 
 create table "projects" (
