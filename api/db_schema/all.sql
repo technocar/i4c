@@ -222,7 +222,20 @@ insert into "user_role" values ('admin', 'admin');
 
 
 insert into role values ('customer', 'active');
--- TODO "customer" role + grants, no user
+
+insert into role_grant values ('customer', 'get/log/meta', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/login', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/workpiece/{id}', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/workpiece', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/batch', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/stat/def', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/stat/def/{id}', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/stat/data/{id}', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/users', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/users/{id}', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/ping/db', array[]::varchar[]);
+insert into role_grant values ('customer', 'patch/users/{id}', array[]::varchar[]);
+insert into role_grant values ('customer', 'get/stat/objmeta', array[]::varchar[]);
 
 
 insert into role values ('pwdresetbot', 'active');
@@ -257,44 +270,44 @@ insert into "user_role" values ('logwriter', 'logwriter');
 
 insert into role values ('alarmchecker', 'active');
 
-insert into role_grant values ('alarmchecker', 'post/alarm/events/check', array[]::varchar[]);
-insert into role_grant values ('alarmchecker', 'get/ping/noop', array[]::varchar[]);
-insert into role_grant values ('alarmchecker', 'get/ping/datetime', array[]::varchar[]);
-insert into role_grant values ('alarmchecker', 'post/ping/noop', array[]::varchar[]);
-insert into role_grant values ('alarmchecker', 'get/ping/sign', array[]::varchar[]);
-insert into role_grant values ('alarmchecker', 'get/ping/db', array[]::varchar[]);
+insert into role_grant values ('alarmcheckbot', 'post/alarm/events/check', array[]::varchar[]);
+insert into role_grant values ('alarmcheckbot', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmcheckbot', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('alarmcheckbot', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmcheckbot', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('alarmcheckbot', 'get/ping/db', array[]::varchar[]);
 
-insert into "user" (id, name, status, login_name) values ('alarmchecker', 'alarmchecker', 'active', 'alarmchecker');
-insert into "user_role" values ('alarmchecker', 'alarmchecker');
-
-
-insert into role values ('alarmpusher', 'active');
-
-insert into role_grant values ('alarmpusher', 'get/alarm/recips', array[]::varchar[]);
-insert into role_grant values ('alarmpusher', 'patch/alarm/recips/{id}', array[]::varchar[]);
-insert into role_grant values ('alarmpusher', 'get/settings/{key}', array['access private']::varchar[]);
-insert into role_grant values ('alarmpusher', 'get/ping/noop', array[]::varchar[]);
-insert into role_grant values ('alarmpusher', 'get/ping/datetime', array[]::varchar[]);
-insert into role_grant values ('alarmpusher', 'post/ping/noop', array[]::varchar[]);
-insert into role_grant values ('alarmpusher', 'get/ping/sign', array[]::varchar[]);
-insert into role_grant values ('alarmpusher', 'get/ping/db', array[]::varchar[]);
-
-insert into "user" (id, name, status, login_name) values ('alarmpusher', 'alarmpusher', 'active', 'alarmpusher');
-insert into "user_role" values ('alarmpusher', 'alarmpusher');
+insert into "user" (id, name, status, login_name) values ('alarmcheckbot', 'alarmcheckbot', 'active', 'alarmcheckbot');
+insert into "user_role" values ('alarmcheckbot', 'alarmcheckbot');
 
 
-insert into role values ('alarmemailer', 'active');
+insert into role values ('alarmpushbot', 'active');
 
-insert into role_grant values ('alarmemailer', 'get/alarm/recips', array[]::varchar[]);
-insert into role_grant values ('alarmemailer', 'patch/alarm/recips/{id}', array[]::varchar[]);
-insert into role_grant values ('alarmemailer', 'get/ping/noop', array[]::varchar[]);
-insert into role_grant values ('alarmemailer', 'get/ping/datetime', array[]::varchar[]);
-insert into role_grant values ('alarmemailer', 'post/ping/noop', array[]::varchar[]);
-insert into role_grant values ('alarmemailer', 'get/ping/sign', array[]::varchar[]);
-insert into role_grant values ('alarmemailer', 'get/ping/db', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'get/alarm/recips', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'patch/alarm/recips/{id}', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'get/settings/{key}', array['access private']::varchar[]);
+insert into role_grant values ('alarmpushbot', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('alarmpushbot', 'get/ping/db', array[]::varchar[]);
 
-insert into "user" (id, name, status, login_name) values ('alarmemailer', 'alarmemailer', 'active', 'alarmemailer');
-insert into "user_role" values ('alarmemailer', 'alarmemailer');
+insert into "user" (id, name, status, login_name) values ('alarmpushbot', 'alarmpushbot', 'active', 'alarmpushbot');
+insert into "user_role" values ('alarmpushbot', 'alarmpushbot');
+
+
+insert into role values ('alarmemailbot', 'active');
+
+insert into role_grant values ('alarmemailbot', 'get/alarm/recips', array[]::varchar[]);
+insert into role_grant values ('alarmemailbot', 'patch/alarm/recips/{id}', array[]::varchar[]);
+insert into role_grant values ('alarmemailbot', 'get/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmemailbot', 'get/ping/datetime', array[]::varchar[]);
+insert into role_grant values ('alarmemailbot', 'post/ping/noop', array[]::varchar[]);
+insert into role_grant values ('alarmemailbot', 'get/ping/sign', array[]::varchar[]);
+insert into role_grant values ('alarmemailbot', 'get/ping/db', array[]::varchar[]);
+
+insert into "user" (id, name, status, login_name) values ('alarmemailbot', 'alarmemailbot', 'active', 'alarmemailbot');
+insert into "user_role" values ('alarmemailbot', 'alarmemailbot');
 
 
 create table "projects" (
