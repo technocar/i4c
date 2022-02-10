@@ -288,6 +288,64 @@ def process_Alarms(section):
         log.debug("archiving file")
         shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
 
+def process_ReaniSaw(section):
+    log.info("Processing ReniSaw files...")
+    api_params = {
+        "timestamp": "2021-12-07T11:20:20.405Z",
+        "sequence": 0,
+        "device": "RENI",
+        "instance": 0,
+        "data_id": '',
+        "value": None,
+        "value_num": None,
+        "value_text": None,
+        "value_extra": None,
+        "value_add": None
+    }
+
+    src_path = "sources\\reni"
+
+    if not os.path.exists(os.path.join(src_path, 'print.txt')):
+        log.debug("no files to load")
+        return
+    api_params_array = []
+    in_section = False
+
+    with open(os.path.join(src_path, 'print.txt')) as srcfile:
+        for lines in srcfile:
+            lines = lines.strip()
+            if lines == '%':
+                if in_section:
+                    if len(api_params_array) != 0:
+                        #  conn.invoke_url("log", "POST", api_params_array)
+                        pass
+                api_params_array = []
+                measure = None
+                api_params["timestamp"] = None
+                api_params["value_num"] = None
+                api_params["sequence"] = 0
+                in_section = not in_section
+                continue
+            if not in_section:
+                continue
+            if lines.startswith('DATE/'):
+                api_params["timestamp"] = datetime.datetime.strptime(lines[5:11] + ' ' + lines[20:26], "%y%m%d %H%M%S").strftime(
+                    "%Y-%m-%dT%H:%M:%SZ.%f")
+                continue
+            if lines.startswith("----") and lines.endswith("----") and not "/IDOBELYEG/" in lines and "/" in lines:
+                idx1 = lines.find('/', 1) + 1;
+                idx2 = lines.find('/', idx1);
+                measure = lines[idx1:idx2].strip()
+                continue
+            if lines.startswith("SIZE"):
+                for values in lines.split('/ '):
+                    (s1, s2) = values.strip().split('/')
+                    if s1 in ("ACTUAL", "DEV"):
+                        api_params["data_id"] = measure + '-' + s1
+                        api_params["value_num"] = float(s2)
+                        api_params_array.append(copy.deepcopy(api_params))
+                        api_params["sequence"] += 1
+        srcfile.close()
 
 
 log.info("start")
@@ -297,5 +355,7 @@ if "GOM" in cfg:
     process_GOM(cfg["GOM"])
 if "Alarms" in cfg:
     process_Alarms(cfg["Alarms"])
+
+process_ReaniSaw(None)
 
 log.info("finish")
