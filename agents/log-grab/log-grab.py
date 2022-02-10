@@ -239,6 +239,55 @@ def process_GOM(section):
                 log.debug("archiving additional file {}".format(fnew))
                 shutil.move(os.path.join(src_path, fnew), os.path.join(params["archive-path"], fnew))
 
+def process_Alarms(section):
+    log.info("Processing ALARM files...")
+
+    api_params = {
+        "timestamp": "2021-12-07T11:20:20.405Z",
+        "sequence": None,
+        "device": "ROBOT",
+        "instance": 0,
+        "data_id": '',
+        "value": None,
+        "value_num": None,
+        "value_text": None,
+        "value_extra": None,
+        "value_add": None
+    }
+    params = check_params(section)
+    if not params["OK"]:
+        return
+
+    src_path = params["source-path"]
+
+    files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
+             and any(entry.upper().endswith(ext) for ext in (".CSV"))
+             and os.path.splitext(entry)[0] < datetime.date.today().strftime("%Y.%m.%d")]
+    if len(files) == 0:
+        log.debug("no files to load")
+        return
+
+    for currentfile in files:
+        log.debug("processing file %s", currentfile)
+        with open(os.path.join(src_path, currentfile)) as csvfile:
+            csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
+            api_params_array = []
+            api_params["sequence"] = 0
+            for lines in csvreader:
+                api_params["timestamp"] = datetime.datetime.strptime(lines[0], "%Y.%m.%d %H:%M:%S").strftime(
+                    "%Y-%m-%dT%H:%M:%SZ.%f")
+                api_params["data_id"] = robot_actions.get(lines[1], "other")
+                if api_params["data_id"] == "other":
+                    api_params["value_text"] = lines[1]
+                else:
+                    api_params["value_text"] = None
+                api_params_array.append(copy.deepcopy(api_params))
+                api_params["sequence"] += 1
+            csvfile.close()
+        conn.invoke_url("log", "POST", api_params_array)
+        log.debug("archiving file")
+        shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
+
 
 
 log.info("start")
@@ -246,4 +295,7 @@ if "robot" in cfg:
     process_robot(cfg["robot"])
 if "GOM" in cfg:
     process_GOM(cfg["GOM"])
+if "Alarms" in cfg:
+    process_Alarms(cfg["Alarms"])
+
 log.info("finish")

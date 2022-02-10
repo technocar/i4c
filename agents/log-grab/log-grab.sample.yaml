@@ -5,6 +5,9 @@ robot:
 GOM:
   source-path: sources\gom
   archive-path: archive\gom
+Alarms:
+  source-path: sources\Alarms
+  archive-path: archive\Alarms
 log:
   version: 1
   formatters:
