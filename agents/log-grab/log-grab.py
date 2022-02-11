@@ -190,7 +190,6 @@ def process_GOM(section):
 
             with open(os.path.join(src_path, fname + ".log")) as csvfile:
                 api_params["sequence"] = 0
-                api_params["data_id"] = "GOM_log"
                 for (line_no, lines) in enumerate(csvfile):
                     (part1, part2, part3, part4) = lines.split(' ', 3)
                     if part3 == "*" : api_params["data_id"] = "WARNING"
