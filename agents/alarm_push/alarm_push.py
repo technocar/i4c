@@ -19,7 +19,7 @@ if "log" in cfg:
 log = logging.getLogger("push_notif_agent")
 
 poll = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--poll"), None)
-poll = poll or conf.get("poll", None)
+poll = poll or cfg.get("poll", None)
 if poll:
     m = re.fullmatch(r"0*([1-9]\d*)\s*(m?s)", poll)
     if not m:
@@ -74,6 +74,13 @@ def main():
                     log.error(f"can't mark notif as sent: {e}")
 
             except Exception as e:
+                # TODO can we determine if the webpush error is permanent?
+                #   if permanent, we should indicate fail status
+                # TODO we could also implement a back-off mechanism
+                #   after first failure, retry next time
+                #   after second failure, delay 10s
+                #   after third failure, delay 1min
+                #   after that, give up, and set to fail
                 log.error(f"error while sending notification: {e}")
 
         if not poll:
