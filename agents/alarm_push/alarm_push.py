@@ -74,6 +74,8 @@ def main():
                     log.error(f"can't mark notif as sent: {e}")
 
             except Exception as e:
+                # TODO can we determine if the webpush error is permanent?
+                #   if permanent, we should indicate fail status
                 log.error(f"error while sending notification: {e}")
 
         if not poll:
