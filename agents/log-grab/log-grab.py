@@ -6,7 +6,7 @@ import datetime
 import copy
 import logging.config
 import yaml
-import cli.i4c
+import i4c
 
 robot_actions = {
     "Darab beérkezett": "spotted",
@@ -50,7 +50,7 @@ def init_globals():
     log = logging.getLogger()
 
     profile = cfg.get("profile", None)
-    conn = cli.i4c.I4CConnection(profile=profile)
+    conn = i4c.I4CConnection(profile=profile)
 
 def check_params(paths):
     result = {"source-path": None, "archive-path": None, "OK": False}
