@@ -1,6 +1,5 @@
 
 import os
-import time
 import csv
 import shutil
 import datetime
@@ -33,16 +32,25 @@ robot_actions = {
     "Darab lerakva NOK tárolóba": "place_bad_out",
     "Folyamat megszakítva": "stopped"}  # TODO add gom repair statuses
 
-with open("log-grab.yaml") as f:
-    cfg = yaml.load(f, Loader=yaml.FullLoader)
-    if "log" in cfg:
-        logging.config.dictConfig(cfg["log"])
 
-log = logging.getLogger()
+cfg = None
+conn = None
+log = None
 
-profile = cfg.get("profile", None)
-conn = cli.i4c.I4CConnection(profile=profile)
+def init_globals():
+    global cfg
+    global log
+    global conn
 
+    with open("log-grab.yaml") as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
+        if "log" in cfg:
+            logging.config.dictConfig(cfg["log"])
+
+    log = logging.getLogger()
+
+    profile = cfg.get("profile", None)
+    conn = cli.i4c.I4CConnection(profile=profile)
 
 def check_params(paths):
     result = {"source-path": None, "archive-path": None, "OK": False}
@@ -62,6 +70,8 @@ def check_params(paths):
     result["OK"] = True
     return result
 
+def get_datetime(source, format):
+    return datetime.datetime.strptime(source, format).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def process_robot(section):
     log.info("processing ROBOT files")
@@ -101,7 +111,7 @@ def process_robot(section):
                 if len(lines) != 2:
                     if lines[0].upper() == "Naplózott események".upper():
                         continue
-                    log.error("Line %d in rong format!", [csvreader.line_num])
+                    log.error("Line %d in wrong format!", [csvreader.line_num])
                     return
 
                 if lines[0].upper() == "Munkadarab azonosítója".upper():
@@ -117,8 +127,7 @@ def process_robot(section):
                             log.error("Program id is not set!", [csvreader.line_num])
                             return
                         api_params["sequence"] = 0
-                        api_params["timestamp"] = datetime.datetime.strptime(lines[0], "%Y.%m.%d %H:%M:%S").strftime(
-                            "%Y-%m-%dT%H:%M:%SZ")
+                        api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
                         api_params["data_id"] = "wkpcid"
                         api_params["value_text"] = wkpcid
                         api_params_array.append(copy.deepcopy(api_params))
@@ -128,8 +137,7 @@ def process_robot(section):
                         api_params_array.append(copy.deepcopy(api_params))
 
                     api_params["sequence"] += 1
-                    api_params["timestamp"] = datetime.datetime.strptime(lines[0], "%Y.%m.%d %H:%M:%S").strftime(
-                            "%Y-%m-%dT%H:%M:%SZ")
+                    api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
                     api_params["data_id"] = robot_actions.get(lines[1], "other")
                     if api_params["data_id"] == "other":
                         api_params["value_text"] = lines[1]
@@ -189,8 +197,7 @@ def process_GOM(section):
                     elif part3 == "!" : api_params["data_id"] = "ERROR"
                     else: api_params["data_id"] = "INFO"
 
-                    api_params["timestamp"] = datetime.datetime.strptime(part1 + ' ' + part2, "%Y-%m-%d %H:%M:%S.%f").strftime(
-                            "%Y-%m-%dT%H:%M:%SZ.%f")
+                    api_params["timestamp"] = get_datetime(part1 + ' ' + part2, "%Y-%m-%d %H:%M:%S.%f")
 
                     if line_no == 0:
                         first_time = api_params["timestamp"]
@@ -215,16 +222,19 @@ def process_GOM(section):
                         idxActual = lines.index("Actual")  # -> value_extra
                     else:
                         api_params["sequence"] += 1
-                        api_params["data_id"] = lines[idxElement]
+                        api_params["data_id"] = lines[idxElement] + '-DEV'
                         api_params["value_num"] = float(lines[idxDev].replace(",", "."))
-                        api_params["value_extra"] = lines[idxActual].replace(",", ".")
+                        api_params_array.append(copy.deepcopy(api_params))
+                        api_params["sequence"] += 1
+                        api_params["data_id"] = lines[idxElement] + '-ACTUAL'
+                        api_params["value_num"] = float(lines[idxActual].replace(",", "."))
                         api_params_array.append(copy.deepcopy(api_params))
                 csvfile.close()
 
             conn.invoke_url("log", "POST", api_params_array)
         else:
-            with open(os.path.join(src_path, f), "rb") as datafile:
-                conn.invoke_url("intfiles/v/1/" + f, "PUT", datafile)
+            with open(os.path.join(src_path, currentfile), "rb") as datafile:
+                conn.invoke_url("intfiles/v/1/" + currentfile, "PUT", datafile)
                 datafile.close()
             pass
 
@@ -274,8 +284,7 @@ def process_Alarms(section):
             api_params_array = []
             api_params["sequence"] = 0
             for lines in csvreader:
-                api_params["timestamp"] = datetime.datetime.strptime(lines[0], "%Y.%m.%d %H:%M:%S").strftime(
-                    "%Y-%m-%dT%H:%M:%SZ.%f")
+                api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
                 api_params["data_id"] = robot_actions.get(lines[1], "other")
                 if api_params["data_id"] == "other":
                     api_params["value_text"] = lines[1]
@@ -303,59 +312,73 @@ def process_ReaniSaw(section):
         "value_add": None
     }
 
-    src_path = "sources\\reni"
+    params = check_params(section)
+    if not params["OK"]:
+        return
 
-    if not os.path.exists(os.path.join(src_path, 'print.txt')):
+    src_path = section["source-path"]
+
+    files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
+             and entry.upper() == "PRINT.TXT"]
+
+    if len(files) == 0:
         log.debug("no files to load")
         return
-    api_params_array = []
-    in_section = False
 
-    with open(os.path.join(src_path, 'print.txt')) as srcfile:
-        for lines in srcfile:
-            lines = lines.strip()
-            if lines == '%':
-                if in_section:
-                    if len(api_params_array) != 0:
-                        #  conn.invoke_url("log", "POST", api_params_array)
-                        pass
-                api_params_array = []
-                measure = None
-                api_params["timestamp"] = None
-                api_params["value_num"] = None
-                api_params["sequence"] = 0
-                in_section = not in_section
-                continue
-            if not in_section:
-                continue
-            if lines.startswith('DATE/'):
-                api_params["timestamp"] = datetime.datetime.strptime(lines[5:11] + ' ' + lines[20:26], "%y%m%d %H%M%S").strftime(
-                    "%Y-%m-%dT%H:%M:%SZ.%f")
-                continue
-            if lines.startswith("----") and lines.endswith("----") and not "/IDOBELYEG/" in lines and "/" in lines:
-                idx1 = lines.find('/', 1) + 1;
-                idx2 = lines.find('/', idx1);
-                measure = lines[idx1:idx2].strip()
-                continue
-            if lines.startswith("SIZE"):
-                for values in lines.split('/ '):
-                    (s1, s2) = values.strip().split('/')
-                    if s1 in ("ACTUAL", "DEV"):
-                        api_params["data_id"] = measure + '-' + s1
-                        api_params["value_num"] = float(s2)
-                        api_params_array.append(copy.deepcopy(api_params))
-                        api_params["sequence"] += 1
-        srcfile.close()
+    for currentfile in files:
+        api_params_array = []
+        in_section = False
+        with open(os.path.join(src_path, currentfile)) as srcfile:
+            for lines in srcfile:
+                lines = lines.strip()
+                if lines == '%':
+                    if in_section:
+                        if len(api_params_array) != 0:
+                            print(api_params_array);
+                            conn.invoke_url("log", "POST", api_params_array)
+                            pass
+                    api_params_array = []
+                    measure = None
+                    api_params["timestamp"] = None
+                    api_params["value_num"] = None
+                    api_params["sequence"] = 0
+                    in_section = not in_section
+                    continue
+                if not in_section:
+                    continue
+                if lines.startswith('DATE/'):
+                    api_params["timestamp"] = get_datetime(lines[5:11] + ' ' + lines[20:26], "%y%m%d %H%M%S")
+                    continue
+                if lines.startswith("----") and lines.endswith("----") and not "/IDOBELYEG/" in lines.upper() and "/" in lines:
+                    idx1 = lines.find('/', 1) + 1;
+                    idx2 = lines.find('/', idx1);
+                    measure = lines[idx1:idx2].strip()
+                    continue
+                if lines.startswith("SIZE"):
+                    for values in lines.split('/ '):
+                        (s1, s2) = values.strip().split('/')
+                        if s1 in ("ACTUAL", "DEV"):
+                            api_params["data_id"] = measure + '-' + s1
+                            api_params["value_num"] = float(s2)
+                            api_params_array.append(copy.deepcopy(api_params))
+                            api_params["sequence"] += 1
+            srcfile.close()
+        log.debug("archiving file")
+        shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
 
 
-log.info("start")
-if "robot" in cfg:
-    process_robot(cfg["robot"])
-if "GOM" in cfg:
-    process_GOM(cfg["GOM"])
-if "Alarms" in cfg:
-    process_Alarms(cfg["Alarms"])
+def main():
+    init_globals()
+    log.info("start")
+    if "robot" in cfg:
+        process_robot(cfg["robot"])
+    if "GOM" in cfg:
+        process_GOM(cfg["GOM"])
+    if "Alarms" in cfg:
+        process_Alarms(cfg["Alarms"])
+    if "ReniSaw" in cfg:
+        process_ReaniSaw(cfg["ReniSaw"])
+    log.info("finish")
 
-process_ReaniSaw(None)
-
-log.info("finish")
+if __name__ == '__main__':
+    main()

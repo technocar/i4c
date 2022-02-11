@@ -8,6 +8,9 @@ GOM:
 Alarms:
   source-path: sources\Alarms
   archive-path: archive\Alarms
+ReniSaw:
+  source-path: sources\Reni
+  archive-path: archive\Reni
 log:
   version: 1
   formatters:
