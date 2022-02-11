@@ -30,8 +30,9 @@ robot_actions = {
     "Darab lerakva szalagra": "place_good_out",
     "Darab lerakva minta fiókba": "place_sample_out",
     "Darab lerakva NOK tárolóba": "place_bad_out",
-    "Folyamat megszakítva": "stopped"}  # TODO add gom repair statuses
+    "Folyamat megszakítva": "stopped"}
 
+robot_alarms = {} # TODO we could codify alarms. now all becomes other_alarm
 
 cfg = None
 conn = None
@@ -254,7 +255,7 @@ def process_Alarms(section):
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
         "sequence": None,
-        "device": "ROBOT",
+        "device": "robot",
         "instance": 0,
         "data_id": '',
         "value": None,
@@ -284,7 +285,7 @@ def process_Alarms(section):
             api_params["sequence"] = 0
             for lines in csvreader:
                 api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
-                api_params["data_id"] = robot_actions.get(lines[1], "other")
+                api_params["data_id"] = robot_alarms.get(lines[1], "other_alarm")
                 if api_params["data_id"] == "other":
                     api_params["value_text"] = lines[1]
                 else:
@@ -301,7 +302,7 @@ def process_ReniShaw(section):
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
         "sequence": 0,
-        "device": "RENI",
+        "device": "renishaw",
         "instance": 0,
         "data_id": '',
         "value": None,
