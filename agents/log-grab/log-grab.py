@@ -296,8 +296,8 @@ def process_Alarms(section):
         log.debug("archiving file")
         shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
 
-def process_ReaniSaw(section):
-    log.info("Processing ReniSaw files...")
+def process_ReniShaw(section):
+    log.info("Processing ReniShaw files...")
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
         "sequence": 0,
@@ -373,8 +373,8 @@ def main():
         process_GOM(cfg["GOM"])
     if "Alarms" in cfg:
         process_Alarms(cfg["Alarms"])
-    if "ReniSaw" in cfg:
-        process_ReaniSaw(cfg["ReniSaw"])
+    if "ReniShaw" in cfg:
+        process_ReniShaw(cfg["ReniShaw"])
     log.info("finish")
 
 if __name__ == '__main__':
