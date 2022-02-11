@@ -85,6 +85,11 @@ create table "alarm_recipient" (
     status character varying (200) not null
 );
 
+ALTER TABLE alarm_recipient 
+add column fail_count integer NOT NULL default 0,
+add column backoff_until timestamp with time zone NULL;
+
+
 GRANT ALL ON TABLE "alarm_recipient" TO aaa;
 GRANT USAGE, SELECT ON SEQUENCE alarm_recipient_id_seq TO aaa;
 GRANT ALL ON TABLE "alarm_recipient" TO postgres;

@@ -725,7 +725,9 @@ create table "alarm_recipient" (
     method character varying (200) not null,
     address text null,
     address_name character varying (200) null,
-    status character varying (200) not null
+    status character varying (200) not null,
+    fail_count integer not null default 0,
+    backoff_until timestamp with time zone null
 );
 
 GRANT ALL ON TABLE "alarm_recipient" TO i4capi;

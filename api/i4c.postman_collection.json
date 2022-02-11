@@ -1985,7 +1985,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/alarm/recips?user_name_mask=teszt",
+							"raw": "localhost:5000/alarm/recips?user_name_mask=teszt&id=2",
 							"host": [
 								"localhost"
 							],
@@ -1998,6 +1998,15 @@
 								{
 									"key": "user_name_mask",
 									"value": "teszt"
+								},
+								{
+									"key": "no_backoff",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "2"
 								}
 							]
 						}
@@ -2031,7 +2040,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"sent\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"outbox\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"status\": [\"outbox\"]\r\n        }\r\n\r\n    ],\r\n    \"change\": {\r\n        \"status\": \"outbox\",\r\n        \"fail_count\": 1,\r\n        \"backoff_until\": \"2022-02-12T00:43:32.000Z\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

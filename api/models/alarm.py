@@ -371,15 +371,20 @@ class AlarmRecip(I4cBaseModel):
     user: AlarmRecipUser = Field(..., title="Information on the recipient user.")
     address: Optional[str] = Field(None, title="Recipient's address.")
     address_name: Optional[str] = Field(None, title="Description of the recipient's address.")
+    fail_count: int = Field(..., title="Number of failed sending attempts.")
+    backoff_until: Optional[datetime] = Field(None, title="Retry wait timestamp")
 
 
 class AlarmRecipPatchCondition(I4cBaseModel):
     """Condition in an update to an alarm recipient."""
     flipped: Optional[bool] = Field(None, title="Pass if the condition does not hold.")
     status: Optional[List[AlarmRecipientStatus]] = Field(None, title="Status is one of the listed.")
+    fail_count: Optional[int] = Field(None, title="Number of failed sending attempts.")
 
     def match(self, recip:AlarmRecip):
-        r = ((self.status is None) or (recip.status in self.status))
+        r = (((self.status is None) or (recip.status in self.status))
+             and ((self.fail_count is None) or (recip.fail_count == self.fail_count))
+             )
         if self.flipped is None or not self.flipped:
             return r
         else:
@@ -392,9 +397,24 @@ class AlarmRecipPatchChange(I4cBaseModel):
     ignored.
     """
     status: Optional[AlarmRecipientStatus] = Field(None, title="New status.")
+    fail_count: Optional[int] = Field(None, title="Number of failed sending attempts.")
+    backoff_until: Optional[datetime] = Field(None, title="Retry wait timestamp")
+    del_backoff_until: bool = Field(False, title="Clear retry wait timestamp")
+
+    @root_validator
+    def check_exclusive(cls, values):
+        x = 1 if values.get('backoff_until') is not None else 0
+        x += 1 if values.get('del_backoff_until') else 0
+        if x > 1:
+            raise I4cInputValidationError('backoff_until and del_backoff_until are exclusive')
+        return values
 
     def is_empty(self):
-        return self.status is None
+        return ( self.status is None
+                 and self.fail_count is None
+                 and self.backoff_until is None
+                 and not self.del_backoff_until
+                 )
 
 
 class AlarmRecipPatchBody(I4cBaseModel):
@@ -1051,7 +1071,7 @@ async def alarmevent_list(credentials, id=None, alarm=None, alarm_mask=None,
 
 async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, event=None,
                            user=None, user_name=None, user_name_mask=None, user_status=None,
-                           method=None, status=None, *, pconn=None) -> List[AlarmRecip]:
+                           method=None, status=None, no_backoff=None, *, pconn=None) -> List[AlarmRecip]:
     sql = dedent("""\
             with
                 res as (
@@ -1068,7 +1088,9 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                       r."address_name",
                       r."user",
                       u.name as user_name,
-                      u."status" as user_status
+                      u."status" as user_status,
+                      r.fail_count,
+                      r.backoff_until
                     from alarm_recipient r
                     join alarm_event e on e.id = r.event
                     join alarm a on a.id = e.alarm
@@ -1107,6 +1129,8 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
         if user_status is not None:
             params.append(user_status)
             sql += f"and res.\"user_status\" = ${len(params)}\n"
+        if no_backoff:
+            sql += f"and (res.backoff_until is null or res.backoff_until <= now()) \n"
         res = await conn.fetch(sql, *params)
         return [AlarmRecip(id=r["id"],
                            event=AlarmEvent(id=r["event_id"],
@@ -1121,7 +1145,9 @@ async def alarmrecips_list(credentials, id=None, alarm=None, alarm_mask=None, ev
                            address_name=r["address_name"],
                            user=AlarmRecipUser(id=r["user"],
                                                name=r["user_name"],
-                                               status=r["user_status"])
+                                               status=r["user_status"]),
+                           fail_count=r["fail_count"],
+                           backoff_until=r["backoff_until"]
                            ) for r in res]
 
 
@@ -1151,6 +1177,18 @@ async def patch_alarmrecips(credentials, id, patch: AlarmRecipPatchBody):
                 params.append(patch.change.status)
                 sql += f"{sep}\"status\"=${len(params)}"
                 sep = ",\n"
+            if patch.change.fail_count is not None:
+                params.append(patch.change.fail_count)
+                sql += f"{sep}\"fail_count\"=${len(params)}"
+                sep = ",\n"
+            if patch.change.backoff_until is not None:
+                params.append(patch.change.backoff_until)
+                sql += f"{sep}\"backoff_until\"=${len(params)}"
+                sep = ",\n"
+            if patch.change.del_backoff_until:
+                sql += f"{sep}\"backoff_until\" = null"
+                sep = ",\n"
+
             sql += "\nwhere id = $1::int"
             await conn.execute(sql, *params)
 
