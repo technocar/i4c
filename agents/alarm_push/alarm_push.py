@@ -19,7 +19,7 @@ if "log" in cfg:
 log = logging.getLogger("push_notif_agent")
 
 poll = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--poll"), None)
-poll = poll or conf.get("poll", None)
+poll = poll or cfg.get("poll", None)
 if poll:
     m = re.fullmatch(r"0*([1-9]\d*)\s*(m?s)", poll)
     if not m:
