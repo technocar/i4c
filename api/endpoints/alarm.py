@@ -233,7 +233,7 @@ async def alarmevent_get(
 async def alarmrecips_list(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips", ask_features=['noaudit'])),
-        id: Optional[str] = Query(None),
+        id: Optional[int] = Query(None),
         alarm: Optional[str] = Query(None, title="Exact alarm name."),
         alarm_mask: Optional[List[str]] = Query(None, title="Alarm name search expression."),
         event: Optional[int] = Query(None, title="Event id."),
@@ -243,11 +243,12 @@ async def alarmrecips_list(
         user_status: Optional[CommonStatusEnum] = Query(None, title="User status."),
         method: Optional[models.alarm.AlarmMethod] = Query(None, title="Notification method."),
         status: Optional[models.alarm.AlarmRecipientStatus] = Query(None, title="Notification status."),
+        no_backoff: bool = Query(False, title="Hide backoffs"),
         noaudit: bool = Query(False, title="Don't write audit record. Requires special privilege.")
 ):
     """List the recipients of an alarm event."""
     return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
-                                               user, user_name, user_name_mask, user_status, method, status)
+                                               user, user_name, user_name_mask, user_status, method, status, no_backoff)
 
 
 @router.get("/recips/{id}", response_model=models.alarm.AlarmRecip, operation_id="alarm_recip",
