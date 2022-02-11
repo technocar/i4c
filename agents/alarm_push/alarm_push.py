@@ -68,7 +68,7 @@ def main():
                         "change": {"status": "sent"} }
                 try:
                     log.debug("marking as sent")
-                    i4c_conn.invoke_url(f'alarm/recips/{urllib.parse.quote(str(id))}', 'PATCH',
+                    i4c_conn.invoke_url(f'alarm/recips/{urllib.parse.quote(str(notif["id"]))}', 'PATCH',
                                         jsondata=chg)
                 except Exception as e:
                     log.error(f"can't mark notif as sent: {e}")
