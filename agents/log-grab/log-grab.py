@@ -334,9 +334,7 @@ def process_ReaniSaw(section):
                 if lines == '%':
                     if in_section:
                         if len(api_params_array) != 0:
-                            print(api_params_array);
                             conn.invoke_url("log", "POST", api_params_array)
-                            pass
                     api_params_array = []
                     measure = None
                     api_params["timestamp"] = None
