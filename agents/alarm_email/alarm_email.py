@@ -1,15 +1,13 @@
 import sys
-import os
 import re
 import time
-import json
 import i4c
 import urllib.parse
 import yaml
 import logging.config
 import smtplib
-import jinja2
-import base64
+from email.message import EmailMessage
+
 
 cfg = None
 log = None
@@ -42,7 +40,6 @@ def init_globals():
     global pwd
     global sender
     global protocol
-    global tmpl
 
     with open("alarm_email.conf", "r") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
@@ -92,14 +89,6 @@ def init_globals():
 
     log.debug(f"smtp settings: {protocol} {svr}:{port} user:{uid} from:{sender}")
 
-    if not os.path.isfile("alarm_email.template"):
-        fail("Missing alarm_email.template")
-    with open("alarm_email.template", "r", encoding="utf-8") as f:
-        tmpl = f.read()
-    env = jinja2.Environment()
-    tmpl = env.from_string(tmpl)
-
-
 def main():
     while True:
         log.debug("get alarm recips")
@@ -107,12 +96,6 @@ def main():
         notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=email')
         for notif in notifs:
             ev = notif["event"]
-
-            log.debug("rendering")
-            sep = base64.urlsafe_b64encode(os.urandom(15)).decode()
-            mail_body = tmpl.render(email=notif["address"], alarm=ev["alarm"], created=ev["created"], sep=sep,
-                                    sender=sender, summary=ev["summary"])
-            mail_body = mail_body.encode("utf-8")
 
             log.info(f'sending to {notif["address"]} for {ev["alarm"]}')
             try:
@@ -128,15 +111,18 @@ def main():
                     log.debug("authenticating")
                     mailer.login(uid, pwd)
 
+                msg = EmailMessage()
+                msg['Subject'] = ev["summary"]
+                msg['From'] = sender
+                msg['To'] = notif["address"]
+                msg.set_content(ev["description"])
+
                 log.debug("sending")
-                mailer.sendmail(sender, notif["address"], mail_body)
+                mailer.send_message(msg)
 
                 try:
                     log.debug("marking as sent")
-
-                    chg = {"conditions": [{"status": ["outbox"]}],
-                           "change": {"status": "sent"}}
-
+                    chg = {"conditions": [{"status": ["outbox"]}], "change": {"status": "sent"}}
                     i4c_conn.invoke_url(f'alarm/recips/{urllib.parse.quote(str(notif["id"]))}', 'PATCH',
                                         jsondata=chg)
                 except Exception as e:
@@ -145,8 +131,7 @@ def main():
             except smtplib.SMTPRecipientsRefused as e:
                 try:
                     log.debug("marking as fail")
-                    chg = {"conditions": [{"status": ["outbox"]}],
-                           "change": {"status": "failed"}}
+                    chg = {"conditions": [{"status": ["outbox"]}], "change": {"status": "failed"}}
                     i4c_conn.invoke_url(f'alarm/recips/{urllib.parse.quote(str(notif["id"]))}', 'PATCH',
                                         jsondata=chg)
                 except Exception as e2:
