@@ -191,6 +191,10 @@ def make_commands(conn: I4CConnection):
     """
     log.debug(f"make_commands, get api")
 
+    if not conn.api_def_available():
+        sys.stderr.write("API definition is not available, allowing local commands only\n")
+        return
+
     api_def = conn.api_def()
 
     for (obj_name, obj) in api_def.objects.items():
