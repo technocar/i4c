@@ -4,6 +4,7 @@ import json
 import base64
 import datetime
 from typing import Any
+import ssl
 import urllib.request
 import nacl.signing
 import nacl.encoding
@@ -122,8 +123,9 @@ class I4CConnection:
     user_name: str
     password: str
     private_key: str
+    insecure: bool
 
-    def __init__(self, *, profile_file=None, api_def=None, base_url=None, api_def_file=None, profile=None, user_name=None, password=None, private_key=None):
+    def __init__(self, *, profile_file=None, api_def=None, base_url=None, api_def_file=None, profile=None, user_name=None, password=None, private_key=None, insecure=None):
         if not profile_file:
             profile_file = os.environ.get("i4c-profile", None)
         if not profile_file:
@@ -159,6 +161,7 @@ class I4CConnection:
         self.user_name = user_name
         self.password = password
         self.private_key = private_key
+        self.insecure = bool(insecure)
 
     def __getitem__(self, item):
         obj = I4CObj()
@@ -234,8 +237,13 @@ class I4CConnection:
             url = "/" + url
         url = self.base_url + url
 
+        ctx = ssl.create_default_context()
+        if self.insecure:
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+
         req = urllib.request.Request(url, data=body, method=method, headers=headers)
-        conn = urllib.request.urlopen(req)
+        conn = urllib.request.urlopen(req, context=ctx)
 
         if conn.getcode() == 204:
             response = None
@@ -248,7 +256,7 @@ class I4CConnection:
 
     def api_def(self):
         if self._api_def is None:
-            self._api_def = I4CDef(base_url=self.base_url, def_file=self.api_def_file)
+            self._api_def = I4CDef(base_url=self.base_url, def_file=self.api_def_file, insecure=self.insecure)
         return self._api_def
 
     def invoke(self, *args, **params):

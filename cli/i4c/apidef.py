@@ -2,7 +2,9 @@ from __future__ import annotations
 import os
 import json
 import datetime
+import sys
 import isodate
+import ssl
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -115,9 +117,11 @@ class Action:
                 value = kwargs[pn]
                 if not isinstance(value, str) and not isinstance(value, bytes):
                     value = str(value)
-                illegal = "".join(c for c in ":/\\?&+=\"" if c in value)
+                illegal = "".join(c for c in ":\\?&+=\"" if c in value)
                 if illegal:
                     raise Exception(f"Illegal character '{illegal}' in path parameter.")
+                if "/" in value:
+                    sys.stderr.write("Warning: using '/' in path parameters can lead to unintended results.\n")
                 value = urllib.parse.quote(value)
                 url = url.replace("{" + pn + "}", value)
 
@@ -272,7 +276,7 @@ class I4CDef:
     objects: Dict[str, Obj] = {}
     schema: Dict[str, Schema] = {}
 
-    def __init__(self, *, base_url=None, def_file=None):
+    def __init__(self, *, base_url=None, def_file=None, insecure=None):
         if def_file:
             def_file = os.path.expanduser(def_file)
             with open(def_file, "r") as f:
@@ -282,7 +286,13 @@ class I4CDef:
             if not url.endswith("/"):
                 url = url + "/"
             url = url + "openapi.json"
-            with urllib.request.urlopen(url) as u:
+
+            ctx = ssl.create_default_context()
+            if insecure:
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+
+            with urllib.request.urlopen(url, context=ctx) as u:
                 self.content = json.load(u)
         else:
             raise Exception("Either base url or definition file required.")

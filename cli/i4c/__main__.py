@@ -261,7 +261,10 @@ def make_commands(conn: I4CConnection):
                 params.append(click.Option(("--auth-user",), help="User name for authentication."))
                 params.append(click.Option(("--auth-pwd",), help="Password for basic authentication. Use a '.' to be prompted."))
                 params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication."))
-                params.append(click.Option(("--base-url",), help="Server URL."))
+                params.append(click.Option(("--connect-url",), help="Server base URL."))
+
+            params.append(click.Option(("--insecure",), is_flag=True))
+
 
             # params.append(click.Option(("--print-curl",), is_flag=True,
             #    help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
@@ -646,18 +649,20 @@ try:
 
     # yeah, this is ugly. we do a sneak peek for authentication parameters
     # because we need it to set up the connection
-    params = ("--auth-user", "--auth-pwd", "--auth-key", "--profile", "--base-url")
+    params = ("--auth-user", "--auth-pwd", "--auth-key", "--profile", "--connect-url")
     params = {opt:opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt in params}
     profile = params.get("--profile", None)
     user = params.get("--auth-user", None)
     pwd = params.get("--auth-pwd", None)
     key = params.get("--auth-key", None)
-    url = params.get("--base-url", None)
+    url = params.get("--connect-url", None)
+    insecure = "--insecure" in sys.argv
     if pwd == ".":
         pwd = click.termui.prompt("Password", hide_input=True)
     log.debug(f"using profile {profile} url {url} user {user} password {bool(pwd)} key {bool(key)}")
 
-    connection = I4CConnection(profile=profile, base_url=url, user_name=user, password=pwd, private_key=key)
+    connection = I4CConnection(profile=profile, base_url=url, user_name=user, password=pwd, private_key=key,
+                               insecure=insecure)
 
     make_commands(connection)
 
