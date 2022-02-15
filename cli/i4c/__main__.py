@@ -76,10 +76,11 @@ def callback(ctx, **args):
         body = args.pop("body")
         body = resolve_file(body)
 
-        input_data = args.get("input_data", None)
-        input_format = args.get("input_format", None)
-        input_placement = args.get("input_placement", None)
-        body = assemble_body(body, input_data, input_format, input_placement)
+        if action.body.content_type == "application/json":
+            input_data = args.get("input_data", None)
+            input_format = args.get("input_format", None)
+            input_placement = args.get("input_placement", None)
+            body = assemble_body(body, input_data, input_format, input_placement)
         if isinstance(body, str):
             body = body.encode("utf-8")
     else:
