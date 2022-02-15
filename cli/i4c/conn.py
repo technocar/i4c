@@ -124,6 +124,7 @@ class I4CConnection:
     password: str
     private_key: str
     insecure: bool
+    profile_data: dict
 
     def __init__(self, *, profile_file=None, api_def=None, base_url=None, api_def_file=None, profile=None, user_name=None, password=None, private_key=None, insecure=None):
         if not profile_file:
@@ -136,20 +137,21 @@ class I4CConnection:
         p = _load_profile(profile_file, require_exist=need_profile)
         if not profile:
             profile = p.get("default", None)
-        if need_profile and not profile:
-            raise Exception("Authentication is incomplete, and no profile is given")
-        p = p.get(profile, {})
-        if not user_name:
-            user_name = p.get("user", profile)
-        if not password:
-            password = p.get("password", None)
-        if not private_key:
-            private_key = p.get("private-key", None)
-        if not base_url:
-            base_url = p.get("base-url")
-        if not api_def_file:
-            api_def_file = p.get("api-def-file")
-        self.profile_data = p
+        if profile:
+            p = p.get(profile, {})
+            if not user_name:
+                user_name = p.get("user", profile)
+            if not private_key and not password:
+                private_key = p.get("private-key", None)
+            if not password:
+                password = p.get("password", None)
+            if not base_url:
+                base_url = p.get("base-url")
+            if not api_def_file:
+                api_def_file = p.get("api-def-file")
+            self.profile_data = p
+        else:
+            self.profile_data = {}
 
         if base_url and base_url.endswith("/"):
             base_url = base_url[:-1]
@@ -253,6 +255,9 @@ class I4CConnection:
             response = conn
 
         return response
+
+    def api_def_available(self):
+        return self._api_def is not None or self.base_url is not None or self.api_def_file is not None
 
     def api_def(self):
         if self._api_def is None:
