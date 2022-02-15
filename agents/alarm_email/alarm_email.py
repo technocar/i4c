@@ -19,8 +19,6 @@ uid = None
 pwd = None
 sender = None
 protocol = None
-tmpl = ""
-
 
 def fail(msg, exit_code=1):
     global log
@@ -28,6 +26,7 @@ def fail(msg, exit_code=1):
         print(f"{msg}")
     log.debug(f"fail {exit_code} {msg}")
     sys.exit(exit_code)
+
 
 def init_globals():
     global cfg
@@ -73,7 +72,6 @@ def init_globals():
     sender = cfg.get("smtp-from", None) or extra.get("smtp-from", None)
     protocol = cfg.get("smtp-protocol", None) or extra.get("smtp-protocol", "starttls")
 
-
     if svr is None:
         log.debug("no server is given, falling back to localhost")
         svr = "127.0.0.1"
@@ -82,6 +80,7 @@ def init_globals():
         fail(f"Smtp protocol must be tls, starttls or plain. '{protocol}' was given.")
 
     log.debug(f"smtp settings: {protocol} {svr}:{port} user:{uid} from:{sender}")
+
 
 def main():
     while True:
@@ -147,4 +146,3 @@ if __name__ == '__main__':
     except Exception as e:
         log.error(f"error: {e}")
         raise
-
