@@ -1,0 +1,4 @@
+PyYAML~=6.0
+pydantic~=1.8.2
+pynacl
+pytz~=2021.3

@@ -43,7 +43,7 @@ def init_globals():
     global log
     global conn
 
-    with open("log-grab.yaml") as f:
+    with open("log_grab.yaml") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
         if "log" in cfg:
             logging.config.dictConfig(cfg["log"])
