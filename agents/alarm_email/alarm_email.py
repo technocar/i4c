@@ -64,21 +64,15 @@ def init_globals():
     profile = profile or cfg.get("profile", None)
     log.debug(f"using profile {profile}")
     i4c_conn = i4c.I4CConnection(profile=profile)
-
-    svr = cfg.get("smtp-server", None)
-    port = cfg.get("smtp-port", None)
-    uid = cfg.get("smtp-user", None)
-    pwd = cfg.get("smtp-password", None)
-    sender = cfg.get("smtp-from", None)
-    protocol = cfg.get("smtp-protocol", None)
-
     extra = i4c_conn.profile_data.get("extra", {})
-    svr = svr or extra.get("smtp-server", None)
-    port = port or extra.get("smtp-port", None)
-    uid = uid or extra.get("smtp-user", None)
-    pwd = pwd or extra.get("smtp-password", None)
-    sender = sender or extra.get("smtp-from", None)
-    protocol = protocol or extra.get("smtp-protocol", "starttls")
+
+    svr = cfg.get("smtp-server", None) or extra.get("smtp-server", None)
+    port = cfg.get("smtp-port", None) or extra.get("smtp-port", None)
+    uid = cfg.get("smtp-user", None) or extra.get("smtp-user", None)
+    pwd = cfg.get("smtp-password", None) or extra.get("smtp-password", None)
+    sender = cfg.get("smtp-from", None) or extra.get("smtp-from", None)
+    protocol = cfg.get("smtp-protocol", None) or extra.get("smtp-protocol", "starttls")
+
 
     if svr is None:
         log.debug("no server is given, falling back to localhost")
@@ -92,8 +86,7 @@ def init_globals():
 def main():
     while True:
         log.debug("get alarm recips")
-        #notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=email&noaudit=1')
-        notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=email')
+        notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=email&noaudit=1')
         for notif in notifs:
             ev = notif["event"]
 
