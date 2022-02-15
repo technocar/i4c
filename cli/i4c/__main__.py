@@ -325,12 +325,17 @@ def profile_get(ctx, name, output_expr, output_file, output_template):
 @profile.command("new-key", help="Creates a new key pair for the profile, and displays the public key")
 @click.option("--name", help="The profile name to modify. Must exist.")
 @click.option("--override", is_flag=True, help="If the profile has a key already, replace it. The old key is deleted.")
+@click.option("--output-file", help="Output file name.")
 @click.pass_context
-def profile_new_key(ctx, name, override):
+def profile_new_key(ctx, name, override, output_file):
     log.debug(f"profile_new_key")
     conn = ctx.obj["connection"]
     pubkey = conn.profile_new_key(name, override)
-    click.echo(pubkey)
+    if output_file:
+        with open(output_file, "w") as f:
+            f.write(pubkey)
+    else:
+        click.echo(pubkey)
 
 
 @profile.command("save", help="Creates or modifies a profile")
