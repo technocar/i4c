@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import Depends, Path, Body
 from fastapi.security import HTTPBasicCredentials
 from starlette.requests import Request
@@ -10,7 +11,7 @@ from common import CredentialsAndFeatures
 router = I4cApiRouter(include_path="/settings")
 
 
-@router.get("/{key}", response_model=str, operation_id="settings_get", summary="Retrieve setting.",
+@router.get("/{key}", response_model=Optional[str], operation_id="settings_get", summary="Retrieve setting.",
             features=['access private'])
 async def settings_get(
         request: Request,
@@ -22,10 +23,9 @@ async def settings_get(
 
 @router.put("/{key}", status_code=201, response_class=Response, operation_id="settings_set", summary="Write setting.")
 async def settings_put(
-    request: Request,
-    credentials: CredentialsAndFeatures = Depends(common.security_checker("put/settings/{key}", ask_features=['access private'])),
-    key: str = Path(...),
-    value: models.settings.ValueIn = Body(...),
-):
-    """Create or update a setting."""
+        request: Request,
+        credentials: CredentialsAndFeatures = Depends(common.security_checker("put/settings/{key}", ask_features=['access private'])),
+        key: str = Path(...),
+        value: models.settings.ValueIn = Body(...)):
+    """Update a setting."""
     await models.settings.settings_put(credentials, key, value)
