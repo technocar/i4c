@@ -23,7 +23,7 @@ async def settings_get(
 @router.put("/{key}", status_code=201, response_class=Response, operation_id="settings_set", summary="Write setting.")
 async def settings_put(
     request: Request,
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("put/settings/{key}")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("put/settings/{key}", ask_features=['access private'])),
     key: str = Path(...),
     value: models.settings.ValueIn = Body(...),
 ):
