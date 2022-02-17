@@ -102,7 +102,7 @@ def main():
                     log.error(f'temporary fail, retrying later for {notif["address"]}: {e}')
                     fail_count += 1
                     backoff = datetime.datetime.now().astimezone() + \
-                              datetime.timedelta(seconds=[1, 5, 10, 50][fail_count - 1])
+                              datetime.timedelta(seconds=[1, 5, 10, 60, 240][fail_count - 1])
                     set_backoff(notif["id"], fail_count, backoff)
             except Exception as e:
                 log.error(f"error while sending notification: {e}")
