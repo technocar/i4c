@@ -4,6 +4,16 @@ import json
 import functools
 
 
+class I4CException(Exception):
+    message: str
+
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
 @functools.wraps(json.dumps)
 def jsonify(*pars, **kwpars):
     old_default = kwpars.get("default", None)

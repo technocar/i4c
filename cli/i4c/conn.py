@@ -9,7 +9,7 @@ import urllib.request
 import nacl.signing
 import nacl.encoding
 from .apidef import I4CDef, Obj, Action
-from .tools import jsonify
+from .tools import jsonify, I4CException
 from urllib.error import HTTPError
 
 
@@ -342,18 +342,18 @@ class I4CConnection:
             default status is revoked.
         """
         if name == "default":
-            raise Exception("Invalid profile name.")
+            raise I4CException("Invalid profile name.")
         if name is None:
             name = self.profile
         if name is None:
-            raise Exception("No profile name could be deduced.")
+            raise I4CException("No profile name could be deduced.")
 
         p = _load_profile(self.profile_file, require_exist=False)
         p = p or {}
 
         if name in p:
             if not override:
-                raise Exception("Profile already exists.")
+                raise I4CException("Profile already exists.")
             sect = p[name]
         else:
             sect = {}
@@ -391,19 +391,19 @@ class I4CConnection:
         :return: the public key to be registered in the API.
         """
         if name == "default":
-            raise Exception("Invalid profile name.")
+            raise I4CException("Invalid profile name.")
         if name is None:
             name = self.profile
         if name is None:
-            raise Exception("No profile name could be deduced.")
+            raise I4CException("No profile name could be deduced.")
 
         p = _load_profile(self.profile_file, require_exist=False)
         sect = p and p.get(name, None)
         if sect is None:
-            raise Exception("No such profile exists.")
+            raise I4CException("No such profile exists.")
 
         if "private-key" in sect and not override:
-            raise Exception("The profile already has a private key.")
+            raise I4CException("The profile already has a private key.")
 
         pri, pub = keypair_create()
         sect["private-key"] = pri
