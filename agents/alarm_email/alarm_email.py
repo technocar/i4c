@@ -59,7 +59,7 @@ def init_globals():
         poll = int(m[1])
         if m[2] == "ms":
             poll = poll / 1000.0
-    log.debug(f"poll: {poll}s")
+    if poll: log.debug(f"poll: {poll} s")
 
     profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
     profile = profile or cfg.get("profile", None)
