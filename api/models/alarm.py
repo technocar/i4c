@@ -342,6 +342,7 @@ class AlarmEventCheckResult(I4cBaseModel):
 class AlarmRecipientStatus(str, Enum):
     outbox = "outbox"
     sent = "sent"
+    failed = "failed"
     deleted = "deleted"
 
 
