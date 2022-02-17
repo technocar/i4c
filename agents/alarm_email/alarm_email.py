@@ -1,5 +1,6 @@
 import sys
 import re
+import datetime
 import time
 import i4c
 import urllib.parse
@@ -19,6 +20,7 @@ uid = None
 pwd = None
 sender = None
 protocol = None
+
 
 def fail(msg, exit_code=1):
     global log
@@ -82,12 +84,32 @@ def init_globals():
     log.debug(f"smtp settings: {protocol} {svr}:{port} user:{uid} from:{sender}")
 
 
+def set_status(id, status):
+    try:
+        log.debug(f"marking as {status}")
+        chg = {"conditions": [{"status": ["outbox"]}], "change": {"status": status}}
+        i4c_conn.invoke_url(f'alarm/recips/{id}', 'PATCH', jsondata=chg)
+    except Exception as e:
+        log.error(f"error while marking as {status}: {e}")
+
+
+def set_backoff(id, fail_count, backoff):
+    try:
+        log.debug(f"setting backoff")
+        chg = {"conditions": [{"status": ["outbox"]}],
+               "change": {"backoff_until": backoff.isoformat(), "fail_count": fail_count}}
+        i4c_conn.invoke_url(f'alarm/recips/{id}', 'PATCH', jsondata=chg)
+    except Exception as e:
+        log.error(f"error while setting backoff: {e}")
+
+
 def main():
     while True:
         log.debug("get alarm recips")
-        notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=email&noaudit=1')
+        notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=email&noaudit=1&no_backoff=1')
         for notif in notifs:
             ev = notif["event"]
+            id = notif["id"]
 
             log.info(f'sending to {notif["address"]} for {ev["alarm"]}')
             try:
@@ -112,24 +134,21 @@ def main():
                 log.debug("sending")
                 mailer.send_message(msg)
 
-                try:
-                    log.debug("marking as sent")
-                    chg = {"conditions": [{"status": ["outbox"]}], "change": {"status": "sent"}}
-                    i4c_conn.invoke_url(f'alarm/recips/{urllib.parse.quote(str(notif["id"]))}', 'PATCH',
-                                        jsondata=chg)
-                except Exception as e:
-                    log.error(f'failed to mark {notif["address"]} as sent: {e}')
+                set_status(id, "sent")
 
             except smtplib.SMTPRecipientsRefused as e:
-                try:
-                    log.debug("marking as fail")
-                    chg = {"conditions": [{"status": ["outbox"]}], "change": {"status": "failed"}}
-                    i4c_conn.invoke_url(f'alarm/recips/{urllib.parse.quote(str(notif["id"]))}', 'PATCH',
-                                        jsondata=chg)
-                except Exception as e2:
-                    log.error(f"failed to mark as failed: {e2}")
-
                 log.error(f'failed mailing for {notif["address"]}: {e}')
+                set_status(id, 'failed')
+            except Exception as e:
+                fail_count = notif["fail_count"]
+                if  fail_count > 3:
+                    log.error(f'too many fails, giving up for {notif["address"]}: {e}')
+                    set_status(id, 'failed')
+                else:
+                    log.error(f'temporary fail, retrying later for {notif["address"]}: {e}')
+                    fail_count += 1
+                    backoff = datetime.datetime.now().astimezone() + datetime.timedelta(seconds=10**fail_count)
+                    set_backoff(id, fail_count, backoff)
 
         if not poll:
             break
