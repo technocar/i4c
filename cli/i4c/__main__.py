@@ -8,7 +8,7 @@ import yaml
 import logging.config
 import click.globals
 from .apidef import I4CDef
-from .conn import I4CConnection, HTTPError
+from .conn import I4CConnection, HTTPError, I4CException
 from .outputproc import print_table, process_json, make_jinja_env
 from .inputproc import assemble_body
 from .tools import resolve_file
@@ -221,6 +221,7 @@ def make_commands(conn: I4CConnection):
                     attrs["type"] = click.FLOAT
                 elif param.type == "boolean":
                     attrs["type"] = click.BOOL
+                    attrs["is_flag"] = True
                 elif param.type == "string" and param.type_fmt == "date-time":
                     attrs["type"] = TZDateTime()
                 elif param.type_enum:
@@ -261,14 +262,14 @@ def make_commands(conn: I4CConnection):
                          "For a detailed explanation on data input and transformations, see the transform command."))
 
             if action.authentication == "basic":
-                params.append(click.Option(("--profile",), help="The name of the saved profile to use."))
                 params.append(click.Option(("--auth-user",), help="User name for authentication."))
                 params.append(click.Option(("--auth-pwd",), help="Password for basic authentication. Use a '.' to be prompted."))
                 params.append(click.Option(("--auth-key",), help="Private key for signed timestamp authentication."))
-                params.append(click.Option(("--connect-url",), help="Server base URL."))
 
-            params.append(click.Option(("--insecure",), is_flag=True))
+            params.append(click.Option(("--profile",), help="The name of the saved profile to use."))
+            params.append(click.Option(("--connect-url",), help="Server base URL."))
 
+            params.append(click.Option(("--insecure",), is_flag=True, help="Don't verify https certificate. DO NOT USE IN LIVE ENVIRONMENT."))
 
             # params.append(click.Option(("--print-curl",), is_flag=True,
             #    help="Instead of executing, print a CURL command line. Please note that sensitive information will be "
@@ -409,9 +410,12 @@ def profile_delete(ctx, name):
 @top_grp.command("doc")
 @click.argument("schema", required=False)
 @click.option("--raw", is_flag=True, default=False)
+@click.option("--profile", help="The name of the saved profile to use.")
+@click.option("--connect-url", help="Server base URL.")
+@click.option("--insecure", is_flag=True, help="Don't verify https certificate. DO NOT USE IN LIVE ENVIRONMENT.")
 @json_options
 @click.pass_context
-def doc(ctx, schema, raw, output_expr, output_file, output_template):
+def doc(ctx, schema, raw, profile, connect_url, insecure, output_expr, output_file, output_template):
     """
     Output OpenAPI definition. If schema is specified, only that schema is displayed. The names of
     the schemas are used in parameters, especially --body parameters, which almost always take a schema.
@@ -676,5 +680,7 @@ try:
     make_commands(connection)
 
     top_grp(obj={"connection": connection}, prog_name="i4c")
+except I4CException as e:
+    click.echo(e.message)
 except click.ClickException as e:
     click.echo(e.message)

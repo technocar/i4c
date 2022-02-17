@@ -10,7 +10,7 @@ import urllib.error
 import urllib.parse
 from typing import List, Dict
 from dataclasses import dataclass, field
-from .tools import jsonify
+from .tools import jsonify, I4CException
 
 
 @dataclass
@@ -113,13 +113,13 @@ class Action:
         for pn, p in self.params.items():
             if p.location == "path":
                 if pn not in kwargs:
-                    raise Exception(f"Missing argument: {pn}")
+                    raise I4CException(f"Missing argument: {pn}")
                 value = kwargs[pn]
                 if not isinstance(value, str) and not isinstance(value, bytes):
                     value = str(value)
                 illegal = "".join(c for c in ":\\?&+=\"" if c in value)
                 if illegal:
-                    raise Exception(f"Illegal character '{illegal}' in path parameter.")
+                    raise I4CException(f"Illegal character '{illegal}' in path parameter.")
                 if "/" in value:
                     sys.stderr.write("Warning: using '/' in path parameters can lead to unintended results.\n")
                 value = urllib.parse.quote(value)
@@ -133,6 +133,8 @@ class Action:
                     if not isinstance(val, list) and not isinstance(val, tuple):
                         val = [val]
                     for i in val:
+                        if isinstance(i, bool):
+                            i = "1" if i else "0"
                         if any(isinstance(i, t) for t in (datetime.datetime, datetime.date, datetime.time)):
                             i = i.isoformat()
                         if isinstance(i, datetime.timedelta):
@@ -295,7 +297,7 @@ class I4CDef:
             with urllib.request.urlopen(url, context=ctx) as u:
                 self.content = json.load(u)
         else:
-            raise Exception("Either base url or definition file required.")
+            raise I4CException("Either base url or definition file required.")
 
         preproc_def(self.content)
 
