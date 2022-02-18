@@ -9,8 +9,20 @@ import urllib.request
 import nacl.signing
 import nacl.encoding
 from .apidef import I4CDef, Obj, Action
-from .tools import jsonify, I4CException
+from .tools import jsonify, I4CException, jsonbrief
 from urllib.error import HTTPError
+
+
+class I4CServerError(I4CException):
+    message: str
+    code: int
+
+    def __init__(self, message, code):
+        self.message = message
+        self.code = code
+
+    def __str__(self):
+        return self.message
 
 
 class I4CAction:
@@ -134,7 +146,8 @@ class I4CConnection:
         self.profile_file = profile_file
 
         need_profile = not user_name or not (password or private_key) or not base_url # or not profile
-        p = _load_profile(profile_file, require_exist=need_profile)
+        p = _load_profile(profile_file, require_exist=False)
+        p = p or {}
         if not profile:
             profile = p.get("default", None)
         if profile:
@@ -245,7 +258,29 @@ class I4CConnection:
             ctx.verify_mode = ssl.CERT_NONE
 
         req = urllib.request.Request(url, data=body, method=method, headers=headers)
-        conn = urllib.request.urlopen(req, context=ctx)
+        try:
+            conn = urllib.request.urlopen(req, context=ctx)
+        except HTTPError as e:
+            payload = e.read()
+            if e.headers.get_content_type() == "application/json":
+                payload = json.loads(payload)
+                if "message" in payload:
+                    payload = payload["message"]
+                elif "detail" in payload:
+                    payload = payload["detail"]
+                else:
+                    payload = jsonbrief(payload)
+            if isinstance(payload, bytes):
+                payload = payload.decode()
+            if not isinstance(payload, str):
+                payload = f"{payload}"
+
+            if payload:
+                msg = f"{payload} ({e.code})"
+            else:
+                msg = f"{e}"
+
+            raise I4CServerError(msg, e.code)
 
         if conn.getcode() == 204:
             response = None

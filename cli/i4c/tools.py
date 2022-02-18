@@ -41,3 +41,19 @@ def resolve_file(fn):
         with open(fn[1:], "r") as f:
             return f.read()
     return fn
+
+
+def jsonbrief(o, inner=False):
+    "Short string representation of a dict for logging purposes"
+    if type(o) == dict:
+        res = ", ".join([f"{k}:{jsonbrief(v, inner=True)}" for (k,v) in o.items()])
+        if inner: res = f"{{{res}}}"
+        return res
+    elif type(o) == list:
+        res = ",".join(jsonbrief(v, inner) for v in o)
+        res = f"[{res}]"
+        return res
+    else:
+        return f"{o}"
+
+

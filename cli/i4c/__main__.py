@@ -11,7 +11,7 @@ from .apidef import I4CDef
 from .conn import I4CConnection, HTTPError, I4CException
 from .outputproc import print_table, process_json, make_jinja_env
 from .inputproc import assemble_body
-from .tools import resolve_file
+from .tools import resolve_file, jsonbrief
 from difflib import SequenceMatcher
 
 log = None # will be set from main
@@ -23,20 +23,6 @@ def stream_copy(src, dst):
     while buf:
         dst.write(buf)
         buf = src.read(0x10000)
-
-
-def jsonbrief(o, inner=False):
-    "Short string representation of a dict for logging purposes"
-    if type(o) == dict:
-        res = ", ".join([f"{k}:{jsonbrief(v, inner=True)}" for (k,v) in o.items()])
-        if inner: res = f"{{{res}}}"
-        return res
-    elif type(o) == list:
-        res = ",".join(jsonbrief(v, inner) for v in o)
-        res = f"[{res}]"
-        return res
-    else:
-        return f"{o}"
 
 
 @click.group()
@@ -123,22 +109,8 @@ def make_callback(**outer_args):
             res = callback(click.globals.get_current_context(), _ep=outer_args, **args)
         except click.ClickException as e:
             raise
-        except HTTPError as e:
-            body = e.read()
-            if e.headers["Content-Type"] == "application/json":
-                body = json.loads(body)
-                if "detail" in body:
-                    body = body["detail"]
-                elif "message" in body:
-                    body = body["message"]
-            if body:
-                if isinstance(body, bytes):
-                    body = body.decode()
-                if isinstance(body, list):
-                    body = ", " + "\n".join(jsonbrief(row) for row in body)
-                else:
-                    body = ", " + jsonbrief(body)
-            raise click.ClickException(f"Server reported {e.code} {e.msg}{body}")
+        except I4CException as e:
+            raise click.ClickException(f"server says {e.message}")
         except Exception as e:
             error_type = None if type(e) == Exception else type(e).__name__
             msg = getattr(e, "message", None)
@@ -677,7 +649,10 @@ try:
     connection = I4CConnection(profile=profile, base_url=url, user_name=user, password=pwd, private_key=key,
                                insecure=insecure)
 
-    make_commands(connection)
+    try:
+        make_commands(connection)
+    except Exception as e:
+        click.echo(f"Error analysing the API definition. Only local commands are available. {e}")
 
     top_grp(obj={"connection": connection}, prog_name="i4c")
 except I4CException as e:
