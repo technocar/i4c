@@ -10,19 +10,26 @@ from db_row import condition_db_row, sample_db_row, event_db_row, db_row
 import i4c as i4c
 from pydantic.schema import datetime
 
-
-args = filter(lambda s: not s.startswith("--"), sys.argv[1:])
-host = next(args, None)
-dev = next(args, None)
-if dev is None:
-    print("record.py host dev [sleeptime] [--poll]")
+if len(sys.argv) < 3:
+    print(f"USAGE: {sys.argv[0]} host device [sleeptime] [--poll] [--profile <profile>]")
     raise Exception("Invalid command line config.")
+
+host = sys.argv[1]
+dev = sys.argv[2]
+if len(sys.argv) >= 4:
+    sleeptime = int(sys.argv[3])
+
 if "://" not in host:
     host = f"http://{host}"
-poll = "--poll" in sys.argv
-sleeptime = float(next(args, "1"))
-i4c_conn = i4c.I4CConnection()
 
+poll = "--poll" in sys.argv
+if "--profile" in sys.argv:
+    index = sys.argv.index("--profile")
+    profile = sys.argv[index + 1]
+else:
+    profile = None
+
+i4c_conn = i4c.I4CConnection(profile=profile)
 
 def mtsample(start, count, inst=None):
     start = f"from={start}" if start else ""
