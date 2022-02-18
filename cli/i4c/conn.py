@@ -207,6 +207,9 @@ class I4CConnection:
         :return: Dict for json payloads, None for 204, otherwise the HTTPResponse.
         """
 
+        if self.base_url is None:
+            raise I4CException("No base url is specified. Check the profile.")
+
         if not method:
             if data is None and jsondata is None and bindata is None:
                 method = "GET"
