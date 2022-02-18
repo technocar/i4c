@@ -7,6 +7,7 @@ import copy
 import logging.config
 import yaml
 import i4c
+import re
 
 robot_actions = {
     "Darab beérkezett": "spotted",
@@ -327,32 +328,30 @@ def process_ReniShaw(section):
 
     for currentfile in files:
         api_params_array = []
-        in_section = False
         with open(os.path.join(src_path, currentfile)) as srcfile:
+            line_no = 0
             for lines in srcfile:
+                line_no += 1
                 lines = lines.strip()
                 if lines == '%':
-                    if in_section:
-                        if len(api_params_array) != 0:
-                            conn.invoke_url("log", "POST", api_params_array)
-                    api_params_array = []
-                    measure = None
-                    api_params["timestamp"] = None
-                    api_params["value_num"] = None
-                    api_params["sequence"] = 0
-                    in_section = not in_section
+                    if len(api_params_array) != 0:
+                        conn.invoke_url("log", "POST", api_params_array)
+                        api_params_array.clear()
+
+                        measure = None
+                        api_params["timestamp"] = None
+                        api_params["value_num"] = None
+                        api_params["sequence"] = 0
+                        api_params['value_extra'] = None
                     continue
-                if not in_section:
+                if lines == '':
                     continue
-                if lines.startswith('DATE/'):
-                    api_params["timestamp"] = get_datetime(lines[5:11] + ' ' + lines[20:26], "%y%m%d %H%M%S")
-                    continue
-                if lines.startswith("----") and lines.endswith("----") and not "/IDOBELYEG/" in lines.upper() and "/" in lines:
-                    idx1 = lines.find('/', 1) + 1;
-                    idx2 = lines.find('/', idx1);
-                    measure = lines[idx1:idx2].strip()
-                    continue
+                if ' FEATURE ' in lines:
+                    api_params['value_extra'] = next((v.strip() for v in lines.split('/ ') if v.strip().startswith('FEATURE')), None)
                 if lines.startswith("SIZE"):
+                    if measure is None:
+                        log.error(f"Size found but no measure is set at line#{line_no}")
+                        continue
                     for values in lines.split('/ '):
                         (s1, s2) = values.strip().split('/')
                         if s1 in ("ACTUAL", "DEV"):
@@ -360,6 +359,19 @@ def process_ReniShaw(section):
                             api_params["value_num"] = float(s2)
                             api_params_array.append(copy.deepcopy(api_params))
                             api_params["sequence"] += 1
+
+                mo = re.match(r"^ *DATE/(?P<date>.*)/ *TIME/(?P<time>.*)/ *$", lines)
+                if mo:
+                    api_params["timestamp"] = get_datetime(mo.group("date") + " " + ("0" + mo.group("time"))[-6:],
+                                                           "%y%m%d %H%M%S")
+                    continue
+                mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)
+                if mo:
+                    if api_params["timestamp"] is None:
+                        log.error(f"Measure found but no timestamp is set at line#{line_no}")
+                        continue
+                    measure = mo.group("measure_name")
+                    continue
             srcfile.close()
         log.debug("archiving file")
         shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
