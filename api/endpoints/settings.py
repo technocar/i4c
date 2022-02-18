@@ -21,7 +21,8 @@ async def settings_get(
     return await models.settings.settings_get(credentials, key)
 
 
-@router.put("/{key}", status_code=201, response_class=Response, operation_id="settings_set", summary="Write setting.")
+@router.put("/{key}", status_code=201, response_class=Response, operation_id="settings_set", summary="Write setting.",
+            features=['access private'])
 async def settings_put(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("put/settings/{key}", ask_features=['access private'])),

@@ -17,6 +17,7 @@ def init_globals():
     overwrite_key = not (next((opt for opt in sys.argv if opt == "--overwrite"), None) is None)
     i4c_conn = i4c.I4CConnection(profile=None)
 
+
 def main():
     vapid = Vapid()
     vapid.generate_keys()
@@ -25,22 +26,23 @@ def main():
                                             serialization.PublicFormat.UncompressedPoint
     ))
 
-    key_exists = True
     try:
-        i4c_conn.settings.get(key="push_priv_key")
+        key_exists = i4c_conn.settings.get(key="push_priv_key") is not None
+        key_exists = key_exists or i4c_conn.settings.get(key="push_public_key") is not None
     except HTTPError as err:
-        if err.code == 404:
-            key_exists = False
+        if not err.fp is None:
+            print(err.code, err.fp.read())
+        else:
+            print(err.code, err.msg)
+        exit(1)
     except Exception as err:
         print(f"Error: {err}")
         exit(1)
 
     if not key_exists or overwrite_key:
         try:
-            body = {"value": priv_key}
-            i4c_conn.settings.set(key="push_priv_key", body=body)
-            body = {"value": pub_key}
-            i4c_conn.settings.set(key="push_public_key", body=body)
+            i4c_conn.settings.set(key="push_priv_key", body={"value": priv_key})
+            i4c_conn.settings.set(key="push_public_key", body={"value": pub_key})
             print(f"Keys are set")
             exit(0)
         except HTTPError as err:
