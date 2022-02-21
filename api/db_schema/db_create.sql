@@ -41,7 +41,7 @@ CREATE INDEX idx_dts
     ON log USING btree
     (device ASC NULLS LAST, data_id ASC NULLS LAST, "timestamp" ASC NULLS LAST, sequence ASC NULLS LAST);
 
-CREATE UNIQUE INDEX idx_ts_wo_device
+CREATE INDEX idx_ts_wo_device
     ON log USING btree
     ("timestamp" ASC NULLS LAST, sequence ASC NULLS LAST);
 
