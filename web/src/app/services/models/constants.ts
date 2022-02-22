@@ -33,7 +33,8 @@ export class Labels {
     methods: [
       [AlarmNotificationType.None, $localize `:@@alarm_method_none:Nincs`],
       [AlarmNotificationType.Email, $localize `:@@alarm_method_email:E-mail`],
-      [AlarmNotificationType.Push, $localize `:@@alarm_method_push:Push`]
+      [AlarmNotificationType.Push, $localize `:@@alarm_method_push:Push`],
+      [AlarmNotificationType.Telegram, $localize `:@@alarm_method_telegram:Telegram`]
     ]
   }
 }

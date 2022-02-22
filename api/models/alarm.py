@@ -216,6 +216,7 @@ class AlarmMethod(str, Enum):
     email = "email"
     push = "push"
     none = "none"
+    telegram = "telegram"
 
 
 class AlarmSubIn(I4cBaseModel):

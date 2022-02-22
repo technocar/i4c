@@ -602,7 +602,7 @@ export interface AlarmRuleCondition extends AlarmRuleBase {
   age_min?: number
 }
 
-export enum AlarmNotificationType { Email = 'email', Push = 'push', None = 'none' }
+export enum AlarmNotificationType { Email = 'email', Push = 'push', None = 'none', Telegram = 'telegram' }
 export enum StatusType { Active = 'active', Inactive = 'inactive' }
 export interface AlarmSubscription {
   groups: string[],
