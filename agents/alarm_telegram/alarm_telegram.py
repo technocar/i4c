@@ -28,7 +28,13 @@ def init_bot():
     global updater
     global dispatcher
 
+    def my_user_id(update: Update, context: CallbackContext):
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 parse_mode=telegram.constants.PARSEMODE_HTML,
+                                 text=f"Az ön azonosítója: {update.effective_user.id}")
+
     def my_chat_id(update: Update, context: CallbackContext):
+#        rslt = context.bot.get_chat_member(chat_id=update.effective_chat.id, user_id=update.effective_user.id)
         context.bot.send_message(chat_id=update.effective_chat.id,
                                  parse_mode=telegram.constants.PARSEMODE_HTML,
                                  text=f"A chat szoba azonosítója: {update.effective_chat.id}")
@@ -40,9 +46,10 @@ def init_bot():
                                  
 <b>command</b> - Elérhető parancsok listája
 <b>mychatid</b> - Ennek a chat szobának az azonosítója
+<b>myuserid</b> - Az Ön azonosítója
 <b>logo</b> - TechnoCar logo""")
 
-    def logo(update: Update, context: CallbackContext):
+    def logo(update: Update, context: CallbackContext, user_data, chat_data):
         context.bot.send_photo(chat_id=update.effective_chat.id,
                                photo="http://www.technocar.hu/assets/images/tc-logo-121x117.jpg")
 
@@ -57,9 +64,10 @@ def init_bot():
     if updater is None:
         updater = Updater(api_key, use_context=True)
         dispatcher = updater.dispatcher
-        dispatcher.add_handler(CommandHandler("mychatid", my_chat_id))
-        dispatcher.add_handler(CommandHandler("command", command))
-        dispatcher.add_handler(CommandHandler("logo", logo))
+        dispatcher.add_handler(CommandHandler(command="mychatid", callback=my_chat_id))
+        dispatcher.add_handler(CommandHandler(command="myuserid", callback=my_user_id))
+        dispatcher.add_handler(CommandHandler(command="command", callback=command))
+        dispatcher.add_handler(CommandHandler(command="logo", callback=logo))
         updater.start_polling()
 
 
