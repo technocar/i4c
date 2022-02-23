@@ -329,9 +329,7 @@ def process_ReniShaw(section):
     for currentfile in files:
         api_params_array = []
         with open(os.path.join(src_path, currentfile)) as srcfile:
-            line_no = 0
-            for lines in srcfile:
-                line_no += 1
+            for line_no, lines in enumerate(srcfile):
                 lines = lines.strip()
                 if lines == '%':
                     if len(api_params_array) != 0:
@@ -346,26 +344,42 @@ def process_ReniShaw(section):
                     continue
                 if lines == '':
                     continue
+                if lines.startswith("+++++OUT OF TOL"):
+                    if measure is None:
+                        log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
+                        continue
+                    if measure2 == "":
+                        log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
+                        continue
+                    mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
+                    if mo:
+                        api_params["data_id"] = measure + measure2 +'-OTOL'
+                        api_params["value_num"] = float(mo.group("error"))
+                        api_params_array.append(copy.deepcopy(api_params))
+                        api_params["sequence"] += 1
                 if ' FEATURE ' in lines:
                     api_params['value_extra'] = next((v.strip() for v in lines.split('/ ') if v.strip().startswith('FEATURE')), None)
-                if lines.startswith("SIZE"):
+                if re.match(r"^[a-zA-Z]*/[-0-9.]*/ *ACTUAL/[-0-9.]*.*", lines):
                     if measure is None:
                         log.error(f"Size found but no measure is set at line#{line_no}")
                         continue
-                    for values in lines.split('/ '):
+                    measure2 = ""
+                    for idx, values in enumerate(lines.split('/ ')):
                         (s1, s2) = values.strip().split('/')
-                        if s1 in ("ACTUAL", "DEV"):
-                            api_params["data_id"] = measure + '-' + s1
-                            api_params["value_num"] = float(s2)
-                            api_params_array.append(copy.deepcopy(api_params))
-                            api_params["sequence"] += 1
+                        api_params["data_id"] = measure + measure2 + "-" + s1 + ("-NOMINAL" if measure2 == "" else "")
+                        api_params["value_num"] = float(s2)
+                        api_params_array.append(copy.deepcopy(api_params))
+                        api_params["sequence"] += 1
+                        if idx == 0:
+                            measure2 = "-" + s1
 
                 mo = re.match(r"^ *DATE/(?P<date>.*)/ *TIME/(?P<time>.*)/ *$", lines)
                 if mo:
                     api_params["timestamp"] = get_datetime(mo.group("date") + " " + ("0" + mo.group("time"))[-6:],
                                                            "%y%m%d %H%M%S")
                     continue
-                mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)
+                mo = re.match("^.*/MEASURE/(?P<measure_name>.*)/.*$", lines)
+#               mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)    old pattern
                 if mo:
                     if api_params["timestamp"] is None:
                         log.error(f"Measure found but no timestamp is set at line#{line_no}")
