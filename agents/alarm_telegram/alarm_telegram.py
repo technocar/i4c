@@ -21,26 +21,38 @@ updater = None
 dispatcher: Dispatcher = None
 
 
-def my_chat_id(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             text=f"Your chat id is: {update.effective_chat.id}")
-
 def init_bot():
     global bot
     global i4c_conn
     global updater
     global dispatcher
 
+    def my_chat_id(update: Update, context: CallbackContext):
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 parse_mode=telegram.constants.PARSEMODE_HTML,
+                                 text=f"A chat szoba azonosítója: {update.effective_chat.id}")
+
+    def command(update: Update, context: CallbackContext):
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 parse_mode=telegram.constants.PARSEMODE_HTML,
+                                 text="""Üdvözli az i4c telegram bot!
+                                 
+<b>command</b> - Elérhető parancsok listája
+<b>mychatid</b> - Ennek a chat szobának az azonosítója""")
+
+
+
+    log.debug("getting telegram API key")
     api_key = i4c_conn.invoke_url('settings/telegram_api_key')
 
     if bot is None:
         bot = telegram.Bot(token=api_key)
-        i4c_conn.invoke_url('settings/telegram_api_key')
 
     if updater is None:
         updater = Updater(api_key, use_context=True)
         dispatcher = updater.dispatcher
         dispatcher.add_handler(CommandHandler("mychatid", my_chat_id))
+        dispatcher.add_handler(CommandHandler("command", command))
         updater.start_polling()
 
 
@@ -101,7 +113,6 @@ def main():
 
 
     while True:
-        log.debug("getting telegram API key")
         init_bot()
         notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=telegram&noaudit=1&no_backoff=1')
         for notif in notifs:
