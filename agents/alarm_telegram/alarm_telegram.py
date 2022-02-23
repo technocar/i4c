@@ -5,6 +5,7 @@ import logging.config
 import sys
 import time
 import datetime
+import re
 
 from telegram.ext.commandhandler import CommandHandler
 from telegram.ext.updater import Updater
@@ -38,7 +39,12 @@ def init_bot():
                                  text="""Üdvözli az i4c telegram bot!
                                  
 <b>command</b> - Elérhető parancsok listája
-<b>mychatid</b> - Ennek a chat szobának az azonosítója""")
+<b>mychatid</b> - Ennek a chat szobának az azonosítója
+<b>logo</b> - TechnoCar logo""")
+
+    def logo(update: Update, context: CallbackContext):
+        context.bot.send_photo(chat_id=update.effective_chat.id,
+                               photo="http://www.technocar.hu/assets/images/tc-logo-121x117.jpg")
 
 
 
@@ -53,6 +59,7 @@ def init_bot():
         dispatcher = updater.dispatcher
         dispatcher.add_handler(CommandHandler("mychatid", my_chat_id))
         dispatcher.add_handler(CommandHandler("command", command))
+        dispatcher.add_handler(CommandHandler("logo", logo))
         updater.start_polling()
 
 
