@@ -106,7 +106,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
     })
     for(let item of this.metaList) {
       if (((this._device === item.device) || !this._device)
-      && (this.selectableTypes.indexOf(item.category) > -1))
+      && (this.selectableTypes?.length === 0 || this.selectableTypes.indexOf(item.category) > -1))
       {
         this.createParents([
           {
