@@ -102,6 +102,18 @@ insert into meta (device,name,data_id,system1,category) values ('robot','Darab l
 insert into meta (device,name,data_id,system1,category) values ('robot','Folyamat megszakítva', 'stopped','log','EVENT');
 insert into meta (device,name,data_id,system1,category) values ('robot','egyéb info', 'other','log','EVENT');
 
+insert into meta (device,name,data_id,system1,category) values ('robot','Esztega Hiba', 'error_lathe','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Eszterga nem áll készen', 'not_ready_lathe','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','GOM nem áll készen', 'not_ready_gom','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Kamera nem áll készen', 'not_ready_cam','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Kihordó szalag indítási Hiba', 'start_error_band','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Levegõnyomás nincs rendben', 'bad_pressure','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Maró Hiba', 'error_mill','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Maró nem áll készen', 'not_ready_mill','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Nyomtató nem áll készen', 'not_ready_printer','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','PC-PLC kommunikációs hiba', 'error_com_plc','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Védõkör Hiba', 'error_protection_circuit','alarm','EVENT');
+insert into meta (device,name,data_id,system1,category) values ('robot','Vészkör Hiba', 'error_emergency_circuit','alarm','EVENT');
 insert into meta (device,name,data_id,system1,category) values ('robot','egyéb hibaesemény','other_alarm', 'alarm','EVENT');
 
 -- gom

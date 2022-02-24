@@ -33,7 +33,20 @@ robot_actions = {
     "Darab lerakva NOK tárolóba": "place_bad_out",
     "Folyamat megszakítva": "stopped"}
 
-robot_alarms = {} # TODO we could codify alarms. now all becomes other_alarm
+robot_alarms = {
+    "Esztega Hiba": "error_lathe",
+    "Eszterga nem áll készen": "not_ready_lathe",
+    "GOM nem áll készen": "not_ready_gom",
+    "Kamera nem áll készen": "not_ready_cam",
+    "Kihordó szalag indítási Hiba": "start_error_band",
+    "Levegõnyomás nincs rendben": "bad_pressure",
+    "Maró Hiba": "error_mill",
+    "Maró nem áll készen": "not_ready_mill",
+    "Nyomtató nem áll készen": "not_ready_printer",
+    "PC-PLC kommunikációs hiba": "error_com_plc",
+    "Védõkör Hiba": "error_protection_circuit",
+    "Vészkör Hiba": "error_emergency_circuit"
+} # TODO we could codify alarms.
 
 cfg = None
 conn = None
@@ -287,7 +300,7 @@ def process_Alarms(section):
             for lines in csvreader:
                 api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
                 api_params["data_id"] = robot_alarms.get(lines[1], "other_alarm")
-                if api_params["data_id"] == "other":
+                if api_params["data_id"] == "other_alarm":
                     api_params["value_text"] = lines[1]
                 else:
                     api_params["value_text"] = None
