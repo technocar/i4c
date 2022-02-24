@@ -1,5 +1,5 @@
-<div #dropdown ngbDropdown class="d-inline-block" (openChange)="toggle($event)" dropdownClass="meta-selector">
-  <button type="button" class="btn btn-outline-primary" id="metric_list" ngbDropdownToggle [disabled]="disabled">
+<div #dropdown ngbDropdown class="d-inline-block" (openChange)="toggle($event)" dropdownClass="meta-selector" [container]="'body'">
+  <button #button type="button" class="btn btn-outline-primary" id="metric_list" ngbDropdownToggle [disabled]="disabled">
     {{selectedMetric?.name ? selectedMetric.name : 'válasszon...'}}
     <i class="bi bi-chevron-down"></i>
   </button>

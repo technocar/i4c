@@ -4,6 +4,7 @@
     <legend>szűrő</legend>
     <table class="table mr-0 mt-2 text-center">
       <thead>
+        <th scope="col" width="25%">eszköz</th>
         <th scope="col" width="25%">esemény</th>
         <th scope="col" width="15%">kapcsolat</th>
         <th scope="col">érték</th>
@@ -12,7 +13,12 @@
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
           <td>
-            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+            <select class="form-control mr-2" [(ngModel)]="filter.device" [disabled]="!access.canUpdate">
+              <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
+            </select>
+          </td>
+          <td>
+            <app-meta-selector [device]="filter.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
           </td>
           <td>
             <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">

@@ -3,7 +3,7 @@ import { ChartConfiguration, ChartTypeRegistry, ScatterDataPoint, BubbleDataPoin
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
-import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatData, StatVisualSettingsChart } from 'src/app/services/models/api';
+import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatData, StatVisualSettingsChart, Device } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers, HSLAColor } from '../../helpers';
@@ -46,6 +46,8 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     canUpdate: false
   }
 
+  devices: Device[] = [];
+
   constructor(
     private apiService: ApiService,
     private authService: AuthenticationService
@@ -53,6 +55,10 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
   {
     this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.eventOps = apiService.getEventOperations();
+    apiService.getDevices()
+      .subscribe(d => {
+        this.devices = d;
+      });
   }
 
   ngOnInit(): void {
