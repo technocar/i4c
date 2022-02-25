@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges, TemplateRef, ViewChild, ɵSWITCH_CHANGE_DETECTOR_REF_FACTORY__POST_R3__ } from '@angular/core';
 import { Category, Meta } from 'src/app/services/models/api';
 import { DeviceType } from 'src/app/services/models/constants';
 
@@ -27,11 +27,10 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   @Input() disabled: boolean = false;
   @Input('device')
   set device(value: string) {
+    if (value === this._device)
+      return;
+
     this._device = value;
-    this.change.emit({
-      data_id: null,
-      device: this._device as DeviceType
-    });
   }
   get device(): string {
     return this._device;
@@ -50,9 +49,10 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
       return;
     }
 
+    this._device = meta.device;
     this.selectedMetric = {
       id: meta.data_id,
-      name: meta.nice_name ? meta.nice_name : meta.name,
+      name: meta.nice_name ?? meta.name ?? meta.data_id,
       device: meta.device,
       type: undefined,
       level: undefined,
@@ -71,6 +71,14 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     console.log(changes);
+    if (changes.device) {
+      let device: SimpleChange = changes.device;
+      if (device.currentValue !== device.previousValue && !device.firstChange)
+        this.change.emit({
+          data_id: null,
+          device: device.currentValue as DeviceType
+        });
+    }
   }
 
   createParents(parentLevels: Metric[], where: Metric[]): Metric[]
@@ -144,99 +152,6 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
     }
   }
 
-
-  getMetrics(ids: string[], parentLevels: string[], level: string): Metric[] {
-    let children: Metric[] = [];
-    let items: Meta[] = [];
-    ids = ids ?? [];
-    parentLevels = parentLevels ?? [];
-
-    if (level === undefined)
-      return [];
-
-    items = this.metaList.filter((value: Meta, index: Number, array: Meta[]) => {
-
-      if (value.device !== this._device && this._device)
-        return false;
-
-      if ((this.selectableTypes ?? []).length > 0 && this.selectableTypes.indexOf(value.category) === -1)
-        return false;
-
-      if (ids.length === 0)
-        return true;
-
-      for (let i = 0; i < ids.length; i++)
-        if (ids[i] !== value[parentLevels[i]])
-          return false;
-
-      return true;
-    });
-
-    for (let item of items) {
-      let idx = children.findIndex((value) => {
-        return value.id === item[level]
-      });
-
-      if (idx > -1)
-        continue;
-
-      let name = level === "data_id" ? (item.nice_name ?? item.name) : item[level];
-      if (name == undefined || name == "") {
-        name = level === "data_id" ? item.data_id : "N/A";
-      }
-
-      children.push({
-        id: item[level],
-        name: name,
-        type: ids.length === 0 ? item[level] : ids[0],
-        level: level,
-        device: item.device,
-        children: this.getMetrics(ids.concat([item[level]]), parentLevels.concat([level]), this.getNextLevel(level, ids, parentLevels))
-      });
-    }
-
-    children = children.sort((a, b) => {
-      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
-    });
-
-    return children;
-  }
-
-  getNextLevel(level: string, ids: string[], parentLevels: string[]): string {
-      const levels = ["category", "system1", "system2", "data_id"];
-      let levelIdx = levels.indexOf(level);
-      if (levelIdx === levels.length - 1)
-        return undefined;
-
-      let nextLevel = levels[++levelIdx];
-
-      let tmp = this.metaList.filter((value: Meta, index: Number, array: Meta[]) => {
-
-        if (value.device !== this._device && this._device)
-          return false;
-
-        if ((this.selectableTypes ?? []).length > 0 && this.selectableTypes.indexOf(value.category) === -1)
-          return false;
-
-        if (ids.length === 0)
-          return true;
-
-        for (let i = 0; i < ids.length; i++)
-          if (ids[i] !== value[parentLevels[i]])
-            return false;
-
-        if (!value[nextLevel])
-          return false;
-
-        return true;
-      });
-
-      if (tmp.length > 0)
-        return nextLevel;
-      else
-        return this.getNextLevel(nextLevel, ids, parentLevels);
-  }
-
   toggleMetricNode(event: Event) {
     let target = (event.target as HTMLElement);
     let isCategorySelection = target.classList.contains("category");
@@ -285,12 +200,11 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   }
 
   getMeta(id: string): Meta {
-    return this.metaList.find((m) => { return m.data_id === id });
+    return this.metaList.find((m) => { return m.data_id === id && (!this._device || m.device === this._device) });
   }
 
   toggle(open: boolean) {
     if (open) {
-      //this.metricTree = this.getMetrics(undefined, undefined, "category");
       this.getTree();
     }
   }
