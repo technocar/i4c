@@ -5,6 +5,7 @@ import { AnalysesComponent } from './analyses.component';
 import { AnalysisComponent } from './analysis/analysis.component';
 import { AnalysisResolver } from './analysis/analysis.resolver';
 
+
 const routes: Routes = [
   { path: '',
     children: [
@@ -12,11 +13,11 @@ const routes: Routes = [
       { path: ':id', component: AnalysisComponent, canActivate: [AuthGuard],
         resolve: { data: AnalysisResolver },
         data: {
-          breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name ?? "Új elemzés" : "???"}`,
+          breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name + " (" + data.data[3] + ")" ?? "Új elemzés" : "???"}`,
           data: { priv: "get/stat/def/{id}" }
         }
       },
-      { path: ':id/:type', component: AnalysisComponent, canActivate: [AuthGuard],
+      { path: ':id/:type/:caption', component: AnalysisComponent, canActivate: [AuthGuard],
         resolve: { data: AnalysisResolver },
         data: {
           breadcrumb: (data: any) => `${(data.data ?? []).length > 1 ? data.data[0]?.name ?? "Új elemzés" : "???"}`,

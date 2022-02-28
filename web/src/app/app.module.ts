@@ -17,6 +17,7 @@ import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootst
 import { QuillModule } from 'ngx-quill';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from 'src/environments/environment';
+import { AnalysisService } from './analyses/analysis/analysis.service';
 
 @NgModule({
   declarations: [
@@ -56,7 +57,8 @@ import { environment } from 'src/environments/environment';
   ],
   exports: [RouterModule],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: AuthenticationInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: AuthenticationInterceptor, multi: true },
+    AnalysisService 
   ],
   bootstrap: [AppComponent]
 })

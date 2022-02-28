@@ -6,6 +6,7 @@ import { FilterControlComponent } from '../commons/filter/filter.component';
 import { ApiService } from '../services/api.service';
 import { AuthenticationService } from '../services/auth.service';
 import { StatData, StatDef, StatDefBase } from '../services/models/api';
+import { AnalysisService, AnalysisType } from './analysis/analysis.service';
 
 export interface AnalysisDef {
   getDef(): StatDefBase
@@ -15,15 +16,12 @@ export interface AnalysisChart {
   getChartConfiguration(data: StatData): ChartConfiguration
 }
 
-export enum AnalysisType { TimeSeries = '0', XY = '1', List = '2', Capability = '3' }
-
 @Component({
   selector: 'app-analyses',
   templateUrl: './analyses.component.html',
   styleUrls: ['./analyses.component.scss']
 })
 export class AnalysesComponent implements OnInit, AfterViewInit {
-
   private _filterName: string;
   private _filterModified: string;
   private _filterShared: number;
@@ -43,12 +41,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
   fetching$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   analysesOwn$: BehaviorSubject<StatDef[]> = new BehaviorSubject([]);
   analysesOthers$: BehaviorSubject<StatDef[]> = new BehaviorSubject([]);
-  analysisTypes: string[][] = [
-    [AnalysisType.TimeSeries, $localize `:@@analysis_type_timeseries:idősoros`],
-    [AnalysisType.XY, $localize `:@@analysis_type_xy:xy`],
-    [AnalysisType.List, $localize `:@@analysis_type_list:lista`],
-    [AnalysisType.Capability, $localize `:@@analysis_type_capability:capability`]
-  ]
+  analysisTypes;
 
   access = {
     canCreate: false,
@@ -60,13 +53,16 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     private router: Router,
     private route: ActivatedRoute,
     private cd: ChangeDetectorRef,
-    private authService: AuthenticationService
+    private authService: AuthenticationService,
+    public  analysis: AnalysisService
+    
   ) {
     this.access.canCreate = authService.hasPrivilige("post/stat/def");
     this.access.canRun = authService.hasPrivilige("get/stat/def/{id}");
     this._filterModified = route.snapshot.queryParamMap.get("fm");
     this._filterShared = parseInt(route.snapshot.queryParamMap.get("fs") ?? "-1");
     this._filterType = route.snapshot.queryParamMap.get("ft");
+    this.analysisTypes = analysis.analysisTypes;
   }
 
   ngOnInit(): void {
@@ -108,21 +104,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     this.getAnalyses();
   }
 
-  getAnalaysisType(analysis: StatDef): AnalysisType {
-    return analysis.timeseriesdef ? AnalysisType.TimeSeries :
-      analysis.xydef ? AnalysisType.XY :
-      analysis.listdef ? AnalysisType.List :
-      analysis.capabilitydef ? AnalysisType.Capability :
-      AnalysisType.TimeSeries;
-  }
 
-  getAnalsysTypeDesc(code: AnalysisType): string {
-    var type = this.analysisTypes.find((t) => { return t[0] === code; });
-    if (type)
-      return type[1];
-    else
-      return code;
-  }
 
   getApiAnalysisType(type: AnalysisType): string {
     switch (type) {

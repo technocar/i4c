@@ -1,11 +1,13 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { appendFile } from 'fs';
 import { forkJoin, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AuthenticationService } from './auth.service';
 import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate, AlarmGroup } from './models/api';
 import { DeviceType } from './models/constants';
+import { AnalysisService } from '../analyses/analysis/analysis.service';
 
 export interface LoginResponse {
   user: User
@@ -93,7 +95,8 @@ export class ApiService {
 
   constructor(
     private http: HttpClient,
-    private auth: AuthenticationService
+    private auth: AuthenticationService,
+    private analysis: AnalysisService
   ) {
     this._apiUrl = environment.apiPath;
     console.log(this._apiUrl);
@@ -368,9 +371,9 @@ export class ApiService {
   }
 
   //This method for resolver of analsysis module to download data for selected analysis
-  getAnalysisData(id: string, type: string): Observable<[StatDef, Meta[], string[]]> {
-    return new Observable<[StatDef, Meta[], string[]]>((observer) => {
-      var result: [StatDef, Meta[], string[]] = [undefined, undefined, undefined];
+  getAnalysisData(id: string, type: string, caption: string): Observable<[StatDef, Meta[], string[], string]> {
+    return new Observable<[StatDef, Meta[], string[], string]>((observer) => {
+      var result: [StatDef, Meta[], string[], string] = [undefined, undefined, undefined, undefined];
       var reqs: Observable<any>[] = [];
       reqs.push( this.getCustomers());
       //Get analysis definition...
@@ -378,7 +381,7 @@ export class ApiService {
         result[0] = {
           id: -1,
           modified: (new Date()).toISOString(),
-          name: "új elemzés",
+          name: caption ?? "új elemzés",
           shared: false,
           customer: undefined,
           timeseriesdef: undefined,
@@ -406,6 +409,7 @@ export class ApiService {
           result[2] = results[0];
           var def = results[1];
           result[0] = def;
+          result[3] = this.analysis.getAnalysisTypeDesc(this.analysis.getAnalysisType(def));
           if (def?.timeseriesdef || def?.capabilitydef) {
             //If it's timeseries then gets meta list...
             this.getMeta().subscribe(meta => {
