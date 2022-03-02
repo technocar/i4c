@@ -42,11 +42,11 @@ async def audit_list(
 
         if object is not None:
             params.append(object)
-            wheres.append(f"and (l.data_id like ${len(params)}||'_')")
+            wheres.append(f"and (left(l.data_id, length(${len(params)})+1) = ${len(params)}||'_')")
 
         if action is not None:
             params.append(action)
-            wheres.append(f"and (l.data_id like '_'||${len(params)})")
+            wheres.append(f"and (right(l.data_id, length(${len(params)})+1) = '_'||${len(params)})")
 
         if count is not None:
             limit = f"limit {count}"
