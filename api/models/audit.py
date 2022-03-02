@@ -3,7 +3,7 @@ from datetime import datetime
 from textwrap import dedent
 from typing import Optional, Dict, Any
 from fastapi.security import HTTPBasicCredentials
-from common import I4cBaseModel, DatabaseConnection
+from common import I4cBaseModel, DatabaseConnection, write_debug_sql
 from pydantic import Field
 
 from common.db_tools import asyncpg_rows_process_json
@@ -42,11 +42,11 @@ async def audit_list(
 
         if object is not None:
             params.append(object)
-            wheres.append(f"and (l.data_id like '${len(params)}_')")
+            wheres.append(f"and (l.data_id like ${len(params)}||'_')")
 
         if action is not None:
             params.append(action)
-            wheres.append(f"and (l.data_id like '${len(params)}_')")
+            wheres.append(f"and (l.data_id like '_'||${len(params)})")
 
         if count is not None:
             limit = f"limit {count}"
@@ -67,6 +67,7 @@ async def audit_list(
                 {limit} 
                 """)
         sql = sql.replace("<wheres>", '\n'.join(wheres))
+        write_debug_sql("audit.sql", sql, *params)
         res = await conn.fetch(sql, *params)
         res = asyncpg_rows_process_json(res, 'extra')
 
