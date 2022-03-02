@@ -70,9 +70,14 @@ async def unicorn_exception_handler(request: Request, exc: I4cServerError):
 async def startup_event():
     await common.DatabaseConnection.init_db_pool()
 
+
 if __name__ == "__main__":
     if ("debug" in apicfg) and apicfg["debug"]:
         common.set_debug_mode()
     # http://localhost:5000
     # http://localhost:5000/docs
-    uvicorn.run("api:app", host="127.0.0.1", port=5000, log_level="info")
+    host = apicfg.get("host", "127.0.0.1")
+    port = int(apicfg.get("port", 5000))
+    log_level = apicfg.get("log_level", "info")
+    workers = int(apicfg.get("workers", 1))
+    uvicorn.run(app="api:app", host=host, port=port, log_level=log_level, workers=workers)
