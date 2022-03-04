@@ -592,7 +592,7 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     Example 1
 
     \b
-    echo {"a":{"b":10}} | cli transform --input-format json --input-data @- --input-placement $.x=$.a
+    echo {"a":{"b":10}} | i4c transform --input-format json --input-data @- --input-placement $.x=$.a
 
     {"x":{"b":10}}
 
@@ -605,7 +605,7 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     blue,100,10
     green,200,20
 
-    cli transform --input-data @file.txt --input-format csv.header.rows
+    i4c transform --input-data @file.txt --input-format csv.header.rows
 
     \b
     [{"color":"red", "weight":"100", "price":"10"},
