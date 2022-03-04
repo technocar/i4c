@@ -482,7 +482,7 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     The input formatting works as follows. The base or skeleton of the final
     data structure is given in --body. The format is json. Raw value can be
     given in-place, a file can be referred as @filename, or stdin can be used
-    by specifying @-.
+    by specifying @-. If body is not given, an empty json object will be used.
 
     Data to be processed and inserted is defined in --input-data. It can be
     in-place, or a file reference using @filename or stdin specifying @-.
@@ -566,7 +566,7 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     table -> The file is processed into an array of arrays [row][column].
 
     Once the data is loaded processed, elements of it can be inserted into the
-    body skeleton. The insertion is defined with the --input-place option.
+    body. The insertion is defined with the --input-place option.
     Multiple options can be specified, each will be executed in order. The
     format of the option is:
 
@@ -586,11 +586,13 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     might be surprising if wildcards are used, but there happens to be one
     element. In order to force the result to be an array, use *=.
 
+    If both he place and the path refers to multiple locations, the cardinality
+    must be the same.
+
     Example 1
 
     \b
-    echo {"a":{"b":10}} | cli transform --body {\\"x\\":null}
-      --input-format json --input-data @- --input-placement $.x=$.a
+    echo {"a":{"b":10}} | cli transform --input-format json --input-data @- --input-placement $.x=$.a
 
     {"x":{"b":10}}
 
@@ -609,8 +611,6 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     [{"color":"red", "weight":"100", "price":"10"},
      {"color":"blue", "weight":"100", "price":"10"},
      {"color":"green", "weight":"200", "price":"20"}]
-
-    # TODO consider: if we use wildcard on both sides, what happens
     """
 
     log.debug(f"transform")

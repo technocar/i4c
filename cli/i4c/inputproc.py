@@ -6,6 +6,7 @@ import jsonpath_ng.ext
 import functools
 import datetime
 import logging
+from .tools import I4CException
 from click import ClickException
 
 log = logging.getLogger("i4c")
@@ -318,9 +319,18 @@ def assemble_body(body, input_data, input_format, input_placement):
             else:
                 piece = None
 
-            if placement is not None:
-                placement.update(body, piece)
-            else:
+            if placement is None:
                 body = piece
+            elif isinstance(piece, list):
+                placements = placement.find(body)
+                if len(placements) == len(piece):
+                    for tgt, src in zip(placements, piece):
+                        tgt.full_path.update_or_create(body, src)
+                elif len(placements) == 1:
+                    placement.update_or_create(body, piece)
+                else:
+                    raise I4CException(f"There are {len(piece)} inputs and {len(placements)} placements.")
+            else:
+                placement.update_or_create(body, piece)
 
     return body
