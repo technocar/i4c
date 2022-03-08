@@ -86,7 +86,7 @@ def check_params(paths):
     return result
 
 def get_datetime(source, format):
-    return datetime.datetime.strptime(source, format).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.datetime.strptime(source, format).strftime("%Y-%m-%dT%H:%M:%S")
 
 def process_robot(section):
     log.info("processing ROBOT files")
@@ -372,19 +372,31 @@ def process_ReniShaw(section):
                         api_params["sequence"] += 1
                 if ' FEATURE ' in lines:
                     api_params['value_extra'] = next((v.strip() for v in lines.split('/ ') if v.strip().startswith('FEATURE')), None)
-                if re.match(r"^[a-zA-Z]*/[-0-9.]*/ *ACTUAL/[-0-9.]*.*", lines):
+
+                mo = re.match(r"^(?P<measure2>[a-zA-Z ]*[ /])(?P<others>.*ACTUAL/[-0-9.]*.*)", lines)
+                if mo:
                     if measure is None:
                         log.error(f"Size found but no measure is set at line#{line_no}")
                         continue
-                    measure2 = ""
-                    for idx, values in enumerate(lines.split('/ ')):
-                        (s1, s2) = values.strip().split('/')
-                        api_params["data_id"] = measure + measure2 + "-" + s1 + ("-NOMINAL" if measure2 == "" else "")
+                    measure2 = mo.group("measure2")
+                    if measure2[-1:] == " ":
+                        measure2 = measure2.strip()
+                        ptrn = mo.group("others")
+                    else:
+                        ptrn = measure2 + mo.group("others")
+                        measure2 = measure2[:-1]
+
+                    for idx, values in enumerate((ptrn).split('/ ')):
+                        rslt = values.strip().split('/')
+                        s1, s2 = rslt[0:2]
+                        if s1 == measure2:
+                            s1 = "NOMINAL"
+
+                        api_params["data_id"] = measure + "-" + measure2 + "-" + s1
                         api_params["value_num"] = float(s2)
                         api_params_array.append(copy.deepcopy(api_params))
                         api_params["sequence"] += 1
-                        if idx == 0:
-                            measure2 = "-" + s1
+                    continue
 
                 mo = re.match(r"^ *DATE/(?P<date>.*)/ *TIME/(?P<time>.*)/ *$", lines)
                 if mo:
