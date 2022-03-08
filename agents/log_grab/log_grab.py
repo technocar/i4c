@@ -189,7 +189,7 @@ def process_GOM(section):
     src_path = params["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and any(entry.upper().endswith(ext) for ext in (".CSV", ".ATOS" ".PDF"))]
+             and any(entry.upper().endswith(ext) for ext in (".CSV", ".ATOS", ".PDF"))]
     if len(files) == 0:
         log.debug("no files to load")
         return
