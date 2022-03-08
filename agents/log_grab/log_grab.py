@@ -333,7 +333,7 @@ def process_ReniShaw(section):
     src_path = section["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and entry.upper() == "PRINT.TXT"]
+             and re.match('^print_[0-9]*.txt', entry, re.IGNORECASE)]
 
     if len(files) == 0:
         log.debug("no files to load")
@@ -341,6 +341,9 @@ def process_ReniShaw(section):
 
     for currentfile in files:
         api_params_array = []
+        measure = None
+        measure2 = None
+
         with open(os.path.join(src_path, currentfile)) as srcfile:
             for line_no, lines in enumerate(srcfile):
                 lines = lines.strip()
@@ -350,6 +353,7 @@ def process_ReniShaw(section):
                         api_params_array.clear()
 
                         measure = None
+                        measure2 = None
                         api_params["timestamp"] = None
                         api_params["value_num"] = None
                         api_params["sequence"] = 0
@@ -361,7 +365,7 @@ def process_ReniShaw(section):
                     if measure is None:
                         log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
                         continue
-                    if measure2 == "":
+                    if measure2 is None or measure2 == "":
                         log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
                         continue
                     mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
