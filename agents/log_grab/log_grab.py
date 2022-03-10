@@ -86,7 +86,7 @@ def check_params(paths):
     return result
 
 def get_datetime(source, format):
-    return datetime.datetime.strptime(source, format).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.datetime.strptime(source, format).strftime("%Y-%m-%dT%H:%M:%S")
 
 def process_robot(section):
     log.info("processing ROBOT files")
@@ -189,7 +189,7 @@ def process_GOM(section):
     src_path = params["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and any(entry.upper().endswith(ext) for ext in (".CSV", ".ATOS" ".PDF"))]
+             and any(entry.upper().endswith(ext) for ext in (".CSV", ".ATOS", ".PDF"))]
     if len(files) == 0:
         log.debug("no files to load")
         return
@@ -333,7 +333,7 @@ def process_ReniShaw(section):
     src_path = section["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and entry.upper() == "PRINT.TXT"]
+             and re.match('^print_[0-9]*.txt', entry, re.IGNORECASE)]
 
     if len(files) == 0:
         log.debug("no files to load")
@@ -341,6 +341,9 @@ def process_ReniShaw(section):
 
     for currentfile in files:
         api_params_array = []
+        measure = None
+        measure2 = None
+
         with open(os.path.join(src_path, currentfile)) as srcfile:
             for line_no, lines in enumerate(srcfile):
                 lines = lines.strip()
@@ -350,6 +353,7 @@ def process_ReniShaw(section):
                         api_params_array.clear()
 
                         measure = None
+                        measure2 = None
                         api_params["timestamp"] = None
                         api_params["value_num"] = None
                         api_params["sequence"] = 0
@@ -361,7 +365,7 @@ def process_ReniShaw(section):
                     if measure is None:
                         log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
                         continue
-                    if measure2 == "":
+                    if measure2 is None or measure2 == "":
                         log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
                         continue
                     mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
@@ -372,19 +376,31 @@ def process_ReniShaw(section):
                         api_params["sequence"] += 1
                 if ' FEATURE ' in lines:
                     api_params['value_extra'] = next((v.strip() for v in lines.split('/ ') if v.strip().startswith('FEATURE')), None)
-                if re.match(r"^[a-zA-Z]*/[-0-9.]*/ *ACTUAL/[-0-9.]*.*", lines):
+
+                mo = re.match(r"^(?P<measure2>[a-zA-Z ]*[ /])(?P<others>.*ACTUAL/[-0-9.]*.*)", lines)
+                if mo:
                     if measure is None:
                         log.error(f"Size found but no measure is set at line#{line_no}")
                         continue
-                    measure2 = ""
-                    for idx, values in enumerate(lines.split('/ ')):
-                        (s1, s2) = values.strip().split('/')
-                        api_params["data_id"] = measure + measure2 + "-" + s1 + ("-NOMINAL" if measure2 == "" else "")
+                    measure2 = mo.group("measure2")
+                    if measure2[-1:] == " ":
+                        measure2 = measure2.strip()
+                        ptrn = mo.group("others")
+                    else:
+                        ptrn = measure2 + mo.group("others")
+                        measure2 = measure2[:-1]
+
+                    for idx, values in enumerate((ptrn).split('/ ')):
+                        rslt = values.strip().split('/')
+                        s1, s2 = rslt[0:2]
+                        if s1 == measure2:
+                            s1 = "NOMINAL"
+
+                        api_params["data_id"] = measure + "-" + measure2 + "-" + s1
                         api_params["value_num"] = float(s2)
                         api_params_array.append(copy.deepcopy(api_params))
                         api_params["sequence"] += 1
-                        if idx == 0:
-                            measure2 = "-" + s1
+                    continue
 
                 mo = re.match(r"^ *DATE/(?P<date>.*)/ *TIME/(?P<time>.*)/ *$", lines)
                 if mo:
