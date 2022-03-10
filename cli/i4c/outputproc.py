@@ -32,7 +32,7 @@ def format_time(time, format_str):
 
 
 def make_jinja_env():
-    env = jinja2.Environment()
+    env = jinja2.Environment(block_start_string="{-", block_end_string="-}")
     env.filters["json_dumps"] = json.dumps
     env.filters["jd"] = json.dumps
     env.filters["format_time"] = format_time

@@ -1,3 +1,4 @@
+import logging
 import os
 import yaml
 import json
@@ -11,6 +12,8 @@ import nacl.encoding
 from .apidef import I4CDef, Obj, Action
 from .tools import jsonify, I4CException, jsonbrief
 from urllib.error import HTTPError
+
+log = logging.getLogger("i4c")
 
 
 class I4CServerError(I4CException):
@@ -260,6 +263,7 @@ class I4CConnection:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
 
+        log.debug(f"invoke {method} {url} body:{bool(body)}")
         req = urllib.request.Request(url, data=body, method=method, headers=headers)
         try:
             conn = urllib.request.urlopen(req, context=ctx)
@@ -348,7 +352,7 @@ class I4CConnection:
         dp = p.pop("default") if "default" in p else None
         ps = [{"profile": k,
                "base-url": v.get("base-url", None),
-               "api_def_file": p.get("api-def-file", None),
+               "api-def-file": p.get("api-def-file", None),
                "user": v.get("user", k),
                "password": ("password" in v),
                "public-key": public_key(v.get("private-key", None)),

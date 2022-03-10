@@ -10,7 +10,7 @@ import click.globals
 from .apidef import I4CDef
 from .conn import I4CConnection, HTTPError, I4CException
 from .outputproc import print_table, process_json, make_jinja_env
-from .inputproc import assemble_body
+from .inputproc import process_input
 from .tools import resolve_file, jsonbrief
 from difflib import SequenceMatcher
 
@@ -57,46 +57,54 @@ def callback(ctx, **args):
     method = ep["method"]
     action = ep["action"]
 
+    input_data = args.pop("input_data", None)
+    input_format = args.pop("input_format", None)
+    input_foreach = args.pop("input_foreach", None)
+    input_placement = args.pop("input_placement", None)
+
+    output_file = args.pop("output_file", None)
+    output_expr = args.pop("output_expr", None)
+    output_template = args.pop("output_template", None)
+
+    for p in ("profile", "auth_user", "auth_pwd", "auth_key", "connect_url", "insecure"):
+        args.pop(p, None)
+
+    args = {k: v for (k, v) in args.items() if v is not None}
+
     # process body
     if "body" in args:
         body = args.pop("body")
         body = resolve_file(body)
-
-        if action.body.content_type == "application/json":
-            input_data = args.get("input_data", None)
-            input_format = args.get("input_format", None)
-            input_placement = args.get("input_placement", None)
-            body = assemble_body(body, input_data, input_format, input_placement)
-        if isinstance(body, str):
-            body = body.encode("utf-8")
     else:
         body = None
 
-    if args.get("print_curl", False):
-        raise Exception("Not implemented") # TODO
+    #if action.body.content_type == "application/json": else:             body = [body]             args = [args]
+    args, body = process_input(args, body, input_data, input_format, input_foreach, input_placement)
 
-    response = action.invoke(**args, body=body)
-
-    output_file = args.get("output_file", None)
-    output_expr = args.get("output_expr", None)
-    output_template = args.get("output_template", None)
+    body = [s.encode("utf-8") if isinstance(s, str) else s for s in body]
 
     if action.response and action.response.content_type == "application/json":
+        response = [action.invoke(**a, body=b) for (a, b) in zip(args, body)]
+        if input_foreach is None:
+            response = response[0]
         process_json(response, output_expr, output_file, output_template)
     else:
-        origin_file_name = response.headers.get_filename()
         if output_expr or output_template:
             click.ClickException("Can't apply expression or template to non-json responses")
-        if not output_file:
-            log.debug(f"streaming to stdout")
-            stream_copy(response, sys.stdout.buffer)
-        else:
-            env = make_jinja_env()
-            output_file = env.from_string(output_file)
-            output_file = output_file.render({"origin": origin_file_name})
-            log.debug(f"writing to file {output_file}")
-            with open(output_file, "wb") as f:
-                stream_copy(response, f)
+
+        for args_item, body_item in zip(args, body):
+            response = action.invoke(**args_item, body=body_item)
+            origin_file_name = response.headers.get_filename()
+            if not output_file:
+                log.debug(f"streaming to stdout")
+                stream_copy(response, sys.stdout.buffer)
+            else:
+                env = make_jinja_env()
+                output_file_env = env.from_string(output_file)
+                output_file_n = output_file_env.render({"origin": origin_file_name})
+                log.debug(f"writing to file {output_file_n}")
+                with open(output_file_n, "wb") as f:
+                    stream_copy(response, f)
 
 
 def make_callback(**outer_args):
@@ -170,7 +178,6 @@ def make_commands(conn: I4CConnection):
     api_def = conn.api_def()
 
     for (obj_name, obj) in api_def.objects.items():
-        log.debug(f"make_commands, processing obj {obj_name}")
         if len(obj.actions) == 1:
             grp = top_grp
         else:
@@ -180,13 +187,12 @@ def make_commands(conn: I4CConnection):
             top_grp.add_command(grp)
 
         for (action_name, action) in obj.actions.items():
-            log.debug(f"make_commands, processing action {action_name}")
             params = []
             for param_name, param in action.params.items():
                 param_decl = "--" + param_name.replace("_", "-")
                 attrs = {}
                 attrs["multiple"] = param.is_array
-                attrs["required"] = param.required
+                # attrs["required"] = param.required ::: can't be required if we allow $param.
                 if param.type == "integer":
                     attrs["type"] = click.INT
                 elif param.type == "number":
@@ -201,37 +207,48 @@ def make_commands(conn: I4CConnection):
 
                 paramhelp = param.description or param.title
                 paramhelp = paramhelp or (param_name.replace("_", " ").capitalize() + "." +
-                                (" Multiple values allowed." if param.is_array else ""))
+                                (" Multiple values allowed." if param.is_array else "") +
+                                (" Required." if param.required else ""))
                 attrs["help"] = paramhelp
 
                 params.append(click.Option((param_decl,), **attrs))
 
+                param_decl = param_name.replace("_", "-")
+                params.append(click.Option(("--$" + param_decl, "__" + param_name), hidden=True))
+
+
             if action.body:
                 attrs = {}
-                attrs["required"] = action.body.required
+                # attrs["required"] = action.body.required
 
                 helpstr = ""
                 if action.body.sch_obj:
-                    helpstr = f"Use the `doc {action.body.sch_obj}` command to get the definition. "
+                    helpstr = f"A list of {action.body.sch_obj} objects. " if action.body.is_array else ""
+                    helpstr = helpstr + f"Use the `doc {action.body.sch_obj}` command to get the definition. "
                 helpstr = helpstr + "Use @filename to read from a file, or @- to read from stdin."
                 attrs["help"] = helpstr
 
                 params.append(click.Option(("--body",), **attrs))
 
-                params.append(click.Option(("--input-data",),
-                    help="The data which will be processed and inserted to the body according to the other "
-                         "--input-* options. Use @filename to read from a file, or @- to read from stdin."))
+            params.append(click.Option(("--input-data",),
+                help="The data which will be processed and inserted to the body according to the other "
+                     "--input-* options. Use @filename to read from a file, or @- to read from stdin."))
 
-                params.append(click.Option(("--input-placement",), multiple=True,
-                    help="Specifies where the input should be placed into the body, and optionally what part of the "
-                         "input. If only a <jsonpath> is given, the input will be written at that location. If "
-                         "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
-                         "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1]."))
+            params.append(click.Option(("--input-placement",), multiple=True,
+                help="Specifies where the input should be placed into the body, and optionally what part of the "
+                     "input. If only a <jsonpath> is given, the input will be written at that location. If "
+                     "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
+                     "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1]."))
 
-                params.append(click.Option(("--input-format",), multiple=True,
-                    help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
-                         "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
-                         "For a detailed explanation on data input and transformations, see the transform command."))
+            params.append(click.Option(("--input-format",), multiple=True,
+                help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
+                     "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
+                     "For a detailed explanation on data input and transformations, see the transform command."))
+
+            params.append(click.Option(("--input-foreach",),
+                help="A jsonpath expression that splits the input data. The command will be executed with each "
+                     "item separately. If data is returned, it will be collected to a list. If this parameter is "
+                     "given, the --input-placement parameter refers to an item."))
 
             if action.authentication == "basic":
                 params.append(click.Option(("--auth-user",), help="User name for authentication."))
@@ -465,13 +482,17 @@ def doc(ctx, schema, raw, profile, connect_url, insecure, output_expr, output_fi
 @click.option("--input-format", multiple=True, help=
     "Specifies a format attribute. If omitted, the format will be derived from the file extension. "
     "Attributes are separated by `.`, or you can specify multiple options, which will be combined.")
+@click.option("--input-foreach", help=
+    "A jsonpath expression that splits the input data. The command will be executed with each item separately. "
+    "If data is returned, it will be collected to a list. If this parameter is given, the --input-placement "
+    "parameter refers to an item.")
 @click.option("--input-placement", multiple=True, help=
     "Specifies where the input should be placed into the body, and optionally what part of the "
     "input. If only a <jsonpath> is given, the input will be written at that location. If "
     "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
     "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1].")
 @json_options
-def transform(body, input_data, input_format, input_placement, output_expr, output_file, output_template):
+def transform(body, input_data, input_format, input_foreach,  input_placement, output_expr, output_file, output_template):
     """
     Short circuited data input-output command. Data will be read and processed
     the same way as for all commands with a --body option. Then the assembled
@@ -565,8 +586,18 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     column1 -> The first column of each row is collected to an array.
     table -> The file is processed into an array of arrays [row][column].
 
-    Once the data is loaded processed, elements of it can be inserted into the
-    body. The insertion is defined with the --input-place option.
+    \b
+    The loaded data can be split into multiple items, and the API endpoint can
+    be called for each one of them. This is achieved by the --input-foreach
+    parameter, which takes a jsonpath. Beware that if the parameter is used,
+    the command behaves differently even if the expression is single valued.
+    If the foreach parameter is given, the result will be a list with the same
+    item type as the result of the endpoint. That is, if the endpoint returns
+    with User, this parameter will return User[].
+
+    \b
+    Once the data is loaded, processed, and split, elements of it can be inserted
+    into the body. The insertion is defined with the --input-place option.
     Multiple options can be specified, each will be executed in order. The
     format of the option is:
 
@@ -616,9 +647,11 @@ def transform(body, input_data, input_format, input_placement, output_expr, outp
     log.debug(f"transform")
     try:
         body = resolve_file(body)
-        data = assemble_body(body, input_data, input_format, input_placement)
+        _, data = process_input({}, body, input_data, input_format, input_foreach, input_placement)
     except Exception as e:
         raise click.ClickException(f"{e}")
+    if input_foreach is None:
+        data = data[0]
     process_json(data, output_expr, output_file, output_template)
 
 
@@ -627,6 +660,7 @@ def read_log_cfg():
         with open("logconfig.yaml") as f:
             cfg = yaml.load(f, Loader=yaml.FullLoader)
             logging.config.dictConfig(cfg)
+
 
 try:
     read_log_cfg()
@@ -650,6 +684,7 @@ try:
                                insecure=insecure)
 
     try:
+        log.debug("making commands")
         make_commands(connection)
     except Exception as e:
         click.echo(f"Error analysing the API definition. Only local commands are available. {e}")
