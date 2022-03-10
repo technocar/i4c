@@ -1,0 +1,4 @@
+[
+  {"savepath":"gom/A7080_1129.py", "file_unc":{"//karatnetsrv/Karatnet/machinestuff/project/A7080/1/gom/A7080_1129.py"}},
+  {"savepath":"gom/A7080_1129.project_template", "file_unc":{"//karatnetsrv/Karatnet/machinestuff/project/A7080/1/gom/A7080_1129.project_template"}}
+]

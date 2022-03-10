@@ -1,0 +1,4 @@
+id	nev	email	role
+ab	Almási Bálint	ab@example.com	power_user
+bc	Baló Cecília	bc@example.com	power_user
+cd	Czakó Dénes	cd@example.com	power_user
