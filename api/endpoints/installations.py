@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import Depends, Query, Path, Body
 from fastapi.security import HTTPBasicCredentials
+from fastapi.responses import FileResponse
 from starlette.requests import Request
 import models.installations
 import common
@@ -63,7 +64,8 @@ async def patch_installation(
     return await models.installations.patch_installation(credentials, id, patch)
 
 
-@router.get("/{id}/{savepath:path}", operation_id="installation_file", summary="Download a file.")
+@router.get("/{id}/{savepath:path}", response_class=FileResponse(..., media_type="application/octet-stream"),
+            operation_id="installation_file", summary="Download a file.")
 async def installation_get_file(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/installations/{id}/{savepath:path}")),
