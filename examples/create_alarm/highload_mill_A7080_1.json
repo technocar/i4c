@@ -1,0 +1,9 @@
+{
+  "conditions": [
+    {"event":{"device":"mill", "data_id":"spgm", "value":"A7080_step1", "age_min":10.5, "age_max":55}},
+    {"event":{"device":"mill", "data_id":"exec", "value":"ACTIVE"}},
+    {"sample":{"device":"mill", "data_id":"xl", "aggregate_count":5, "aggregate_method":"avg", "rel":">", "value":85}}
+  ],
+  "max_freq": 120,
+  "subsgroup": "machinist"
+}
