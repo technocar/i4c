@@ -227,7 +227,7 @@ class AlarmSubIn(I4cBaseModel):
     method: AlarmMethod = Field(..., title="Notification method.")
     address: Optional[str] = Field(None, title="Address")
     address_name: Optional[str] = Field(None, title="Address description.")
-    status: CommonStatusEnum = Field(..., title="Status.")
+    status: Optional[CommonStatusEnum] = Field(CommonStatusEnum.active, title="Status.")
 
 
 class AlarmSub(AlarmSubIn):
