@@ -60,9 +60,10 @@ class AlarmCondSample(I4cBaseModel):
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Data type.")
     aggregate_period: Optional[float] = Field(None, title="Aggregation period, seconds.")
-    aggregate_count: Optional[int] = Field(..., title="Aggregation, number of samples.")
-    aggregate_method: AlarmCondSampleAggMethod = Field(..., title="Aggregation function.")
-    rel: AlarmCondSampleRel = Field(..., title="Relation.")
+    aggregate_count: Optional[int] = Field(None, title="Aggregation, number of samples.")
+    aggregate_method: Optional[AlarmCondSampleAggMethod] = Field(AlarmCondSampleAggMethod.avg,
+                                                                 title="Aggregation function.")
+    rel: Optional[AlarmCondSampleRel] = Field(AlarmCondSampleRel.eq, title="Relation.")
     value: float = Field(..., title="Value.")
 
     def __eq__(self, other):
@@ -107,7 +108,7 @@ class AlarmCondEvent(I4cBaseModel):
     """Alarm condition for events."""
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Data type.")
-    rel: CondEventRel = Field(..., title="Relation")
+    rel: Optional[CondEventRel] = Field(CondEventRel.eq, title="Relation")
     value: str = Field(..., title="Value.")
     age_min: Optional[float] = Field(None, title="Value persists for minimum, seconds.")
     age_max: Optional[float] = Field(None, title="Value persists for maximum, seconds.")
