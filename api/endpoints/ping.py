@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from typing import Optional, Dict, Any
 from fastapi import Depends, Query, Body, HTTPException
@@ -6,7 +7,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 import common
 from I4cAPI import I4cApiRouter
-from common import CredentialsAndFeatures
+from common import CredentialsAndFeatures, DatabaseConnection
 from common.auth import check_signature
 
 router = I4cApiRouter(include_path="/ping")
@@ -20,8 +21,11 @@ class Pong(BaseModel):
             summary="Test API availability.")
 async def noop_get(
         request: Request,
-        data: Optional[str] = Query(None, title="Will be given back in the response")):
+        data: Optional[str] = Query(None, title="Will be given back in the response"),
+        wait: Optional[float] = Query(None, title="Only return after this many seconds")):
     """Test API availability."""
+    if wait is not None:
+        await asyncio.sleep(wait)
     return {"data": data}
 
 
@@ -81,6 +85,10 @@ async def sign_get(
 async def db_get(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/ping/db")),
-        data: Optional[str] = Query(None, title="Will be given back in the response")):
+        data: Optional[str] = Query(None, title="Will be given back in the response"),
+        wait: Optional[float] = Query(None, title="Only return after this many seconds")):
     """Test real authentication and backend database access."""
-    return {"data": data}
+    async with DatabaseConnection() as conn:
+        reply = await conn.fetchval("select $1::varchar from pg_sleep($2::double precision)", data, wait)
+
+    return {"data": reply}
