@@ -1,4 +1,5 @@
 import functools
+import asyncio
 from datetime import datetime
 from typing import List
 from fastapi import APIRouter
@@ -63,7 +64,29 @@ class I4cApiRouter(APIRouter):
                             await put_log_write(None, [d])
                         except Exception as e:
                             raise I4cClientError(f"Error while logging: {e}")
-                return await f(*a, **b)
+
+                async def poll():
+                    try:
+                        while not await b["request"].is_disconnected():
+                            await asyncio.sleep(1)
+                    except asyncio.CancelledError:
+                        pass
+
+                poller_task = asyncio.ensure_future(poll())
+                main_task = asyncio.ensure_future(f(*a, **b))
+
+                _, pending = await asyncio.wait([poller_task, main_task], return_when = asyncio.FIRST_COMPLETED)
+
+                if main_task in pending:
+                    log.info("client disconnect, aborting")
+                for t in pending:
+                    t.cancel()
+                    try:
+                        await t
+                    except asyncio.CancelledError:
+                        pass
+
+                return await main_task
             return func(log_result)
         return log_decorator
 

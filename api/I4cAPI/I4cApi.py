@@ -1,61 +1,6 @@
 import re
-
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI
 from .I4cApiRouter import I4cApiRouter
-from typing import Awaitable, TypeVar
-import asyncio
-
-T = TypeVar("T")
-
-
-class CancelOnDisconnect:
-    """
-    Dependency that can be used to wrap a coroutine,
-    to cancel it if the request disconnects
-    """
-
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    async def _poll(self):
-        """
-        Poll for a disconnect.
-        If the request disconnects, stop polling and return.
-        """
-        try:
-            while not await self.request.is_disconnected():
-                await asyncio.sleep(1)
-        except asyncio.CancelledError:
-            pass
-
-    async def __call__(self, awaitable: Awaitable[T]) -> T:
-        """Run the awaitable and cancel it if the request disconnects"""
-
-        # Create two tasks, one to poll the request and check if the
-        # client disconnected, and another which wraps the awaitable
-        poller_task = asyncio.ensure_future(self._poll())
-        main_task = asyncio.ensure_future(awaitable)
-
-        _, pending = await asyncio.wait(
-            [poller_task, main_task], return_when=asyncio.FIRST_COMPLETED
-        )
-
-        # Cancel any outstanding tasks
-        for t in pending:
-            t.cancel()
-
-            try:
-                await t
-            except asyncio.CancelledError:
-                pass  # print(f"{t} was cancelled")
-            except Exception as exc:
-                pass  # print(f"{t} raised {exc} when being cancelled")
-
-        # This will:
-        # - Raise asyncio.CancelledError if the handler was cancelled
-        # - Return the value if it ran to completion
-        # - Raise any other stored exception, if the task raised it
-        return await main_task
 
 
 class I4cApi(FastAPI):
