@@ -86,7 +86,7 @@ async def db_get(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/ping/db")),
         data: Optional[str] = Query(None, title="Will be given back in the response"),
-        wait: Optional[float] = Query(None, title="Only return after this many seconds")):
+        wait: Optional[float] = Query(0, title="Only return after this many seconds")):
     """Test real authentication and backend database access."""
     async with DatabaseConnection() as conn:
         reply = await conn.fetchval("select $1::varchar from pg_sleep($2::double precision)", data, wait)
