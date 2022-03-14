@@ -157,6 +157,11 @@ def format_attrs(s, default: InputFormat = None):
                 f.tabular_type = "sep"
                 f.sep = "none"
                 f.table_fmt = "column1"
+            elif e == "list":
+                f.fmt = "tabular"
+                f.tabular_type = "sep"
+                f.sep = "comma"
+                f.table_fmt = "row1"
             elif e == "sep" or e == "fix":
                 f.fmt = "tabular"
                 f.tabular_type = e
@@ -313,7 +318,7 @@ def process_input(args, body, input_data, input_format, input_foreach, input_pla
             ext = input_data
     else:
         ext = None
-        
+
     if not input_placement and input_data:
         input_placement = ["$"]
 

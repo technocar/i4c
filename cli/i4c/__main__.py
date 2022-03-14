@@ -533,6 +533,7 @@ def transform(body, input_data, input_format, input_foreach,  input_placement, o
     txt -> shorthand for sep.tab
     fix -> fixed width tabular text file
     lines -> shorthand for sep.none.column1
+    list -> shorthand for sep.comma.row1
     json -> json
     xml -> xml
     str -> a single string value
