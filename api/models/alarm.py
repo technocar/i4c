@@ -143,6 +143,8 @@ class AlarmCondCondition(I4cBaseModel):
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Condition type.")
     value: str = Field(..., title="Value. Normal, Fault or Warning.")
+      # TODO should not be str but enum
+      # TODO new value: Abnormal
     age_min: Optional[float] = Field(None, title="Active at least since, seconds")
 
     def __eq__(self, other):
@@ -173,13 +175,12 @@ class AlarmCond(I4cBaseModel):
 
     @root_validator
     def check_exclusive(cls, values):
-        x = 1 if values.get('sample') is not None else 0
-        x += 1 if values.get('event') is not None else 0
-        x += 1 if values.get('condition') is not None else 0
-        if x > 1:
-            raise I4cInputValidationError('sample, event, and condition are exclusive')
-        if x == 0:
-            raise I4cInputValidationError('sample, event, or condition are required')
+        nones = tuple(values.get(s) for s in ('sample', 'event', 'condition')).count(None)
+        cnt = len(values) - nones
+        if cnt > 1:
+            raise I4cInputValidationError('Sample, event, and condition are exclusive.')
+        if cnt == 0:
+            raise I4cInputValidationError('Sample, event, or condition is required.')
         return values
 
     def __eq__(self, other):
@@ -314,31 +315,32 @@ class AlarmSubPatchChange(I4cBaseModel):
 
 class AlarmSubPatchBody(I4cBaseModel):
     """Used for alarm subscriber update. If all conditions are met, the changes will be carried out."""
-    conditions: List[AlarmSubPatchCondition]
-    change: AlarmSubPatchChange
+    conditions: Optional[List[AlarmSubPatchCondition]] = Field([], title="List of conditions to check before the update.")
+    change: AlarmSubPatchChange = Field(..., title="The changes to do.")
 
 
 class SubsGroups(I4cBaseModel):
     """Subscription group with member users."""
     name: str
-    users: List[str] = Field([])
+    users: Optional[List[str]] = Field([])
 
 
 class SubsGroupsIn(I4cBaseModel):
     """Subscription group with member users. Without name."""
-    users: List[str] = Field([])
+    users: List[str] = Field(...)
 
 
 class SubsGroupsUser(I4cBaseModel):
     """Subscription groups belonging to a user."""
     user: str
-    groups: List[str] = Field([])
+    groups: Optional[List[str]] = Field([])
 
 
 class AlarmEventCheckResult(I4cBaseModel):
     """Returned by alarm event check. Represents an alarm that was triggered."""
     alarm: str = Field(..., title="Triggered alarm")
     alarmevent_count: Optional[int] = Field(None, title="Number of created events for the alarm.")
+      # TODO why is it optional?
 
 
 class AlarmRecipientStatus(str, Enum):
@@ -375,7 +377,7 @@ class AlarmRecip(I4cBaseModel):
     address: Optional[str] = Field(None, title="Recipient's address.")
     address_name: Optional[str] = Field(None, title="Description of the recipient's address.")
     fail_count: int = Field(..., title="Number of failed sending attempts.")
-    backoff_until: Optional[datetime] = Field(None, title="Retry wait timestamp")
+    backoff_until: Optional[datetime] = Field(None, title="Retry wait until timestamp.")
 
 
 class AlarmRecipPatchCondition(I4cBaseModel):
@@ -422,7 +424,7 @@ class AlarmRecipPatchChange(I4cBaseModel):
 
 class AlarmRecipPatchBody(I4cBaseModel):
     """Change to an alarm recipient. If all conditions are met, the change is carried out."""
-    conditions: List[AlarmRecipPatchCondition] = Field(..., title="Conditions evaluated before the change.")
+    conditions: Optional[List[AlarmRecipPatchCondition]] = Field([], title="Conditions evaluated before the change.")
     change: AlarmRecipPatchChange = Field(..., title="Requested changes.")
 
 
@@ -661,11 +663,11 @@ async def alarmdef_list(credentials, name_mask, report_after,
 async def subsgroupsusage_list(credentials, user, *, pconn=None):
     sql = dedent("""\
             select "user", array_agg("group") as groups
-            from alarm_subsgroup_map 
-            where 
+            from alarm_subsgroup_map
+            where
               ("user" = $1 or $1 is null)
               and ("user" = $2 or $2 is null)
-            group by "user" 
+            group by "user"
             """)
     async with DatabaseConnection(pconn) as conn:
         self_filter = None
@@ -681,11 +683,11 @@ async def subsgroup_members(credentials, user=None, group=None, *, pconn=None):
     sql = dedent("""\
             with
               p as (select
-                      $1::varchar(200) -- */ '1'::varchar(200) 
+                      $1::varchar(200) -- */ '1'::varchar(200)
                           as user,
                       $2::varchar(200) -- */ 'grpxxx'::varchar(200)
                           as group
-                   ), 
+                   ),
               gm as (
                   select g."group", array_agg(g."user") as "users"
                   from alarm_subsgroup_map g
@@ -693,8 +695,8 @@ async def subsgroup_members(credentials, user=None, group=None, *, pconn=None):
                   where p.user is null or p.user = g.user
                   group by g."group"
               )
-            select 
-              g."group" as "name", 
+            select
+              g."group" as "name",
               coalesce(gm."users", array[]::varchar[]) "users"
             from alarm_subsgroup g
             cross join p
@@ -1007,7 +1009,7 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                                             "and \"status\" = 'active'", row_alarm["subsgroup"])
                     for sub in subs:
                         sql_r = dedent("""\
-                                   insert into alarm_recipient (event, "user", method, address, address_name, "status") 
+                                   insert into alarm_recipient (event, "user", method, address, address_name, "status")
                                    values ($1, $2, $3, $4, $5, $6)""")
                         await conn.execute(sql_r, alarm_event_id, sub["user"], sub["method"],
                                            sub["address"], sub["address_name"], AlarmRecipientStatus.outbox)

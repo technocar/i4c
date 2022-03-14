@@ -48,7 +48,7 @@ async def alarmdef_list(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs")),
     name_mask: Optional[List[str]] = Query(None, title="Search phrase for the name."),
-    report_after: Optional[datetime] = Query(None, title="timestamp", description="eg.: 2021-08-15T15:53:11.123456Z"),
+    report_after: Optional[datetime] = Query(None, title="Occured after this time."),
     subs_status: Optional[CommonStatusEnum] = Query(None, title="Has a subscriber with the status."),
     subs_method: Optional[models.alarm.AlarmMethod] = Query(None, title="Has a subscriber via this method."),
     subs_address: Optional[str] = Query(None, title="Has a subscriber with this exact address."),
@@ -56,7 +56,7 @@ async def alarmdef_list(
     subs_user: Optional[str] = Query(None, title="User subscribing."),
     subs_user_mask: Optional[List[str]] = Query(None, title="Search expression for a subscriber user name.")
 ):
-    """List alarm definitions."""
+    """List alarm definitions. Subs filters must be all satisfied by the same subscriber."""
     return await models.alarm.alarmdef_list(credentials, name_mask, report_after,
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
@@ -96,26 +96,26 @@ async def subsgroup_members_list(
 
 
 @router.put("/subsgroups/{name}", response_model=models.alarm.SubsGroups, operation_id="alarm_subsgroup_set",
-            summary="Update alarm subgroup member definition.")
+            summary="Update alarm subs group member definition.")
 async def subsgroup_members_put(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/alarm/subsgroups/{name}")),
     name: str = Path(..., title="Identifier name."),
     sub_groups_in: models.alarm.SubsGroupsIn = Body(...),
 ):
-    """Update alarm subgroup member definition."""
+    """Update alarm subscription group's member definition."""
     return await models.alarm.subsgroup_members_put(credentials, name, sub_groups_in)
 
 
 @router.delete("/subsgroups/{name}", status_code=204, response_class=Response, operation_id="alarm_subsgroup_delete",
-               summary="Delete alarm subgroup.")
+               summary="Delete alarm subs group.")
 async def subsgroup_delete(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/alarm/subsgroups/{name}")),
     name: str = Path(..., title="Group name."),
     forced: Optional[bool] = Query(False, title="Delete group with members, but groups used in alarms cannot be deleted")
 ):
-    """Delete alarm subgroup."""
+    """Delete alarm subscription group."""
     await models.alarm.subsgroup_delete(credentials, name, forced)
 
 
@@ -135,7 +135,7 @@ async def alarmsub_list(
         address: Optional[str] = Query(None, title="Exact address."),
         address_mask: Optional[List[str]] = Query(None, title="Search phrase for address."),
         alarm: Optional[str] = Query(None, title="Subscribes to this alarm.")):
-    """Get the list of subscribers"""
+    """Get a list of alarm subscribers."""
     return await models.alarm.alarmsub_list(credentials, id, group, group_mask, user, user_name, user_name_mask,
                                             method, status, address, address_mask, alarm)
 
@@ -186,14 +186,9 @@ async def check_alarmevent(
     credentials: HTTPBasicCredentials = Depends(common.security_checker("post/alarm/events/check", ask_features=['noaudit'])),
     alarm: Optional[str] = Query(None, title="Only check this alarm."),
     max_count: Optional[int] = Query(None, title="Stop after creating this many events."),
-    noaudit: bool = Query(False, title="Don't write audit record. Requires special privilege.")
+    noaudit: Optional[bool] = Query(False, title="Don't write audit record. Requires special privilege.")
 ):
     """Check alarms and create events if an alarm state is detected."""
-    def hun_tz(dt):
-        tz = pytz.timezone("Europe/Budapest")
-        return tz.localize(dt)
-
-    # return await models.alarm.check_alarmevent(credentials, alarm, max_count, override_last_check=hun_tz(datetime(2021,10,27,13,21)), override_now=hun_tz(datetime(2021,10,27,13,30)))
     return await models.alarm.check_alarmevent(credentials, alarm, max_count)
 
 
@@ -225,7 +220,7 @@ async def alarmevent_get(
     res = await models.alarm.alarmevent_list(credentials, id=id)
     if len(res) > 0:
         return res[0]
-    raise I4cClientNotFound("No record found")
+    raise I4cClientNotFound("Alarm not found")
 
 
 @router.get("/recips", response_model=List[models.alarm.AlarmRecip], operation_id="alarm_recips",
@@ -233,10 +228,10 @@ async def alarmevent_get(
 async def alarmrecips_list(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/recips", ask_features=['noaudit'])),
-        id: Optional[int] = Query(None),
+        id: Optional[int] = Query(None, title="The recipient's identifier."),
         alarm: Optional[str] = Query(None, title="Exact alarm name."),
         alarm_mask: Optional[List[str]] = Query(None, title="Alarm name search expression."),
-        event: Optional[int] = Query(None, title="Event id."),
+        event: Optional[int] = Query(None, title="Event identifier."),
         user: Optional[str] = Query(None, title="User identifier."),
         user_name: Optional[str] = Query(None, title="Exact user name."),
         user_name_mask: Optional[List[str]] = Query(None, title="User name search expression."),
@@ -246,7 +241,7 @@ async def alarmrecips_list(
         no_backoff: bool = Query(False, title="Hide backoffs"),
         noaudit: bool = Query(False, title="Don't write audit record. Requires special privilege.")
 ):
-    """List the recipients of an alarm event."""
+    """List the recipients of alarm events."""
     return await models.alarm.alarmrecips_list(credentials, id, alarm, alarm_mask, event,
                                                user, user_name, user_name_mask, user_status, method, status, no_backoff)
 
