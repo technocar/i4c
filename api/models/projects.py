@@ -58,7 +58,7 @@ class ProjectPatchBody(I4cBaseModel):
 class ProjectIn(I4cBaseModel):
     """Collection of programs needed for machining a product. Input."""
     name: str
-    status: ProjectStatusEnum = Field("active")
+    status: Optional[ProjectStatusEnum] = Field("active")
     extra: Optional[Dict[str,str]]
 
 
@@ -244,10 +244,10 @@ async def get_projects(credentials, name=None, name_mask=None, status=None, file
                 <versions_only>
                 group by v.project),
             res as (
-                select 
-                  p.name, 
-                  p.status, 
-                  coalesce(array_cat(pv.versions, pl.versions), ARRAY[]::character varying (200)[]) as versions, 
+                select
+                  p.name,
+                  p.status,
+                  coalesce(array_cat(pv.versions, pl.versions), ARRAY[]::character varying (200)[]) as versions,
                   p.extra
                 from projects p
                 left join pv on pv.project = p.name
@@ -288,9 +288,9 @@ async def new_project(credentials, project: ProjectIn):
         raise I4cClientError("Project name is not unique")
 
     sql_insert_project = dedent("""\
-         insert into projects 
-           (name, "status", "extra") 
-         values 
+         insert into projects
+           (name, "status", "extra")
+         values
            ($1, $2, $3)""")
     if project.status is None:
         project.status = ProjectStatusEnum.active
@@ -342,15 +342,15 @@ async def patch_project(credentials, name, patch: ProjectPatchBody):
 
 async def get_proj_file(project_ver, savepath, *, pconn=None):
     sql = dedent("""\
-            select 
+            select
               file_git.id as git_id,
               file_git.repo as git_repo,
               file_git.name as git_name,
               file_git.commit as git_commit,
-              
+
               file_unc.id as unc_id,
               file_unc.name as unc_name,
-              
+
               file_int.id as int_id,
               file_int.name as int_name,
               file_int.ver as int_ver
@@ -388,11 +388,11 @@ async def get_projects_version(credentials, project, ver, *, pconn=None):
                 from project_file pf
                 group by pf.project_ver
                 )
-            select 
-              pv.id as project_ver, 
-              pv.ver, 
-              coalesce(pl.labels, array[]::varchar[]) labels, 
-              pv.status, 
+            select
+              pv.id as project_ver,
+              pv.ver,
+              coalesce(pl.labels, array[]::varchar[]) labels,
+              pv.status,
               coalesce(rf.files, array[]::varchar[]) files
             from project_version pv
             left join pl on pl.project = pv.project and pl.ver = pv.ver
@@ -467,7 +467,7 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
             if patch.change.clear_label:
                 sql = dedent("""\
                     delete from project_label
-                    where 
+                    where
                       project_ver = $1
                       and label = $2
                 """)
@@ -476,25 +476,25 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
 
             if patch.change.set_label:
                 sql_check = dedent("""\
-                    select pv.id as project_ver 
+                    select pv.id as project_ver
                     from project_label pl
                     join project_version pv on pv.id = pl.project_ver
-                    where 
+                    where
                       pv.project = $1
                       and label = $2
                 """)
                 sql_insert = dedent("""\
-                    insert into project_label 
-                       (project_ver, label) 
-                    values 
+                    insert into project_label
+                       (project_ver, label)
+                    values
                        ($1, $2)
                 """)
                 sql_update = dedent("""\
                     update project_label
                     set project_ver = $1
-                    where 
+                    where
                       project_ver = $2
-                      and label = $3 
+                      and label = $3
                 """)
                 for l in patch.change.set_label:
                     res_chec = await conn.fetch(sql_check, project_name, l)
@@ -512,7 +512,7 @@ async def patch_project_version(credentials, project_name, ver, patch: ProjectVe
                 # todo: delete data from extension tables (file_git, file_unc)?
                 sql = dedent("""\
                     delete from project_file
-                    where 
+                    where
                       project_ver = $1
                       and savepath = $2
                 """)
@@ -538,7 +538,7 @@ async def files_list(credentials, proj_name, projver, save_path, save_path_mask,
     sql = dedent("""\
             with
                 res as (
-                    SELECT 
+                    SELECT
                       pv.project as proj_name,
                       pv.ver as proj_ver,
                       pf.savepath as save_path,
@@ -549,25 +549,25 @@ async def files_list(credentials, proj_name, projver, save_path, save_path_mask,
                       fg.repo,
                       fg.commit,
                       fi.ver as filever,
-                      
+
                       fg.id as git_id,
                       fg.repo as git_repo,
                       fg.name as git_name,
                       fg.commit as git_commit,
-                    
+
                       fu.id as unc_id,
                       fu.name as unc_name,
-                    
+
                       fi.id as int_id,
                       fi.name as int_name,
-                      fi.ver as int_ver  
+                      fi.ver as int_ver
                     from project_file pf
                     join project_version pv on pv.id = pf.project_ver
                     left join file_git fg on fg.id = pf.file_git
                     left join file_int fi on fi.id = pf.file_int
                     left join file_unc fu on fu.id = pf.file_unc
                 )
-            select * 
+            select *
             from res
             where True
           """)
@@ -625,8 +625,8 @@ async def get_real_project_version(project, version, *, pconn=None):
         select v.ver
         from project_version v
         join project_label l on l.project_ver = v.id
-        where 
-          v.project = $1 
+        where
+          v.project = $1
           and l.label = $2
         """)
     sql_project_version_last = dedent("""\
