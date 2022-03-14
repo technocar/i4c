@@ -1,7 +1,7 @@
 from datetime import datetime, date, timedelta
 from enum import Enum
 from textwrap import dedent
-from typing import Optional
+from typing import Optional, List
 from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 import models.log
@@ -16,7 +16,7 @@ class ToolsPatchChange(I4cBaseModel):
         return self.type is None
 
 
-class ToolsPatchCondition(I4cBasedModel):
+class ToolsPatchCondition(I4cBaseModel):
     type: Optional[List[str]] = Field(None, title="If the status is any of these.")
 
 
