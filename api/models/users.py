@@ -35,6 +35,19 @@ class UserWithPrivs(User):
     privs: List[Priv]
 
 
+class UserPatchConditions(I4cBaseModel):
+    """A condition to check before a change to a User."""
+    flipped: Optional[bool] = Field(False, title="Pass if the condition is not met.")
+    has_password: Optional[bool] = Field(None, title="Has a password.")
+    has_key: Optional[bool] = Field(None, title="Has a public key.")
+    public_key: Optional[str] = Field(None, title="Has the public key.")
+    statuses: Optional[List[UserStatusEnum]] = Field(None, title="Any of the statuses.")
+    email: Optional[str] = Field(None, title="Has the email address.")
+    has_email: Optional[bool] = Field(None, title="Has an email.")
+    is_customer: Optional[bool] = Field(None, title="Belongs to a customer.")
+    customer: Optional[str] = Field(None, title="Customer identifier.")
+
+
 class UserPatchChange(I4cBaseModel):
     """Change in a user update."""
     password: Optional[str] = Field(None, title="Set password.")
@@ -42,7 +55,7 @@ class UserPatchChange(I4cBaseModel):
     public_key: Optional[str] = Field(None, title="Public key.")
     del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")
     status: Optional[UserStatusEnum] = Field(None, title="Set status.")
-    customer: Optional[str] = Field(None, nullable=True, title="Set customer.")
+    customer: Optional[str] = Field(None, nullable=True, title="Set customer identifier.")
     email: Optional[str] = Field(None, nullable=True, title="Set email.")
 
     @root_validator
@@ -63,7 +76,9 @@ class UserPatchChange(I4cBaseModel):
 
 class UserPatchBody(I4cBaseModel):
     """Update to a user."""
-    change: UserPatchChange
+    conditions: Optional[List[UserPatchConditions]] = Field([], title="Conditions to check before the change.")
+    # TODO implement conditions
+    change: UserPatchChange = Field(..., title="The change to be carried out.")
 
 
 def user_from_row(row):
