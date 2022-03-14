@@ -16,8 +16,14 @@ class ToolsPatchChange(I4cBaseModel):
         return self.type is None
 
 
+class ToolsPatchCondition(I4cBasedModel):
+    type: Optional[List[str]] = Field(None, title="If the status is any of these.")
+
+
 class ToolsPatchBody(I4cBaseModel):
     """Update to a tool. Check conditions, and if all checks out, carry out the change."""
+    conditions: Optional[List[ToolsPatchCondition]] = Field([], title="Conditions to check before the change.")
+      # TODO implement conditions
     change: ToolsPatchChange = Field(..., title="Change to be carried out.")
 
 

@@ -46,6 +46,19 @@ async def tools_log_delete(
     await models.log.delete_log(credentials, d)
 
 
+@router.get("", response_model=List[models.tools.ToolDataPointWithType], operation_id="tool_list",
+            summary="List tool changes.")
+async def tool_list(
+        request: Request,
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools")),
+        device: Device = Query(..., title="device"),
+        timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
+        sequence: Optional[int] = Query(None, description="sequence excluding this"),
+        max_count: Optional[int] = Query(None)):
+    """List tool change events."""
+    return await models.tools.tool_list(credentials, device, timestamp, sequence, max_count)
+
+
 @router.patch("/{tool_id}", response_model=models.common.PatchResponse, operation_id="tool_update",
               summary="Update or create tool.")
 async def patch_tools(
@@ -60,23 +73,11 @@ async def patch_tools(
     return await models.tools.patch_tool(credentials, tool_id, patch)
 
 
-@router.get("", response_model=List[models.tools.ToolDataPointWithType], operation_id="tool_list",
-            summary="List tool changes.")
-async def tool_list(
-        request: Request,
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools")),
-        device: Device = Query(..., title="device"),
-        timestamp: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
-        sequence: Optional[int] = Query(None, description="sequence excluding this"),
-        max_count: Optional[int] = Query(None)):
-    """List tool change events."""
-    return await models.tools.tool_list(credentials, device, timestamp, sequence, max_count)
-
-
 @router.get("/list_usage", response_model=List[models.tools.ToolItem], operation_id="tool_usage",
             summary="List tools.")
 async def tool_list_usage(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list_usage"))):
     """List tools and some statistics on their usage."""
+    # TODO why this thing has no search filters?
     return await models.tools.tool_list_usage(credentials)
