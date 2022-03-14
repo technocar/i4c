@@ -10,12 +10,12 @@ from common.db_tools import asyncpg_rows_process_json
 
 
 class AuditListItem(I4cBaseModel):
-    """Audit of operations."""
+    """Audit event."""
     ts: datetime = Field(..., title="Exact time the data was collected.")
     user: Optional[str] = Field(None, title="Logged user.")
     ip: Optional[str] = Field(None, title="IP address.")
-    obj: str = Field(..., title="Object.")
-    action: Optional[str] = Field(None, title="Action.")
+    obj: str = Field(..., title="Endpoint object.")
+    action: Optional[str] = Field(None, title="Endpoint action.")
     extra: Optional[Dict[str,Any]] = Field(None, title="Other information")
 
 
@@ -51,20 +51,21 @@ async def audit_list(
         if count is not None:
             limit = f"limit {count}"
 
+        # TODO if before is given but after is not, use descending order
         sql = dedent(f"""
-                select 
-                  l."timestamp" as ts, 
-                  l.data_id operation_id, 
-                  l.value_text "user", 
-                  l.value_extra ip, 
+                select
+                  l."timestamp" as ts,
+                  l.data_id operation_id,
+                  l.value_text "user",
+                  l.value_extra ip,
                   l.value_aux extra
                 from log l
-                where 
-                    l.device='audit' 
+                where
+                    l.device='audit'
                     <wheres>
-                order by 
+                order by
                     l.timestamp
-                {limit} 
+                {limit}
                 """)
         sql = sql.replace("<wheres>", '\n'.join(wheres))
         write_debug_sql("audit.sql", sql, *params)
