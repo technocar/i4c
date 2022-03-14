@@ -19,11 +19,11 @@ router = I4cApiRouter(include_path="/stat")
 async def stat_list(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def")),
-        id: Optional[int] = Query(None),
-        user_id: Optional[str] = Query(None),
-        name: Optional[str] = Query(None),
-        name_mask: Optional[List[str]] = Query(None),
-        type: Optional[models.stat.StatType] = Query(None),):
+        id: Optional[int] = Query(None, title="Identifier of the query."),
+        user_id: Optional[str] = Query(None, title="Belongs to user."),
+        name: Optional[str] = Query(None, title="Exact name."),
+        name_mask: Optional[List[str]] = Query(None, title="Search phrase for the name."),
+        type: Optional[models.stat.StatType] = Query(None, title="Query type.")):
     """List saved queries."""
     return await models.stat.stat_list(credentials, id, user_id, name, name_mask, type)
 
@@ -33,7 +33,7 @@ async def stat_list(
 async def stat_get(
     request: Request,
     credentials: CredentialsAndFeatures = Depends(common.security_checker("get/stat/def/{id}")),
-    id: int = Path(...),
+    id: int = Path(..., title="Identifier of the query."),
 ):
     """Get a saved query."""
     res = await models.stat.stat_list(credentials, id=id)
@@ -57,7 +57,7 @@ async def stat_post(
 async def stat_delete(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/stat/def/{id}", ask_features=['delete any'])),
-    id: int = Path(...)
+    id: int = Path(..., title="Identifier of the query.")
 ):
     """Delete a saved query."""
     await models.stat.stat_delete(credentials, id)
@@ -68,7 +68,7 @@ async def stat_delete(
 async def stat_patch(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/stat/def/{id}", ask_features=['patch any'])),
-    id: int = Path(...),
+    id: int = Path(..., title="Identifier of the query."),
     patch: models.stat.StatPatchBody = Body(...),
 ):
     """Update a saved query."""
@@ -79,7 +79,7 @@ async def stat_patch(
 async def stat_data_get(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/data/{id}")),
-    id: int = Path(...),
+    id: int = Path(..., title="Identifier of the query."),
 ):
     """Run query."""
     return await models.stat.statdata_get(credentials, id)
@@ -90,7 +90,7 @@ async def stat_data_get(
 async def get_objmeta(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/stat/objmeta")),
-    after: Optional[datetime] = Query(None, title="timestamp", description="Iso format, defaults to last year."),
+    after: Optional[datetime] = Query(None, title="Scan the log sincs this time. Iso format. Defaults to last year."),
 ):
     """Get metadata for xy queries."""
     return await models.stat.get_objmeta(credentials, after)
