@@ -55,7 +55,7 @@ async def intfiles_delete(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("delete/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(..., title="Version."),
-    path: str = Path(..., title="Unique name.")
+    path: str = Path(...)
 ):
     """Delete an internal file."""
     await models.intfiles.intfiles_delete(credentials, ver, path)
