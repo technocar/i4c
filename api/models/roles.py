@@ -19,7 +19,7 @@ class RoleIn(I4cBaseModel):
     """Group of privileges forming a typical role. Input."""
     subroles: Optional[List[str]] = Field([], title="Contained other roles.")
     privs: Optional[List[Priv]] = Field([], title="Granted privileges.")
-    status: CommonStatusEnum = Field("active", title="Status.")
+    status: Optional[CommonStatusEnum] = Field("active", title="Status.")
 
 
 class Role(RoleIn):
@@ -31,7 +31,7 @@ async def get_roles(credentials, name=None, *, active_only=True, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         res = []
         sql = dedent("""\
-                select 
+                select
                   r.name,
                   r."status",
                   coalesce(rs.subroles, array[]::varchar[]) subroles,
@@ -44,7 +44,7 @@ async def get_roles(credentials, name=None, *, active_only=True, pconn=None):
                       group by rs.role
                      ) rs on rs.role = r.name
                 left join role_grant rg on rg.role = r.name
-                where True 
+                where True
                   <filter>
                 order by r.name
             """)
