@@ -50,7 +50,7 @@ class InstallationPatchChange(I4cBaseModel):
 
 class InstallationPatchBody(I4cBaseModel):
     """Update to an installation. The change will be carried out if all conditions are met."""
-    conditions: List[InstallationPatchCondition] = Field(..., title="Conditions to check before the update.")
+    conditions: Optional[List[InstallationPatchCondition]] = Field([], title="Conditions to check before the update.")
     change: InstallationPatchChange = Field(..., title="Change to be carried out.")
 
 
@@ -65,15 +65,15 @@ async def new_installation(credentials, project, version,
     sql_project_version = dedent("""\
         select *
         from project_version v
-        where 
-          v.project = $1 
+        where
+          v.project = $1
           and v.ver = $2
         """)
     sql_project_files = dedent("""\
         select pf.savepath
         from project_file pf
         join project_version pv on pv.id = pf.project_ver
-        where 
+        where
           pv.project = $1
           and pv.ver = $2
         """)
@@ -96,9 +96,9 @@ async def new_installation(credentials, project, version,
                 db_project_files = await conn.fetch(sql_project_files, project, i["real_version"])
 
                 sql_insert_installation = dedent("""\
-                     insert into installation 
-                       ("timestamp", project, invoked_version, real_version, status) 
-                     values 
+                     insert into installation
+                       ("timestamp", project, invoked_version, real_version, status)
+                     values
                        (current_timestamp, $1, $2, $3, $4)
                      returning id, "timestamp", status, status_msg
                      """)
@@ -112,9 +112,9 @@ async def new_installation(credentials, project, version,
                 i["status_msg"] = db_insert_installation[3]
 
                 sql_insert_installation_file = dedent("""\
-                     insert into installation_file 
-                       (installation, savepath) 
-                     values 
+                     insert into installation_file
+                       (installation, savepath)
+                     values
                        ($1, $2)""")
                 i["files"] = []
                 for db_project_file in db_project_files:
@@ -135,7 +135,7 @@ async def get_installations(credentials, id=None, status=None, after=None, befor
                     from installation_file a
                     group by a.installation),
                 res as (
-                    select 
+                    select
                       i.id,
                       i.timestamp as ts,
                       i.project,
@@ -243,20 +243,20 @@ def get_git_file_content(repo, name, commit):
 
 async def installation_get_file(credentials, id, savepath, *, pconn=None):
     sql = dedent("""\
-            select 
+            select
               pf.file_git,
               pf.file_unc,
               pf.file_int,
-              
+
               git.repo git_repo,
               git."name" git_name,
               git.commit git_commit,
-              
+
               unc."name" unc_name,
-              
+
               int."name" int_name,
               int.ver int_ver,
-              int.content_hash int_content_hash                          
+              int.content_hash int_content_hash
             from installation i
             join installation_file f on f.installation = i.id
             join project_version pv on pv.project = i.project and pv.ver = i.real_version
@@ -264,7 +264,7 @@ async def installation_get_file(credentials, id, savepath, *, pconn=None):
             left join file_git git on git.id = pf.file_git
             left join file_unc unc on unc.id = pf.file_unc
             left join file_int int on int.id = pf.file_int
-            where 
+            where
               i.id = $1 -- */ 8
               and f.savepath = $2 -- */ 'file1'
           """)
