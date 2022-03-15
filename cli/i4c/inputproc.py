@@ -261,7 +261,7 @@ def process_input(args, body, input_data, input_format, input_foreach, input_pla
     """
 
     if body is None:
-        if input_data is not None:
+        if input_data is not None or input_placement is not None:
             body = {}
     elif isinstance(body, str):
         body = json.loads(body)
@@ -356,15 +356,18 @@ def process_input(args, body, input_data, input_format, input_foreach, input_pla
                 raise Exception("not impl") #TODO
             else:
                 expr = expr or "$"
-                expr = jsonpath_ng.ext.parse(expr)
-                matches = expr.find(item)
-                if matches:
-                    if op == "*=" or len(matches) > 1:
-                        piece = [m.value for m in matches]
+                if expr.startswith("$"):
+                    expr = jsonpath_ng.ext.parse(expr)
+                    matches = expr.find(item)
+                    if matches:
+                        if op == "*=" or len(matches) > 1:
+                            piece = [m.value for m in matches]
+                        else:
+                            piece = matches[0].value
                     else:
-                        piece = matches[0].value
+                        piece = None
                 else:
-                    piece = None
+                    piece = json.loads(expr)
 
                 if placement is None:
                     body_copy = piece

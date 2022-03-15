@@ -33,14 +33,14 @@ def top_grp():
 def json_options(f):
     # TODO this is now DRY but not super-DRY. dynamic command creation uses its own version
     "This macro adds json output processing Click options"
-    @click.option("--output-expr", help="Jsonpath expression to apply to the response. "
-                                        "The returned items will be separately processed by "
-                                        "--output-file and --output-template. If omitted, the entire result will be one item.")
-    @click.option("--output-file", help="Output file name or jinja template. "
-                                        "If a template is given, it will be evaluated "
-                                        "against each data item (see --output-expr). If omitted or -, stdout is used.")
-    @click.option("--output-template", help="Jinja template to process data items "
-                                            "before printed or written to a file. If omitted, raw json will be written.")
+    @click.option("--output-expr", "-X", help="Jsonpath expression to apply to the response. "
+        "The returned items will be separately processed by "
+        "--output-file and --output-template. If omitted, the entire result will be one item.")
+    @click.option("--output-file", "-O", help="Output file name or jinja template. "
+        "If a template is given, it will be evaluated "
+        "against each data item (see --output-expr). If omitted or -, stdout is used.")
+    @click.option("--output-template", "-T", help="Jinja template to process data items "
+        "before printed or written to a file. If omitted, raw json will be written.")
     @wraps(f)
     def newf(*a, **kw):
         return f(*a, **kw)
@@ -230,22 +230,22 @@ def make_commands(conn: I4CConnection):
 
                 params.append(click.Option(("--body",), **attrs))
 
-            params.append(click.Option(("--input-data",),
+            params.append(click.Option(("--input-data","-D"),
                 help="The data which will be processed and inserted to the body according to the other "
                      "--input-* options. Use @filename to read from a file, or @- to read from stdin."))
 
-            params.append(click.Option(("--input-placement",), multiple=True,
+            params.append(click.Option(("--input-placement","-P"), multiple=True,
                 help="Specifies where the input should be placed into the body, and optionally what part of the "
                      "input. If only a <jsonpath> is given, the input will be written at that location. If "
                      "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
                      "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1]."))
 
-            params.append(click.Option(("--input-format",), multiple=True,
+            params.append(click.Option(("--input-format","-F"), multiple=True,
                 help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
                      "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
                      "For a detailed explanation on data input and transformations, see the transform command."))
 
-            params.append(click.Option(("--input-foreach",),
+            params.append(click.Option(("--input-foreach","-E"),
                 help="A jsonpath expression that splits the input data. The command will be executed with each "
                      "item separately. If data is returned, it will be collected to a list. If this parameter is "
                      "given, the --input-placement parameter refers to an item."))
@@ -266,14 +266,14 @@ def make_commands(conn: I4CConnection):
 
             if action.response:
                 if action.response.content_type == "application/json":
-                    params.append(click.Option(("--output-expr",),
+                    params.append(click.Option(("--output-expr","-X"),
                         help="Jsonpath expression to apply to the response. The returned items will be separately processed by " \
                              "--output-file and --output-template. If omitted, the entire result will be one item."))
-                    params.append(click.Option(("--output-file",),
+                    params.append(click.Option(("--output-file","-O"),
                         help="Output file name or jinja template. If a template is given, it will be evaluated " \
                              "against each data item (see --output-expr). If omitted or -, stdout is used. " \
                              "If the response contains file name, it can be referred to as {{origin}}"))
-                    params.append(click.Option(("--output-template",),
+                    params.append(click.Option(("--output-template","-T"),
                         help="Jinja template to process data items before printed or written to a file. If omitted, raw " \
                               "json will be written."))
                 else:
@@ -477,16 +477,16 @@ def doc(ctx, schema, raw, profile, connect_url, insecure, output_expr, output_fi
 
 @top_grp.command("transform")
 @click.option("--body")
-@click.option("--input-data", help="The data which will be processed according to the other "
+@click.option("--input-data", "-D", help="The data which will be processed according to the other "
     "--input-* options. Use @filename to read from a file, or @- to read from stdin.")
-@click.option("--input-format", multiple=True, help=
+@click.option("--input-format", "-F", multiple=True, help=
     "Specifies a format attribute. If omitted, the format will be derived from the file extension. "
     "Attributes are separated by `.`, or you can specify multiple options, which will be combined.")
-@click.option("--input-foreach", help=
+@click.option("--input-foreach", "-E", help=
     "A jsonpath expression that splits the input data. The command will be executed with each item separately. "
     "If data is returned, it will be collected to a list. If this parameter is given, the --input-placement "
     "parameter refers to an item.")
-@click.option("--input-placement", multiple=True, help=
+@click.option("--input-placement", "-P", multiple=True, help=
     "Specifies where the input should be placed into the body, and optionally what part of the "
     "input. If only a <jsonpath> is given, the input will be written at that location. If "
     "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
@@ -598,7 +598,7 @@ def transform(body, input_data, input_format, input_foreach,  input_placement, o
 
     \b
     Once the data is loaded, processed, and split, elements of it can be inserted
-    into the body. The insertion is defined with the --input-place option.
+    into the body. The insertion is defined with the --input-placement option.
     Multiple options can be specified, each will be executed in order. The
     format of the option is:
 
@@ -606,6 +606,7 @@ def transform(body, input_data, input_format, input_foreach,  input_placement, o
     --input-placement "<place>"
     --input-placement "<place>=<path>"
     --input-placement "<place>*=<path>"
+    --input-placement "<place>=<data>"
 
     The <place> is a jsonpath that points to a location in the skeleton. The
     skeleton root can be simply referred to as "$". If the jsonpath refers to
@@ -618,17 +619,28 @@ def transform(body, input_data, input_format, input_foreach,  input_placement, o
     might be surprising if wildcards are used, but there happens to be one
     element. In order to force the result to be an array, use *=.
 
+    The <data> is direct data to be placed. It is interpreted as json, thus you
+    can write a number as 10, while strings need to be quoted with "". You can
+    specify arrays or dicts as well.
+
     If both he place and the path refers to multiple locations, the cardinality
     must be the same.
 
-    Example 1
+    Example 1 - placement from json
 
     \b
     echo {"a":{"b":10}} | i4c transform --input-format json --input-data @- --input-placement $.x=$.a
 
     {"x":{"b":10}}
 
-    Example 2
+    Example 2 - direct data
+
+    \b
+    i4c transform --input-placement $.x.y=10
+
+    {"x":{"y":10}}
+
+    Example 3 - loading a csv file
 
     \b
     file.txt:
