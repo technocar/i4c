@@ -7,7 +7,7 @@ import common
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.cmp_list import cmp_list
 import common.tools
-from common.exceptions import I4cClientError
+from common.exceptions import I4cClientError, I4cClientNotFound
 from models import UserStatusEnum
 from models.common import PatchResponse
 from models.roles import Priv
@@ -47,6 +47,22 @@ class UserPatchConditions(I4cBaseModel):
     is_customer: Optional[bool] = Field(None, title="Belongs to a customer.")
     customer: Optional[str] = Field(None, title="Customer identifier.")
 
+    def match(self, user:User, user_has_password:bool):
+        r = ( ((self.has_password is None) or (user_has_password == self.has_password))
+              and ((self.has_key is None) or ((user.public_key is not None) == self.has_key))
+              and ((self.public_key is None) or (user.public_key == self.public_key))
+              and ((self.statuses is None) or (user.status in self.statuses))
+              and ((self.email is None) or (user.email == self.email))
+              and ((self.has_email is None) or ((user.email is not None) == self.has_email))
+              and ((self.is_customer is None) or ((user.customer is not None) == self.is_customer))
+              and ((self.customer is None) or (user.customer == self.customer))
+              )
+        if self.flipped is None or not self.flipped:
+            return r
+        else:
+            return not r
+
+
 
 class UserPatchChange(I4cBaseModel):
     """Change in a user update."""
@@ -77,7 +93,6 @@ class UserPatchChange(I4cBaseModel):
 class UserPatchBody(I4cBaseModel):
     """Update to a user."""
     conditions: Optional[List[UserPatchConditions]] = Field([], title="Conditions to check before the change.")
-    # TODO implement conditions
     change: UserPatchChange = Field(..., title="The change to be carried out.")
 
 
@@ -259,37 +274,54 @@ async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBod
         if 'modify others' not in credentials.info_features:
             raise I4cClientError("Unable to modify other user's data")
 
-    if patch.change.is_empty():
-        return PatchResponse(changed=True)
-
     async with DatabaseConnection(pconn) as conn:
-        sql = dedent("""\
-                  update "user"
-                  set
-                    <fields>
-                  where id = $1
-                  """)
-        fields = []
-        params = [id]
-        if patch.change.password is not None:
-            params.append(common.create_password(patch.change.password))
-            fields.append(f"password_verifier = ${len(params)}")
-        if patch.change.del_password:
-            fields.append(f"password_verifier = null")
-        if patch.change.public_key is not None:
-            params.append(patch.change.public_key)
-            fields.append(f"public_key = ${len(params)}")
-        if patch.change.del_public_key:
-            fields.append(f"public_key = null")
-        if patch.change.status is not None:
-            params.append(patch.change.status)
-            fields.append(f""""status" = ${len(params)}""")
-        if patch.change.customer is not None:
-            params.append(patch.change.customer)
-            fields.append(f""""customer" = ${len(params)}""")
-        if patch.change.email is not None:
-            params.append(patch.change.email)
-            fields.append(f""""email" = ${len(params)}""")
-        sql = sql.replace("<fields>", ',\n'.join(fields))
-        await conn.execute(sql, *params)
-        return PatchResponse(changed=True)
+        async with conn.transaction(isolation='repeatable_read'):
+            user = await get_user(user_id=id, pconn=conn)
+
+            sql_user_has_password = dedent("""\
+                    select case when password_verifier is not null then true else false end as user_has_password
+                    from "user" u
+                    where u.id = $1""")
+            user_has_password = (await conn.fetchrow(sql_user_has_password, id))[0]
+
+            match = True
+            for cond in patch.conditions:
+                match = cond.match(user, user_has_password)
+                if not match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+
+            sql = dedent("""\
+                      update "user"
+                      set
+                        <fields>
+                      where id = $1
+                      """)
+            fields = []
+            params = [id]
+            if patch.change.password is not None:
+                params.append(common.create_password(patch.change.password))
+                fields.append(f"password_verifier = ${len(params)}")
+            if patch.change.del_password:
+                fields.append(f"password_verifier = null")
+            if patch.change.public_key is not None:
+                params.append(patch.change.public_key)
+                fields.append(f"public_key = ${len(params)}")
+            if patch.change.del_public_key:
+                fields.append(f"public_key = null")
+            if patch.change.status is not None:
+                params.append(patch.change.status)
+                fields.append(f""""status" = ${len(params)}""")
+            if patch.change.customer is not None:
+                params.append(patch.change.customer)
+                fields.append(f""""customer" = ${len(params)}""")
+            if patch.change.email is not None:
+                params.append(patch.change.email)
+                fields.append(f""""email" = ${len(params)}""")
+            sql = sql.replace("<fields>", ',\n'.join(fields))
+            await conn.execute(sql, *params)
+            return PatchResponse(changed=True)
