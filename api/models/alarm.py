@@ -138,13 +138,18 @@ class AlarmCondEvent(I4cBaseModel):
                             self.age_min, self.age_max)
 
 
+class AlarmCondConditionValue(str, Enum):
+    normal = "Normal"
+    abnormal = "Abnormal"
+    fault = "Fault"
+    warning = "Warning"
+
+
 class AlarmCondCondition(I4cBaseModel):
     """Alarm condition for condition types."""
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Condition type.")
-    value: str = Field(..., title="Value. Normal, Fault or Warning.")
-      # TODO should not be str but enum
-      # TODO new value: Abnormal
+    value: AlarmCondConditionValue = Field(..., title="Value.")
     age_min: Optional[float] = Field(None, title="Active at least since, seconds")
 
     def __eq__(self, other):
@@ -339,8 +344,7 @@ class SubsGroupsUser(I4cBaseModel):
 class AlarmEventCheckResult(I4cBaseModel):
     """Returned by alarm event check. Represents an alarm that was triggered."""
     alarm: str = Field(..., title="Triggered alarm")
-    alarmevent_count: Optional[int] = Field(None, title="Number of created events for the alarm.")
-      # TODO why is it optional?
+    alarmevent_count: int = Field(..., title="Number of created events for the alarm.")
 
 
 class AlarmRecipientStatus(str, Enum):
