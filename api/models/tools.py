@@ -135,7 +135,7 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
         return res
 
 
-async def tool_list_usage(credentials, tool_id=None, *, pconn=None):
+async def tool_list_usage(credentials, tool_id=None, type=None, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\
                 select
@@ -147,16 +147,21 @@ async def tool_list_usage(credentials, tool_id=None, *, pconn=None):
                 where
                   l.timestamp >= $1::timestamp with time zone -- */ '2021-08-23 07:56:00.957133+02'::timestamp with time zone
                   and l.data_id in ('install_tool', 'remove_tool')
-                  <tool_id>
+                  <filters>
                 group by l.value_text, t.type
                 order by 1,2
                 """)
         params = [date.today() + timedelta(days=-365)]
+        filters = []
         if tool_id is not None:
-            sql = sql.replace('<tool_id>', "and l.value_text = $2")
             params.append(tool_id)
-        else:
-            sql = sql.replace('<tool_id>', '')
+            filters.append(f"and l.value_text = ${len(params)}")
+
+        if type is not None:
+            params.append(type)
+            filters.append(f"and t.type = ${len(params)}")
+
+        sql = sql.replace('<filters>', "\n".join(filters))
         return await conn.fetch(sql, *params)
 
 
