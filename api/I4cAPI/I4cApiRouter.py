@@ -65,17 +65,22 @@ class I4cApiRouter(APIRouter):
                         except Exception as e:
                             raise I4cClientError(f"Error while logging: {e}")
 
-                async def poll():
-                    try:
-                        while not await b["request"].is_disconnected():
-                            await asyncio.sleep(1)
-                    except asyncio.CancelledError:
-                        pass
-
-                poller_task = asyncio.ensure_future(poll())
                 main_task = asyncio.ensure_future(f(*a, **b))
+                tasks = [main_task]
 
-                _, pending = await asyncio.wait([poller_task, main_task], return_when = asyncio.FIRST_COMPLETED)
+                if "request" in b:
+                    async def poll():
+                        try:
+                            while not await b["request"].is_disconnected():
+                                await asyncio.sleep(1)
+                        except asyncio.CancelledError:
+                            pass
+                    poller_task = asyncio.ensure_future(poll())
+                    tasks.append(poller_task)
+                else:
+                    log.error("REQUEST PARAMETER IS NOT PRESENT. ENDPOINT IS NOT INTERRUPTABLE.")
+
+                _, pending = await asyncio.wait(tasks, return_when = asyncio.FIRST_COMPLETED)
 
                 if main_task in pending:
                     log.info("client disconnect, aborting")
