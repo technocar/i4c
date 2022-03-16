@@ -31,8 +31,13 @@ async def noop_get(
 
 @router.get("/datetime", operation_id="ping_datetime",)
 async def get_datetime(
-    dt: Optional[datetime] = Query(None, title="Around timestamp, iso format.")
+    request: Request,
+    dt: Optional[datetime] = Query(None, title="Timestamp, iso format, will be given back.")
 ):
+    """
+    Test datetime formatting, and/or query the server time. The dt parameter will be given back verbatim.
+    If omitted, the current time with timezone will be given back.
+    """
     return dt or datetime.now().astimezone()
 
 
