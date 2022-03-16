@@ -87,13 +87,18 @@ for installation in installations:
                     log.warning("status changed, stopping")
                     continue
 
+                source = prefix + f
                 target = base_path + f
+                target_dir, _ = os.path.split(target)
+                temp_target = target_dir + "\\.tempfile"
 
                 resp = c.installation.file(id=id, savepath=prefix+f)
 
                 log.debug(f"saving to {target}")
-                with open(target, "wb") as f:
+                with open(temp_target, "wb") as f:
                     stream_copy(resp, f)
+                os.remove(target)
+                os.rename(temp_target, target)
 
         change_status(id, "working", "done", "done")
     except Exception as e:
