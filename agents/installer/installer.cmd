@@ -1,3 +1,3 @@
-python installer.py
+python installer.py %*
 
-rem python installer.py --profile installer --config-file installer.conf
+rem python installer.py --profile installbot --config-file installer.conf
