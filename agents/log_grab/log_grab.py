@@ -46,7 +46,7 @@ robot_alarms = {
     "PC-PLC kommunikációs hiba": "error_com_plc",
     "Védõkör Hiba": "error_protection_circuit",
     "Vészkör Hiba": "error_emergency_circuit"
-} # TODO we could codify alarms.
+}
 
 cfg = None
 conn = None
@@ -57,7 +57,7 @@ def init_globals():
     global log
     global conn
 
-    with open("log_grab.yaml") as f:
+    with open("log_grab.conf") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
         if "log" in cfg:
             logging.config.dictConfig(cfg["log"])
@@ -425,12 +425,12 @@ def main():
     log.info("start")
     if "robot" in cfg:
         process_robot(cfg["robot"])
-    if "GOM" in cfg:
-        process_GOM(cfg["GOM"])
-    if "Alarms" in cfg:
-        process_Alarms(cfg["Alarms"])
-    if "ReniShaw" in cfg:
-        process_ReniShaw(cfg["ReniShaw"])
+    if "gom" in cfg:
+        process_GOM(cfg["gom"])
+    if "alarms" in cfg:
+        process_Alarms(cfg["alarms"])
+    if "renishaw" in cfg:
+        process_ReniShaw(cfg["renishaw"])
     log.info("finish")
 
 if __name__ == '__main__':
