@@ -180,11 +180,11 @@ class AlarmCond(I4cBaseModel):
 
     @root_validator
     def check_exclusive(cls, values):
+        print(f"VALUES: {values}")
         nones = tuple(values.get(s) for s in ('sample', 'event', 'condition')).count(None)
-        cnt = len(values) - nones
-        if cnt > 1:
+        if nones < 2:
             raise I4cInputValidationError('Sample, event, and condition are exclusive.')
-        if cnt == 0:
+        if nones == 3:
             raise I4cInputValidationError('Sample, event, or condition is required.')
         return values
 
