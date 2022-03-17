@@ -32,9 +32,11 @@ async def audit_list(
         params = []
         wheres = []
         limit = ""
+        order_direction = ""
         if before is not None:
             params.append(before)
             wheres.append(f'and (l.timestamp <= ${len(params)})')
+            order_direction = " desc" if after is None else ""
 
         if after is not None:
             params.append(after)
@@ -51,7 +53,6 @@ async def audit_list(
         if count is not None:
             limit = f"limit {count}"
 
-        # TODO if before is given but after is not, use descending order
         sql = dedent(f"""
                 select
                   l."timestamp" as ts,
@@ -64,7 +65,7 @@ async def audit_list(
                     l.device='audit'
                     <wheres>
                 order by
-                    l.timestamp
+                    l.timestamp{order_direction}
                 {limit}
                 """)
         sql = sql.replace("<wheres>", '\n'.join(wheres))

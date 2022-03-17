@@ -77,7 +77,8 @@ async def patch_tools(
             summary="List tools.")
 async def tool_list_usage(
         request: Request,
-        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list_usage"))):
+        credentials: HTTPBasicCredentials = Depends(common.security_checker("get/tools/list_usage")),
+        tool_id: Optional[str] = Query(None, title="Tool id filter."),
+        type: Optional[str] = Query(None, title="Type filter.")):
     """List tools and some statistics on their usage."""
-    # TODO why this thing has no search filters?
-    return await models.tools.tool_list_usage(credentials)
+    return await models.tools.tool_list_usage(credentials, tool_id=tool_id, type=type)

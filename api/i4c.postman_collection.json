@@ -591,7 +591,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"change\": {\r\n        \"password\": \"1234\",\r\n        \"del_public_key\": true\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"has_key\": false\r\n        },\r\n        {\r\n            \"has_key\": true\r\n        }\r\n    ],    \r\n    \"change\": {\r\n        \"password\": \"1234\",\r\n        \"del_public_key\": true\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1353,7 +1353,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"change\": {\r\n        \"type\": \"fúrófej\"\r\n    }\r\n}",
+							"raw": "{\r\n    \"conditions\": [\r\n        {\r\n            \"type\": [\"fúrófej3\", \"fúrófej\"]\r\n        }\r\n    ],\r\n    \"change\": {\r\n        \"type\": \"fúrófej\"\r\n    }\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1415,6 +1415,18 @@
 							"path": [
 								"tools",
 								"list_usage"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "M5-100",
+									"disabled": true
+								},
+								{
+									"key": "tool_id",
+									"value": "M5-100-101013",
+									"disabled": true
+								}
 							]
 						}
 					},
@@ -2512,7 +2524,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:5000/audit?after=2022-01-14T07:54:00.957133Z&count=1000",
+							"raw": "localhost:5000/audit?count=1000&before=2022-01-14T07:54:00.957133Z",
 							"host": [
 								"localhost"
 							],
@@ -2523,12 +2535,41 @@
 							"query": [
 								{
 									"key": "after",
-									"value": "2022-01-14T07:54:00.957133Z"
+									"value": "2022-01-14T07:52:00.957133Z",
+									"disabled": true
 								},
 								{
 									"key": "count",
 									"value": "1000"
+								},
+								{
+									"key": "before",
+									"value": "2022-01-14T07:54:00.957133Z"
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ping",
+			"item": [
+				{
+					"name": "datetime",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:5000/ping/datetime",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"ping",
+								"datetime"
 							]
 						}
 					},

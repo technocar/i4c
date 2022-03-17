@@ -5,6 +5,7 @@ from typing import Optional, List
 from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 import models.log
+from common.exceptions import I4cClientNotFound
 from models.common import PatchResponse
 
 
@@ -16,14 +17,28 @@ class ToolsPatchChange(I4cBaseModel):
         return self.type is None
 
 
+class ToolItem(I4cBaseModel):
+    """Tool information."""
+    tool_id: Optional[str] = Field(None, title="Identifier.")
+    type: Optional[str] = Field(None, title="Tool type.")
+    count: int = Field(..., title="Number of times the tool was installed.")
+
+
 class ToolsPatchCondition(I4cBaseModel):
     type: Optional[List[str]] = Field(None, title="If the status is any of these.")
+    flipped: Optional[bool] = Field(None, title="Pass if the condition does not hold.")
+
+    def match(self, tool:ToolItem):
+        r = ((self.type is None) or (tool.type in self.type))
+        if self.flipped is None or not self.flipped:
+            return r
+        else:
+            return not r
 
 
 class ToolsPatchBody(I4cBaseModel):
     """Update to a tool. Check conditions, and if all checks out, carry out the change."""
     conditions: Optional[List[ToolsPatchCondition]] = Field([], title="Conditions to check before the change.")
-      # TODO implement conditions
     change: ToolsPatchChange = Field(..., title="Change to be carried out.")
 
 
@@ -54,25 +69,6 @@ class ToolDataPoint(I4cBaseModel):
 class ToolDataPointWithType(ToolDataPoint):
     """Tool change event with extended fields."""
     type: Optional[str] = Field(None, title="Type of the tool.")
-
-
-class ToolItem(I4cBaseModel):
-    """Tool information."""
-    tool_id: Optional[str] = Field(None, title="Identifier.")
-    type: Optional[str] = Field(None, title="Tool type.")
-    count: int = Field(..., title="Number of times the tool was installed.")
-
-
-async def patch_tool(credentials, tool_id, patch:ToolsPatchBody, *, pconn=None):
-    async with DatabaseConnection(pconn) as conn:
-        sql = dedent("""\
-                  insert into tools (id, "type")
-                  values ($1, $2)
-                  ON CONFLICT(id) DO UPDATE
-                  SET "type" = EXCLUDED."type";
-                  """)
-        await conn.execute(sql, tool_id, patch.change.type)
-        return PatchResponse(changed=True)
 
 
 async def tool_list(credentials, device, timestamp, sequence, max_count):
@@ -139,8 +135,8 @@ async def tool_list(credentials, device, timestamp, sequence, max_count):
         return res
 
 
-async def tool_list_usage(credentials):
-    async with DatabaseConnection() as conn:
+async def tool_list_usage(credentials, tool_id=None, type=None, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
         sql = dedent("""\
                 select
                   l.value_text "tool_id",
@@ -151,7 +147,48 @@ async def tool_list_usage(credentials):
                 where
                   l.timestamp >= $1::timestamp with time zone -- */ '2021-08-23 07:56:00.957133+02'::timestamp with time zone
                   and l.data_id in ('install_tool', 'remove_tool')
+                  <filters>
                 group by l.value_text, t.type
                 order by 1,2
                 """)
-        return await conn.fetch(sql, date.today() + timedelta(days=-365))
+        params = [date.today() + timedelta(days=-365)]
+        filters = []
+        if tool_id is not None:
+            params.append(tool_id)
+            filters.append(f"and l.value_text = ${len(params)}")
+
+        if type is not None:
+            params.append(type)
+            filters.append(f"and t.type = ${len(params)}")
+
+        sql = sql.replace('<filters>', "\n".join(filters))
+        return await conn.fetch(sql, *params)
+
+
+async def patch_tool(credentials, tool_id, patch:ToolsPatchBody, *, pconn=None):
+    async with DatabaseConnection(pconn) as conn:
+        async with conn.transaction(isolation='repeatable_read'):
+            tool = await tool_list_usage(credentials, tool_id=tool_id, pconn=conn)
+            if len(tool) == 0:
+                raise I4cClientNotFound("No record found")
+            tool = ToolItem(**tool[0])
+
+            match = True
+            for cond in patch.conditions:
+                match = cond.match(tool)
+                if not match:
+                    break
+            if not match:
+                return PatchResponse(changed=False)
+
+            if patch.change.is_empty():
+                return PatchResponse(changed=True)
+
+            sql = dedent("""\
+                      insert into tools (id, "type")
+                      values ($1, $2)
+                      ON CONFLICT(id) DO UPDATE
+                      SET "type" = EXCLUDED."type";
+                      """)
+            await conn.execute(sql, tool_id, patch.change.type)
+            return PatchResponse(changed=True)
