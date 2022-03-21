@@ -1,10 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { NgbActiveModal, NgbModal, NgbModalRef, NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
-import { merge, Observable, OperatorFunction, Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { NgbActiveModal, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { Subject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
-import { Meta } from 'src/app/services/models/api';
+import { Device, Meta } from 'src/app/services/models/api';
 import { DeviceType } from 'src/app/services/models/constants';
 
 interface Metric {
@@ -51,6 +50,7 @@ export class MetaFilterComponent implements OnInit {
   @Input('selectableTypes') selectableTypes: string[];
   @Input('mode') mode: MetaFilterMode = MetaFilterMode.Select;
   @Input('onlySelector') onlySelector: boolean;
+  @Input('device') device: string;
   @Output("onFilter") onFilter: EventEmitter<MetricFilterModel> = new EventEmitter();
 
   @ViewChild('dialog') dialog;
@@ -69,12 +69,14 @@ export class MetaFilterComponent implements OnInit {
   eventOps: string[][] = [];
 
   disableMetricSelection: boolean = false;
+  devices: Device[] = [];
 
   constructor(
     private modalService: NgbModal,
     private apiService: ApiService)
   {
     this.eventOps = apiService.getEventOperations();
+    apiService.getDevices().subscribe(r => this.devices = r);
   }
 
   ngOnInit(): void {
@@ -82,7 +84,7 @@ export class MetaFilterComponent implements OnInit {
 
   selectMeta(meta: Meta) {
     console.log(meta);
-    this.searchModel.device = meta.device;
+    this.searchModel.device = this.device as DeviceType;
     this.searchModel.metricId = meta.data_id;
     this.searchModel.metricName = meta.nice_name ?? meta.name ?? meta.data_id;
     this.searchModel.metricType = meta.category;

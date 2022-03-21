@@ -35,6 +35,8 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   get device(): string {
     return this._device;
   }
+
+  @Input('conditionSelectable') conditionSelectable: boolean = false;
   @Input('metaList') metaList: Meta[];
   @Input('selectableTypes') selectableTypes: string[];
   @Input('selectedMetaId')

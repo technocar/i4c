@@ -48,7 +48,6 @@ export class DashboardComponent implements OnInit {
   private _updateIntervalTimeFast = 4000;
   private _updateIntervalTimeCurrent: number = 1000;
   private _updateInterval;
-  private _metaList: Meta[] = [];
   private _allEventValues: EventValues[] = [];
   private _activeSnapshotRequest: Subscription;
   private _activeListRequest: Subscription;
@@ -71,6 +70,7 @@ export class DashboardComponent implements OnInit {
   events$: BehaviorSubject<EventLog[]> = new BehaviorSubject([]);
   list$: BehaviorSubject<ListItem[]> = new BehaviorSubject([]);
 
+  metaList: Meta[] = [];
   metaListOfDevice: Meta[] = [];
 
   constructor(
@@ -123,7 +123,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getMetaListOfDevice() {
-    this.metaListOfDevice = this._metaList.filter((m) => { return m.device === this._device; });
+    this.metaListOfDevice = this.metaList.filter((m) => { return m.device === this._device; });
   }
 
   startUpdateInterval() {
@@ -199,7 +199,7 @@ export class DashboardComponent implements OnInit {
     return this.apiService.getMeta()
       .pipe(
         tap(r => {
-        this._metaList = r ?? [];
+        this.metaList = r ?? [];
         this.getMetaListOfDevice();
       }));
   }
@@ -254,7 +254,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getMeta(item: ListItem): Meta {
-    return this._metaList.find((value: Meta, index: number, obj: Meta[]) => {
+    return this.metaList.find((value: Meta, index: number, obj: Meta[]) => {
       return value.device === this.device && value.data_id === item.data_id;
     });
   }
@@ -300,7 +300,7 @@ export class DashboardComponent implements OnInit {
     console.log(model);
 
     let req: FindParams = {
-      device: this.device,
+      device: model.device,
       afterCount: model.direction === "1" ? 1 : undefined,
       beforeCount: model.direction === "-1" ? 1 : undefined,
       category: model.metricType,

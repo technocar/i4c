@@ -8,8 +8,14 @@
   <div class="modal-body">
     <form #searchForm="ngForm" id="dialog"(ngSubmit)="filter(searchForm, modal)" novalidate (change)="searchDataChanged($event)">
       <div class="form-group">
+        <label for="search_device" class="mr-2">Eszköz</label>
+        <select id="search_device" name="search_device" class="form-control" [(ngModel)]="device">
+          <option *ngFor="let d of devices" [value]="d.id">{{d.name}}</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label for="search_metrics" class="mr-2">Mérőszám</label>
-        <app-meta-selector [selectableTypes]="[]" [metaList]="metaList" (change)="selectMeta($event)"></app-meta-selector>
+        <app-meta-selector [device]="device" [selectableTypes]="[]" [metaList]="metaList" [conditionSelectable]="true" (change)="selectMeta($event)"></app-meta-selector>
       </div>
       <div *ngIf="!onlySelector" class="form-group">
         <label for="search_value" class="mr-2">Érrék</label>

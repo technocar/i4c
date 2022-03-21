@@ -14,7 +14,7 @@
         <i class="bi bi-plus-square"></i>
         <i class="bi bi-dash-square"></i>
         <span class="pl-2 pr-2">{{ item.name }}</span>
-        <button *ngIf="item.level === 'category' && item.name === 'CONDITION'" type="button" class="category btn btn-sm btn-outline-primary">kiválaszt</button>
+        <button *ngIf="conditionSelectable && item.level === '0' && item.name === 'CONDITION'" type="button" class="category btn btn-sm btn-outline-primary">kiválaszt</button>
         <ul *ngIf="item.children.length > 0">
           <ng-container
             *ngTemplateOutlet="metricListTmpl; context:{ list: item.children }"
