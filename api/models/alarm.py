@@ -935,7 +935,11 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                     agg_values = []
                     for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
                         if row_cond["log_row_category"] == AlarmCondLogRowCategory.condition:
-                            if check_rel("=", row_cond["value_text"], r_series_prev["value_text"]):
+                            if ( row_cond["value_text"] == r_series_prev["value_text"]
+                               or (row_cond["value_text"] == AlarmCondConditionValue.abnormal
+                                   and r_series_prev["value_text"] in (AlarmCondConditionValue.warning, AlarmCondConditionValue.fault)
+                                   )
+                                 ):
                                 age_min = timedelta(seconds=row_cond["age_min"] if row_cond["age_min"] else 0)
                                 if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
                                     t = series_intersect.TimePeriod(r_series_prev["timestamp"] + age_min, r_series["timestamp"],
