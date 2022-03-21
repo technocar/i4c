@@ -1,0 +1,1 @@
+python gen_push_key.py %*

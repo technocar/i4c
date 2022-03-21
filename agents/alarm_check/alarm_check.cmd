@@ -1,7 +1,4 @@
 
-:loop
+python alarm_check.py %*
 
-i4c alarm check --profile alarmcheckbot
-
-timeout 2
-:goto loop
+rem python alarm_check.py --profile alarmcheckbot --config-file alarm_check.conf
