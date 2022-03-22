@@ -321,6 +321,8 @@ export class DashboardComponent implements OnInit {
       if ((r ?? []).length > 0)
         t = new Date(r[0].timestamp).getTime();
       this.setTimestamp(t);
+      if (this._stopped)
+        this.getData();
       this.searchDialog.close();
     }, (err: HttpErrorResponse) => {
       let message = "";
