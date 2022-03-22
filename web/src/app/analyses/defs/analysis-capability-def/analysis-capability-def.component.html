@@ -52,7 +52,7 @@
     <div class="row form-group">
       <label class="col-6">merőszám</label>
       <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="selectableMetas" (change)="changeMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" [device]="device" (change)="changeMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
       </div>
     </div>
     <div class="row form-group">

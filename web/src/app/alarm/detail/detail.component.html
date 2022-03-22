@@ -50,7 +50,7 @@
           <select class="col-2 form-control" name="rule_device" [(ngModel)]="rule.device">
             <option *ngFor="let device of devices" [value]="device.id">{{device.name}}</option>
           </select>
-          <app-meta-selector class="col-2" [selectableTypes]="[]" [metaList]="getMetaForDevice(rule.device)" (change)="selectRuleMeta(rule, $event)" [selectedMetaId]="getSelectedDataId(rule)"></app-meta-selector>
+          <app-meta-selector class="col-2" [selectableTypes]="[]" [metaList]="metaList" [device]="rule.device" (change)="selectRuleMeta(rule, $event)" [selectedMetaId]="getSelectedDataId(rule)"></app-meta-selector>
           <div class="col">
             <div class="row align-items-center">
 
