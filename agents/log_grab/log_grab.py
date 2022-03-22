@@ -1,4 +1,3 @@
-
 import os
 import csv
 import shutil
@@ -52,6 +51,7 @@ cfg = None
 conn = None
 log = None
 
+
 def init_globals():
     global cfg
     global log
@@ -66,6 +66,7 @@ def init_globals():
 
     profile = cfg.get("profile", None)
     conn = i4c.I4CConnection(profile=profile)
+
 
 def check_params(paths):
     result = {"source-path": None, "archive-path": None, "OK": False}
@@ -85,11 +86,13 @@ def check_params(paths):
     result["OK"] = True
     return result
 
+
 def get_datetime(source, format):
     return datetime.datetime.strptime(source, format).strftime("%Y-%m-%dT%H:%M:%S")
 
+
 def process_robot(section):
-    log.info("processing ROBOT files")
+    log.debug("processing ROBOT files")
 
     api_params = {
         "timestamp": None,
@@ -119,7 +122,7 @@ def process_robot(section):
         wkpcid = None
         progid = None
         api_params_array = []
-        log.debug("Processing file %s", currentfile)
+        log.info("Processing file %s", currentfile)
         with open(os.path.join(src_path, currentfile)) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
             for lines in csvreader:
@@ -167,7 +170,7 @@ def process_robot(section):
 
 
 def process_GOM(section):
-    log.info("Processing GOM files...")
+    log.debug("Processing GOM files...")
 
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
@@ -195,7 +198,7 @@ def process_GOM(section):
         return
 
     for currentfile in files:
-        log.debug("processing file %s", currentfile)
+        log.info("processing file %s", currentfile)
         fname, fext = os.path.splitext(currentfile)
         if fext.upper() == ".CSV":
             if not os.path.exists(os.path.join(src_path, fname + '.LOG')):
@@ -263,8 +266,9 @@ def process_GOM(section):
                 log.debug("archiving additional file {}".format(fnew))
                 shutil.move(os.path.join(src_path, fnew), os.path.join(params["archive-path"], fnew))
 
+
 def process_Alarms(section):
-    log.info("Processing ALARM files...")
+    log.debug("Processing ALARM files...")
 
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
@@ -292,7 +296,7 @@ def process_Alarms(section):
         return
 
     for currentfile in files:
-        log.debug("processing file %s", currentfile)
+        log.info("processing file %s", currentfile)
         with open(os.path.join(src_path, currentfile)) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
             api_params_array = []
@@ -311,8 +315,9 @@ def process_Alarms(section):
         log.debug("archiving file")
         shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
 
+
 def process_ReniShaw(section):
-    log.info("Processing ReniShaw files...")
+    log.debug("Processing ReniShaw files...")
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
         "sequence": 0,
@@ -340,6 +345,8 @@ def process_ReniShaw(section):
         return
 
     for currentfile in files:
+        log.info("processing file %s", currentfile)
+
         api_params_array = []
         measure = None
         measure2 = None
@@ -422,7 +429,7 @@ def process_ReniShaw(section):
 
 def main():
     init_globals()
-    log.info("start")
+    log.debug("start")
     if "robot" in cfg:
         process_robot(cfg["robot"])
     if "gom" in cfg:
@@ -431,7 +438,7 @@ def main():
         process_Alarms(cfg["alarms"])
     if "renishaw" in cfg:
         process_ReniShaw(cfg["renishaw"])
-    log.info("finish")
+    log.debug("finish")
 
 if __name__ == '__main__':
     main()
