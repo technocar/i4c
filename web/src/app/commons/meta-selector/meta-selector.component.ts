@@ -181,8 +181,8 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
       let meta: Meta;
       if (isCategorySelection)
         meta = {
-          data_id: this.selectedMetric.id,
-          device: undefined,
+          data_id: undefined,
+          device: this._device as DeviceType,
           category: this.selectedMetric.id as Category,
           name: this.selectedMetric.name
         }

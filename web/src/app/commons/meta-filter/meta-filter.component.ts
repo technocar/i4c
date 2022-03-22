@@ -85,7 +85,7 @@ export class MetaFilterComponent implements OnInit {
   selectMeta(meta: Meta) {
     console.log(meta);
     this.searchModel.device = this.device as DeviceType;
-    this.searchModel.metricId = meta.data_id;
+    this.searchModel.metricId = (meta.data_id === meta.category) ? undefined : meta.data_id;
     this.searchModel.metricName = meta.nice_name ?? meta.name ?? meta.data_id;
     this.searchModel.metricType = meta.category;
     if (this.searchModel.metricType === "EVENT")
