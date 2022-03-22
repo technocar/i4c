@@ -8,6 +8,7 @@ import { DeviceType, Labels } from 'src/app/services/models/constants';
 import { AppNotifType, NotificationService } from 'src/app/services/notification.service';
 
 interface Rule extends AlarmRule {
+  id: number,
   device: DeviceType,
   value_list: string[]
 }
@@ -41,9 +42,9 @@ export class AlarmDetailComponent implements OnInit {
       this.def = r.data[0] as Alarm;
       this.origDef = this.def;
       this.metaList = r.data[1] as Meta[];
-      this.rules$.next(this.def.conditions.map(r => {
+      this.rules$.next(this.def.conditions.map((r, idx) => {
         var device = (r.condition ?? r.event ?? r.sample).device;
-        var rule = Object.assign({ device: device, value_list: [] }, r);
+        var rule = Object.assign({ device: device, value_list: [], id: idx + 1 }, r);
         return rule;
       }));
       this.groups = (<AlarmGroup[]>(r.data[2] ?? [])).map(g => g.name);
@@ -136,24 +137,30 @@ export class AlarmDetailComponent implements OnInit {
   }
 
   trackByRuleIdx(index: number, rule: Rule) {
-    return index;
+    return rule.id;
+  }
+
+  changeRuleDevice(rule: Rule, event: Event) {
+    rule.device = (event.target as HTMLSelectElement).value as DeviceType;
   }
 
   newRule() {
-    var rules = this.rules$.value;
-    rules.push({
+    this.rules$.value.push({
+      id: (this.rules$.value.length === 0 ? 0 : Math.max(...this.rules$.value.map(f => f.id))) + 1,
       device: DeviceType.Lathe,
       value_list: [],
       condition: undefined,
       event: undefined,
       sample: undefined
     });
-    this.rules$.next(rules);
+    console.log(this.rules$.value);
   }
 
-  deleteRule(index: number) {
+  deleteRule(id: number) {
     var rules = this.rules$.value;
-    rules.splice(index, 1);
+    var index = rules.findIndex(r => r.id === id);
+    if (index > -1)
+      rules.splice(index, 1);
     this.rules$.next(rules);
   }
 

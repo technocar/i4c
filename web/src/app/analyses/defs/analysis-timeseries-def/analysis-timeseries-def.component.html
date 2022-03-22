@@ -31,10 +31,10 @@
             <input class="form-control mr-2" [(ngModel)]="filter.value" [disabled]="!access.canUpdate"/>
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" [disabled]="!access.canUpdate"/>
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" [disabled]="!access.canUpdate" step="0.01"/>
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" [disabled]="!access.canUpdate"/>
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" [disabled]="!access.canUpdate" step="0.01"/>
           </td>
           <td>
             <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="access.canUpdate">

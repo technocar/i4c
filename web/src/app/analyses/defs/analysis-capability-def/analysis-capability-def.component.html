@@ -57,23 +57,23 @@
     </div>
     <div class="row form-group">
       <label class="col">nominal</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.nominal" [disabled]="!access.canUpdate"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.nominal" [disabled]="!access.canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">utl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.utl" [disabled]="!access.canUpdate"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.utl" [disabled]="!access.canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">ltl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.ltl" [disabled]="!access.canUpdate"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.ltl" [disabled]="!access.canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">ucl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.ucl" [disabled]="!access.canUpdate"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.ucl" [disabled]="!access.canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">lcl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.lcl" [disabled]="!access.canUpdate"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.lcl" [disabled]="!access.canUpdate" step="0.01"/>
     </div>
   </fieldset>
   <fieldset class="col p-4 mt-4 ml-2">

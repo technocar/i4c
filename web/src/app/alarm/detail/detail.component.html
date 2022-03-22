@@ -47,7 +47,7 @@
       <legend>feltételek</legend>
       <div class="col-12">
         <div class="row mb-2" *ngFor="let rule of rules$ | async; index as ruleIdx; trackBy: trackByRuleIdx">
-          <select class="col-2 form-control" name="rule_device" [(ngModel)]="rule.device">
+          <select class="col-2 form-control" [name]="'rule_device_' + ruleIdx" [(ngModel)]="rule.device">
             <option *ngFor="let device of devices" [value]="device.id">{{device.name}}</option>
           </select>
           <app-meta-selector class="col-2" [selectableTypes]="[]" [metaList]="metaList" [device]="rule.device" (change)="selectRuleMeta(rule, $event)" [selectedMetaId]="getSelectedDataId(rule)"></app-meta-selector>
@@ -64,7 +64,7 @@
                 <select class="col-2 form-control mr-2" name="rule_sample_rel" [(ngModel)]="rule.sample.rel">
                   <option *ngFor="let rel of getNumberRelations()" [value]="rel">{{rel}}</option>
                 </select>
-                <input type="number" class="col form-control" name="rule_sample_value" [(ngModel)]="rule.sample.value" />
+                <input type="number" class="col form-control" name="rule_sample_value" [(ngModel)]="rule.sample.value" step="0.01" />
               </ng-template>
 
               <ng-template [ngIf]="rule.event">
@@ -73,19 +73,19 @@
                 </select>
                 <autocomplete-input [values]="rule.value_list" [(value)]="rule.event.value" class="col mr-2"></autocomplete-input>
 
-                <input type="number" class="col-2 form-control" name="rule_event_age_min" [(ngModel)]="rule.event.age_min" />
+                <input type="number" class="col-2 form-control" name="rule_event_age_min" [(ngModel)]="rule.event.age_min"  step="0.01"/>
                 <label class="col-auto mr-1 ml-1 mb-0">-</label>
-                <input type="number" class="col-2 form-control" name="rule_event_age_max" [(ngModel)]="rule.event.age_max" />
+                <input type="number" class="col-2 form-control" name="rule_event_age_max" [(ngModel)]="rule.event.age_max" step="0.01"/>
               </ng-template>
 
               <ng-template [ngIf]="rule.condition">
                 <input class="col-4 form-control mr-2" name="rule_condition_value" [(ngModel)]="rule.condition.value" />
-                <input type="number" class="col-2 form-control" name="rule_condition_age_min" [(ngModel)]="rule.condition.age_min" />
+                <input type="number" class="col-2 form-control" name="rule_condition_age_min" [(ngModel)]="rule.condition.age_min" step="0.01" />
               </ng-template>
             </div>
           </div>
           <div class="col-auto ml-auto pl-2 pr-0">
-            <button class="btn btn-outline-danger" title="törlés" (click)="deleteRule(ruleIdx)">
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteRule(rule.id)">
               <i class="bi bi-trash"></i>
             </button>
           </div>
