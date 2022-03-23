@@ -277,7 +277,7 @@ def process_input(args, body, input_data, input_format, input_foreach, input_pla
             if ext == ".csv":
                 d.separator = "comma"
             elif ext.lower() in (".json", ".xml"):
-                d.fmt = ext.lower()
+                d.fmt = ext.lower()[1:]
     attr = format_attrs(input_format, default=d)
 
     if input_data == "@-":
