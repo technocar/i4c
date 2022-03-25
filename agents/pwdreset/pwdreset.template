@@ -1,5 +1,6 @@
 From: {{sender}}
 To: {{email}}
+MIME-Version: 1.0
 Content-Type: multipart/alternative; boundary="{{sep}}"
 Subject: =?UTF-8?Q?I4C jelsz=c3=b3?=
 
