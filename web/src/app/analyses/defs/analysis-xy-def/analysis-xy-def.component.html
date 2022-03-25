@@ -19,11 +19,12 @@
           </td>
           <td>
             <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">
-              <option *ngFor="let op of operators" value="{{op}}">{{op}}</option>
+              <option *ngFor="let op of getOperators(filter)" value="{{op}}">{{op}}</option>
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length === 0" [disabled]="!access.canUpdate"/>
+            <input type="number" step="0.01" class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter._type === 'numeric' && (!filter.values || filter.values.length === 0)" [disabled]="!access.canUpdate"/>
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter._type !== 'numeric' && (!filter.values || filter.values.length === 0)" [disabled]="!access.canUpdate"/>
             <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length > 0" [disabled]="!access.canUpdate">
               <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
             </select>

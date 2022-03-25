@@ -16,6 +16,7 @@ Quill.register('modules/graphdata', QuillGraphData);
 
 interface Filter extends StatXYFilter {
   _id: number,
+  _type: string,
   values: string[]
 }
 
@@ -153,6 +154,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       var filters = (this.def.filter ?? []).map((f, i) => {
         var result: Filter = {
           _id: i,
+          _type: this.getField(f.field)?.type,
           id: f.id,
           rel: f.rel,
           value: f.value,
@@ -169,6 +171,15 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
         this.objectChanged(this.def.obj.type, true);
       }
     });
+  }
+
+  getField(fieldname: string): StatXYMetaObjectField {
+    for (let object of this.objects$.value) {
+      let field = object.fields.find(f => f.name === fieldname);
+      if (field)
+        return field;
+    }
+    return undefined;
   }
 
   objectChanged(type: string, noInteractive: boolean = false) {
@@ -196,6 +207,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     var filters = this.filters$.value;
     filters.push({
       _id: ((filters ?? []).length === 0 ? 0 : Math.max(...filters.map(f => f._id))) + 1,
+      _type: undefined,
       id: null,
       field: undefined,
       rel: NumberRelation.Equal,
@@ -208,8 +220,11 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   updateFilterField(filter: Filter) {
     var metaField = this.fields$.value.find((f) => f.name === filter.field);
     if (metaField) {
+      filter._type = metaField.type;
       filter.values = metaField.value_list;
     }
+    console.log(metaField);
+    console.log(filter.values);
   }
 
   getFieldValues(name: string): string[] {
@@ -218,6 +233,11 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       return field.value_list ?? [];
     else
       return [];
+  }
+
+  getOperators(filter: Filter): NumberRelation[] {
+    var forCategories: NumberRelation[] = [NumberRelation.Equal, NumberRelation.NotEqual];
+    return this.operators.filter(o => (filter._type === "category" && forCategories.indexOf(o) > -1) || filter._type !== "category");
   }
 
   deleteOther(id: number) {
