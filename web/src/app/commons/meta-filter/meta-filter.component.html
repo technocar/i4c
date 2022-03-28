@@ -14,11 +14,11 @@
         </select>
       </div>
       <div class="form-group">
-        <label for="search_metrics" class="mr-2">Mérőszám</label>
+        <label for="search_metrics" class="mr-2">Adat</label>
         <app-meta-selector [device]="device" [selectableTypes]="[]" [metaList]="metaList" [conditionSelectable]="true" (change)="selectMeta($event)"></app-meta-selector>
       </div>
       <div *ngIf="!onlySelector" class="form-group">
-        <label for="search_value" class="mr-2">Érrék</label>
+        <label for="search_value" class="mr-2">Érték</label>
         <div *ngIf="searchModel.metricType == 'SAMPLE'" class="row form-group pr-3 pl-3">
           <select name="search_rel" [(ngModel)]="searchModel.relation" class="form-control mr-2 col">
             <option value="=">=</option>
