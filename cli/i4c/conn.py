@@ -425,6 +425,29 @@ class I4CConnection:
 
         _save_profile(self.profile_file, p)
 
+    def delete_profile(self, name):
+        """
+        Permanently deletes the profile. Use with caution, it is not reversible.
+
+        :param name: the profile to delete, required.
+        :return: True if deleted, False if not found.
+        """
+
+        if name == "default":
+            raise I4CException("Invalid profile name.")
+        if name is None:
+            raise I4CException("Name required.")
+
+        p = _load_profile(self.profile_file, require_exist=False)
+        if not p or name not in p:
+            return False
+
+        del p[name]
+
+        _save_profile(self.profile_file, p)
+
+        return True
+
     def profile_new_key(self, name, override):
         """
         Creates a new key pair, saves the private key to the profile, and returns the public key.
