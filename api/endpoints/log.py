@@ -9,6 +9,7 @@ import common
 from I4cAPI import I4cApiRouter
 from common.exceptions import I4cClientNotFound
 from models import Device, DeviceAuto
+from models.log.find import LogCondEventRel
 
 router = I4cApiRouter(include_path="/log")
 
@@ -39,13 +40,14 @@ async def find(
         data_id: Optional[str] = Query(None, title="Log data type."),
         val: Optional[List[str]] = Query(None, title="Value of the log item."),
         extra: Optional[str] = Query(None, title="Extra of the log item."),
-        rel: Optional[str] = Query(None, title="Relation for the val or extra.")
+        rel: Optional[LogCondEventRel] = Query(None, title="Relation for the val or extra.")
 ):
     """List log entries."""
     rs = await models.log.get_find(credentials, device, timestamp, sequence, before_count, after_count, categ, data_id, val, extra, rel)
     if rs is None:
         raise I4cClientNotFound("No log record found")
     return rs
+
 
 @router.get("/meta", response_model=List[models.log.Meta], operation_id="log_meta", summary="Get log metadata.")
 async def meta(

@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional, List, Dict, Any
 from pydantic import Field
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
@@ -30,6 +31,18 @@ class DataPoint(I4cBaseModel):
     value_add: Optional[Dict[str,Any]] = Field(None, title="Other information")
 
 
+class LogCondEventRel(str, Enum):
+    """Relation for condition, event data type."""
+    eq = "="
+    neq = "!="
+    less = "<"
+    leq = "<="
+    gtr = ">"
+    geq = ">="
+    contains = "*"
+    not_contains = "!*"
+
+
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,
                  allow_exact_ts_match: bool = True, seq_part: Optional[str] = None):
     wheres = []
@@ -37,12 +50,10 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
     count = None
     comp_rel = None
     if rel is None:
-        rel = '='
-    if rel not in ('=','<','>','<=','>=','!=','*=','*!='):
-        raise I4cClientError(f"Invalid rel parameter")
-    if rel == '*=':
+        rel = LogCondEventRel.eq
+    if rel == LogCondEventRel.contains:
         srel = 'like \'%\'||<val>||\'%\''
-    elif rel == '*!=':
+    elif rel == LogCondEventRel.not_contains:
         srel = 'not like \'%\'||<val>||\'%\''
     else:
         srel = rel + " <val>"
@@ -100,7 +111,7 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
     if val is not None:
         wheres.append('and ((0=1)')
         for vi in val:
-            if rel not in ('*=','*!='):
+            if rel not in (LogCondEventRel.contains, LogCondEventRel.not_contains):
                 try:
                     params.append(float(vi))
                     wheres.append(f'      or ((m.category = \'SAMPLE\') and (l.value_num '
