@@ -175,7 +175,7 @@ def process_GOM(section):
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
         "sequence": None,
-        "device": "GOM",
+        "device": "gom",
         "instance": 0,
         "data_id": '',
         "value": None,
@@ -206,6 +206,7 @@ def process_GOM(section):
                 continue
             api_params_array = []
 
+            log.debug("loading log")
             with open(os.path.join(src_path, fname + ".log")) as csvfile:
                 api_params["sequence"] = 0
                 for (line_no, lines) in enumerate(csvfile):
@@ -248,6 +249,7 @@ def process_GOM(section):
                         api_params_array.append(copy.deepcopy(api_params))
                 csvfile.close()
 
+            log.debug(f"writing log entries: {len(api_params_array)}")
             conn.invoke_url("log", "POST", api_params_array)
         else:
             with open(os.path.join(src_path, currentfile), "rb") as datafile:
