@@ -20,6 +20,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
 
   private _selectedMetaId: string;
   private _device: string;
+  private _metaList: Meta[];
 
   @ViewChild("button") button: ElementRef<HTMLButtonElement>;
   @ViewChild("dropdown") dropdown: ElementRef<HTMLElement>;
@@ -37,7 +38,15 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   }
 
   @Input('conditionSelectable') conditionSelectable: boolean = false;
-  @Input('metaList') metaList: Meta[];
+  @Input('metaList')
+  get metaList(): Meta[] {
+    return this._metaList;
+  }
+  set metaList(value: Meta[]) {
+    this._metaList = value ?? [];
+    if (this._selectedMetaId)
+      this.selectedMetaId = this._selectedMetaId;
+  }
   @Input('selectableTypes') selectableTypes: string[];
   @Input('selectedMetaId')
   public get selectedMetaId(): string {
@@ -202,7 +211,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   }
 
   getMeta(id: string): Meta {
-    return this.metaList.find((m) => { return m.data_id === id && (!this._device || m.device === this._device) });
+    return (this.metaList ?? []).find((m) => { return m.data_id === id && (!this._device || m.device === this._device) });
   }
 
   toggle(open: boolean) {

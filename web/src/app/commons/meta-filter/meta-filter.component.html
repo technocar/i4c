@@ -9,13 +9,13 @@
     <form #searchForm="ngForm" id="dialog"(ngSubmit)="filter(searchForm, modal)" novalidate (change)="searchDataChanged($event)">
       <div class="form-group">
         <label for="search_device" class="mr-2">Eszköz</label>
-        <select id="search_device" name="search_device" class="form-control" [(ngModel)]="device">
+        <select id="search_device" name="search_device" class="form-control" [(ngModel)]="searchModel.device">
           <option *ngFor="let d of devices" [value]="d.id">{{d.name}}</option>
         </select>
       </div>
       <div class="form-group">
         <label for="search_metrics" class="mr-2">Adat</label>
-        <app-meta-selector [device]="device" [selectableTypes]="[]" [metaList]="metaList" [conditionSelectable]="true" (change)="selectMeta($event)"></app-meta-selector>
+        <app-meta-selector [device]="searchModel.device" [selectedMetaId]="searchModel.metricId" [selectableTypes]="[]" [metaList]="metaList" [conditionSelectable]="true" (change)="selectMeta($event)"></app-meta-selector>
       </div>
       <div *ngIf="!onlySelector" class="form-group">
         <label for="search_value" class="mr-2">Érték</label>
