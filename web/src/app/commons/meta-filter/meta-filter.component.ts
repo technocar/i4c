@@ -50,7 +50,14 @@ export class MetaFilterComponent implements OnInit {
   @Input('selectableTypes') selectableTypes: string[];
   @Input('mode') mode: MetaFilterMode = MetaFilterMode.Select;
   @Input('onlySelector') onlySelector: boolean;
-  @Input('device') device: string;
+  @Input('device')
+  set device(value: string) {
+    console.log(value);
+    this.searchModel.device = value as DeviceType;
+  }
+  get device(): string {
+    return this.searchModel.device;
+  }
   @Output("onFilter") onFilter: EventEmitter<MetricFilterModel> = new EventEmitter();
 
   @ViewChild('dialog') dialog;
@@ -59,6 +66,7 @@ export class MetaFilterComponent implements OnInit {
   click$ = new Subject<string>();
 
   searchModel: MetricFilterModel = {
+    device: DeviceType.Lathe,
     direction: "-1"
   };
   searchError: MetricFilterError = {
@@ -84,7 +92,6 @@ export class MetaFilterComponent implements OnInit {
 
   selectMeta(meta: Meta) {
     console.log(meta);
-    this.searchModel.device = this.device as DeviceType;
     this.searchModel.metricId = (meta.data_id === meta.category) ? undefined : meta.data_id;
     this.searchModel.metricName = meta.nice_name ?? meta.name ?? meta.data_id;
     this.searchModel.metricType = meta.category;
@@ -99,8 +106,6 @@ export class MetaFilterComponent implements OnInit {
   show(model?: MetricFilterModel, disableMetricSelection?: boolean) {
     if (model)
       this.searchModel = model;
-    else
-      this.searchModel = { direction: "-1" };
     this.disableMetricSelection = disableMetricSelection === true;
 
     this._activeModal = this.modalService.open(this.dialog);
