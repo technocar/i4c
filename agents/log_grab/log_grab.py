@@ -7,6 +7,7 @@ import logging.config
 import yaml
 import i4c
 import re
+import tempfile
 
 robot_actions = {
     "Darab beérkezett": "spotted",
@@ -289,17 +290,33 @@ def process_Alarms(section):
         return
 
     src_path = params["source-path"]
+    ref_date = datetime.date.today().strftime("%Y.%m.%d")
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
              and any(entry.upper().endswith(ext) for ext in (".CSV"))
-             and os.path.splitext(entry)[0] < datetime.date.today().strftime("%Y.%m.%d")]
+             and os.path.splitext(entry)[0] <= ref_date]
     if len(files) == 0:
         log.debug("no files to load")
         return
 
+    current_file = dict()
     for currentfile in files:
-        log.info("processing file %s", currentfile)
-        with open(os.path.join(src_path, currentfile)) as csvfile:
+        current_file["name"] = currentfile
+        current_file["path"] = src_path
+        current_file["fullname"] = os.path.join(src_path, currentfile)
+
+        log.info("processing file %s", current_file["fullname"])
+        fname, _ = os.path.splitext(currentfile)
+        if fname == ref_date:
+            log.info("creating temp file")
+            shutil.copyfile(current_file["fullname"], os.path.join(tempfile.gettempdir(), current_file["name"]))
+            current_file["path"] = tempfile.gettempdir()
+            current_file["fullname"] = os.path.join(tempfile.gettempdir(), current_file["name"])
+            current_file["move"] = False
+        else:
+            current_file["move"] = True
+
+        with open(current_file["fullname"]) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
             api_params_array = []
             api_params["sequence"] = 0
@@ -314,8 +331,12 @@ def process_Alarms(section):
                 api_params["sequence"] += 1
             csvfile.close()
         conn.invoke_url("log", "POST", api_params_array)
-        log.debug("archiving file")
-        shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
+        if current_file["move"]:
+            log.debug("archiving file")
+            shutil.move(current_file["fullname"], os.path.join(params["archive-path"], current_file["name"]))
+        else:
+            log.debug("deleting temp file")
+            os.remove(current_file["fullname"])
 
 
 def process_ReniShaw(section):
