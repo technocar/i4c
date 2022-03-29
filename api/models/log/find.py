@@ -20,7 +20,7 @@ class DataPoint(I4cBaseModel):
     """One data point in the log."""
     timestamp: datetime = Field(..., title="Exact time the data was collected.")
     sequence: int = Field(..., title="Sequence, used to determine order when the timestamp is identical.")
-    device: str = Field(..., title="Originating device.")
+    device: str = Field(..., title="Originating device.") # TODO inconsistent with get, there it is an enum
     instance: Optional[str] = Field(None, title="Identifies a session on a device. Changes when turned off.")
     data_id: str = Field(..., title="Data type.")
     value: Optional[str]
