@@ -120,8 +120,12 @@ def main():
                     log.debug("authenticating")
                     mailer.login(uid, pwd)
 
+                mailer.ehlo_or_helo_if_needed()
+                mailopt = ("BODY=8BITMIME",) if "8bitmime" in mailer.esmtp_features else ()
+                log.debug(f"mail opt: {'|'.join(mailopt)}")
+
                 log.debug("sending")
-                mailer.sendmail(sender, [email], mail_body)
+                mailer.sendmail(sender, [email], mail_body, mail_options=mailopt)
 
                 try:
                     log.debug("marking as sent")
