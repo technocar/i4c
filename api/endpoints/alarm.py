@@ -11,7 +11,6 @@ from I4cAPI import I4cApiRouter
 from common import CredentialsAndFeatures
 from common.exceptions import I4cClientNotFound, I4cClientError
 from models import CommonStatusEnum
-import pytz
 
 router = I4cApiRouter(include_path="/alarm")
 

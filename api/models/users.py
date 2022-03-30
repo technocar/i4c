@@ -7,7 +7,7 @@ import common
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
 from common.cmp_list import cmp_list
 import common.tools
-from common.exceptions import I4cClientError, I4cClientNotFound
+from common.exceptions import I4cClientError
 from models import UserStatusEnum
 from models.common import PatchResponse
 from models.roles import Priv

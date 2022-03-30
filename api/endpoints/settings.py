@@ -1,6 +1,5 @@
 from typing import Optional
 from fastapi import Depends, Path, Body
-from fastapi.security import HTTPBasicCredentials
 from starlette.requests import Request
 from starlette.responses import Response
 import common
