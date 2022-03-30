@@ -8,6 +8,11 @@ class Device(str, Enum):
     robot = "robot"
 
 
+class ToolDevice(str, Enum):
+    mill = "mill"
+    lathe = "lathe"
+
+
 class DeviceAuto(str, Enum):
     """Device or 'auto' for automatic selection."""
     auto = "auto"

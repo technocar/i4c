@@ -7,7 +7,7 @@ from fastapi.types import DecoratedCallable
 from common import log
 from common.exceptions import I4cClientError
 from common.tools import deepdict
-from models.log import put_log_write, DataPoint
+from models.log import put_log_write, DataPointLog
 
 
 class I4cApiRouterPath:
@@ -56,7 +56,7 @@ class I4cApiRouter(APIRouter):
                             log_str = f"{ip} - {rest_method} - {path} - {operation_id}{' - '+params if params else ''} - {kwparams}"
                             log.info(log_str)
 
-                            d = DataPoint(timestamp=datetime.now(), sequence=1, device='audit',
+                            d = DataPointLog(timestamp=datetime.now(), sequence=1, device='audit',
                                           data_id=operation_id,
                                           value_text=user,
                                           value_extra=ip,

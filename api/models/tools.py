@@ -6,6 +6,7 @@ from pydantic import Field
 from common import I4cBaseModel, DatabaseConnection
 import models.log
 from common.exceptions import I4cClientNotFound
+from models import ToolDevice
 from models.common import PatchResponse
 
 
@@ -52,7 +53,7 @@ class ToolDataPointKey(I4cBaseModel):
     """Identifies a tool change log event."""
     timestamp: datetime
     sequence: int
-    device: str
+    device: ToolDevice
     data_id: ToolDataId
 
 
@@ -60,7 +61,7 @@ class ToolDataPoint(I4cBaseModel):
     """Tool change event."""
     timestamp: datetime
     sequence: int
-    device: str
+    device: ToolDevice
     data_id: ToolDataId
     tool_id: Optional[str]
     slot_number: Optional[str]

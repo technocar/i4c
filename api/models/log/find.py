@@ -5,6 +5,7 @@ from pydantic import Field
 from common import I4cBaseModel, write_debug_sql, DatabaseConnection, log
 from common.db_tools import asyncpg_rows_process_json
 from common.exceptions import I4cClientError
+from models import Device
 
 view_find_sql = open("models/log/find.sql").read()
 
@@ -17,11 +18,9 @@ class DataPointKey(I4cBaseModel):
     data_id: str = Field(..., title="Data type.")
 
 
-class DataPoint(I4cBaseModel):
-    """One data point in the log."""
+class DataPointBase(I4cBaseModel):
     timestamp: datetime = Field(..., title="Exact time the data was collected.")
     sequence: int = Field(..., title="Sequence, used to determine order when the timestamp is identical.")
-    device: str = Field(..., title="Originating device.") # TODO inconsistent with get, there it is an enum
     instance: Optional[str] = Field(None, title="Identifies a session on a device. Changes when turned off.")
     data_id: str = Field(..., title="Data type.")
     value: Optional[str]
@@ -29,6 +28,15 @@ class DataPoint(I4cBaseModel):
     value_text: Optional[str] = Field(None, title="Text value")
     value_extra: Optional[str] = Field(None, title="Additional text value")
     value_add: Optional[Dict[str,Any]] = Field(None, title="Other information")
+
+
+class DataPointDevice(DataPointBase):
+    """One device data point in the log."""
+    device: Device = Field(..., title="Originating device.")
+
+
+class DataPointLog(DataPointBase):
+    device: str = Field(..., title="Originating device.")
 
 
 class LogCondEventRel(str, Enum):
@@ -136,7 +144,7 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
 
 
 async def get_find(credentials, device, timestamp=None, sequence=None, before_count=None, after_count=None, categ=None,
-                   data_id=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPoint]:
+                   data_id=None, val=None, extra=None, rel=None, *, pconn=None) -> List[DataPointDevice]:
     if sequence is not None and timestamp is None:
         raise I4cClientError("sequence allowed only when timestamp is not empty")
 
@@ -148,4 +156,4 @@ async def get_find(credentials, device, timestamp=None, sequence=None, before_co
         log.debug('before sql run')
         rs = await conn.fetch(sql,*params)
         log.debug('after sql run')
-    return [DataPoint(**r) for r in asyncpg_rows_process_json(rs, 'value_add')]
+    return [DataPointDevice(**r) for r in asyncpg_rows_process_json(rs, 'value_add')]

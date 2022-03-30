@@ -3,7 +3,7 @@ from textwrap import dedent
 from common import DatabaseConnection
 from common.db_tools import dict2asyncpg_param
 from common.exceptions import I4cClientError
-from models.log import DataPoint
+from models.log import DataPointLog
 
 
 async def check_data_id(conn, device, timestamp, sequence, data_id):
@@ -19,7 +19,7 @@ async def check_data_id(conn, device, timestamp, sequence, data_id):
         raise I4cClientError("data_id update is not allowed")
 
 
-async def put_log_write(credentials, datapoints: List[DataPoint], *, override=False, pconn=None):
+async def put_log_write(credentials, datapoints: List[DataPointLog], *, override=False, pconn=None):
     on_conflict = "DO NOTHING" if not override else """\
                    DO UPDATE SET 
                      instance = EXCLUDED.instance,

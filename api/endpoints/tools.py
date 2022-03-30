@@ -22,12 +22,12 @@ async def tools_log_write(
     """
     Record a tool change event. Updates if same device/timestamp/sequence/slot.
     """
-    d = models.log.DataPoint(timestamp=datapoint.timestamp,
-                             sequence=datapoint.sequence,
-                             device=datapoint.device,
-                             data_id=datapoint.data_id,
-                             value_text=datapoint.tool_id,
-                             value_extra=datapoint.slot_number)
+    d = models.log.DataPointLog(timestamp=datapoint.timestamp,
+                                sequence=datapoint.sequence,
+                                device=datapoint.device,
+                                data_id=datapoint.data_id,
+                                value_text=datapoint.tool_id,
+                                value_extra=datapoint.slot_number)
     await models.log.put_log_write(credentials, [d], override=True)
 
 

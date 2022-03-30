@@ -26,7 +26,7 @@ async def snapshot(
     return await models.log.get_snapshot(credentials, ts, device)
 
 
-@router.get("/find", response_model=List[models.log.DataPoint], operation_id="log_list", allow_log=False,
+@router.get("/find", response_model=List[models.log.DataPointDevice], operation_id="log_list", allow_log=False,
             summary="Search the log.")
 async def find(
         request: Request,
@@ -61,7 +61,7 @@ async def meta(
 async def log_write(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(common.security_checker("post/log")),
-        datapoints: List[models.log.DataPoint] = Body(...)):
+        datapoints: List[models.log.DataPointDevice] = Body(...)):
     """Submit data to the log."""
     await models.log.put_log_write(credentials, datapoints)
 
