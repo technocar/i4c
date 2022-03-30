@@ -142,6 +142,8 @@ def format_attrs(s, default: InputFormat = None):
     :return: an InputFormat object with all the fields filled in
     """
     f = default or InputFormat()
+    if s is None:
+        s = ("",)
     if isinstance(s, str):
         s = (s,)
     for i in s:

@@ -74,12 +74,20 @@ def callback(ctx, **args):
     # process body
     if "body" in args:
         body = args.pop("body")
-        body = resolve_file(body)
+        direct_file = body.startswith("@") and action.body.content_type == "application/octet-stream"
+        if direct_file:
+            body = open(body[1:], "rb")
+        else:
+            body = resolve_file(body)
     else:
+        direct_file = False
         body = None
 
-    #if action.body.content_type == "application/json": else:             body = [body]             args = [args]
-    args, body = process_input(args, body, input_data, input_format, input_foreach, input_placement)
+    if direct_file:
+        args = [args]
+        body = [body]
+    else:
+        args, body = process_input(args, body, input_data, input_format, input_foreach, input_placement)
 
     body = [s.encode("utf-8") if isinstance(s, str) else s for s in body]
 
@@ -230,25 +238,26 @@ def make_commands(conn: I4CConnection):
 
                 params.append(click.Option(("--body",), **attrs))
 
-            params.append(click.Option(("--input-data","-D"),
-                help="The data which will be processed and inserted to the body according to the other "
-                     "--input-* options. Use @filename to read from a file, or @- to read from stdin."))
+            if action.body and action.body.content_type != "application/octet-stream":
+                params.append(click.Option(("--input-data", "-D"),
+                    help="The data which will be processed and inserted to the body according to the other "
+                         "--input-* options. Use @filename to read from a file, or @- to read from stdin."))
 
-            params.append(click.Option(("--input-placement","-P"), multiple=True,
-                help="Specifies where the input should be placed into the body, and optionally what part of the "
-                     "input. If only a <jsonpath> is given, the input will be written at that location. If "
-                     "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
-                     "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1]."))
+                params.append(click.Option(("--input-placement", "-P"), multiple=True,
+                    help="Specifies where the input should be placed into the body, and optionally what part of the "
+                         "input. If only a <jsonpath> is given, the input will be written at that location. If "
+                         "<jsonpath1>=<jsonpath2> is used, the second expression will be extracted from the input, and "
+                         "placed where indicated by the first expression. The target must exist. E.g.:\xa0$.name=$[0][1]."))
 
-            params.append(click.Option(("--input-format","-F"), multiple=True,
-                help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
-                     "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
-                     "For a detailed explanation on data input and transformations, see the transform command."))
+                params.append(click.Option(("--input-format", "-F"), multiple=True,
+                    help="Specifies a format attribute. If omitted, the format will be derived from the file extension. "
+                         "Attributes are separated by `.`, or you can specify multiple options, which will be combined. "
+                         "For a detailed explanation on data input and transformations, see the transform command."))
 
-            params.append(click.Option(("--input-foreach","-E"),
-                help="A jsonpath expression that splits the input data. The command will be executed with each "
-                     "item separately. If data is returned, it will be collected to a list. If this parameter is "
-                     "given, the --input-placement parameter refers to an item."))
+                params.append(click.Option(("--input-foreach", "-E"),
+                    help="A jsonpath expression that splits the input data. The command will be executed with each "
+                         "item separately. If data is returned, it will be collected to a list. If this parameter is "
+                         "given, the --input-placement parameter refers to an item."))
 
             if action.authentication == "basic":
                 params.append(click.Option(("--auth-user",), help="User name for authentication."))
@@ -385,7 +394,7 @@ def profile_list(ctx, user_name, has_password, has_key, base_url, output_expr, o
 
 
 @profile.command("delete", help="Permanently deletes the profile. Irreversible!")
-@click.option("--name", help="The profile name to delete.")
+@click.option("--name", help="The profile name to delete.", required=True)
 @click.pass_context
 def profile_delete(ctx, name):
     log.debug(f"profile_delete")
