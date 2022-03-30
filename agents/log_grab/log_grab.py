@@ -79,7 +79,7 @@ def check_params(paths):
         log.debug("source path: %s", result["source-path"])
 
     if not os.path.exists(paths["source-path"]):
-        log.error("source path doesn't exist.")
+        log.debug("source path doesn't exist.")
         return result
 
     if "archive-path" not in paths:
@@ -323,7 +323,7 @@ def process_Alarms(section):
         try:
             fname, _ = os.path.splitext(currentfile)
             if fname == ref_date:
-                log.info("creating temp file")
+                log.debug("creating temp file")
                 shutil.copyfile(current_file["fullname"], os.path.join(tempfile.gettempdir(), current_file["name"]))
                 current_file["path"] = tempfile.gettempdir()
                 current_file["fullname"] = os.path.join(tempfile.gettempdir(), current_file["name"])
