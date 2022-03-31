@@ -94,17 +94,14 @@ async def post_bin(
 
     st = datetime.now().astimezone()
 
-    print("start")
     h = hashlib.sha384()
     l = 0
     c = 0
     async for chunk in request.stream():
-        print("chunk")
         h.update(chunk)
         l += len(chunk)
         c += 1
     h = h.digest().hex()
-    print("done")
 
     en = datetime.now().astimezone()
 
