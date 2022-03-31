@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import List, Optional
-from fastapi import Depends, Path, Body, Query
+from fastapi import Depends, Path, Query
 from fastapi.security import HTTPBasicCredentials
 from fastapi.responses import FileResponse, Response
 from starlette.requests import Request
@@ -38,16 +38,16 @@ async def intfiles_get(
     return await models.intfiles.intfiles_get(credentials, ver, path)
 
 
-@router.put("/v/{ver}/{path:path}", status_code=201, response_class=Response, operation_id="intfile_upload", summary="Upload internal file.")
+@router.put("/v/{ver}/{path:path}", status_code=201, response_class=Response, operation_id="intfile_upload",
+            summary="Upload internal file.", disconnect_guard=False)
 async def intfiles_put(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/intfiles/v/{ver}/{path:path}")),
     ver: int = Path(..., title="Version."),
-    path: str = Path(..., title="Unique name, optionally including path."),
-    data: bytes = Body(..., media_type="application/octet-stream")
+    path: str = Path(..., title="Unique name, optionally including path.")
 ):
     """Upload an internal file."""
-    await models.intfiles.intfiles_put(credentials, ver, path, data)
+    return await models.intfiles.intfiles_put(request, credentials, ver, path)
 
 
 @router.delete("/v/{ver}/{path:path}", status_code=204, response_class=Response, operation_id="intfile_delete", summary="Delete internal file.")

@@ -30,7 +30,8 @@ class I4cApiRouter(APIRouter):
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def func_extra(func, path: str, rest_method: str = None, allow_log: bool = True, operation_id: str = None):
+    def func_extra(func, path: str, rest_method: str = None, allow_log: bool = True, operation_id: str = None,
+                   disconnect_guard: bool = True):
         @functools.wraps(func)
         def log_decorator(f) -> DecoratedCallable:
             @functools.wraps(f)
@@ -64,6 +65,9 @@ class I4cApiRouter(APIRouter):
                             await put_log_write(None, [d])
                         except Exception as e:
                             raise I4cClientError(f"Error while logging: {e}")
+
+                if not disconnect_guard:
+                    return await f(*a, **b)
 
                 main_task = asyncio.ensure_future(f(*a, **b))
                 tasks = [main_task]
@@ -109,6 +113,9 @@ class I4cApiRouter(APIRouter):
         allow_log = True
         if "allow_log" in kwargs:
             allow_log = kwargs.pop("allow_log")
+        disconnect_guard = True
+        if "disconnect_guard" in kwargs:
+            disconnect_guard = kwargs.pop("disconnect_guard")
         operation_id = None
         if "operation_id" in kwargs:
             operation_id = kwargs["operation_id"]
@@ -116,7 +123,7 @@ class I4cApiRouter(APIRouter):
         if "features" in kwargs:
             features = kwargs.pop("features")
         self.path_list.append(I4cApiRouterPath(method + self.calc_full_path(path), features))
-        spec_params = dict(allow_log=allow_log, operation_id=operation_id)
+        spec_params = dict(allow_log=allow_log, operation_id=operation_id, disconnect_guard=disconnect_guard)
         return spec_params, kwargs
 
 

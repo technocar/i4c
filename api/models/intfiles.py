@@ -2,6 +2,7 @@ import os
 from hashlib import sha384
 from textwrap import dedent
 from typing import Optional
+import starlette
 from pydantic import Field
 from fastapi.security import HTTPBasicCredentials
 from starlette.responses import FileResponse
@@ -9,6 +10,8 @@ import common
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection
 from common.exceptions import I4cClientError, I4cClientNotFound
+import tempfile
+from starlette.requests import Request
 
 
 class FileDetail(I4cBaseModel):
@@ -107,17 +110,25 @@ async def intfiles_check_usage(ver: int, name: str, *, pconn=None):
         return id
 
 
-
 async def intfiles_put(
+    request: Request,
     credentials: HTTPBasicCredentials,
     ver: int,
-    name: str,
-    file: bytes
+    name: str
 ):
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            id = await intfiles_check_usage(ver, name, pconn=conn)
-            hash = sha384(file).digest().hex()
+            try:
+                id = await intfiles_check_usage(ver, name, pconn=conn)
+                tf = tempfile.NamedTemporaryFile()
+                hash_obj = sha384()
+                async for chunk in request.stream():
+                    hash_obj.update(chunk)
+                    tf.write(chunk)
+                hash = hash_obj.hexdigest()
+            except starlette.requests.ClientDisconnect:
+                return
+
             if id:
                 sql_update = dedent("""\
                     update file_int
@@ -125,15 +136,14 @@ async def intfiles_put(
                     where id = $2
                 """)
                 await conn.execute(sql_update, hash, id)
-
             else:
                 sql_insert = "insert into file_int (name, ver, content_hash) values ($1, $2, $3)"
                 await conn.execute(sql_insert, name, ver, hash)
 
             fn = get_internal_file_name(hash)
             if not os.path.isfile(fn):
-                with open(fn, "wb") as f:
-                    f.write(file)
+                tf.delete = False
+                os.rename(tf.name, fn)
 
 
 async def intfiles_delete(credentials, ver, name):

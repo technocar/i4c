@@ -124,7 +124,8 @@ def process_robot(section):
     src_path = params["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if
-             os.path.isfile(os.path.join(src_path, entry)) and entry.upper().endswith("FINISH.CSV")]
+             os.path.isfile(os.path.join(src_path, entry))
+             and entry.upper().endswith("FINISH.CSV")]
     if len(files) == 0:
         log.debug("No files to load")
         return
@@ -176,14 +177,16 @@ def process_robot(section):
 
                 csvfile.close()
             conn.invoke_url("log", "POST", api_params_array)
+            process_GOM(cfg["gom"], wkpcid)
+            process_ReniShaw(cfg["renishaw"], wkpcid)
             log.debug("Archiving file...")
             shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
         except Exception as E:
             log.error(E)
 
 
-def process_GOM(section):
-    log.debug("Processing GOM files...")
+def process_GOM(section, wkpcid=""):
+    log.debug(f"Processing GOM files ({wkpcid})...")
 
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
@@ -205,7 +208,7 @@ def process_GOM(section):
     src_path = params["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and any(entry.upper().endswith(ext) for ext in (".CSV", ".ATOS", ".PDF"))]
+             and any(entry.upper().endswith(("_" if wkpcid != "" else "") + wkpcid + ext) for ext in (".CSV", ".ATOS", ".PDF"))]
     if len(files) == 0:
         log.debug("no files to load")
         return
@@ -356,8 +359,8 @@ def process_Alarms(section):
             log.error(E)
 
 
-def process_ReniShaw(section):
-    log.debug("Processing ReniShaw files...")
+def process_ReniShaw(section, wkpcid=""):
+    log.debug(f"Processing ReniShaw files ({wkpcid})...")
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
         "sequence": 0,
@@ -378,7 +381,7 @@ def process_ReniShaw(section):
     src_path = section["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and re.match('^print_[0-9]*.txt', entry, re.IGNORECASE)]
+             and re.match(r"^print_" + (wkpcid if wkpcid != "" else r"[0-9]*") + r".txt", entry, re.IGNORECASE)]
 
     if len(files) == 0:
         log.debug("no files to load")
@@ -472,14 +475,12 @@ def process_ReniShaw(section):
 def main():
     init_globals()
     log.debug("start")
+
     if "robot" in cfg:
         process_robot(cfg["robot"])
-    if "gom" in cfg:
-        process_GOM(cfg["gom"])
     if "alarms" in cfg:
         process_Alarms(cfg["alarms"])
-    if "renishaw" in cfg:
-        process_ReniShaw(cfg["renishaw"])
+
     log.debug("finish")
 
 if __name__ == '__main__':
