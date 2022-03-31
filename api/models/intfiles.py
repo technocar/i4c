@@ -1,4 +1,5 @@
 import os
+import secrets
 from hashlib import sha384
 from textwrap import dedent
 from typing import Optional
@@ -34,7 +35,7 @@ async def intfiles_list(credentials, name, name_mask, min_ver, max_ver, hash, *,
                         SELECT f.name, f.ver, f.content_hash as hash
                         from file_int f
                     )
-                select * 
+                select *
                 from res
                 where True
           """)
@@ -102,7 +103,7 @@ async def intfiles_check_usage(ver: int, name: str, *, pconn=None):
                 select *
                 from project_file pf
                 join project_version pv on pv.id = pf.project_ver
-                where pf.file_int = $1 and pv.status != 'edit'                
+                where pf.file_int = $1 and pv.status != 'edit'
             """)
             dc = await conn.fetch(sql_check_usage, id)
             if dc:
@@ -118,32 +119,47 @@ async def intfiles_put(
 ):
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
+            temp_name = get_internal_file_name("." + secrets.token_hex(16))
+            fn = None
             try:
                 id = await intfiles_check_usage(ver, name, pconn=conn)
-                tf = tempfile.NamedTemporaryFile()
-                hash_obj = sha384()
-                async for chunk in request.stream():
-                    hash_obj.update(chunk)
-                    tf.write(chunk)
-                hash = hash_obj.hexdigest()
-            except starlette.requests.ClientDisconnect:
-                return
+                with open(temp_name, "wb") as tf:
+                    hash_obj = sha384()
+                    async for chunk in request.stream():
+                        hash_obj.update(chunk)
+                        tf.write(chunk)
+                    hash = hash_obj.hexdigest()
 
-            if id:
-                sql_update = dedent("""\
-                    update file_int
-                    set content_hash = $1
-                    where id = $2
-                """)
-                await conn.execute(sql_update, hash, id)
-            else:
-                sql_insert = "insert into file_int (name, ver, content_hash) values ($1, $2, $3)"
-                await conn.execute(sql_insert, name, ver, hash)
+                fn = get_internal_file_name(hash)
+                if os.path.isfile(fn):
+                    os.remove(fn)
+                os.rename(temp_name, fn)
 
-            fn = get_internal_file_name(hash)
-            if not os.path.isfile(fn):
-                tf.delete = False
-                os.rename(tf.name, fn)
+                if id:
+                    sql_update = dedent("""\
+                        update file_int
+                        set content_hash = $1
+                        where id = $2
+                    """)
+                    await conn.execute(sql_update, hash, id)
+                else:
+                    sql_insert = "insert into file_int (name, ver, content_hash) values ($1, $2, $3)"
+                    await conn.execute(sql_insert, name, ver, hash)
+            except Exception as e:
+                if fn and os.path.isfile(fn):
+                    try:
+                        os.remove(fn)
+                    except:
+                        pass
+                if os.path.isfile(temp_name):
+                    try:
+                        os.remove(temp_name)
+                    except:
+                        pass
+                if isinstance(e, starlette.requests.ClientDisconnect):
+                    return
+                else:
+                    raise
 
 
 async def intfiles_delete(credentials, ver, name):
