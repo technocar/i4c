@@ -1,9 +1,11 @@
 import asyncio
+import hashlib
 from datetime import datetime
 from typing import Optional, Dict, Any
 from fastapi import Depends, Query, Body, HTTPException
 from fastapi.security import HTTPBasicCredentials, HTTPBasic
 from pydantic import BaseModel
+from starlette.responses import StreamingResponse
 from starlette.requests import Request
 import common
 from I4cAPI import I4cApiRouter
@@ -29,7 +31,7 @@ async def noop_get(
     return {"data": data}
 
 
-@router.get("/datetime", operation_id="ping_datetime",)
+@router.get("/datetime", response_model=datetime, operation_id="ping_datetime",)
 async def get_datetime(
     request: Request,
     dt: Optional[datetime] = Query(None, title="Timestamp, iso format, will be given back.")
@@ -50,6 +52,65 @@ async def noop_post(
     if data is None:
         data = {}
     return data
+
+
+@router.get("/bin", response_class=StreamingResponse(..., media_type="application/octet-stream"),
+    operation_id="ping_download", summary="Test binary download")
+async def get_bin(
+        request: Request,
+        size: Optional[int] = Query(4096, title="File size in bytes, defaults to 4096."),
+        char: Optional[str] = Query("00", title="The byte to repeat, hex. Default 00."),
+        delay: Optional[int] = Query(0, title="Delay between 64K chunks, millisecond. Default 0.")):
+
+    char = bytes([int(char, 16)])
+
+    async def create():
+        to_send = size
+        while to_send > 65536:
+            yield char * 65536
+            to_send -= 65536
+            if delay > 0:
+                await asyncio.sleep(delay / 1000.0)
+        else:
+            yield char * to_send
+
+    return StreamingResponse(content=create(), media_type="application/octet-stream")
+
+
+class PingBinReport(BaseModel):
+    chunks: int
+    digest: str
+    size: int
+    upload_start: datetime
+    upload_finish: datetime
+
+__oa = {"requestBody": {"content": {"application/octet-stream": {"schema": {"title": "Data", "type": "string", "format": "binary"}}}}}
+
+@router.post("/bin", response_model=PingBinReport, allow_log=False, operation_id="ping_upload",
+            summary="Test binary upload.", openapi_extra=__oa)
+async def post_bin(
+        request: Request):
+    """Test POST method and binary transport. Will report the length and the sha384 hash of the data, and stats."""
+
+    st = datetime.now().astimezone()
+
+    print("start")
+    h = hashlib.sha384()
+    l = 0
+    c = 0
+    async for chunk in request.stream():
+        print("chunk")
+        h.update(chunk)
+        l += len(chunk)
+        c += 1
+    h = h.digest().hex()
+    print("done")
+
+    en = datetime.now().astimezone()
+
+    report = dict(chunks=c, digest=h, size=l, upload_start=st, upload_finish=en)
+
+    return report
 
 
 @router.get("/pwd", response_model=Pong, allow_log=False, operation_id="ping_pwd",
