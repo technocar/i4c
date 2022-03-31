@@ -38,8 +38,10 @@ async def intfiles_get(
     return await models.intfiles.intfiles_get(credentials, ver, path)
 
 
+__oae = {"requestBody": {"content": {"application/octet-stream": {"schema": {"title": "Data", "type": "string", "format": "binary"}}}}}
+
 @router.put("/v/{ver}/{path:path}", status_code=201, response_class=Response, operation_id="intfile_upload",
-            summary="Upload internal file.", disconnect_guard=False)
+            summary="Upload internal file.", disconnect_guard=False, openapi_extra=__oae)
 async def intfiles_put(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("put/intfiles/v/{ver}/{path:path}")),
