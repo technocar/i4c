@@ -257,11 +257,12 @@ def process_GOM(section, wkpcid):
                         idxActual = lines.index("Actual")  # -> value_extra
                     else:
                         api_params["sequence"] += 1
-                        api_params["data_id"] = lines[idxElement] + '-DEV'
+                        did = lines[idxElement].strip()
+                        api_params["data_id"] = did + '-DEV'
                         api_params["value_num"] = float(lines[idxDev].replace(",", "."))
                         api_params_array.append(copy.deepcopy(api_params))
                         api_params["sequence"] += 1
-                        api_params["data_id"] = lines[idxElement] + '-ACTUAL'
+                        api_params["data_id"] = did + '-ACTUAL'
                         api_params["value_num"] = float(lines[idxActual].replace(",", "."))
                         api_params_array.append(copy.deepcopy(api_params))
                 csvfile.close()
