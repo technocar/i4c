@@ -1,6 +1,5 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { appendFile } from 'fs';
 import { forkJoin, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
@@ -148,7 +147,8 @@ export class ApiService {
       { id: DeviceType.Lathe, name: $localize `:@@device_lathe_name:Eszterga` },
       { id: DeviceType.Mill, name: $localize `:@@device_mill_name:Maró` },
       { id: DeviceType.Robot, name: $localize `:@@device_robot_name:Robot` },
-      { id: DeviceType.GOM, name: $localize `:@@device_gom_name:GOM` }
+      { id: DeviceType.GOM, name: $localize `:@@device_gom_name:GOM` },
+      { id: DeviceType.Renishaw, name: $localize `:@@device_renishaw_name:Renishaw` }
     ]);
   }
 

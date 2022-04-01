@@ -6,7 +6,7 @@ import { BehaviorSubject, forkJoin, Observable, Subscription } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { MetaFilterComponent, MetricFilterModel } from '../commons/meta-filter/meta-filter.component';
 import { ApiService } from '../services/api.service';
-import { Category, EventLog, EventValues, FindParams, ListItem, Meta, Snapshot } from '../services/models/api';
+import { Category, Device, EventLog, EventValues, FindParams, ListItem, Meta, Snapshot } from '../services/models/api';
 import { DeviceType } from '../services/models/constants';
 
 @Component({
@@ -72,11 +72,13 @@ export class DashboardComponent implements OnInit {
 
   metaList: Meta[] = [];
   metaListOfDevice: Meta[] = [];
+  devices$: BehaviorSubject<Device[]> = new BehaviorSubject([]);
 
   constructor(
     private apiService: ApiService,
     private route: ActivatedRoute
   ) {
+    apiService.getDevices().subscribe(r => this.devices$.next(r.filter(d => d.id !== "renishaw")));
     this.setTimestamp(this.getCurrentDate());
     this.device = DeviceType.Lathe;
     let pDev = this.route.snapshot.queryParamMap.get('device');

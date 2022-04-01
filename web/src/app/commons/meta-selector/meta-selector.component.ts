@@ -60,7 +60,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
       return;
     }
 
-    this._device = meta.device;
+    //this._device = meta.device;
     this.selectedMetric = {
       id: meta.data_id,
       name: meta.nice_name ?? meta.name ?? meta.data_id,

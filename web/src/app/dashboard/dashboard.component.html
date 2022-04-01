@@ -53,17 +53,8 @@
     </div>
     <div class="col">
       <ul ngbNav #devices="ngbNav" [activeId]="device" (navChange)="changeDevice($event.nextId)" class="nav nav-pills nav-fill {{!device ? 'no-selection' : ''}}">
-        <li ngbNavItem="mill">
-          <a ngbNavLink>Maró</a>
-        </li>
-        <li ngbNavItem="lathe">
-          <a ngbNavLink>Eszterga</a>
-        </li>
-        <li ngbNavItem="robot">
-          <a ngbNavLink>Robot</a>
-        </li>
-        <li ngbNavItem="gom">
-          <a ngbNavLink>GOM</a>
+        <li ngbNavItem="{{d.id}}" *ngFor="let d of devices$ | async">
+          <a ngbNavLink>{{d.name}}</a>
         </li>
       </ul>
     </div>
@@ -74,6 +65,7 @@
       <app-snapshot-lathe *ngIf="device === 'lathe'" [snapshot]="snapshot"></app-snapshot-lathe>
       <app-snapshot-robot *ngIf="device === 'robot'" [snapshot]="snapshot"></app-snapshot-robot>
       <app-snapshot-gom *ngIf="device === 'gom'" [snapshot]="snapshot"></app-snapshot-gom>
+      <app-snapshot-gom *ngIf="device === 'renishaw'" [snapshot]="snapshot"></app-snapshot-gom>
     </div>
   </div>
   <div id="events" class="row text-monospace small" *ngIf="!isListMode && !noData">
