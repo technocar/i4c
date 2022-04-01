@@ -185,7 +185,7 @@ def process_robot(section):
             log.error(E)
 
 
-def process_GOM(section, wkpcid=""):
+def process_GOM(section, wkpcid):
     log.debug(f"Processing GOM files ({wkpcid})...")
 
     api_params = {
@@ -208,83 +208,81 @@ def process_GOM(section, wkpcid=""):
     src_path = params["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and any(entry.upper().endswith(("_" if wkpcid != "" else "") + wkpcid + ext) for ext in (".CSV", ".ATOS", ".PDF"))]
+             and any(entry.upper().endswith("_" + wkpcid + ext) for ext in (".CSV", ".ATOS", ".PDF"))]
     if len(files) == 0:
         log.debug("no files to load")
         return
 
     for currentfile in files:
         log.info("processing file %s", currentfile)
-        try:
-            fname, fext = os.path.splitext(currentfile)
-            if fext.upper() == ".CSV":
-                if not os.path.exists(os.path.join(src_path, fname + '.LOG')):
-                    log.error("No log file found")
-                    continue
-                api_params_array = []
 
-                log.debug("loading log")
-                with open(os.path.join(src_path, fname + ".log")) as csvfile:
-                    api_params["sequence"] = 0
-                    for (line_no, lines) in enumerate(csvfile):
-                        (part1, part2, part3, part4) = lines.split(' ', 3)
-                        if part3 == "*" : api_params["data_id"] = "WARNING"
-                        elif part3 == "!" : api_params["data_id"] = "ERROR"
-                        else: api_params["data_id"] = "INFO"
+        fname, fext = os.path.splitext(currentfile)
+        if fext.upper() == ".CSV":
+            if not os.path.exists(os.path.join(src_path, fname + '.LOG')):
+                log.error("No log file found")
+                continue
+            api_params_array = []
 
-                        api_params["timestamp"] = get_datetime(part1 + ' ' + part2, "%Y-%m-%d %H:%M:%S.%f")
+            log.debug("loading log")
+            with open(os.path.join(src_path, fname + ".log")) as csvfile:
+                api_params["sequence"] = 0
+                for (line_no, lines) in enumerate(csvfile):
+                    (part1, part2, part3, part4) = lines.split(' ', 3)
+                    if part3 == "*" : api_params["data_id"] = "WARNING"
+                    elif part3 == "!" : api_params["data_id"] = "ERROR"
+                    else: api_params["data_id"] = "INFO"
 
-                        if line_no == 0:
-                            first_time = api_params["timestamp"]
+                    api_params["timestamp"] = get_datetime(part1 + ' ' + part2, "%Y-%m-%d %H:%M:%S.%f")
 
-                        api_params["value_text"] = part4.strip()
+                    if line_no == 0:
+                        first_time = api_params["timestamp"]
+
+                    api_params["value_text"] = part4.strip()
+                    api_params_array.append(copy.deepcopy(api_params))
+                    api_params["sequence"] += 1
+                csvfile.close()
+
+            api_params["value_text"] = '_'.join(fname.split('_')[0:2])
+            api_params["data_id"] = "pgm"
+            api_params["timestamp"] = first_time
+            api_params_array.append(copy.deepcopy(api_params))
+            api_params["value_text"] = None
+
+            with open(os.path.join(src_path, currentfile)) as csvfile:
+                csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
+                for lines in csvreader:
+                    if csvreader.line_num == 1:
+                        idxElement = lines.index("Element")  # -> data_id
+                        idxDev = lines.index("Dev")  # -> value_num
+                        idxActual = lines.index("Actual")  # -> value_extra
+                    else:
+                        api_params["sequence"] += 1
+                        api_params["data_id"] = lines[idxElement] + '-DEV'
+                        api_params["value_num"] = float(lines[idxDev].replace(",", "."))
                         api_params_array.append(copy.deepcopy(api_params))
                         api_params["sequence"] += 1
-                    csvfile.close()
+                        api_params["data_id"] = lines[idxElement] + '-ACTUAL'
+                        api_params["value_num"] = float(lines[idxActual].replace(",", "."))
+                        api_params_array.append(copy.deepcopy(api_params))
+                csvfile.close()
 
-                api_params["value_text"] = '_'.join(fname.split('_')[0:2])
-                api_params["data_id"] = "pgm"
-                api_params["timestamp"] = first_time
-                api_params_array.append(copy.deepcopy(api_params))
-                api_params["value_text"] = None
+            log.debug(f"writing log entries: {len(api_params_array)}")
+            conn.invoke_url("log", "POST", api_params_array)
+        else:
+            with open(os.path.join(src_path, currentfile), "rb") as datafile:
+                conn.invoke_url("intfiles/v/1/" + currentfile, "PUT", datafile)
+                datafile.close()
 
-                with open(os.path.join(src_path, currentfile)) as csvfile:
-                    csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
-                    for lines in csvreader:
-                        if csvreader.line_num == 1:
-                            idxElement = lines.index("Element")  # -> data_id
-                            idxDev = lines.index("Dev")  # -> value_num
-                            idxActual = lines.index("Actual")  # -> value_extra
-                        else:
-                            api_params["sequence"] += 1
-                            api_params["data_id"] = lines[idxElement] + '-DEV'
-                            api_params["value_num"] = float(lines[idxDev].replace(",", "."))
-                            api_params_array.append(copy.deepcopy(api_params))
-                            api_params["sequence"] += 1
-                            api_params["data_id"] = lines[idxElement] + '-ACTUAL'
-                            api_params["value_num"] = float(lines[idxActual].replace(",", "."))
-                            api_params_array.append(copy.deepcopy(api_params))
-                    csvfile.close()
+        log.debug("archiving file")
+        shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
+        if fext.upper() == ".CSV":
+            shutil.move(os.path.join(src_path, fname + '.log'), os.path.join(params["archive-path"], fname + '.log'))
 
-                log.debug(f"writing log entries: {len(api_params_array)}")
-                conn.invoke_url("log", "POST", api_params_array)
-            else:
-                with open(os.path.join(src_path, currentfile), "rb") as datafile:
-                    conn.invoke_url("intfiles/v/1/" + currentfile, "PUT", datafile)
-                    datafile.close()
-
-            log.debug("archiving file")
-            shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
-            if fext.upper() == ".CSV":
-                shutil.move(os.path.join(src_path, fname + '.log'), os.path.join(params["archive-path"], fname + '.log'))
-
-            for newext in ['.ok', '.error', '.bad', '.good']:
-                fnew = fname + newext
-                if os.path.exists(os.path.join(src_path, fnew)):
-                    log.debug("archiving additional file {}".format(fnew))
-                    shutil.move(os.path.join(src_path, fnew), os.path.join(params["archive-path"], fnew))
-        except Exception as E:
-            log.error(E)
+        for newext in ['.ok', '.error', '.bad', '.good']:
+            fnew = fname + newext
+            if os.path.exists(os.path.join(src_path, fnew)):
+                log.debug("archiving additional file {}".format(fnew))
+                shutil.move(os.path.join(src_path, fnew), os.path.join(params["archive-path"], fnew))
 
 
 def process_Alarms(section):
@@ -359,7 +357,7 @@ def process_Alarms(section):
             log.error(E)
 
 
-def process_ReniShaw(section, wkpcid=""):
+def process_ReniShaw(section, wkpcid):
     log.debug(f"Processing ReniShaw files ({wkpcid})...")
     api_params = {
         "timestamp": "2021-12-07T11:20:20.405Z",
@@ -381,7 +379,7 @@ def process_ReniShaw(section, wkpcid=""):
     src_path = section["source-path"]
 
     files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and re.match(r"^print_" + (wkpcid if wkpcid != "" else r"[0-9]*") + r".txt", entry, re.IGNORECASE)]
+             and re.match(r"^print_" + wkpcid + r".txt", entry, re.IGNORECASE)]
 
     if len(files) == 0:
         log.debug("no files to load")
@@ -389,87 +387,85 @@ def process_ReniShaw(section, wkpcid=""):
 
     for currentfile in files:
         log.info("processing file %s", currentfile)
-        try:
-            api_params_array = []
-            measure = None
-            measure2 = None
 
-            with open(os.path.join(src_path, currentfile)) as srcfile:
-                for line_no, lines in enumerate(srcfile):
-                    lines = lines.strip()
-                    if lines == '%':
-                        if len(api_params_array) != 0:
-                            conn.invoke_url("log", "POST", api_params_array)
-                            api_params_array.clear()
+        api_params_array = []
+        measure = None
+        measure2 = None
 
-                            measure = None
-                            measure2 = None
-                            api_params["timestamp"] = None
-                            api_params["value_num"] = None
-                            api_params["sequence"] = 0
-                            api_params['value_extra'] = None
+        with open(os.path.join(src_path, currentfile)) as srcfile:
+            for line_no, lines in enumerate(srcfile):
+                lines = lines.strip()
+                if lines == '%':
+                    if len(api_params_array) != 0:
+                        conn.invoke_url("log", "POST", api_params_array)
+                        api_params_array.clear()
+
+                        measure = None
+                        measure2 = None
+                        api_params["timestamp"] = None
+                        api_params["value_num"] = None
+                        api_params["sequence"] = 0
+                        api_params['value_extra'] = None
+                    continue
+                if lines == '':
+                    continue
+                if lines.startswith("+++++OUT OF TOL"):
+                    if measure is None:
+                        log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
                         continue
-                    if lines == '':
+                    if measure2 is None or measure2 == "":
+                        log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
                         continue
-                    if lines.startswith("+++++OUT OF TOL"):
-                        if measure is None:
-                            log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
-                            continue
-                        if measure2 is None or measure2 == "":
-                            log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
-                            continue
-                        mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
-                        if mo:
-                            api_params["data_id"] = measure + measure2 +'-OTOL'
-                            api_params["value_num"] = float(mo.group("error"))
-                            api_params_array.append(copy.deepcopy(api_params))
-                            api_params["sequence"] += 1
-                    if ' FEATURE ' in lines:
-                        api_params['value_extra'] = next((v.strip() for v in lines.split('/ ') if v.strip().startswith('FEATURE')), None)
-
-                    mo = re.match(r"^(?P<measure2>[a-zA-Z ]*[ /])(?P<others>.*ACTUAL/[-0-9.]*.*)", lines)
+                    mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
                     if mo:
-                        if measure is None:
-                            log.error(f"Size found but no measure is set at line#{line_no}")
-                            continue
-                        measure2 = mo.group("measure2")
-                        if measure2[-1:] == " ":
-                            measure2 = measure2.strip()
-                            ptrn = mo.group("others")
-                        else:
-                            ptrn = measure2 + mo.group("others")
-                            measure2 = measure2[:-1]
+                        api_params["data_id"] = measure + measure2 +'-OTOL'
+                        api_params["value_num"] = float(mo.group("error"))
+                        api_params_array.append(copy.deepcopy(api_params))
+                        api_params["sequence"] += 1
+                if ' FEATURE ' in lines:
+                    api_params['value_extra'] = next((v.strip() for v in lines.split('/ ') if v.strip().startswith('FEATURE')), None)
 
-                        for idx, values in enumerate((ptrn).split('/ ')):
-                            rslt = values.strip().split('/')
-                            s1, s2 = rslt[0:2]
-                            if s1 == measure2:
-                                s1 = "NOMINAL"
+                mo = re.match(r"^(?P<measure2>[a-zA-Z ]*[ /])(?P<others>.*ACTUAL/[-0-9.]*.*)", lines)
+                if mo:
+                    if measure is None:
+                        log.error(f"Size found but no measure is set at line#{line_no}")
+                        continue
+                    measure2 = mo.group("measure2")
+                    if measure2[-1:] == " ":
+                        measure2 = measure2.strip()
+                        ptrn = mo.group("others")
+                    else:
+                        ptrn = measure2 + mo.group("others")
+                        measure2 = measure2[:-1]
 
-                            api_params["data_id"] = measure + "-" + measure2 + "-" + s1
-                            api_params["value_num"] = float(s2)
-                            api_params_array.append(copy.deepcopy(api_params))
-                            api_params["sequence"] += 1
-                        continue
+                    for idx, values in enumerate((ptrn).split('/ ')):
+                        rslt = values.strip().split('/')
+                        s1, s2 = rslt[0:2]
+                        if s1 == measure2:
+                            s1 = "NOMINAL"
 
-                    mo = re.match(r"^ *DATE/(?P<date>.*)/ *TIME/(?P<time>.*)/ *$", lines)
-                    if mo:
-                        api_params["timestamp"] = get_datetime(mo.group("date") + " " + ("0" + mo.group("time"))[-6:],
-                                                               "%y%m%d %H%M%S")
+                        api_params["data_id"] = measure + "-" + measure2 + "-" + s1
+                        api_params["value_num"] = float(s2)
+                        api_params_array.append(copy.deepcopy(api_params))
+                        api_params["sequence"] += 1
+                    continue
+
+                mo = re.match(r"^ *DATE/(?P<date>.*)/ *TIME/(?P<time>.*)/ *$", lines)
+                if mo:
+                    api_params["timestamp"] = get_datetime(mo.group("date") + " " + ("0" + mo.group("time"))[-6:],
+                                                           "%y%m%d %H%M%S")
+                    continue
+                mo = re.match("^.*/MEASURE/(?P<measure_name>.*)/.*$", lines)
+#               mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)    old pattern
+                if mo:
+                    if api_params["timestamp"] is None:
+                        log.error(f"Measure found but no timestamp is set at line#{line_no}")
                         continue
-                    mo = re.match("^.*/MEASURE/(?P<measure_name>.*)/.*$", lines)
-    #               mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)    old pattern
-                    if mo:
-                        if api_params["timestamp"] is None:
-                            log.error(f"Measure found but no timestamp is set at line#{line_no}")
-                            continue
-                        measure = mo.group("measure_name")
-                        continue
-                srcfile.close()
-            log.debug("archiving file")
-            shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
-        except Exception as E:
-            log.error(E)
+                    measure = mo.group("measure_name")
+                    continue
+            srcfile.close()
+        log.debug("archiving file")
+        shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
 
 
 def main():
