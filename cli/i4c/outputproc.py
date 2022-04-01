@@ -11,7 +11,22 @@ from .tools import jsonify, resolve_file
 log = logging.getLogger("i4c")
 
 
-def format_time(time, format_str):
+def localize_time(time):
+    if time is None:
+        return None
+
+    if isinstance(time, str):
+        try:
+            time = isodate.parse_datetime(time)
+        except Exception as e:
+            log.debug(f"can't parse time: {time}")
+            return "???"
+
+    newtime = time.astimezone()
+    return newtime
+
+
+def format_time(time, format_str=None):
     if time is None:
         return None
 
@@ -23,6 +38,7 @@ def format_time(time, format_str):
             return "???"
 
     try:
+        format_str = format_str or "%c"
         s = time.strftime(format_str)
     except Exception as e:
         log.debug(f"time format string bad: {format_str}")
@@ -37,6 +53,7 @@ def make_jinja_env():
     env.filters["jd"] = json.dumps
     env.filters["format_time"] = format_time
     env.filters["ft"] = format_time
+    env.filters["tzloc"] = localize_time
     return env
 
 
