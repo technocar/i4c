@@ -6,6 +6,7 @@ class Device(str, Enum):
     lathe = "lathe"
     gom = "gom"
     robot = "robot"
+    renishaw = "renishaw"
 
 
 class ToolDevice(str, Enum):
