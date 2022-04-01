@@ -13,7 +13,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id = 'spotted'           /* workpiece_begin, todo: use proper data */
+      and l.data_id = 'spotted'
   ), 
   workpiece_end as (
     select l.timestamp, l.sequence
@@ -23,7 +23,7 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id in ('place_good_out', 'place_bad_out')    /* workpiece_end, todo: use proper data */
+      and l.data_id in ('stopped', 'place_good_out', 'place_bad_out')
   ),
   workpiece_id as (
     select l.value_text as "id", l.timestamp, l.sequence
@@ -33,17 +33,17 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id='wkpcid'           /* workpiece_id, todo: use proper data */
+      and l.data_id = 'wkpcid'
   ),
   workpiece_status as (
-    select lower(l.value_text) as "auto_status", l.timestamp, l.sequence
+    select case l.data_id when 'place_good_out' then 'good' else 'bad' end as "auto_status", l.timestamp, l.sequence
     from log l
     cross join p
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device = 'gom'
-      and l.data_id='eval'           /* workpiece_status, todo: use proper data */
+      and l.device = 'robot'
+      and l.data_id in ('place_good_out', 'place_bad_out')
   ),
   map_project_version as (
     select
@@ -73,7 +73,7 @@ with
                   from map_project_version m
                   where 
                     m.timestamp <= r.timestamp
-                 ) mpv on mpv.savepath = 'robot/'||r."program"   /* todo: use proper path */
+                 ) mpv on mpv.savepath = 'robot/'||r."program"
                           and mpv.r = 1
   ),
   discover_log as (
