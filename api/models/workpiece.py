@@ -9,6 +9,11 @@ from models import WorkpieceStatusEnum
 from models.common import PatchResponse
 import common.db_helpers
 
+# TODO will not find the id because 'wkpcid' is before 'spotted'
+  # how to fix? 1. extend finding logic
+  #               how exactly?
+  #             2. make log_grab fake the log order
+  #               but then fix the existing logs
 
 class NoteAdd(I4cBaseModel):
     """Workpiece comment. Input."""
