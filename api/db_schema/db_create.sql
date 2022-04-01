@@ -122,21 +122,49 @@ insert into meta (device,data_id,name,system1,category) values ('gom','WARNING',
 insert into meta (device,data_id,name,system1,category) values ('gom','ERROR','log error','log', 'EVENT');
 insert into meta (device,data_id,name,system1,category) values ('gom','INFO','log info','log', 'EVENT');
 insert into meta (device,data_id,name,system1,category) values ('gom','pgm','program','log', 'EVENT');
-insert into meta (device,data_id,name,system1,category) values ('gom','d1-DEV', 'd1 dev','metric', 'SAMPLE');
-insert into meta (device,data_id,name,system1,category) values ('gom','d1-ACTUAL', 'd1','metric', 'SAMPLE');
-insert into meta (device,data_id,name,system1,category) values ('gom','d2-DEV', 'd2 dev','metric', 'SAMPLE');
-insert into meta (device,data_id,name,system1,category) values ('gom','d2-ACTUAL', 'd2','metric', 'SAMPLE');
+insert into meta (device,data_id,name,system1,category) values ('gom','Cylinder 1-DEV', 'd1 dev','metric', 'SAMPLE');
+insert into meta (device,data_id,name,system1,category) values ('gom','Cylinder 1-ACTUAL', 'd1','metric', 'SAMPLE');
+insert into meta (device,data_id,name,system1,category) values ('gom','Cylinder 2-DEV', 'd2 dev','metric', 'SAMPLE');
+insert into meta (device,data_id,name,system1,category) values ('gom','Cylinder 2-ACTUAL', 'd2','metric', 'SAMPLE');
 
 -- renishaw
 
-insert into meta (device,data_id,name,category) values ('renishaw', 'D1 - ATMERO 90-ACTUAL', 'D1 - ATMERO 90-ACTUAL', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'D1 - ATMERO 90-DEV', 'D1 - ATMERO 90-DEV', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'D2 - ATMERO 124 -R62-ACTUAL', 'D2 - ATMERO 124 -R62-ACTUAL', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'D2 - ATMERO 124 -R62-DEV', 'D2 - ATMERO 124 -R62-DEV', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'D2 - ATMERO 194 -R97-ACTUAL', 'D2 - ATMERO 194 -R97-ACTUAL', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'D2 - ATMERO 194 -R97-DEV', 'D2 - ATMERO 194 -R97-DEV', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'S - VASTAGSAG-ACTUAL', 'S - VASTAGSAG-ACTUAL', 'SAMPLE');
-insert into meta (device,data_id,name,category) values ('renishaw', 'S - VASTAGSAG-DEV', 'S - VASTAGSAG-DEV', 'SAMPLE');
+insert into meta (data_id, device, category) values ('D1-POSNX-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-POSNX-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-POSNX-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-POSNY-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-POSNY-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-POSNY-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-SIZED-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-SIZED-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-SIZED-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D1-SIZED-TOL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-POSNX-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-POSNX-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-POSNX-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-POSNY-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-POSNY-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-POSNY-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-SIZED-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-SIZED-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-SIZED-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D2-SIZED-TOL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-POSNX-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-POSNX-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-POSNX-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-POSNY-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-POSNY-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-POSNY-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-SIZED-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-SIZED-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-SIZED-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('D3-SIZED-TOL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('E1-EGYTENGELY-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('E2-EGYTENGELY-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('S-SIZEZ-ACTUAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('S-SIZEZ-DEV','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('S-SIZEZ-NOMINAL','renishaw','SAMPLE');
+insert into meta (data_id, device, category) values ('S-SIZEZ-TOL','renishaw','SAMPLE');
 
 -- mazak
 
