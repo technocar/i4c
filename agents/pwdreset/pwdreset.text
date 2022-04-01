@@ -1,0 +1,6 @@
+Az Ön I4C fiókjához új jelszó lett kérve. Amennyiben Ön kezdeményezte, az
+alábbi link segítségével választhat új jelszót. Ha nem Ön kérte, úgy nem
+szükséges semmit tennie. A jelszó megváltoztatásához nyissa meg ezt az oldalt a
+böngészőjével (vagy csak kattintson rá, ha a levelezőprogramja lehetővé teszi):
+
+https://i4c.technocar.hu/pwdreset?token={{token}}&loginname={{login}}

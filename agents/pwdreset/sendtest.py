@@ -6,6 +6,9 @@ import time
 import yaml
 import logging.config
 import smtplib
+from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import jinja2
 import i4c
 
@@ -66,15 +69,6 @@ def main():
 
     log.debug(f"smtp settings: {protocol} {svr}:{port} user:{uid} from:{sender}")
 
-    if not os.path.isfile("pwdreset.template"):
-        fail("Missing pwdreset.template")
-
-    with open("pwdreset.template", "r", encoding="utf-8") as f:
-        tmpl = f.read()
-
-    env = jinja2.Environment()
-    tmpl = env.from_string(tmpl)
-
     if os.path.isfile("test.json"):
         with open("test.json", encoding="UTF-8") as f:
             r = json.load(f)
@@ -89,15 +83,53 @@ def main():
     sep = base64.urlsafe_b64encode(os.urandom(15)).decode()
 
     email = r["email"]
-    token = r.get("token", "TOKEN")
-    login = r.get("loginname", "LOGINNAME")
+    token = r.get("token", "XXTOKENXX")
+    login = r.get("loginname", "LOGIN@NAME")
     log.info(f"sending to {email} for {login}")
 
+    if os.path.isfile("pwdreset.subj"):
+        with open("pwdreset.subj", "r", encoding="utf-8") as f:
+            subject = f.readline()
+    else:
+        subject = "I4C jelszó"
+
+    if os.path.isfile("pwdreset.text"):
+        with open("pwdreset.text", "r", encoding="utf-8") as f:
+            text = f.read()
+    else:
+        text = None
+
+    if os.path.isfile("pwdreset.html"):
+        with open("pwdreset.html", "r", encoding="utf-8") as f:
+            html = f.read()
+    else:
+        html = None
+
     log.debug("rendering")
-    mail_body = tmpl.render(email=email, token=token, login=login, sep=sep, sender=sender)
-    mail_body = mail_body.encode("utf-8")
+    env = jinja2.Environment()
+    if text:
+        text = env.from_string(text)
+        text = text.render(token=token, login=login)
+    if html:
+        html = env.from_string(html)
+        html = html.render(token=token, login=login)
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = email
+    if text and html:
+        msg.set_content(text)
+        msg.add_alternative(html, subtype="html")
+    elif text:
+        msg.set_content(text)
+    elif html:
+        msg.set_content(html, subtype="html")
+    else:
+        fail("Missing pwdreset.text and/or pwdreset.html")
+
     with open("outgoing.eml", "wb") as f:
-        f.write(mail_body)
+        f.write(msg.as_bytes())
 
     log.debug("connecting")
     if protocol == "ssl":
@@ -111,12 +143,7 @@ def main():
         log.debug("authenticating")
         mailer.login(uid, pwd)
 
-    mailer.ehlo_or_helo_if_needed()
-    mailopt = ("BODY=8BITMIME",) if "8bitmime" in mailer.esmtp_features else ()
-    log.debug(f"mail opt: {'|'.join(mailopt)}")
-
-    log.debug("sending")
-    mailer.sendmail(sender, [email], mail_body, mail_options=mailopt)
+    mailer.send_message(msg)
 
     log.debug("finished")
 
