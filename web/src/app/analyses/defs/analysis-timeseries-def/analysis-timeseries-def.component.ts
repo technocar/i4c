@@ -159,10 +159,10 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     this.filters$.next(filters);
   }
 
-  setDevice(device: DeviceType, meta: Meta) {
-    if (!meta)
-      meta = { device: undefined, data_id: undefined };
-    meta.device = device;
+  setDevice(device: DeviceType, meta: string) {
+    if (!this.def[meta])
+    this.def[meta] = { device: undefined, data_id: undefined };
+    this.def[meta].device = device;
   }
 
   selectMetric(meta: Meta) {
