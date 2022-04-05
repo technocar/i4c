@@ -19,7 +19,7 @@ from .stat_xy import StatXYDef, StatXYOther, StatXYFilter, StatXYData, statdata_
 
 
 class StatUser(I4cBaseModel):
-    id: int
+    id: str
     name: str
 
     @classmethod
