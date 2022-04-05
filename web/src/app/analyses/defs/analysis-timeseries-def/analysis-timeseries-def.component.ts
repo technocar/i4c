@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatData, StatVisualSettingsChart, Device } from 'src/app/services/models/api';
-import { Labels } from 'src/app/services/models/constants';
+import { DeviceType, Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers, HSLAColor } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
@@ -68,10 +68,10 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
         after: undefined,
         duration: undefined,
         filter: [],
-        metric: undefined,
+        metric: { device: undefined, data_id: undefined },
         agg_func: StatTimeSeriesAggFunc.Avg,
-        agg_sep: undefined,
-        series_sep: undefined,
+        agg_sep: { device: undefined, data_id: undefined },
+        series_sep: { device: undefined, data_id: undefined },
         series_name: StatTimeSeriesName.Timestamp,
         xaxis: undefined,
         visualsettings: undefined

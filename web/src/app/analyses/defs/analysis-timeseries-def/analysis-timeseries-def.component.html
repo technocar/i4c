@@ -51,13 +51,16 @@
   </fieldset>
   <fieldset class="params col p-4 mt-4 mr-2">
     <legend>paraméterek</legend>
-    <div class="row form-group">
+    <div class="row form-group pl-0 py-2 pr-2 border rounded">
       <label class="col-6">mérőszám</label>
       <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+        <select class="form-control mb-2" [(ngModel)]="def.metric.device" [disabled]="!access.canUpdate">
+          <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
+        </select>
+        <app-meta-selector [device]="def.metric.device" [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
       </div>
     </div>
-    <div class="row form-group">
+    <div class="row form-group pr-2">
       <label class="col">x tengely</label>
       <select class="col form-control"  [(ngModel)]="def.xaxis" [disabled]="!access.canUpdate">
         <option value="timestamp">dátum</option>
@@ -66,13 +69,16 @@
     </div>
     <div class="row group">
       <div class="col">
-        <div class="row form-group">
+        <div class="row form-group border rounded pl-0 py-2 pr-2">
           <label class="col-6">elválasztó</label>
           <div class="col p-0">
-            <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+            <select class="form-control mb-2" [(ngModel)]="def.agg_sep.device" [disabled]="!access.canUpdate">
+              <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
+            </select>
+            <app-meta-selector [device]="def.agg_sep.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
           </div>
         </div>
-        <div class="row form-group">
+        <div class="row form-group pl-0 py-2 pr-2">
           <label class="col">összesítés</label>
           <select class="col form-control"  [(ngModel)]="def.agg_func" [disabled]="!access.canUpdate">
             <option value="">nincs</option>
@@ -81,16 +87,19 @@
         </div>
       </div>
     </div>
-    <div class="row form-group">
+    <div class="row form-group pr-2">
       <label class="col">adatsor elnevezése</label>
       <select class="col form-control" [(ngModel)]="def.series_name" [disabled]="!access.canUpdate">
         <option *ngFor="let item of seriesNameTypes" [value]="item[0]">{{item[1]}}</option>
       </select>
     </div>
-    <div class="row form-group">
+    <div class="row form-group pl-0 py-2 pr-2 border rounded">
       <label class="col-6">görbe elválasztó</label>
       <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+        <select class="form-control mb-2" [(ngModel)]="def.series_sep.device" [disabled]="!access.canUpdate">
+          <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
+        </select>
+        <app-meta-selector [device]="def.series_sep.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
       </div>
     </div>
   </fieldset>
