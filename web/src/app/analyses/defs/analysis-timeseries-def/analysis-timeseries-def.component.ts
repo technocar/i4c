@@ -68,10 +68,10 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
         after: undefined,
         duration: undefined,
         filter: [],
-        metric: { device: undefined, data_id: undefined },
+        metric: undefined,
         agg_func: StatTimeSeriesAggFunc.Avg,
-        agg_sep: { device: undefined, data_id: undefined },
-        series_sep: { device: undefined, data_id: undefined },
+        agg_sep: undefined,
+        series_sep: undefined,
         series_name: StatTimeSeriesName.Timestamp,
         xaxis: undefined,
         visualsettings: undefined
@@ -115,7 +115,21 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     this.def.duration = pDef.duration;
     this.def.filter = this.filters$.value.slice(0);
     this.def.agg_func = (this.def.agg_func ?? "") === "" ? undefined : this.def.agg_func;
+    this.def.metric = this.handleEmptyMeta(this.def.metric);
+    this.def.agg_sep = this.handleEmptyMeta(this.def.agg_sep);
+    this.def.series_sep = this.handleEmptyMeta(this.def.series_sep);
     return this.def;
+  }
+
+  handleEmptyMeta(meta: Meta): Meta {
+    if (!meta)
+      return undefined;
+
+    for (let prop of ["device", "data_id"])
+      if ((meta[prop] ?? undefined) === undefined) {
+          return undefined;
+      }
+    return meta;
   }
 
   newFilter() {
@@ -143,6 +157,12 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     if (idx > -1)
       filters.splice(idx, 1);
     this.filters$.next(filters);
+  }
+
+  setDevice(device: DeviceType, meta: Meta) {
+    if (!meta)
+      meta = { device: undefined, data_id: undefined };
+    meta.device = device;
   }
 
   selectMetric(meta: Meta) {
