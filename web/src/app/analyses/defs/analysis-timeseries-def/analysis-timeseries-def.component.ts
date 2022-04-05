@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { StatTimeSeriesAggFunc, Meta, StatDefBase, StatTimeSeriesDef, StatTimesSeriesFilter, StatTimeSeriesName, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatData, StatVisualSettingsChart, Device } from 'src/app/services/models/api';
-import { Labels } from 'src/app/services/models/constants';
+import { DeviceType, Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers, HSLAColor } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
@@ -115,7 +115,21 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     this.def.duration = pDef.duration;
     this.def.filter = this.filters$.value.slice(0);
     this.def.agg_func = (this.def.agg_func ?? "") === "" ? undefined : this.def.agg_func;
+    this.def.metric = this.handleEmptyMeta(this.def.metric);
+    this.def.agg_sep = this.handleEmptyMeta(this.def.agg_sep);
+    this.def.series_sep = this.handleEmptyMeta(this.def.series_sep);
     return this.def;
+  }
+
+  handleEmptyMeta(meta: Meta): Meta {
+    if (!meta)
+      return undefined;
+
+    for (let prop of ["device", "data_id"])
+      if ((meta[prop] ?? undefined) === undefined) {
+          return undefined;
+      }
+    return meta;
   }
 
   newFilter() {
@@ -143,6 +157,12 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     if (idx > -1)
       filters.splice(idx, 1);
     this.filters$.next(filters);
+  }
+
+  setDevice(device: DeviceType, meta: Meta) {
+    if (!meta)
+      meta = { device: undefined, data_id: undefined };
+    meta.device = device;
   }
 
   selectMetric(meta: Meta) {
