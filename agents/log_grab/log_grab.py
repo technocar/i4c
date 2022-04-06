@@ -141,7 +141,7 @@ def process_robot(section):
                     if len(lines) != 2:
                         if lines[0].upper() == "Naplózott események".upper():
                             continue
-                        log.error("Line %d in wrong format!", [csvreader.line_num])
+                        log.error(f"Line {csvreader.line_num} in wrong format!")
                         return
 
                     if lines[0].upper() == "Munkadarab azonosítója".upper():
@@ -151,10 +151,10 @@ def process_robot(section):
                     elif csvreader.line_num >= 5:
                         if csvreader.line_num == 5:
                             if wkpcid is None:
-                                log.error("Workpiece id is not set!", [csvreader.line_num])
+                                log.error("Workpiece id is not set!")
                                 return
                             if progid is None:
-                                log.error("Program id is not set!", [csvreader.line_num])
+                                log.error("Program id is not set!")
                                 return
                             api_params["sequence"] = 0
                             api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
@@ -412,10 +412,10 @@ def process_ReniShaw(section, wkpcid):
                     continue
                 if lines.startswith("+++++OUT OF TOL"):
                     if measure is None:
-                        log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
+                        log.error(f"OUT OF TOL found but no measure is set at line {line_no}")
                         continue
                     if measure2 is None or measure2 == "":
-                        log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
+                        log.error(f"OUT OF TOL found but no sub measure is set at line {line_no}")
                         continue
                     mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
                     if mo:
@@ -429,7 +429,7 @@ def process_ReniShaw(section, wkpcid):
                 mo = re.match(r"^(?P<measure2>[a-zA-Z ]*[ /])(?P<others>.*ACTUAL/[-0-9.]*.*)", lines)
                 if mo:
                     if measure is None:
-                        log.error(f"Size found but no measure is set at line#{line_no}")
+                        log.error(f"Size found but no measure is set at line {line_no}")
                         continue
                     measure2 = mo.group("measure2")
                     if measure2[-1:] == " ":
@@ -460,7 +460,7 @@ def process_ReniShaw(section, wkpcid):
 #               mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)    old pattern
                 if mo:
                     if api_params["timestamp"] is None:
-                        log.error(f"Measure found but no timestamp is set at line#{line_no}")
+                        log.error(f"Measure found but no timestamp is set at line {line_no}")
                         continue
                     measure = mo.group("measure_name")
                     continue
