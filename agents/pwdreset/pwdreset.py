@@ -6,6 +6,7 @@ import time
 import yaml
 import logging.config
 import smtplib
+from email.message import EmailMessage
 import jinja2
 import i4c
 
@@ -35,7 +36,9 @@ def main():
     log = logging.getLogger()
     log.debug("start")
 
-    poll = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--poll"), None)
+    options = {opt: opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt.startswith("--")}
+
+    poll = options.get("poll")
     if not poll and "poll" in conf:
         poll = conf["poll"]
     if poll:
@@ -54,7 +57,7 @@ def main():
     sender = conf.get("smtp-from", None)
     protocol = conf.get("smtp-protocol", None)
 
-    profile = next((opv for (opt, opv) in zip(sys.argv, sys.argv[1:]) if opt == "--profile"), None)
+    profile = options.get("--profile")
     if not profile and "profile" in conf:
         profile = conf["profile"]
     log.debug(f"profile: {profile}")
@@ -62,15 +65,15 @@ def main():
     log.debug("accessing profile")
     conn = i4c.I4CConnection(profile=profile)
     extra = conn.profile_data.get("extra", {})
-    svr = svr or extra.get("smtp-server", None)
-    port = port or extra.get("smtp-port", None)
-    uid = uid or extra.get("smtp-user", None)
-    pwd = pwd or extra.get("smtp-password", None)
-    sender = sender or extra.get("smtp-from", None)
-    protocol = protocol or extra.get("smtp-protocol", "starttls")
+    svr = svr or extra.get("smtp-server")
+    port = port or extra.get("smtp-port")
+    uid = uid or extra.get("smtp-user")
+    pwd = pwd or extra.get("smtp-password")
+    sender = sender or extra.get("smtp-from")
+    protocol = protocol or extra.get("smtp-protocol") or "starttls"
 
     if svr is None:
-        log.debug("no server is given, falling back to localhost")
+        log.debug("no server is given, falling back to 127.0.0.1")
         svr = "127.0.0.1"
 
     if protocol not in ("ssl", "starttls", "plain"):
@@ -78,34 +81,71 @@ def main():
 
     log.debug(f"smtp settings: {protocol} {svr}:{port} user:{uid} from:{sender}")
 
-    if not os.path.isfile("pwdreset.template"):
-        fail("Missing pwdreset.template")
-
-    with open("pwdreset.template", "r", encoding="utf-8") as f:
-        tmpl = f.read()
-
     env = jinja2.Environment()
-    tmpl = env.from_string(tmpl)
+
+    if os.path.isfile("pwdreset.subj"):
+        with open("pwdreset.subj", "r", encoding="utf-8") as f:
+            subject = f.readline()
+    else:
+        subject = "I4C jelszó"
+
+    if os.path.isfile("pwdreset.text"):
+        with open("pwdreset.text", "r", encoding="utf-8") as f:
+            log.debug("reading pwdreset.text")
+            text_tmpl = f.read()
+            log.debug("parsing")
+            text_tmpl = env.from_string(text_tmpl)
+    else:
+        text_tmpl = None
+
+    if os.path.isfile("pwdreset.html"):
+        with open("pwdreset.html", "r", encoding="utf-8") as f:
+            log.debug("reading pwdreset.html")
+            html_tmpl = f.read()
+            log.debug("parsing")
+            html_tmpl = env.from_string(html_tmpl)
+    else:
+        html_tmpl = None
+
+    if text_tmpl is None and html_tmpl is None:
+        fail("Missing pwdreset.text and/or pwdreset.html")
 
     while True:
         log.debug("getting pwdreset list")
         try:
             resets = conn.pwdreset.list()
+            log.debug(f"got {len(resets)} items")
         except Exception as e:
             log.error(f"Error reading pwdreset list: {e}")
+            resets = []
 
-        sep = base64.urlsafe_b64encode(os.urandom(15)).decode()
-
-        log.debug(f"got {len(resets)} items")
         for r in resets:
             email = r["email"]
             token = r["token"]
             login = r["loginname"]
             log.info(f"sending to {email} for {login}")
 
-            log.debug("rendering")
-            mail_body = tmpl.render(email=email, token=token, login=login, sep=sep, sender=sender)
-            mail_body = mail_body.encode("utf-8")
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = sender
+            msg["To"] = email
+
+            text = None
+            html = None
+            if text_tmpl:
+                log.debug("rendering text")
+                text = text_tmpl.render(token=token, login=login)
+            if html_tmpl:
+                log.debug("rendering html")
+                html = html_tmpl.render(token=token, login=login)
+
+            if text_tmpl and html_tmpl:
+                msg.set_content(text)
+                msg.add_alternative(html, subtype="html")
+            elif text_tmpl:
+                msg.set_content(text)
+            elif html_tmpl:
+                msg.set_content(html, subtype="html")
 
             try:
                 log.debug("connecting")
@@ -120,12 +160,8 @@ def main():
                     log.debug("authenticating")
                     mailer.login(uid, pwd)
 
-                mailer.ehlo_or_helo_if_needed()
-                mailopt = ("BODY=8BITMIME",) if "8bitmime" in mailer.esmtp_features else ()
-                log.debug(f"mail opt: {'|'.join(mailopt)}")
-
                 log.debug("sending")
-                mailer.sendmail(sender, [email], mail_body, mail_options=mailopt)
+                mailer.send_message(msg)
 
                 try:
                     log.debug("marking as sent")
