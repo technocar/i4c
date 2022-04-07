@@ -10,28 +10,28 @@ import re
 import tempfile
 
 robot_actions = {
-    "Darab beérkezett": "spotted",
-    "Darab felvéve a szalagról (Nyers)": "pickup",
-    "Darab lerakva a GOM-ra (Nyers)": "place_gom",
-    "GOM mérés OK (Nyers)": "gom_good",
-    "GOM mérés NOK (Nyers)": "gom_bad",
-    "Darab felvéve a GOM-ról (Nyers)": "takeout_gom",
-    "Darab lerakva Esztergába": "place_lathe",
-    "Darab felvéve Esztergából": "takeout_lathe",
-    "Darab lerakva Maróba": "place_mill",
-    "Darab felvéve Maróból": "takeout_mill",
-    "Darab lerakva fordítóra": "place_table",
-    "Darab felvéve fordítóról": "pickup_table",
-    "Darab lerakva a GOM-ra (Kész)": "place_gom",
-    "GOM mérés OK (Kész)": "gom_good",
-    "GOM mérés NOK (Kész)": "gom_bad",
-    "Darab felvéve a GOM-ról (Kész)": "pickout_gom",
-    "Darab jelölve": "marking",
-    "Darab lefújatva": "cleaning",
-    "Darab lerakva szalagra": "place_good_out",
-    "Darab lerakva minta fiókba": "place_sample_out",
-    "Darab lerakva NOK tárolóba": "place_bad_out",
-    "Folyamat megszakítva": "stopped"}
+    "Darab beérkezett": ("state", "spotted"),
+    "Darab felvéve a szalagról (Nyers)": ("state", "pickup"),
+    "Darab lerakva a GOM-ra (Nyers)": ("state", "place_gom"),
+    "GOM mérés OK (Nyers)": ("gom_signal", "gom_good"),
+    "GOM mérés NOK (Nyers)": ("gom_signal", "gom_bad"),
+    "Darab felvéve a GOM-ról (Nyers)": ("state", "takeout_gom"),
+    "Darab lerakva Esztergába": ("state", "place_lathe"),
+    "Darab felvéve Esztergából": ("state", "takeout_lathe"),
+    "Darab lerakva Maróba": ("state", "place_mill"),
+    "Darab felvéve Maróból": ("state", "takeout_mill"),
+    "Darab lerakva fordítóra": ("state", "place_table"),
+    "Darab felvéve fordítóról": ("state", "pickup_table"),
+    "Darab lerakva a GOM-ra (Kész)": ("state", "place_gom"),
+    "GOM mérés OK (Kész)": ("gom_signal", "gom_good"),
+    "GOM mérés NOK (Kész)": ("gom_signal", "gom_bad"),
+    "Darab felvéve a GOM-ról (Kész)": ("state", "pickout_gom"),
+    "Darab jelölve": ("state", "marking"),
+    "Darab lefújatva": ("state", "cleaning"),
+    "Darab lerakva szalagra": ("state", "place_good_out"),
+    "Darab lerakva minta fiókba": ("state", "place_sample_out"),
+    "Darab lerakva NOK tárolóba": ("state", "place_bad_out"),
+    "Folyamat megszakítva": ("state", "stopped")}
 
 robot_alarms = {
     "Esztega Hiba": "error_lathe",
@@ -160,6 +160,7 @@ def process_robot(section):
                             api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
                             api_params["data_id"] = "wkpcid"
                             api_params["value_text"] = wkpcid
+                            api_params["value_extra"] = None
                             api_params_array.append(copy.deepcopy(api_params))
                             api_params["sequence"] += 1
                             api_params["data_id"] = "pgm"
@@ -168,11 +169,10 @@ def process_robot(section):
 
                         api_params["sequence"] += 1
                         api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
-                        api_params["data_id"] = robot_actions.get(lines[1], "other")
-                        if api_params["data_id"] == "other":
-                            api_params["value_text"] = lines[1]
-                        else:
-                            api_params["value_text"] = None
+                        (did, value) = robot_actions.get(lines[1], ("state", "unknown"))
+                        api_params["data_id"] = did
+                        api_params["value_text"] = value
+                        api_params["value_extra"] = lines[1]
                         api_params_array.append(copy.deepcopy(api_params))
 
                 csvfile.close()
@@ -339,11 +339,9 @@ def process_Alarms(section):
                 api_params["sequence"] = 0
                 for lines in csvreader:
                     api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
-                    api_params["data_id"] = robot_alarms.get(lines[1], "other_alarm")
-                    if api_params["data_id"] == "other_alarm":
-                        api_params["value_text"] = lines[1]
-                    else:
-                        api_params["value_text"] = None
+                    api_params["data_id"] = "alarm"
+                    api_params["value_text"] = robot_alarms.get(lines[1], "other_alarm")
+                    api_params["value_extra"] = lines[1]
                     api_params_array.append(copy.deepcopy(api_params))
                     api_params["sequence"] += 1
                 csvfile.close()

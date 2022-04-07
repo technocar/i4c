@@ -23,7 +23,8 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id in ('stopped', 'place_good_out', 'place_bad_out')
+      and l.data_id = 'state'
+      and l.value_text in ('stopped', 'place_good_out', 'place_bad_out')
   ),
   workpiece_id as (
     select l.value_text as "id", l.timestamp, l.sequence
@@ -36,14 +37,15 @@ with
       and l.data_id = 'wkpcid'
   ),
   workpiece_status as (
-    select case l.data_id when 'place_good_out' then 'good' when 'place_bad_out' then 'bad' else 'unknown' end as "auto_status", l.timestamp, l.sequence
+    select case l.value_text when 'place_good_out' then 'good' when 'place_bad_out' then 'bad' else 'unknown' end as "auto_status", l.timestamp, l.sequence
     from log l
     cross join p
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id in ('stopped', 'place_good_out', 'place_bad_out')
+      and l.data_id ='state'
+      and l.value_text in ('stopped', 'place_good_out', 'place_bad_out')
   ),
   map_project_version as (
     select
@@ -61,8 +63,8 @@ with
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device='robot'
-      and l.data_id='pgm'
+      and l.device = 'robot'
+      and l.data_id = 'pgm'
   ),
   workpiece_project as (
     select mpv."project", mpv.version, r.timestamp, r.sequence
