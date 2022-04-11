@@ -131,6 +131,12 @@ async def get_workpiece_log(begin_timestamp, begin_sequence, end_timestamp, end_
         dr = await conn.fetch(workpiece_list_log_detail, begin_timestamp, begin_sequence, end_timestamp, end_sequence)
         res = []
         for r in dr:
+            if begin_sequence is not None:
+                if r["ts"] == begin_sequence and r["seq"] <= begin_sequence:
+                    continue
+            if end_sequence is not None:
+                if r["ts"] == end_timestamp and r["seq"] >= end_sequence:
+                    continue
             res.append(Log(**r))
         return res
 

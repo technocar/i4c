@@ -10,28 +10,28 @@ import re
 import tempfile
 
 robot_actions = {
-    "Darab beérkezett": "spotted",
-    "Darab felvéve a szalagról (Nyers)": "pickup",
-    "Darab lerakva a GOM-ra (Nyers)": "place_gom",
-    "GOM mérés OK (Nyers)": "gom_good",
-    "GOM mérés NOK (Nyers)": "gom_bad",
-    "Darab felvéve a GOM-ról (Nyers)": "takeout_gom",
-    "Darab lerakva Esztergába": "place_lathe",
-    "Darab felvéve Esztergából": "takeout_lathe",
-    "Darab lerakva Maróba": "place_mill",
-    "Darab felvéve Maróból": "takeout_mill",
-    "Darab lerakva fordítóra": "place_table",
-    "Darab felvéve fordítóról": "pickup_table",
-    "Darab lerakva a GOM-ra (Kész)": "place_gom",
-    "GOM mérés OK (Kész)": "gom_good",
-    "GOM mérés NOK (Kész)": "gom_bad",
-    "Darab felvéve a GOM-ról (Kész)": "pickout_gom",
-    "Darab jelölve": "marking",
-    "Darab lefújatva": "cleaning",
-    "Darab lerakva szalagra": "place_good_out",
-    "Darab lerakva minta fiókba": "place_sample_out",
-    "Darab lerakva NOK tárolóba": "place_bad_out",
-    "Folyamat megszakítva": "stopped"}
+    "Darab beérkezett": ("state", "spotted"),
+    "Darab felvéve a szalagról (Nyers)": ("state", "pickup"),
+    "Darab lerakva a GOM-ra (Nyers)": ("state", "place_gom"),
+    "GOM mérés OK (Nyers)": ("gom_signal", "gom_good"),
+    "GOM mérés NOK (Nyers)": ("gom_signal", "gom_bad"),
+    "Darab felvéve a GOM-ról (Nyers)": ("state", "takeout_gom"),
+    "Darab lerakva Esztergába": ("state", "place_lathe"),
+    "Darab felvéve Esztergából": ("state", "takeout_lathe"),
+    "Darab lerakva Maróba": ("state", "place_mill"),
+    "Darab felvéve Maróból": ("state", "takeout_mill"),
+    "Darab lerakva fordítóra": ("state", "place_table"),
+    "Darab felvéve fordítóról": ("state", "pickup_table"),
+    "Darab lerakva a GOM-ra (Kész)": ("state", "place_gom"),
+    "GOM mérés OK (Kész)": ("gom_signal", "gom_good"),
+    "GOM mérés NOK (Kész)": ("gom_signal", "gom_bad"),
+    "Darab felvéve a GOM-ról (Kész)": ("state", "pickout_gom"),
+    "Darab jelölve": ("state", "marking"),
+    "Darab lefújatva": ("state", "cleaning"),
+    "Darab lerakva szalagra": ("state", "place_good_out"),
+    "Darab lerakva minta fiókba": ("state", "place_sample_out"),
+    "Darab lerakva NOK tárolóba": ("state", "place_bad_out"),
+    "Folyamat megszakítva": ("state", "stopped")}
 
 robot_alarms = {
     "Esztega Hiba": "error_lathe",
@@ -141,7 +141,7 @@ def process_robot(section):
                     if len(lines) != 2:
                         if lines[0].upper() == "Naplózott események".upper():
                             continue
-                        log.error("Line %d in wrong format!", [csvreader.line_num])
+                        log.error(f"Line {csvreader.line_num} in wrong format!")
                         return
 
                     if lines[0].upper() == "Munkadarab azonosítója".upper():
@@ -151,15 +151,16 @@ def process_robot(section):
                     elif csvreader.line_num >= 5:
                         if csvreader.line_num == 5:
                             if wkpcid is None:
-                                log.error("Workpiece id is not set!", [csvreader.line_num])
+                                log.error("Workpiece id is not set!")
                                 return
                             if progid is None:
-                                log.error("Program id is not set!", [csvreader.line_num])
+                                log.error("Program id is not set!")
                                 return
                             api_params["sequence"] = 0
                             api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
                             api_params["data_id"] = "wkpcid"
                             api_params["value_text"] = wkpcid
+                            api_params["value_extra"] = None
                             api_params_array.append(copy.deepcopy(api_params))
                             api_params["sequence"] += 1
                             api_params["data_id"] = "pgm"
@@ -168,11 +169,10 @@ def process_robot(section):
 
                         api_params["sequence"] += 1
                         api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
-                        api_params["data_id"] = robot_actions.get(lines[1], "other")
-                        if api_params["data_id"] == "other":
-                            api_params["value_text"] = lines[1]
-                        else:
-                            api_params["value_text"] = None
+                        (did, value) = robot_actions.get(lines[1], ("state", "unknown"))
+                        api_params["data_id"] = did
+                        api_params["value_text"] = value
+                        api_params["value_extra"] = lines[1]
                         api_params_array.append(copy.deepcopy(api_params))
 
                 csvfile.close()
@@ -339,11 +339,9 @@ def process_Alarms(section):
                 api_params["sequence"] = 0
                 for lines in csvreader:
                     api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
-                    api_params["data_id"] = robot_alarms.get(lines[1], "other_alarm")
-                    if api_params["data_id"] == "other_alarm":
-                        api_params["value_text"] = lines[1]
-                    else:
-                        api_params["value_text"] = None
+                    api_params["data_id"] = "alarm"
+                    api_params["value_text"] = robot_alarms.get(lines[1], "other_alarm")
+                    api_params["value_extra"] = lines[1]
                     api_params_array.append(copy.deepcopy(api_params))
                     api_params["sequence"] += 1
                 csvfile.close()
@@ -412,10 +410,10 @@ def process_ReniShaw(section, wkpcid):
                     continue
                 if lines.startswith("+++++OUT OF TOL"):
                     if measure is None:
-                        log.error(f"OUT OF TOL found but no measure is set at line#{line_no}")
+                        log.error(f"OUT OF TOL found but no measure is set at line {line_no}")
                         continue
                     if measure2 is None or measure2 == "":
-                        log.error(f"OUT OF TOL found but no sub measure is set at line#{line_no}")
+                        log.error(f"OUT OF TOL found but no sub measure is set at line {line_no}")
                         continue
                     mo = re.match(r"[+]*OUT OF TOL/.*ERROR/\D*(?P<error>[-.\d]*).*$", lines)
                     if mo:
@@ -429,7 +427,7 @@ def process_ReniShaw(section, wkpcid):
                 mo = re.match(r"^(?P<measure2>[a-zA-Z ]*[ /])(?P<others>.*ACTUAL/[-0-9.]*.*)", lines)
                 if mo:
                     if measure is None:
-                        log.error(f"Size found but no measure is set at line#{line_no}")
+                        log.error(f"Size found but no measure is set at line {line_no}")
                         continue
                     measure2 = mo.group("measure2")
                     if measure2[-1:] == " ":
@@ -460,7 +458,7 @@ def process_ReniShaw(section, wkpcid):
 #               mo = re.match(r"^---- */  (?P<measure_name>.*)  / *----$", lines)    old pattern
                 if mo:
                     if api_params["timestamp"] is None:
-                        log.error(f"Measure found but no timestamp is set at line#{line_no}")
+                        log.error(f"Measure found but no timestamp is set at line {line_no}")
                         continue
                     measure = mo.group("measure_name")
                     continue
