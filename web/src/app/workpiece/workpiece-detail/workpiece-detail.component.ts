@@ -5,7 +5,8 @@ import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { DownloadService } from 'src/app/services/download.service';
-import { WorkPiece, WorkPieceNote } from 'src/app/services/models/api';
+import { Device, WorkPiece, WorkPieceNote } from 'src/app/services/models/api';
+import { DeviceType } from 'src/app/services/models/constants';
 
 @Component({
   selector: 'app-workpiece-detail',
@@ -18,6 +19,7 @@ export class WorkpieceDetailComponent implements OnInit {
   data: WorkPiece;
   notes$: BehaviorSubject<WorkPieceNote[]> = new BehaviorSubject([]);
   statuses: string[][] = [];
+  devices: Device[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -27,6 +29,7 @@ export class WorkpieceDetailComponent implements OnInit {
     private downloadService: DownloadService
     ) {
       this.id = route.snapshot.paramMap.get('id');
+      apiService.getDevices().subscribe(r => this.devices = r);
     }
 
   ngOnInit(): void {
@@ -92,5 +95,13 @@ export class WorkpieceDetailComponent implements OnInit {
   getStatusDesc(code: string): string {
     var status = this.statuses.find((s) => { return s[0] === code; });
     return status ? status[1] : code;
+  }
+
+  getDeviceName(deviceId: DeviceType): string {
+    let device = this.devices.find(d => d.id === deviceId);
+    if (device)
+      return device.name;
+    else
+      return deviceId;
   }
 }

@@ -63,7 +63,9 @@
           <tr>
             <th scope="col">időpont</th>
             <th scope="col">sorszám</th>
+            <th scope="col">eszköz</th>
             <th scope="col">típus</th>
+            <th scope="col">érték</th>
             <th scope="col">megjegyzés</th>
           </tr>
         </thead>
@@ -71,8 +73,10 @@
           <tr *ngFor="let log of data.log">
             <td>{{log.ts}}</td>
             <td>{{log.seq}}</td>
+            <td>{{getDeviceName(log.device)}}</td>
             <td>{{log.data}}</td>
             <td>{{log.text}}</td>
+            <td>{{log.value_extra}}</td>
           </tr>
         </tbody>
       </table>

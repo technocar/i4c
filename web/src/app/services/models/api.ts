@@ -206,7 +206,9 @@ export interface WorkPieceLog {
   ts: string,
   seq: number,
   data: string,
-  text: string
+  text: string,
+  device: DeviceType,
+  value_extra: string
 }
 
 export interface WorkPieceFile {
