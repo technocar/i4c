@@ -12,6 +12,7 @@ export class AutocompleteInputComponent implements OnInit {
 
   @Input() values: string[] = [];
   @Input() value: string;
+  @Input() disabled: boolean = false;
   @Output() valueChange: EventEmitter<string> = new EventEmitter();
 
   @ViewChild('valuesSelector', {static: true}) instance: NgbTypeahead;
@@ -30,8 +31,8 @@ export class AutocompleteInputComponent implements OnInit {
     const inputFocus$ = this.focus$;
 
     return merge(debouncedText$, inputFocus$, clicksWithClosedPopup$).pipe(
-      map(term => (term === '' ? this.values
-        : this.values.filter(v => v.toLowerCase().indexOf(term.toLowerCase()) > -1)).slice(0, 10))
+      map(term => (term === '' ? (this.values ?? [])
+        : (this.values ?? []).filter(v => v.toLowerCase().indexOf(term.toLowerCase()) > -1)).slice(0, 10))
     );
   }
 
