@@ -5,7 +5,7 @@ import { PasswordResetComponent } from './password-reset/password-reset.componen
 const routes: Routes = [{
   path: '',
   children: [
-    {path: 'password-reset/:token', component: PasswordResetComponent, data: { breadcrumb: "új jelszó" }}
+    {path: 'passwordreset/:token', component: PasswordResetComponent, data: { breadcrumb: "új jelszó" }}
   ]
 }];
 

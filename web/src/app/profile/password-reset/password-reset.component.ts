@@ -45,7 +45,7 @@ export class PasswordResetComponent implements OnInit {
     private router: Router,
     private apiService: ApiService
   ) {
-    this.username = route.snapshot.queryParamMap.get("loginname");
+    this.username = route.snapshot.queryParamMap.get("login");
     this.token = route.snapshot.paramMap.get("token");
   }
 
