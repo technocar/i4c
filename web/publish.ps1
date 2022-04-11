@@ -4,7 +4,7 @@ $dest_api_path="\\karatnetsrv\Karatnet\machinestuff\i4c\api\"
 $dest_web_path="\\karatnetsrv\Karatnet\machinestuff\i4c\web\"
 $dest_iis_path="\\karatnetsrv\i4c_web\"
 
-Invoke-Expression "ng build --configuration=production"
+Invoke-Expression "ng  build --aot --prod --output-hashing none"
 
 Copy-Item -Path $src_api_path"*" -Destination $dest_api_path -Exclude @("__pycache__", "internal_file", "log", "*.yaml", "*.cmd") -Force -Confirm:$false -Recurse
 Remove-Item $dest_web_path"*" -Force -Confirm:$false -Recurse
