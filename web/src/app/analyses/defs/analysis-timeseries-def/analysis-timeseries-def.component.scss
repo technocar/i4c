@@ -18,3 +18,7 @@
     margin-bottom: 0;
   }
 }
+
+::ng-deep autocomplete-input .dropdown-menu {
+  top: -30px !important;
+}

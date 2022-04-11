@@ -9,6 +9,10 @@ import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers, HSLAColor } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
 
+interface StatTimesSeriesFilterEx extends StatTimesSeriesFilter {
+  valueList?: string[];
+}
+
 @Component({
   selector: 'app-analysis-timeseries-def',
   templateUrl: './analysis-timeseries-def.component.html',
@@ -21,7 +25,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
 
 
-  filters$: BehaviorSubject<StatTimesSeriesFilter[]> = new BehaviorSubject([]);
+  filters$: BehaviorSubject<StatTimesSeriesFilterEx[]> = new BehaviorSubject([]);
 
   aggFuncs: string[][] = [
     [StatTimeSeriesAggFunc.Avg, $localize `:@@stat_timeseries_agg_func_avg:átlag`],
@@ -77,7 +81,13 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
         visualsettings: undefined
       };
     else {
-      this.filters$.next(this.def.filter ?? []);
+      this.filters$.next((this.def.filter ?? []).map(f => {
+        let filter: StatTimesSeriesFilterEx = Object.assign({}, f);
+        const meta = this.metaList.find(m => m.device === f.device && m.data_id === f.data_id);
+        if (meta)
+          filter.valueList = meta.value_list;
+        return filter;
+      }));
     }
     this.setDefualtVisualSettings();
   }
@@ -146,12 +156,13 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     this.filters$.next(filters);
   }
 
-  updateFilterId(meta: Meta, filter: StatTimesSeriesFilter) {
+  updateFilterId(meta: Meta, filter: StatTimesSeriesFilterEx) {
     filter.data_id = meta.data_id;
     filter.device = meta.device;
+    filter.valueList = meta.value_list;
   }
 
-  deleteFilter(filter: StatTimesSeriesFilter) {
+  deleteFilter(filter: StatTimesSeriesFilterEx) {
     var filters = this.filters$.value;
     var idx = filters.findIndex((f) => { return f.data_id === filter.data_id && f.device === filter.device });
     if (idx > -1)

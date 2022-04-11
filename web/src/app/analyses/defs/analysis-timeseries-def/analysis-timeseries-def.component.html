@@ -28,7 +28,7 @@
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" [disabled]="!access.canUpdate"/>
+            <autocomplete-input [values]="filter.valueList" [(value)]="filter.value" class="mr-2 container d-inline-block" [disabled]="!access.canUpdate"></autocomplete-input>
           </td>
           <td>
             <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" [disabled]="!access.canUpdate" step="0.01"/>
