@@ -5,9 +5,10 @@ from pydantic import root_validator, Field
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, CredentialsAndFeatures
 from common.db_tools import get_user_customer
 from common.exceptions import I4cClientError
-from models import WorkpieceStatusEnum
+from models import WorkpieceStatusEnum, Device
 from models.common import PatchResponse
 import common.db_helpers
+
 
 class NoteAdd(I4cBaseModel):
     """Workpiece comment. Input."""
@@ -25,10 +26,12 @@ class Note(NoteAdd):
 
 class Log(I4cBaseModel):
     """Workpiece manufacturing log item."""
+    device: Device = Field(..., title="Device.")
     ts: datetime = Field(..., title="Timestamp.")
     seq: int = Field(..., title="Sequence.")
     data: str = Field(..., title="Event or condition type.")
     text: Optional[str] = Field(..., title="Event or condition data.")
+    value_extra: Optional[str] = Field(None, title="Additional text value")
 
 
 class File(I4cBaseModel):
@@ -127,8 +130,8 @@ workpiece_list_log_detail = open("models/workpiece_list_log_detail.sql").read()
 
 async def get_workpiece_log(begin_timestamp, begin_sequence, end_timestamp, end_sequence, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
-        write_debug_sql("workpiece_log.sql", workpiece_list_log_detail, begin_timestamp, begin_sequence, end_timestamp, end_sequence)
-        dr = await conn.fetch(workpiece_list_log_detail, begin_timestamp, begin_sequence, end_timestamp, end_sequence)
+        write_debug_sql("workpiece_log.sql", workpiece_list_log_detail, begin_timestamp, end_timestamp)
+        dr = await conn.fetch(workpiece_list_log_detail, begin_timestamp, end_timestamp)
         res = []
         for r in dr:
             if begin_sequence is not None:
