@@ -27,7 +27,11 @@ class RequestParams {
     switch (typeof value) {
       case "object":
         if (value instanceof Date)
-          v = (value as Date).toISOString();
+          try {
+            v = (value as Date).toISOString();
+          } catch {
+            v = undefined;
+          }
         else if (Array.isArray(value))
         {
           for (let item of v)
@@ -42,6 +46,10 @@ class RequestParams {
         break;
     }
     console.log(v);
+
+    if (v === undefined)
+      return;
+
     if (name.endsWith("_mask")) {
       for (let filter of v.split(' '))
         this._params = this._params.append(name, filter);

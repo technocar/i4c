@@ -45,7 +45,7 @@
             <label class="custom-control-label" for="select_all_workpieces">&nbsp;</label>
           </div>
         </th>
-        <th scope="col" class="text-center">szám</th>
+        <th scope="col" class="text-center">azonosító</th>
         <th scope="col" class="text-center">elkészült</th>
         <th scope="col" class="text-center">folyamat</th>
         <th scope="col" class="text-center">állapot</th>
@@ -83,6 +83,7 @@
       </ng-template>
     </tbody>
   </table>
+  <div class="col-12 alert alert-danger text-center rounded-0" *ngIf="noFilter">Az alábbi adatok közül legalább egy megadása kötelező!<br/> <b>azonosító</b><br/><b>elkészült</b><br/><b>munkaszám</b></div>
 </div>
 
 <ng-template #batch_list>

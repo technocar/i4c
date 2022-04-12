@@ -80,6 +80,8 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
     this.filter();
   }
 
+  noFilter = false;
+
   statuses: string[][] = [];
 
   access = {
@@ -143,8 +145,15 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
 
   getWorkPieces() {
-    var startDate = Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day, 0, 0, 0, 0);
-    var endDate = Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day + 1, 0, 0, 0, -1);
+    this.noFilter = false;
+    if (!this._filterDate?.year && !this._filterDate?.month && !this._filterDate?.day && !this._filterBatch && !this.filterId) {
+      this.noFilter = true;
+      this.workPieces$.next([]);
+      return;
+    }
+
+    var startDate = this._filterDate ? Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day, 0, 0, 0, 0) : undefined;
+    var endDate = this._filterDate ? Date.UTC(this._filterDate.year, this._filterDate.month - 1, this._filterDate.day + 1, 0, 0, 0, -1) : undefined;
     this.fetchingList$.next(true);
     this.selected = [];
     this.apiService.getWorkPieces({
@@ -226,7 +235,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
 
   filter() {
     var filters: WorkPieceFilters = {
-      fd: `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}`,
+      fd: this.filterDate ? `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}` : undefined,
       fid: (this.filterId ?? "") === "" ? undefined : this.filterId,
       fp: this.filterProjectCtrl.queryParam,
       fb: this.filterBatchCtrl.queryParam,
