@@ -32,7 +32,6 @@
             <div class="col form-group mb-0">
               <input id="from_date" type="date" class="form-control" [(ngModel)]="filterFromDate" (change)="filter()" ngbDatepicker #ds="ngbDatepicker" />
             </div>
-            <div class="col-auto m-0 p-0"> - </div>
             <div class="col form-group mb-0">
               <input id="to_date" type="date" class="form-control" [(ngModel)]="filterToDate" (change)="filter()" ngbDatepicker #de="ngbDatepicker" />
             </div>
@@ -50,12 +49,14 @@
             <option *ngFor="let status of statuses" [value]="status[0]">{{status[1]}}</option>
           </select>
         </th>
+        <th></th>
       </tr>
       <tr class="text-center">
         <th scope="col" class="ts">Időpont</th>
         <th scope="col" class="project">Projekt</th>
         <th scope="col" class="real_version">Verzió</th>
         <th scope="col" class="status">Státusz</th>
+        <th scope="col" class="status">Megjegyzés</th>
       </tr>
     </thead>
     <tbody>
@@ -84,6 +85,7 @@
               {{getStatusDesc(item.status)}}
             </span>
           </td>
+          <td class="text-truncate" title="{{item.status_msg}}">{{item.status_msg}}</td>
         </tr>
       </ng-template>
     </tbody>
