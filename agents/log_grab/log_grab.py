@@ -317,22 +317,27 @@ def process_Alarms(section):
 
     current_file = dict()
     for currentfile in files:
+        log.debug(f"found {currentfile}")
         current_file["name"] = currentfile
         current_file["path"] = src_path
         current_file["fullname"] = os.path.join(src_path, currentfile)
 
-        log.info("processing file %s", current_file["fullname"])
         try:
             fname, _ = os.path.splitext(currentfile)
             if fname == ref_date:
-                log.debug("creating temp file")
-                shutil.copyfile(current_file["fullname"], os.path.join(tempfile.gettempdir(), current_file["name"]))
-                current_file["path"] = tempfile.gettempdir()
-                current_file["fullname"] = os.path.join(tempfile.gettempdir(), current_file["name"])
+                log.debug("processing active file %s", current_file["fullname"])
+                tmp_dir = tempfile.gettempdir()
+                tmp_file = os.path.join(tmp_dir, current_file["name"])
+                log.debug(f"creating temp file {tmp_file}")
+                shutil.copyfile(current_file["fullname"], tmp_file)
+                current_file["path"] = tmp_dir
+                current_file["fullname"] = tmp_file
                 current_file["move"] = False
             else:
+                log.info("processing final file %s", current_file["fullname"])
                 current_file["move"] = True
 
+            log.debug("opening csv")
             with open(current_file["fullname"]) as csvfile:
                 csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
                 api_params_array = []
@@ -345,6 +350,7 @@ def process_Alarms(section):
                     api_params_array.append(copy.deepcopy(api_params))
                     api_params["sequence"] += 1
                 csvfile.close()
+            log.debug(f"writing {len(api_params_array)} records")
             conn.invoke_url("log", "POST", api_params_array)
             if current_file["move"]:
                 log.debug("archiving file")
@@ -354,6 +360,7 @@ def process_Alarms(section):
                 os.remove(current_file["fullname"])
         except Exception as E:
             log.error(E)
+    log.debug("alarms done")
 
 
 def process_ReniShaw(section, wkpcid):
