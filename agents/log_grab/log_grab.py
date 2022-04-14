@@ -185,6 +185,19 @@ def process_robot(section):
             log.error(E)
 
 
+def safe_float(s):
+    if s is None:
+        return None
+    s = s.replace(" ", "")
+    if s == "":
+        return None
+    if s.startswith("?"):
+        return None
+    s = s.replace(",", ".")
+    f = float(s)
+    return f
+
+
 def process_GOM(section, wkpcid):
     log.debug(f"Processing GOM files ({wkpcid})...")
 
@@ -259,11 +272,11 @@ def process_GOM(section, wkpcid):
                         api_params["sequence"] += 1
                         did = lines[idxElement].strip()
                         api_params["data_id"] = did + '-DEV'
-                        api_params["value_num"] = float(lines[idxDev].replace(",", "."))
+                        api_params["value_num"] = safe_float(lines[idxDev])
                         api_params_array.append(copy.deepcopy(api_params))
                         api_params["sequence"] += 1
                         api_params["data_id"] = did + '-ACTUAL'
-                        api_params["value_num"] = float(lines[idxActual].replace(",", "."))
+                        api_params["value_num"] = safe_float(lines[idxActual])
                         api_params_array.append(copy.deepcopy(api_params))
                 csvfile.close()
 
