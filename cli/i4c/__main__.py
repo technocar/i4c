@@ -286,7 +286,7 @@ def make_commands(conn: I4CConnection):
                         help="Jinja template to process data items before printed or written to a file. If omitted, raw " \
                               "json will be written."))
                 else:
-                    params.append(click.Option(("--output-file",),
+                    params.append(click.Option(("--output-file","-O"),
                         help="Output file name. If omitted or -, stdout is used."))
 
             callback = make_callback(path=action.path, method=action.method, action=conn[obj_name][action_name])
