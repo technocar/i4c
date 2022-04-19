@@ -28,7 +28,7 @@ async def get_role(
 ):
     """Get a role."""
     res = await models.roles.get_roles(credentials, name, active_only=False)
-    if res is None:
+    if not res:
         raise I4cClientNotFound("No record found")
     return res[0]
 
