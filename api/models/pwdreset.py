@@ -2,7 +2,7 @@
 import base64
 import secrets
 from textwrap import dedent
-from pydantic import Field
+from pydantic import Field, SecretStr
 import common
 import models.users
 from common import I4cBaseModel, DatabaseConnection
@@ -40,10 +40,10 @@ class SetPassParams(I4cBaseModel):
     """Password reset data."""
     loginname: str = Field(..., title="Login name.")
     token: str = Field(..., title="Password reset token.")
-    password: str = Field(..., title="New password.")
+    password: SecretStr = Field(..., title="New password.")
 
 
-async def setpass(loginname, token, password, *, pconn=None):
+async def setpass(loginname, token, password: SecretStr, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction(isolation='repeatable_read'):
             sql = dedent("""\
@@ -68,7 +68,7 @@ async def setpass(loginname, token, password, *, pconn=None):
                 where 
                   login_name = $1
                 """)
-            new_password_verifier = common.create_password(password)
+            new_password_verifier = common.create_password(password.get_secret_value())
             await conn.execute(sql_update, loginname, new_password_verifier)
 
             return await models.users.get_user(login_name=loginname, with_privs=True)

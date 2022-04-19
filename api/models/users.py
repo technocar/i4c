@@ -1,7 +1,7 @@
 from textwrap import dedent
 from asyncpg import ForeignKeyViolationError, UniqueViolationError
 from fastapi.security import HTTPBasicCredentials
-from pydantic import Field, root_validator
+from pydantic import Field, root_validator, SecretStr
 from typing import Optional, List
 import common
 from common import I4cBaseModel, DatabaseConnection, CredentialsAndFeatures
@@ -66,7 +66,7 @@ class UserPatchConditions(I4cBaseModel):
 
 class UserPatchChange(I4cBaseModel):
     """Change in a user update."""
-    password: Optional[str] = Field(None, title="Set password.", mask_log_value=True)
+    password: Optional[SecretStr] = Field(None, title="Set password.", mask_log_value=True)
     del_password: Optional[bool] = Field(None, title="If set, removes the password.")
     public_key: Optional[str] = Field(None, title="Public key.")
     del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")
@@ -304,7 +304,7 @@ async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBod
             fields = []
             params = [id]
             if patch.change.password is not None:
-                params.append(common.create_password(patch.change.password))
+                params.append(common.create_password(patch.change.password.get_secret_value()))
                 fields.append(f"password_verifier = ${len(params)}")
             if patch.change.del_password:
                 fields.append(f"password_verifier = null")

@@ -3,10 +3,11 @@ import math
 from enum import Enum
 from fractions import Fraction
 from typing import List
+from pydantic import SecretStr
 from common.exceptions import I4cInputValidationError
 
 
-def deepdict(o, json_compat=False, hide_bytes=False, hide_mask_log_value=False):
+def deepdict(o, json_compat=False, hide_bytes=False):
     """
     Creates a dict of a variety of sources.
     As a general rule, if something has fields, it will be converted to dict, if something is enumerable, it will be
@@ -16,19 +17,14 @@ def deepdict(o, json_compat=False, hide_bytes=False, hide_mask_log_value=False):
         return "<bytes>"
     if isinstance(o, Enum):
         res = o.value
+    elif isinstance(o, SecretStr):
+        res = str(o)
     elif isinstance(o, dict) or hasattr(o, "__dict__"):
-        res = {}
-        for k,v in dict(o).items():
-            try:
-                hide_value = hide_mask_log_value \
-                             and type(o).__fields__[k].field_info.extra['mask_log_value'] # access pydantic field extra
-            except:
-                hide_value = False
-            res[k] = deepdict(v, json_compat, hide_bytes, hide_mask_log_value) if not hide_value else '****'
+        res = {k:deepdict(v, json_compat, hide_bytes) for (k,v) in dict(o).items()}
     elif isinstance(o, str):
         res = o
     elif hasattr(o, "__getitem__"):
-        res = [deepdict(i, json_compat, hide_bytes, hide_mask_log_value) for i in o]
+        res = [deepdict(i, json_compat, hide_bytes) for i in o]
     else:
         if json_compat:
             if isinstance(o, datetime.date) or isinstance(o, datetime.time) or isinstance(o, datetime.datetime):
