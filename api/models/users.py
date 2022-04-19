@@ -282,7 +282,11 @@ async def user_patch(credentials: CredentialsAndFeatures, id, patch:UserPatchBod
                     select case when password_verifier is not null then true else false end as user_has_password
                     from "user" u
                     where u.id = $1""")
-            user_has_password = (await conn.fetchrow(sql_user_has_password, id))[0]
+            user_has_password = (await conn.fetchrow(sql_user_has_password, id))
+            if user_has_password is None:
+                raise I4cClientError("Unknown user")
+
+            user_has_password = user_has_password[0]
 
             match = True
             for cond in patch.conditions:
