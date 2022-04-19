@@ -66,7 +66,7 @@ class UserPatchConditions(I4cBaseModel):
 
 class UserPatchChange(I4cBaseModel):
     """Change in a user update."""
-    password: Optional[str] = Field(None, title="Set password.")
+    password: Optional[str] = Field(None, title="Set password.", mask_log_value=True)
     del_password: Optional[bool] = Field(None, title="If set, removes the password.")
     public_key: Optional[str] = Field(None, title="Public key.")
     del_public_key: Optional[bool] = Field(None, title="If set, remove the public key.")

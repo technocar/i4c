@@ -39,7 +39,7 @@ class I4cApiRouter(APIRouter):
                 if allow_log:
                     params = ', '.join((str(x) for x in a))
                     bmasked = {k:v for k,v in b.items() if k != 'request'}
-                    bmasked = deepdict(bmasked, json_compat=True, hide_bytes=True)
+                    bmasked = deepdict(bmasked, json_compat=True, hide_bytes=True, hide_mask_log_value=True)
                     user = ""
                     noaudit = ("noaudit" in bmasked) and bmasked["noaudit"]
                     noaudit_priv = False
