@@ -1,3 +1,4 @@
+import { DepFlags } from '@angular/compiler/src/core';
 import { AfterViewInit, Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ChartConfiguration } from 'chart.js';
 import { QuillEditorComponent } from 'ngx-quill';
@@ -5,7 +6,7 @@ import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
-import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther, StatMetaObjectFieldType, StatXYMetaObjectFieldUnit } from 'src/app/services/models/api';
+import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther, StatMetaObjectFieldType, StatXYMetaObjectFieldUnit, StatXYParam, StatXYMetaObjectParam } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
@@ -25,6 +26,10 @@ interface Other {
   field_name: string
 }
 
+interface ObjParam extends StatXYMetaObjectParam {
+  value: string
+}
+
 @Component({
   selector: 'app-analysis-xy-def',
   templateUrl: './analysis-xy-def.component.html',
@@ -42,6 +47,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   numFields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
   filters$: BehaviorSubject<Filter[]> = new BehaviorSubject([]);
   others$: BehaviorSubject<Other[]> = new BehaviorSubject([]);
+  params$: BehaviorSubject<ObjParam[]> = new BehaviorSubject([]);
   operators: NumberRelation[] = [
     NumberRelation.Equal,
     NumberRelation.NotEqual,
@@ -89,6 +95,12 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     this.def.y = (this.def.y ?? "") === "" ? null : this.def.y;
     this.def.shape = (this.def.shape ?? "") === "" ? null : this.def.shape;
     this.def.color = (this.def.color ?? "") === "" ? null : this.def.color;
+
+    if (this.params$.value.length > 0)
+      this.def.obj.params = this.params$.value.map(p => <StatXYParam>{
+        key: p.name,
+        value: (p.value ?? "") === "" ? null : p.value
+      });
 
     return this.def;
   }
@@ -208,6 +220,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     fields.splice(0, 0, ...[emptyField]);
     this.fields$.next(fields);
     this.numFields$.next(obj.length > 0 ? fields.filter(f => f.type === StatMetaObjectFieldType.Numeric) : []);
+    this.params$.next(obj[0].params.map(p => <ObjParam>{ label: p.label, name: p.name, type: p.type, value: this.def.obj?.params?.find(dp => dp.key === p.name)?.value }));
   }
 
   deleteFilter(filter: Filter) {

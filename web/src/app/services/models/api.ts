@@ -480,7 +480,6 @@ export enum NumberRelation { Equal = '=', NotEqual = '!=', Lesser = '<', LesserE
 export enum StringRelation { Equal = '=', NotEqual = '!=', Contains = '*', NotContains = '!*' }
 
 export interface StatXYParam {
-  id: number,
   key: string,
   value: string
 }
