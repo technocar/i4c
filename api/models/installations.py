@@ -88,10 +88,11 @@ async def new_installation(credentials, project, version,
 
                 db_project_version = await conn.fetchrow(sql_project_version, project, i["real_version"])
                 if db_project_version:
-                    if db_project_version["status"] not in statuses:
-                        raise I4cClientError("Not matching project version status")
+                    cur_status = db_project_version["status"]
+                    if cur_status not in statuses:
+                        raise I4cClientError(f"Project version status is '{cur_status}', not installing.")
                 else:
-                    raise I4cClientError("No project version found")
+                    raise I4cClientError("Project version not found")
 
                 db_project_files = await conn.fetch(sql_project_files, project, i["real_version"])
 
