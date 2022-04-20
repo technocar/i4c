@@ -133,13 +133,14 @@ export class ProjectComponent implements OnInit {
       status: ProjectInstallStatus.Working
     }).subscribe(r => {
       if (r.length === 0) {
-        this.apiService.installProject(name, version)
-          .subscribe((r) => {
-            alert(`A ${name} ${version} sikeresen telepítve`);
-            this.getInstalledProjects();
-          }, (err) => {
-            alert(this.apiService.getErrorMsg(err));
-          });
+        if (confirm(`Biztosan telepítené szeretné?\n\nprojekt: ${name}\nverzió: ${version}`)) {
+          this.apiService.installProject(name, version)
+            .subscribe((r) => {
+              this.getInstalledProjects();
+            }, (err) => {
+              alert(this.apiService.getErrorMsg(err));
+            });
+        }
       } else {
         alert("Van futó telepítés!");
       }
