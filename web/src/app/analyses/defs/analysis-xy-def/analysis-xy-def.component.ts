@@ -355,7 +355,8 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
         plugins: {
           tooltip: {
             enabled: false,
-            position: 'nearest',
+            boxWidth: 350,
+            position: 'average',
               external: (context) => {
 
                 function getOrCreateTooltip(chart) {
@@ -476,10 +477,25 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
                 // Display, position, and set styles for font
                 tooltipEl.style.opacity = "1";
-                tooltipEl.style.left = positionX + tooltip.caretX + 'px';
-                tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+                let left = positionX + tooltip.caretX;
+                let position = chart.canvas.getBoundingClientRect();
+                if (left < 0)
+                  left = 0;
+                else if ( position.left + left + tooltipEl.offsetWidth > window.innerWidth)
+                  left = window.innerWidth - position.left - positionX - tooltipEl.offsetWidth;
+
+                let top = positionY + tooltip.caretY;
+                if (top < 0)
+                  top = 0;
+                else if (position.top + top + tooltipEl.offsetHeight > window.innerHeight)
+                  top = window.innerHeight - position.top - positionY - tooltipEl.offsetHeight;
+                tooltipEl.style.left = left + 'px';
+                tooltipEl.style.top = top + 'px';
                 tooltipEl.style.font = (tooltip.options.bodyFont as any).string;
                 tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+                tooltipEl.style.width =  tooltip.width ? (tooltip.width + 'px') : 'auto';
+                console.log(left);
+                console.log(top);
               }
           },
           title: AnalysisHelpers.setChartTitle(data.stat_def.xydef.visualsettings?.title),
