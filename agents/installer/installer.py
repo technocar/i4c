@@ -56,9 +56,13 @@ for installation in installations:
     try:
         id = installation["id"]
         files = installation["files"]
-        project_id = installation["project"]
+        project = installation["project"]
+        ver = installation["invoked_version"]
+        realver = installation["real_version"]
+        if str(realver) != ver:
+            ver = f"{ver} ({realver})"
 
-        log.info(f"installing {id}")
+        log.info(f"installing {id} for {project} .{ver}")
 
         if not change_status(id, "todo", "working", "analysing"):
             raise Exception("state is not 'todo' anymore")
