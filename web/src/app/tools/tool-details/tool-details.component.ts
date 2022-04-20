@@ -39,7 +39,7 @@ export class ToolDetailsComponent implements OnInit {
 
   ngOnInit(): void {
     this.events = this.apiService.getToolEventTypes();
-    var d$ = this.apiService.getDevices();
+    var d$ = this.apiService.getDevices(false);
     var tu$ = this.apiService.getToolUsageList();
     forkJoin([d$, tu$]).subscribe(r => {
       this.devices$.next(r[0]);

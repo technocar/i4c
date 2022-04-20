@@ -1,6 +1,6 @@
 import { AlarmNotificationType, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition } from "./api";
 
-export enum DeviceType { Mill = "mill", Lathe = "lathe", GOM = "gom", Robot = "robot", Renishaw = "renishaw" }
+export enum DeviceType { Mill = "mill", Lathe = "lathe", GOM = "gom", Robot = "robot", Renishaw = "renishaw", Empty = "" }
 
 export class Labels {
 

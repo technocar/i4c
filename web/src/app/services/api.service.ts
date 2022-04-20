@@ -150,14 +150,17 @@ export class ApiService {
     return this.http.post<User>(`${this._apiUrl}/pwdreset/setpass`, { loginname: username, token: token, password: password });
   }
 
-  getDevices(): Observable<Device[]> {
-    return of([
+  getDevices(withEmpty: boolean = true): Observable<Device[]> {
+    let devices = [
       { id: DeviceType.Lathe, name: $localize `:@@device_lathe_name:Eszterga` },
       { id: DeviceType.Mill, name: $localize `:@@device_mill_name:Maró` },
       { id: DeviceType.Robot, name: $localize `:@@device_robot_name:Robot` },
       { id: DeviceType.GOM, name: $localize `:@@device_gom_name:GOM` },
       { id: DeviceType.Renishaw, name: $localize `:@@device_renishaw_name:Renishaw` }
-    ]);
+    ];
+    if (withEmpty)
+      devices.splice(0, 0, ...[{ id: DeviceType.Empty, name: "-" }])
+    return of(devices);
   }
 
   getSnapShot(device: string, timestamp: Date): Observable<SnapshotResponse> {

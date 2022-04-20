@@ -78,7 +78,7 @@ export class DashboardComponent implements OnInit {
     private apiService: ApiService,
     private route: ActivatedRoute
   ) {
-    apiService.getDevices().subscribe(r => this.devices$.next(r.filter(d => d.id !== "renishaw")));
+    apiService.getDevices(false).subscribe(r => this.devices$.next(r.filter(d => d.id !== "renishaw")));
     this.setTimestamp(this.getCurrentDate());
     this.device = DeviceType.Lathe;
     let pDev = this.route.snapshot.queryParamMap.get('device');

@@ -64,7 +64,7 @@ export class ToolsComponent implements OnInit {
 
   ngOnInit(): void {
     this.events = this.apiService.getToolEventTypes();
-    this.apiService.getDevices()
+    this.apiService.getDevices(false)
       .subscribe(r => {
         this.devices$.next(r.filter((d) => [ DeviceType.Lathe, DeviceType.Mill ].indexOf(d.id) > -1));
         if (!this.filterDevice)

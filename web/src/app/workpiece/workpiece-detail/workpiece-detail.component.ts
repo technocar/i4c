@@ -29,7 +29,7 @@ export class WorkpieceDetailComponent implements OnInit {
     private downloadService: DownloadService
     ) {
       this.id = route.snapshot.paramMap.get('id');
-      apiService.getDevices().subscribe(r => this.devices = r);
+      apiService.getDevices(false).subscribe(r => this.devices = r);
     }
 
   ngOnInit(): void {
