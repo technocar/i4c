@@ -3,7 +3,7 @@
     {{selectedMetric?.name ? selectedMetric.name : 'válasszon...'}}
     <i class="bi bi-chevron-down"></i>
   </button>
-  <div ngbDropdownMenu aria-labelledby="metric_list" (click)="toggleMetricNode($event)">
+  <div #menu ngbDropdownMenu aria-labelledby="metric_list" (click)="itemSelected($event)">
     <ul>
       <ng-container
         *ngTemplateOutlet="metricListTmpl; context:{ list: metricTree }"

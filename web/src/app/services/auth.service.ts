@@ -42,6 +42,10 @@ export class AuthenticationService {
     return user;
   }
 
+  lastLoggedUserName(): string {
+    return localStorage.getItem('last_logged_user_name');
+  }
+
   removeUser() {
     localStorage.removeItem('current_user');
     this.currentUserSubject.next(null);
@@ -53,6 +57,7 @@ export class AuthenticationService {
   }
 
   storeUser(user: AuthenticatedUser) {
+    localStorage.setItem('last_logged_user_name', user.username);
     localStorage.setItem('current_user', JSON.stringify(user));
     this.currentUserSubject.next(user);
   }

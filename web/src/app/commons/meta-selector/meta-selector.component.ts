@@ -1,4 +1,5 @@
-import { Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges, TemplateRef, ViewChild, ɵSWITCH_CHANGE_DETECTOR_REF_FACTORY__POST_R3__ } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, ElementRef, EventEmitter, Inject, Input, OnChanges, OnInit, Output, SimpleChange, SimpleChanges, TemplateRef, ViewChild, ɵSWITCH_CHANGE_DETECTOR_REF_FACTORY__POST_R3__ } from '@angular/core';
 import { Category, Meta } from 'src/app/services/models/api';
 import { DeviceType } from 'src/app/services/models/constants';
 
@@ -24,6 +25,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
 
   @ViewChild("button") button: ElementRef<HTMLButtonElement>;
   @ViewChild("dropdown") dropdown: ElementRef<HTMLElement>;
+  @ViewChild("menu") menu: ElementRef<HTMLElement>;
 
   @Input() disabled: boolean = false;
   @Input('device')
@@ -75,7 +77,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   metricTree: Metric[] = [];
   selectedMetric: Metric;
 
-  constructor() { }
+  constructor(@Inject(DOCUMENT) private document: Document) { }
 
   ngOnInit(): void {
   }
@@ -165,8 +167,12 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
     }
   }
 
-  toggleMetricNode(event: Event) {
-    let target = (event.target as HTMLElement);
+  itemSelected(event: Event) {
+    event.stopPropagation();
+    this.toggleMetricNode(event.target as HTMLElement);
+  }
+
+  toggleMetricNode(target: HTMLElement) {
     let isCategorySelection = target.classList.contains("category");
     let allowedNodes = ["LI", "I", "SPAN"];
     if (allowedNodes.indexOf(target.nodeName) === -1 && !isCategorySelection)
@@ -187,6 +193,8 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
       node.closest(".dropdown-menu").classList.toggle("show");
       this.dropdown.nativeElement.classList.toggle("show");
       this.button.nativeElement.setAttribute("aria-expanded", "false");
+      if (!this.dropdown.nativeElement.classList.contains("show"))
+        this.button.nativeElement.scrollIntoView();
 
       this._selectedMetaId = this.selectedMetric.id;
       let meta: Meta;
@@ -210,6 +218,10 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
         node.classList.add("closed");
       }
     }
+    let top = this.menu.nativeElement.getBoundingClientRect().top + window.scrollY;
+    console.log(top);
+    if (top + this.menu.nativeElement.offsetHeight > this.document.body.offsetHeight)
+      this.document.body.style.height = (top + this.menu.nativeElement.offsetHeight) + "px";
   }
 
   getMeta(id: string): Meta {
