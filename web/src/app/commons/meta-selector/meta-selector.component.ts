@@ -87,7 +87,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
     if (changes.device) {
       let device: SimpleChange = changes.device;
       if (device.currentValue !== device.previousValue && !device.firstChange) {
-        let meta = (device.currentValue ?? "") ? undefined :
+        let meta = (device.currentValue ?? "") === "" ? undefined :
           this._selectedMetaId ? this.getMeta(this._selectedMetaId) : undefined;
         this.change.emit({
           data_id: meta ? meta.data_id : undefined,

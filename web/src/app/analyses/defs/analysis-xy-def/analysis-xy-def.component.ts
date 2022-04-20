@@ -5,7 +5,7 @@ import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
-import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther, StatMetaObjectFieldType } from 'src/app/services/models/api';
+import { StatData, StatVisualSettingsChart, StatVisualSettingsChartLegendAlign, StatVisualSettingsChartLegendPosition, StatXYDef, StatXYFilter, NumberRelation, StatXYMeta, StatXYMetaObjectField, StatXYObjectType, StatXYOther, StatMetaObjectFieldType, StatXYMetaObjectFieldUnit } from 'src/app/services/models/api';
 import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
@@ -84,6 +84,12 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     this.def.duration = pDef.duration;
     this.def.filter = this.filters$.value.slice(0);
     this.def.other = this.others$.value.filter((o) => (o.field_name ?? '') !== '').map((o) => { return o.field_name });
+
+    this.def.x = (this.def.x ?? "") === "" ? null : this.def.x;
+    this.def.y = (this.def.y ?? "") === "" ? null : this.def.y;
+    this.def.shape = (this.def.shape ?? "") === "" ? null : this.def.shape;
+    this.def.color = (this.def.color ?? "") === "" ? null : this.def.color;
+
     return this.def;
   }
 
@@ -190,8 +196,18 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
         params: []
       };
     }
-    this.fields$.next(obj.length > 0 ? obj[0].fields : []);
-    this.numFields$.next(obj.length > 0 ? obj[0].fields.filter(f => f.type === StatMetaObjectFieldType.Numeric) : []);
+    let emptyField: StatXYMetaObjectField = {
+      displayname: "-",
+      name: "",
+      type: StatMetaObjectFieldType.Numeric,
+      unit: StatXYMetaObjectFieldUnit.Percent,
+      value_list: []
+    };
+
+    let fields = obj.length > 0 ? obj[0].fields : [];
+    fields.splice(0, 0, ...[emptyField]);
+    this.fields$.next(fields);
+    this.numFields$.next(obj.length > 0 ? fields.filter(f => f.type === StatMetaObjectFieldType.Numeric) : []);
   }
 
   deleteFilter(filter: Filter) {
