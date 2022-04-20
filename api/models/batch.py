@@ -6,6 +6,7 @@ from common import I4cBaseModel, DatabaseConnection
 from enum import Enum
 
 from common.db_tools import get_user_customer
+from common.exceptions import I4cClientError
 
 
 class BatchStatus(str, Enum):
@@ -45,6 +46,10 @@ async def batch_list(credentials, project, status, *, pconn=None):
 async def batch_put(credentials, id, batch, *, pconn=None):
     async with DatabaseConnection(pconn) as conn:
         async with conn.transaction(isolation='repeatable_read'):
+            project_exists = await conn.fetchrow("select from projects where name = $1", batch.project)
+            if project_exists is None:
+                raise I4cClientError("Unknown project")
+
             batch_exists = await conn.fetchrow("select from batch where id = $1", id)
             if batch_exists is None:
                 sql = "insert into batch (id, customer, project, target_count, \"status\") values ($1, $2, $3, $4, $5)"
