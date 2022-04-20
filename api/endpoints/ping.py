@@ -87,7 +87,7 @@ class PingBinReport(BaseModel):
 __oa = {"requestBody": {"content": {"application/octet-stream": {"schema": {"title": "Data", "type": "string", "format": "binary"}}}}}
 
 @router.post("/bin", response_model=PingBinReport, allow_log=False, operation_id="ping_upload",
-            summary="Test binary upload.", openapi_extra=__oa)
+            summary="Test binary upload.", disconnect_guard=False, openapi_extra=__oa)
 async def post_bin(
         request: Request):
     """Test POST method and binary transport. Will report the length and the sha384 hash of the data, and stats."""
