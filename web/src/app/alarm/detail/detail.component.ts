@@ -59,8 +59,8 @@ export class AlarmDetailComponent implements OnInit {
     return [
       [AlarmRuleSampleAggMethod.Avg, $localize `:@@alarm_rule_sample_aggmethod__avg:átlag`],
       [AlarmRuleSampleAggMethod.Median, $localize `:@@alarm_rule_sample_aggmethod__median:medián`],
-      [AlarmRuleSampleAggMethod.Q1th, $localize `:@@alarm_rule_sample_aggmethod__q1th:1. kvantilis`],
-      [AlarmRuleSampleAggMethod.Q4th, $localize `:@@alarm_rule_sample_aggmethod__q1th:4. kvantilis`],
+      [AlarmRuleSampleAggMethod.Q1th, $localize `:@@alarm_rule_sample_aggmethod__q1th:1. kvintilis`],
+      [AlarmRuleSampleAggMethod.Q4th, $localize `:@@alarm_rule_sample_aggmethod__q1th:4. kvintilis`],
       [AlarmRuleSampleAggMethod.Slope, $localize `:@@alarm_rule_sample_aggmethod__slope:slope`]
     ];
   }
