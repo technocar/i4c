@@ -41,7 +41,7 @@ export class AuthenticationService {
     this.storeUser({
       id: user.id,
       username: user.login_name,
-      expires: Date.now() + (1000 * 60 * 1),
+      expires: Date.now() + (1000 * 60 * 45),
       token: `${window.btoa(username + ':' + password)}`,
       privs: user.privs ?? []
     });
