@@ -17,6 +17,7 @@ export class AuthenticatedUser {
 export class AuthenticationService {
   private currentUserSubject: BehaviorSubject<AuthenticatedUser>;
   public currentUser: Observable<AuthenticatedUser>;
+  private _isAuthenticated = false;
 
   constructor(private http: HttpClient, private router: Router) {
     this.currentUserSubject = new BehaviorSubject<AuthenticatedUser>(JSON.parse(localStorage.getItem('current_user')));
@@ -28,14 +29,19 @@ export class AuthenticationService {
   }
 
   public isAuthenticated(): boolean {
-    return !!this.currentUserValue && !!this.currentUserValue.expires && this.currentUserValue.expires > Date.now();
+    const expired = !!this.currentUserValue && !!this.currentUserValue.expires && this.currentUserValue.expires > Date.now();
+    if (expired != this._isAuthenticated) {
+      this._isAuthenticated = expired;
+      this.currentUserSubject.next(JSON.parse(localStorage.getItem('current_user')));
+    }
+    return expired;
   }
 
   login(username: string, password: string, user: User): User {
     this.storeUser({
       id: user.id,
       username: user.login_name,
-      expires: Date.now() + (1000 * 60 * 45),
+      expires: Date.now() + (1000 * 60 * 1),
       token: `${window.btoa(username + ':' + password)}`,
       privs: user.privs ?? []
     });
