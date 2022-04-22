@@ -32,8 +32,8 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     [StatTimeSeriesAggFunc.Median, $localize `:@@stat_timeseries_agg_func_median:median`],
     [StatTimeSeriesAggFunc.Min, $localize `:@@stat_timeseries_agg_func_min:min`],
     [StatTimeSeriesAggFunc.Max, $localize `:@@stat_timeseries_agg_func_max:max`],
-    [StatTimeSeriesAggFunc.FirstQuartile, $localize `:@@stat_timeseries_agg_func_q1st:1. kvantilis`],
-    [StatTimeSeriesAggFunc.FourQuartile, $localize `:@@stat_timeseries_agg_func_q3rd:4. kvantilis`]
+    [StatTimeSeriesAggFunc.FirstQuartile, $localize `:@@stat_timeseries_agg_func_q1st:1. kvintilis`],
+    [StatTimeSeriesAggFunc.FourQuartile, $localize `:@@stat_timeseries_agg_func_q3rd:4. kvintilis`]
   ];
 
   seriesNameTypes: string[][] = [
