@@ -32,13 +32,13 @@
     <table class="table mr-0 mt-2 text-center">
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
-          <td>
+          <td width="30%">
             <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!access.canUpdate">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
               <option *ngIf="!validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
             </select>
           </td>
-          <td>
+          <td width="10%">
             <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">
               <option *ngFor="let op of getOperators(filter)" value="{{op}}">{{op}}</option>
             </select>
@@ -50,7 +50,7 @@
               <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
             </select>
           </td>
-          <td>
+          <td width="5%">
             <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="access.canUpdate">
               <i class="bi bi-trash"></i>
             </button>
