@@ -15,8 +15,19 @@ export class AlarmDetailResolver implements Resolve<[Alarm, Meta[], AlarmGroup[]
   constructor(private apiService: ApiService) {}
 
   resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<[Alarm, Meta[], AlarmGroup[]]> {
+    var name = route.paramMap.get("name");
     return forkJoin([
-      this.apiService.getAlarm(route.paramMap.get("name")),
+      (name ?? "") !== "" ? this.apiService.getAlarm(name) : of(<Alarm>{
+        conditions: [],
+        id: -1,
+        last_check: undefined,
+        last_report: undefined,
+        max_freq: 0,
+        name: "",
+        subs: [],
+        subsgroup: undefined,
+        window: 0
+      }),
       this.apiService.getMeta(),
       this.apiService.getAlarmGroups()
     ]);

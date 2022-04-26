@@ -22,10 +22,17 @@ const routes: Routes = [{
       },
       { path: '', component: AlarmSubscriptionComponent, canActivate: [AuthGuard], data: { priv: "get/alarm/subs" } }]
     },
-    { path: ':name', component: AlarmDetailComponent, canActivate: [AuthGuard],
+    { path: 'def/:name', component: AlarmDetailComponent, canActivate: [AuthGuard],
       resolve: { data: AlarmDetailResolver },
       data: {
         breadcrumb: (data: any) => `${data.data?.length > 0 ? data.data[0].name : "???"}`,
+        priv: "get/alarm/defs/{name}"
+      }
+    },
+    { path: 'create', component: AlarmDetailComponent, canActivate: [AuthGuard],
+      resolve: { data: AlarmDetailResolver },
+      data: {
+        breadcrumb: (data: any) => `<új riasztás>`,
         priv: "get/alarm/defs/{name}"
       }
     },
