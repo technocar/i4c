@@ -22,11 +22,9 @@
   </div>
   <div class="col-6 form-group">
     <label for="tool_tool_id">szerszám</label>
-    <select #tool_id="ngModel" id="tool_tool_id" name="tool_io" [ngModel]="tool.tool_id" (ngModelChange)="onChange('tool_id', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && tool_id.errors }">
-      <option *ngFor="let toolUsage of toolUsages$ | async" [value]="toolUsage.tool_id">{{toolUsage.tool_id}}</option>
-    </select>
-    <div *ngIf="tool_id.invalid && submitted" class="invalid-feedback">
-      <div *ngIf="tool_id.errors?.required">szerszám megadása kötelező</div>
+    <autocomplete-input [cssClass]="'px-3'" [values]="tools" [value]="tool.tool_id" (valueChange)="onChange('tool_id', $event)"></autocomplete-input>
+    <div *ngIf="submitted" class="invalid-feedback">
+      <div *ngIf="!tool.tool_id">szerszám megadása kötelező</div>
     </div>
   </div>
   <div class="col-6 form-group">

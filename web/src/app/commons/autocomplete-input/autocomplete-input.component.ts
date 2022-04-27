@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { ControlValueAccessor } from '@angular/forms';
 import { NgbTypeahead } from '@ng-bootstrap/ng-bootstrap';
 import { merge, Observable, OperatorFunction, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
@@ -8,11 +9,13 @@ import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
   templateUrl: './autocomplete-input.component.html',
   styleUrls: ['./autocomplete-input.component.scss']
 })
-export class AutocompleteInputComponent implements OnInit {
+export class AutocompleteInputComponent implements OnInit, ControlValueAccessor  {
 
   @Input() values: string[] = [];
   @Input() value: string;
   @Input() disabled: boolean = false;
+  @Input() name: string;
+  @Input() cssClass: string;
   @Output() valueChange: EventEmitter<string> = new EventEmitter();
 
   @ViewChild('valuesSelector', {static: true}) instance: NgbTypeahead;
@@ -20,7 +23,23 @@ export class AutocompleteInputComponent implements OnInit {
   focus$ = new Subject<string>();
   click$ = new Subject<string>();
 
+  onChange: any = () => { };
+  onTouched: any = () => { };
+
   constructor() { }
+
+  writeValue(obj: any): void {
+    this.value = obj;
+  }
+  registerOnChange(fn: any): void {
+    this.onChange = fn;
+  }
+  registerOnTouched(fn: any): void {
+    this.onTouched = fn;
+  }
+  setDisabledState?(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+  }
 
   ngOnInit(): void {
   }
