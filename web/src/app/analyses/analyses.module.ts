@@ -10,9 +10,9 @@ import { AnalysisDatetimeDefComponent } from './defs/analysis-datetime-def/analy
 import { AnalysisTimeseriesDefComponent } from './defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisComponent } from './analysis/analysis.component';
 import { AnalysisXyDefComponent } from './defs/analysis-xy-def/analysis-xy-def.component';
-import { QuillModule } from 'ngx-quill';
 import { AnalysisListDefComponent } from './defs/analysis-list-def/analysis-list-def.component';
 import { AnalysisCapabilityDefComponent } from './defs/analysis-capability-def/analysis-capability-def.component';
+import { EditorModule } from '@tinymce/tinymce-angular';
 
 @NgModule({
   declarations: [
@@ -32,7 +32,7 @@ import { AnalysisCapabilityDefComponent } from './defs/analysis-capability-def/a
     NgbButtonsModule,
     NgbAccordionModule,
     NgbModalModule,
-    QuillModule
+    EditorModule
   ]
 })
 export class AnalysesModule { }

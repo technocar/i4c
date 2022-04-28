@@ -1,8 +1,6 @@
-import { DepFlags } from '@angular/compiler/src/core';
 import { AfterViewInit, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { EditorComponent } from '@tinymce/tinymce-angular';
 import { ChartConfiguration } from 'chart.js';
-import { QuillEditorComponent } from 'ngx-quill';
-import Quill from 'quill';
 import { BehaviorSubject } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
@@ -11,9 +9,6 @@ import { Labels } from 'src/app/services/models/constants';
 import { AnalysisChart, AnalysisDef } from '../../analyses.component';
 import { AnalysisHelpers } from '../../helpers';
 import { AnalysisDatetimeDefComponent } from '../analysis-datetime-def/analysis-datetime-def.component';
-import QuillGraphData, { GraphDataBlot } from './quill-graph-data';
-
-Quill.register('modules/graphdata', QuillGraphData);
 
 interface Filter extends StatXYFilter {
   _id: number,
@@ -40,7 +35,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   @Input("def") def: StatXYDef;
   @Input("xymeta") xymeta: StatXYMeta;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
-  @ViewChild(QuillEditorComponent) quill: QuillEditorComponent;
+  @ViewChild('editor') editor: EditorComponent;
 
   objects$: BehaviorSubject<StatXYMeta[]> = new BehaviorSubject([]);
   fields$: BehaviorSubject<StatXYMetaObjectField[]> = new BehaviorSubject([]);
@@ -74,12 +69,85 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     }
   }
 
+  editorConfig: Record<string, any>;
+
   constructor(
     private apiService: ApiService,
     private authService: AuthenticationService
   )
   {
     this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
+
+    this.editorConfig = {
+      base_url: '/tinymce',
+      suffix: '.min',
+      selector: 'textarea',
+      plugins: 'noneditable',
+      toolbar: 'forecolor backcolor | bold italic underline | data',
+      content_css: '/assets/tinymce.css',
+      setup: (ctx) => {
+        var nonEditableClass = "graphdata";
+        // Register a event before certain commands run that will turn contenteditable off temporarilly on noneditable fields
+        ctx.on('BeforeExecCommand', function (e) {
+          // The commands we want to permit formatting noneditable items for
+          var textFormatCommands = [
+            'mceToggleFormat',
+            'mceApplyTextcolor',
+            'mceRemoveTextcolor'
+          ];
+          if (textFormatCommands.indexOf(e.command) !== -1) {
+            // Find all elements in the editor body that have the noneditable class on them
+            //  and turn contenteditable off
+            var elements = (ctx.getBody() as HTMLElement).querySelectorAll('.' + nonEditableClass);
+            elements.forEach(e => e.removeAttribute("contenteditable"));
+            console.log(ctx.getBody());
+          }
+        });
+        // Turn the contenteditable attribute back to false after the command has executed
+        ctx.on('FormatApply', function (e) {
+          // Find all elements in the editor body that have the noneditable class on them
+          //  and turn contenteditable back to false
+          var elements = (ctx.getBody() as HTMLElement).querySelectorAll('.' + nonEditableClass);
+          elements.forEach(e => e.setAttribute("contenteditable", "false"));
+          console.log(elements);
+        });
+
+        var others$ = this.others$;
+        var fields$ = this.fields$;
+        ctx.ui.registry.addMenuButton('data', {
+          text: 'adatok',
+          fetch: function (callback) {
+            var items = [
+              { id: 'X',  name: 'X' },
+              { id: 'Y',  name: 'Y' },
+              { id: 'shape',  name: 'forma' },
+              { id: 'color',  name: 'szín' }
+            ];
+            others$.value.forEach(o =>
+              items.push({
+                id: o.field_name,
+                name: (fields$.value.find(f => f.name === o.field_name) ?? {
+                  name: o.field_name,
+                  displayname: o.field_name
+                }).displayname
+              })
+            );
+            var menuItems = [];
+            items.forEach(i => {
+              menuItems.push({
+                type: 'menuitem',
+                text: i.name,
+                onAction: function () {
+                  ctx.insertContent(`<span class="graphdata" contenteditable="false">{{${i.id}}}</span>`);
+                }
+              })
+            })
+
+            callback(menuItems);
+          }
+        });
+      }
+    }
   }
 
   getDef(): StatXYDef {
@@ -132,13 +200,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   }
 
   ngAfterViewInit() {
-    console.log(this.quill);
-    this.quill.onEditorCreated.subscribe(() => {
-      this.quill.quillEditor.keyboard.addBinding({ key: "enter" }, function(range, context) {
-        console.log(range, context);
-        this.quill.format('list', false);
-      });
-    });
+    console.log(this.editor);
   }
 
   setDefualtVisualSettings() {
@@ -298,7 +360,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     for (let other of others)
       list.push([other.field_name, this.fields$.value.find(f => f.name === other.field_name)?.displayname ?? other.field_name]);
 
-    (this.quill.quillEditor.getModule("graphdata") as QuillGraphData).reloadList(list);
+  //  (this.quill.quillEditor.getModule("graphdata") as QuillGraphData).reloadList(list);
   }
 
   editorGraphDataChanged(value) {
