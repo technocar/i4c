@@ -60,7 +60,7 @@ async def tool_list(
 
 
 @router.patch("/{tool_id}", response_model=models.common.PatchResponse, operation_id="tool_update",
-              summary="Update or create tool.")
+              summary="Update tool.")
 async def patch_tools(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/tools/{tool_id}")),
