@@ -32,6 +32,7 @@ export class ToolDetailsComponent implements OnInit {
   devices$: BehaviorSubject<Device[]> = new BehaviorSubject([]);
   events: string[][] = [];
   toolUsages$: BehaviorSubject<ToolUsage[]> = new BehaviorSubject([]);
+  tools: string[] = [];
 
   constructor(
     private apiService: ApiService)
@@ -44,6 +45,7 @@ export class ToolDetailsComponent implements OnInit {
     forkJoin([d$, tu$]).subscribe(r => {
       this.devices$.next(r[0]);
       this.toolUsages$.next(r[1]);
+      this.tools = r[1].map(t => t.tool_id);
       this.init();
     });
   }

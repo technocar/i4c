@@ -27,6 +27,7 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
   @ViewChild("dropdown") dropdown: ElementRef<HTMLElement>;
   @ViewChild("menu") menu: ElementRef<HTMLElement>;
 
+  @Input() menuMaxHeight: boolean = false;
   @Input() disabled: boolean = false;
   @Input('device')
   set device(value: string) {
@@ -220,9 +221,13 @@ export class MetaSelectorComponent implements OnInit, OnChanges {
       }
     }
     let top = this.menu.nativeElement.getBoundingClientRect().top + window.scrollY;
-    console.log(top);
+    if (this.menuMaxHeight) {
+      this.menu.nativeElement.style.maxHeight = (window.innerHeight - top) + "px";
+      this.menu.nativeElement.style.overflow = 'auto';
+    } else {
     if (top + this.menu.nativeElement.offsetHeight > this.document.body.offsetHeight)
       this.document.body.style.height = (top + this.menu.nativeElement.offsetHeight) + "px";
+    }
   }
 
   getMeta(id: string): Meta {

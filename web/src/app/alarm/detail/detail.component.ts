@@ -170,7 +170,7 @@ export class AlarmDetailComponent implements OnInit {
 
     this.apiService.setAlarm(encodeURIComponent(this.origDef.name), this.def)
       .subscribe(r => {
-        this.router.navigate([r.name], { relativeTo: this.route.parent, replaceUrl: true });
+        this.router.navigate(['def', r.name], { relativeTo: this.route.parent, replaceUrl: true });
         this.notifService.sendAppNotif(AppNotifType.Success, $localize `:@@save_success:Sikeres mentés!`);
       }, err => {
         this.notifService.sendAppNotif(AppNotifType.Error, this.apiService.getErrorMsg(err).toString());
