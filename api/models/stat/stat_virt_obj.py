@@ -343,9 +343,9 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
             agg_measures[key] = prods_measure
         prods_measure = agg_measures[key]
         age_min = [x.value for x in virt_obj.params if x.key == "age_min"]
-        age_min = timedelta(seconds=float(age_min[0]) if age_min else 0)
+        age_min = timedelta(seconds=float(age_min[0]) if age_min[0] else 0)
         age_max = [x.value for x in virt_obj.params if x.key == "age_max"]
-        age_max = timedelta(seconds=float(age_max[0])) if age_max else None
+        age_max = timedelta(seconds=float(age_max[0])) if age_max[0] else None
         prod_measure = [x.value_num for x in prods_measure
                         if (mf_start + age_min <= x.timestamp < mf_end
                             and (x.timestamp < mf_start + age_max if age_max is not None else True))]
