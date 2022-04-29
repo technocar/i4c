@@ -113,7 +113,7 @@ def main():
     while True:
         log.debug("getting pwdreset list")
         try:
-            resets = conn.pwdreset.list()
+            resets = conn.pwdreset.list(noaudit=True)
             log.debug(f"got {len(resets)} items")
         except Exception as e:
             log.error(f"Error reading pwdreset list: {e}")
