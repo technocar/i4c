@@ -49,7 +49,7 @@ def stream_copy(src, dst):
         buf = src.read(0x10000)
 
 log.debug("getting installations")
-installations = c.installation.list(status="todo")
+installations = c.installation.list(status="todo", noaudit=True)
 log.debug(f"got {len(installations)}")
 
 for installation in installations:
