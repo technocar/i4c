@@ -14,10 +14,10 @@ import { LoginComponent } from './login/login.component';
 import { CommonModule } from '@angular/common';
 import { CommonsModule } from './commons/commons.module';
 import { NgbDropdownModule, NgbProgressbarModule } from '@ng-bootstrap/ng-bootstrap';
-import { QuillModule } from 'ngx-quill';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from 'src/environments/environment';
 import { AnalysisService } from './analyses/analysis/analysis.service';
+import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 
 @NgModule({
   declarations: [
@@ -41,7 +41,7 @@ import { AnalysisService } from './analyses/analysis/analysis.service';
     CommonsModule,
     NgbProgressbarModule,
     NgbDropdownModule,
-    QuillModule.forRoot(),
+    EditorModule,
     RouterModule.forRoot([
       { path: 'workpiece', loadChildren: () => import('./workpiece/workpiece.module').then(m => m.WorkpieceModule), canActivate: [AuthGuard], data: { priv: "get/workpiece" } },
       { path: 'project', loadChildren: () => import('./project/project.module').then(m => m.ProjectModule), canActivate: [AuthGuard], data: { priv: "get/projects" } },
@@ -58,7 +58,8 @@ import { AnalysisService } from './analyses/analysis/analysis.service';
   exports: [RouterModule],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthenticationInterceptor, multi: true },
-    AnalysisService 
+    { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' },
+    AnalysisService
   ],
   bootstrap: [AppComponent]
 })
