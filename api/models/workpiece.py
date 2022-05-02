@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional
@@ -147,13 +148,20 @@ async def get_workpiece_log(begin_timestamp, begin_sequence, end_timestamp, end_
 workpiece_list_log_files = open("models/workpiece_list_log_files.sql").read()
 
 
-async def get_workpiece_files(begin_timestamp, begin_sequence, end_timestamp, end_sequence, *, pconn=None):
+async def get_workpiece_files(begin_timestamp, begin_sequence, end_timestamp, end_sequence, see_all_files, *, pconn=None):
+
+    def allow_file(fn):
+        if see_all_files:
+            return True
+        return os.path.splitext(fn)[1].lower() == '.pdf'
+
     async with DatabaseConnection(pconn) as conn:
         write_debug_sql("workpiece_files.sql", workpiece_list_log_files, begin_timestamp, begin_sequence, end_timestamp, end_sequence)
         dr = await conn.fetch(workpiece_list_log_files, begin_timestamp, begin_sequence, end_timestamp, end_sequence)
         res = []
         for r in dr:
-            res.append(File(**r))
+            if allow_file(r['download_name']):
+                res.append(File(**r))
         return res
 
 
@@ -164,7 +172,8 @@ workpiece_list_log_sql_id = open("models/workpiece_list_log_id.sql").read()
 async def list_workpiece(credentials: CredentialsAndFeatures,
                          before=None, after=None, id=None, project=None, project_mask=None,
                          batch=None, batch_mask=None, status=None, note_user=None, note_text=None, note_text_mask=None,
-                         note_before=None, note_after=None, with_details=True, with_deleted=False, *, pconn=None):
+                         note_before=None, note_after=None, with_details=True, with_log=None, with_deleted=False,
+                         see_all_files=True, *, pconn=None):
     sql = workpiece_list_log_sql
     async with DatabaseConnection(pconn) as conn:
         customer = await get_user_customer(credentials.user_id, pconn=conn)
@@ -212,8 +221,8 @@ async def list_workpiece(credentials: CredentialsAndFeatures,
             d = dict(**r)
             d["notes"] = (await get_workpiece_notes(r["id"], with_deleted=with_deleted, pconn=conn)) if with_details else []
             dpar = (r["begin_timestamp"],r["begin_sequence"], r["end_timestamp"], r["end_sequence"])
-            d["log"] = (await get_workpiece_log(*dpar, pconn=conn)) if with_details else []
-            d["files"] = (await get_workpiece_files(*dpar, pconn=conn)) if with_details else []
+            d["log"] = (await get_workpiece_log(*dpar, pconn=conn)) if (with_details and (with_log is None)) or with_log else []
+            d["files"] = (await get_workpiece_files(*dpar, see_all_files, pconn=conn)) if with_details else []
             res.append(Workpiece(**d))
         return res
 
