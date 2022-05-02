@@ -66,7 +66,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
   }
 
   ngOnInit(): void {
-    if (!this.def)
+    if (!this.def) {
       this.def = {
         before: undefined,
         after: undefined,
@@ -77,10 +77,10 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
         agg_sep: undefined,
         series_sep: undefined,
         series_name: StatTimeSeriesName.Timestamp,
-        xaxis: undefined,
+        xaxis: StatTimeSeriesName.Sequence,
         visualsettings: undefined
       };
-    else {
+    } else {
       this.filters$.next((this.def.filter ?? []).map(f => {
         let filter: StatTimesSeriesFilterEx = Object.assign({}, f);
         const meta = this.metaList.find(m => m.device === f.device && m.data_id === f.data_id);
@@ -90,6 +90,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
       }));
     }
     this.setDefualtVisualSettings();
+    this.xaxisChange(this.def.xaxis as StatTimeSeriesName);
   }
 
   setDefualtVisualSettings() {
@@ -195,6 +196,16 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
       data_id: meta.data_id,
       device: meta.device
     };
+  }
+
+  xaxisChange(xaxis: StatTimeSeriesName) {
+    var ps = this.def.xaxis ? this.seriesNameTypes.find(s => s[0] === this.def.xaxis) : undefined;
+    this.def.xaxis = xaxis;
+    if (!this.def.visualsettings.xaxis.caption || (this.def.visualsettings.xaxis.caption ?? "") === (ps ?? ["", ""])[1]) {
+      var s = this.seriesNameTypes.find(s => s[0] === xaxis);
+      if (s)
+        this.def.visualsettings.xaxis.caption = s[1];
+    }
   }
 
   getChartConfiguration(data: StatData): ChartConfiguration {
