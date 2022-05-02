@@ -52,6 +52,7 @@ def set_status(id, status):
     except Exception as e:
         log.error(f"error while marking as {status}: {e}")
 
+
 def set_backoff(id, fail_count, backoff):
     try:
         log.debug(f"setting backoff")
@@ -61,13 +62,14 @@ def set_backoff(id, fail_count, backoff):
     except Exception as e:
         log.error(f"error while setting backoff: {e}")
 
+
 def main():
     while True:
         log.debug("get setting push_email")
-        email = i4c_conn.invoke_url('settings/push_email')
+        email = i4c_conn.invoke_url('settings/push_email?noaudit=1')
 
         log.debug("get setting push_priv_key")
-        private_key = i4c_conn.invoke_url('settings/push_priv_key')
+        private_key = i4c_conn.invoke_url('settings/push_priv_key?noaudit=1')
 
         log.debug("get alarm recips")
         notifs = i4c_conn.invoke_url('alarm/recips?status=outbox&method=push&noaudit=1&no_backoff=1')

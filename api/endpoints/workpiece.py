@@ -14,25 +14,27 @@ router = I4cApiRouter(include_path="/workpiece")
 
 
 @router.get("/{id}", response_model=models.workpiece.Workpiece, operation_id="workpiece_get",
-            summary="Retrieve workpiece.")
+            summary="Retrieve workpiece.", features=['see-all-files', 'see-log'])
 async def get_workpiece(
     request: Request,
-    credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece/{id}")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece/{id}", ask_features=['see-all-files', 'see-log'])),
     id: str = Path(...),
     with_deleted: Optional[bool] = Query(False, description="With or without deleted notes")
 ):
     """Get a workpiece."""
-    res = await models.workpiece.list_workpiece(credentials, id=id, with_deleted=with_deleted)
+    with_log = 'see-log' in credentials.info_features
+    see_all_files = 'see-all-files' in credentials.info_features
+    res = await models.workpiece.list_workpiece(credentials, id=id, with_log=with_log, with_deleted=with_deleted, see_all_files=see_all_files)
     if len(res) > 0:
         return res[0]
     raise I4cClientNotFound("No record found")
 
 
 @router.get("", response_model=List[models.workpiece.Workpiece], operation_id="workpiece_list",
-            summary="List workpieces.")
+            summary="List workpieces.", features=['see-all-files', 'see-log'])
 async def list_workpiece(
     request: Request,
-    credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece")),
+    credentials: CredentialsAndFeatures = Depends(common.security_checker("get/workpiece", ask_features=['see-all-files', 'see-log'])),
     before: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
     after: Optional[datetime] = Query(None, description="eg.: 2021-08-15T15:53:11.123456Z"),
     id: Optional[str] = Query(None, title="Identifier."),
@@ -51,9 +53,11 @@ async def list_workpiece(
     # todo log???
 ):
     """List workpieces."""
+    with_log = 'see-log' in credentials.info_features
+    see_all_files = 'see-all-files' in credentials.info_features
     return await models.workpiece.list_workpiece(credentials, before, after, id, project, project_mask, batch,
                                                  batch_mask, status, note_user, note_text, note_text_mask, note_before,
-                                                 note_after, with_details, with_deleted)
+                                                 note_after, with_details, with_log, with_deleted, see_all_files)
 
 
 @router.patch("/{id}", response_model=models.common.PatchResponse, operation_id="workpiece_patch",
