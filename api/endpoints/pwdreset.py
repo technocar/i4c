@@ -30,10 +30,10 @@ async def setpass(
 
 
 @router.get("", response_model=List[models.pwdreset.PwdresetOutboxItem], operation_id="pwdreset_list",
-            summary="List password reset tokens.")
+            summary="List password reset tokens.", features=['noaudit'])
 async def get_outbox_list(
     request: Request,
-    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/pwdreset"))
+    credentials: HTTPBasicCredentials = Depends(common.security_checker("get/pwdreset", ask_features=['noaudit']))
 ):
     """List unsent password reset tokens."""
     return await models.pwdreset.get_outbox_list(credentials)

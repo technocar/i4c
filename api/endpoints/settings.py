@@ -11,10 +11,10 @@ router = I4cApiRouter(include_path="/settings")
 
 
 @router.get("/{key}", response_model=Optional[str], operation_id="settings_get", summary="Retrieve setting.",
-            features=['access private'])
+            features=['access private', 'noaudit'])
 async def settings_get(
         request: Request,
-        credentials: CredentialsAndFeatures = Depends(common.security_checker("get/settings/{key}", ask_features=['access private'])),
+        credentials: CredentialsAndFeatures = Depends(common.security_checker("get/settings/{key}", ask_features=['access private', 'noaudit'])),
         key: str = Path(...)):
     """Get a setting."""
     return await models.settings.settings_get(credentials, key)
