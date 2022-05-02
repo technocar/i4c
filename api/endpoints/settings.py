@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import Depends, Path, Body
+from fastapi import Depends, Path, Body, Query
 from starlette.requests import Request
 from starlette.responses import Response
 import common
@@ -15,7 +15,8 @@ router = I4cApiRouter(include_path="/settings")
 async def settings_get(
         request: Request,
         credentials: CredentialsAndFeatures = Depends(common.security_checker("get/settings/{key}", ask_features=['access private', 'noaudit'])),
-        key: str = Path(...)):
+        key: str = Path(...),
+        noaudit: Optional[bool] = Query(False, title="Don't write audit record. Requires special privilege.")):
     """Get a setting."""
     return await models.settings.settings_get(credentials, key)
 
