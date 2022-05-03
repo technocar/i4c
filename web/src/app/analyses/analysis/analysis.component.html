@@ -53,6 +53,9 @@
       </div>
     </div>
     <div *ngIf="showChart" #chart_place class="row">
+      <div class="col-12">
+        <button *ngIf="showResetZoom" class="btn btn-outline-primary" (click)="resetZoom()">Nagyítás törlése</button>
+      </div>
       <canvas #chart class="col chart"></canvas>
     </div>
     <div *ngIf="showTable" class="mb-4">
