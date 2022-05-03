@@ -28,7 +28,7 @@
     </div>
   </div>
   <div class="col-6 form-group">
-    <label for="tool_slot_number">zseb</label>
+    <label for="tool_slot_number">hely</label>
     <input #slot_number="ngModel" id="tool_slot_number" name="slot_number" [ngModel]="tool.slot_number" (ngModelChange)="onChange('slot_number', $event)" class="form-control" required [ngClass]="{ 'is-invalid': submitted && slot_number.errors }" />
     <div *ngIf="slot_number.invalid && submitted" class="invalid-feedback">
       <div *ngIf="slot_number.errors?.required">zseb megadása kötelező</div>

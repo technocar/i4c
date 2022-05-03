@@ -62,7 +62,7 @@
     </div>
     <div class="row form-group pr-2">
       <label class="col">x tengely</label>
-      <select class="col form-control"  [(ngModel)]="def.xaxis" [disabled]="!access.canUpdate">
+      <select class="col form-control"  [ngModel]="def.xaxis" (ngModelChange)="xaxisChange($event)" [disabled]="!access.canUpdate">
         <option value="timestamp">dátum</option>
         <option value="sequence">szekvencia</option>
       </select>

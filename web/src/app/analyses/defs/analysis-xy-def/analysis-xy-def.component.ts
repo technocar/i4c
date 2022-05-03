@@ -85,6 +85,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       plugins: 'noneditable',
       toolbar: 'forecolor backcolor | bold italic underline | data',
       content_css: '/assets/tinymce.css',
+      branding: false,
       setup: (ctx) => {
         var nonEditableClass = "graphdata";
         // Register a event before certain commands run that will turn contenteditable off temporarilly on noneditable fields

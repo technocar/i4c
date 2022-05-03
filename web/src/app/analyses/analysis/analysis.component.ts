@@ -10,7 +10,7 @@ import { map, tap } from 'rxjs/operators';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { Meta, StatCapabilityDefVisualSettingsInfoBoxLocation, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
-import { AnalysisType } from './analysis.service';  
+import { AnalysisType } from './analysis.service';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
 import { AnalysisListDefComponent } from '../defs/analysis-list-def/analysis-list-def.component';
@@ -38,6 +38,7 @@ export class AnalysisComponent implements OnInit {
   showTable: boolean = false;
   showChart: boolean = false;
   customers: string[] = [];
+  showResetZoom: boolean = false;
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
@@ -296,7 +297,13 @@ export class AnalysisComponent implements OnInit {
       }
     }
 
+    //this.showResetZoom = true;
+
     return this.capabilityDef.getChartConfiguration(result);
+  }
+
+  resetZoom() {
+    this.capabilityDef.resetZoom(this._chartInstance);
   }
 
   save(): Observable<boolean> {
