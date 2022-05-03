@@ -1,6 +1,6 @@
 {
   "/api/*": {
-      "target": "http://karatnetsrv:5078",
+      "target": "http://localhost:5000",
       "pathRewrite": { "^/api": "" },
       "secure": false,
       "logLevel": "debug",

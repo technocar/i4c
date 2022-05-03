@@ -20,6 +20,7 @@ export class WorkpieceDetailComponent implements OnInit {
   notes$: BehaviorSubject<WorkPieceNote[]> = new BehaviorSubject([]);
   statuses: string[][] = [];
   devices: Device[] = [];
+  canAccessLog: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -30,6 +31,7 @@ export class WorkpieceDetailComponent implements OnInit {
     ) {
       this.id = route.snapshot.paramMap.get('id');
       apiService.getDevices(false).subscribe(r => this.devices = r);
+      this.canAccessLog = authService.hasPrivilige("get/workpiece/{id}", "see-log");
     }
 
   ngOnInit(): void {
