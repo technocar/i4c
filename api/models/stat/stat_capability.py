@@ -280,8 +280,8 @@ async def statdata_get_capability(credentials, st_id:int, st_capabilitydef: Stat
             res["mean"] = sum(res["points"]) / len(res["points"])
             res["sigma"] = (sum((i - res["mean"]) ** 2 for i in res["points"]) / (len(res["points"]) - 1)) ** (1 / 2) \
                 if len(res["points"]) > 1 else 0
-            res["c"] = (st_capabilitydef.utl - st_capabilitydef.ltl) / (3 * res["sigma"]) if res["sigma"] != 0 else None
-            res["ck"] = min( (st_capabilitydef.utl - res["mean"]) / (1.5*res["sigma"]),
-                             (res["mean"] - st_capabilitydef.ltl) / (1.5*res["sigma"]) ) if res["sigma"] != 0 else None
+            res["c"] = (st_capabilitydef.utl - st_capabilitydef.ltl) / (6 * res["sigma"]) if res["sigma"] != 0 else None
+            res["ck"] = min( (st_capabilitydef.utl - res["mean"]) / (3 * res["sigma"]),
+                             (res["mean"] - st_capabilitydef.ltl) / (3 * res["sigma"]) ) if res["sigma"] != 0 else None
 
     return StatCapabilityData(**res)
