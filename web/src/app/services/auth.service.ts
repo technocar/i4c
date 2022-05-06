@@ -70,7 +70,7 @@ export class AuthenticationService {
 
   extendExpiration() {
     if (this.isAuthenticated()) {
-      this.currentUserValue.expires = Date.now() + (1000 * 60 * 45);
+      this.currentUserValue.expires = Date.now() + (1000 * 60 * 60 * 24);
       this.storeUser(this.currentUserValue);
     }
   }
