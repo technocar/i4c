@@ -22,6 +22,7 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
 
   @Input("def") def: StatCapabilityDef;
   @Input("metaList") metaList: Meta[];
+  @Input("canUpdate") canUpdate: boolean = false;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
 
   selectableMetas: Meta[] = [];
@@ -36,9 +37,6 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
     ['top', $localize `:@@analysis_capability_infobox_loc_top:fent`]
   ]
   labels = Labels.analysis;
-  access = {
-    canUpdate: false
-  }
   devices: Device[] = [];
   device: string;
 
@@ -46,7 +44,6 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
     private apiService: ApiService,
     private authService: AuthenticationService
   ) {
-    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.eventOps = apiService.getEventOperations();
     apiService.getDevices()
       .subscribe(r => {
@@ -387,7 +384,7 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
     infoBox.classList.add('row');
     infoBox.classList.add('infobox');
     var setData: [string, string, string][] = [
-      ['#388697', $localize `:@@analysis_capability_infobox_nominal:névleges`, data.stat_def.capabilitydef.nominal?.toFixed(3)],
+      ['#388697', $localize `:@@analysis_capability_infobox_nominal:nominális`, data.stat_def.capabilitydef.nominal?.toFixed(3)],
       ['#CC2936', $localize `:@@analysis_capability_infobox_utl:UTL`, data.stat_def.capabilitydef.utl?.toFixed(3)],
       ['#00A3FF', $localize `:@@analysis_capability_infobox_ucl:UCL`, data.stat_def.capabilitydef.ucl?.toFixed(3)],
       ['#CC2936', $localize `:@@analysis_capability_infobox_ltl:LTL`, data.stat_def.capabilitydef.ltl?.toFixed(3)],
@@ -404,8 +401,8 @@ export class AnalysisCapabilityDefComponent implements OnInit, AnalysisDef, Anal
       ['#eed2aa', $localize `:@@analysis_capability_infobox_ck:Ck`, data.capabilitydata.ck?.toFixed(3)]
     ];
 
-    infoBox.append(this.createBox($localize `:@@analysis_capability_infobox_title_set:beállított paraméterek`, setData, data.stat_def.capabilitydef.visualsettings.infoboxloc));
-    infoBox.append(this.createBox($localize `:@@analysis_capability_infobox_title_measured:mért értékek`, measuredData, data.stat_def.capabilitydef.visualsettings.infoboxloc));
+    infoBox.append(this.createBox($localize `:@@analysis_capability_infobox_title_set:beállított paraméterek`, setData, this.def.visualsettings.infoboxloc));
+    infoBox.append(this.createBox($localize `:@@analysis_capability_infobox_title_measured:mért értékek`, measuredData, this.def.visualsettings.infoboxloc));
 
     return infoBox;
   }

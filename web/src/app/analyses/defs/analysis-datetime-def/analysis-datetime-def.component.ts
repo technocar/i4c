@@ -13,6 +13,7 @@ export class AnalysisDatetimeDefComponent implements OnInit, AnalysisDef {
   private _timestamp: string;
 
   @Input('def') def: StatDateTimeDef;
+  @Input("canUpdate") canUpdate: boolean;
 
   get timestamp(): string { return this._timestamp; }
   set timestamp(value: string) { this._timestamp = (new Date(value)).toISOString(); }
@@ -25,12 +26,8 @@ export class AnalysisDatetimeDefComponent implements OnInit, AnalysisDef {
     ['Y', $localize `:@@datetime_year:év`]
   ];
   period: string;
-  access = {
-    canUpdate: false
-  }
 
   constructor(private authService: AuthenticationService) {
-    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.timestamp = (new Date()).toISOString();
     this.direction = -1;
     this.count = 1;
