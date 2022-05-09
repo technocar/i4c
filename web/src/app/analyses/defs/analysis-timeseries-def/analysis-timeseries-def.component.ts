@@ -22,6 +22,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
 
   @Input("def") def: StatTimeSeriesDef;
   @Input("metaList") metaList: Meta[];
+  @Input("canUpdate") canUpdate: boolean;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
 
 
@@ -46,10 +47,6 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
 
   eventOps: string[][] = [];
 
-  access = {
-    canUpdate: false
-  }
-
   devices: Device[] = [];
 
   constructor(
@@ -57,7 +54,6 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     private authService: AuthenticationService
   )
   {
-    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
     this.eventOps = apiService.getEventOperations();
     apiService.getDevices()
       .subscribe(d => {

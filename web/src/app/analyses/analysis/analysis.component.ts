@@ -102,6 +102,10 @@ export class AnalysisComponent implements OnInit {
     return this.def.user?.id == this.authService.currentUserValue.id;
   }
 
+  canUpdate(): boolean {
+    return this.isOwn() || this.access.canUpdate;
+  }
+
   hasChanges(): boolean {
     if (this.isNew())
       return true;
@@ -280,15 +284,15 @@ export class AnalysisComponent implements OnInit {
       cont = document.createElement('div');
       cont.classList.add("cont");
       cont.append(infoBox)
-      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Top
-        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left)
+      if (this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Top
+        || this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left)
         this.chart_place.nativeElement.prepend(cont);
       else
         this.chart_place.nativeElement.append(cont);
 
-      this.chart.nativeElement.classList.remove(...['col', 'col-8']);
-      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Right
-        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left) {
+      this.chart.nativeElement.classList.remove(...['col', 'col-9']);
+      if (this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Right
+        || this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left) {
         cont.classList.add("col");
         this.chart.nativeElement.classList.add("col-9")
       } else {
@@ -307,7 +311,7 @@ export class AnalysisComponent implements OnInit {
   }
 
   save(): Observable<boolean> {
-    if (!this.isOwn())
+    if (!this.canUpdate())
       return of(true);
 
     if (this.isNew())

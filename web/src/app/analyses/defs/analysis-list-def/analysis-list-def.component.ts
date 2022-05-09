@@ -20,6 +20,7 @@ interface Filter extends StatXYFilter {
 export class AnalysisListDefComponent implements OnInit, AnalysisDef {
 
   @Input("def") def: StatListDef;
+  @Input("canUpdate") canUpdate: boolean;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
 
   objects$: BehaviorSubject<StatXYMeta[]> = new BehaviorSubject([]);
@@ -45,15 +46,11 @@ export class AnalysisListDefComponent implements OnInit, AnalysisDef {
     normal_fg: '#000000'
   };
   colors = Object.assign({}, this.defaultColors);
-  access = {
-    canUpdate: false
-  }
 
   constructor(
     private apiService: ApiService,
     private authService: AuthenticationService
   ) {
-    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
   }
 
   ngOnInit(): void {
