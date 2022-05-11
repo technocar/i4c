@@ -23,8 +23,8 @@ with
       l.timestamp >= p.after
       and l.timestamp <= p.before
       and l.device = 'robot'
-      and l.data_id = 'status'
-      and l.value_text in ('place_good_out', 'place_bad_out', 'stopped')
+      and l.data_id = 'state'
+      and l.value_text in ('stopped', 'place_good_out', 'place_bad_out')
   ),
   p_code as (
     select l.value_text as "code", l.timestamp, l.sequence
