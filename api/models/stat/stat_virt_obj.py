@@ -92,7 +92,7 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
                                 """))
 
         mazak_fields = [
-            StatObjMetaField(name="start", displayname="start", type=StatObjMateFieldType.label),
+            StatObjMetaField(name="start", displayname="kezdés", type=StatObjMateFieldType.label),
             StatObjMetaField(name="end", displayname="vége", type=StatObjMateFieldType.label),
             StatObjMetaField(name="device", displayname="eszköz", type=StatObjMateFieldType.category,
                              value_list=['mill', 'lathe']),
@@ -152,16 +152,16 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
                                       )
 
         workpiece_fields = [
-            StatObjMetaField(name="code", displayname="code", type=StatObjMateFieldType.label),
-            StatObjMetaField(name="start", displayname="start", type=StatObjMateFieldType.label),
+            StatObjMetaField(name="code", displayname="azonosító", type=StatObjMateFieldType.label),
+            StatObjMetaField(name="start", displayname="kezdés", type=StatObjMateFieldType.label),
             StatObjMetaField(name="end", displayname="vége", type=StatObjMateFieldType.label),
-            StatObjMetaField(name="batch", displayname="batch", type=StatObjMateFieldType.category,
+            StatObjMetaField(name="batch", displayname="munkaszám", type=StatObjMateFieldType.category,
                              value_list=await get_value_list(stat_obj_workpiece_batch_sql)),
             StatObjMetaField(name="project", displayname="project", type=StatObjMateFieldType.category,
                              value_list=[r["project"] for r in pv_db]),
             StatObjMetaField(name="project version", displayname="project verzió", type=StatObjMateFieldType.category,
                              value_list=[str(r["version"]) for r in pv_db]),
-            StatObjMetaField(name="eval", displayname="eval", type=StatObjMateFieldType.category,
+            StatObjMetaField(name="eval", displayname="minősítés", type=StatObjMateFieldType.category,
                              value_list=good_bad_list),
             StatObjMetaField(name="gom max deviance", displayname="gom max deviance", type=StatObjMateFieldType.numeric),
             StatObjMetaField(name="runtime", displayname="futásidő", type=StatObjMateFieldType.numeric, unit=StatObjMetaFieldUnit.second)
