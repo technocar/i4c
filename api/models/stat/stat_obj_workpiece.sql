@@ -91,7 +91,7 @@ with
       w_batch."batch" as mf_batch,
       w_project."project" as mf_project,
       w_project."version" as "mf_project version",
-      w_gb.gb as "mf_workpiece good/bad"
+      w_gb.gb as "mf_eval"
     from p_begin wb
     left join lateral (
       select * from (
