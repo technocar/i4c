@@ -4,7 +4,7 @@
       <input type="checkbox" aria-label="Teljes egyezés" [(ngModel)]="mask" (change)="filter()" />
     </div>
   </div>
-  <input [id]="id" [(ngModel)]="value" class="form-control" [class]="css" placement="bottom" [ngbPopover]="hint" (keyup.enter)="filter()" triggers="mouseenter:mouseleave" popoverClass="hint" [autoClose]="false" [openDelay]="500"/>
+  <input [id]="id" [(ngModel)]="value" class="form-control" [class]="css" placement="bottom" [ngbPopover]="hint" (keyup.enter)="filter()" (change)="filter()" triggers="mouseenter:mouseleave" popoverClass="hint" [autoClose]="false" [openDelay]="500"/>
 </div>
 <ng-template #hint >
   <p>

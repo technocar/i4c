@@ -37,6 +37,15 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   private _filterWOBatch: boolean;
   private _filterProject: string;
   private _filterBatch: string;
+  private _filterStatus: string;
+  private _filterId: string;
+
+  private _filterDateChanged = false;
+  private _filterWOBatchChanged = false;
+  private _filterProjectChanged = false;
+  private _filterBatchChanged = false;
+  private _filterStatusChanged = false;
+  private _filterIdChanged = false;
 
   isAllSelected: boolean = false;
   workPieces$: BehaviorSubject<WorkPieceItem[]> = new BehaviorSubject([]);
@@ -53,31 +62,47 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   }
   set filterDate(value: NgbDateStruct) {
     this._filterDate = value;
-    this.filter();
+    this._filterDateChanged = true;
   }
-  filterId: string;
+
+  get filterId(): string {
+    return this._filterId;
+  }
+
+  set filterId(value: string) {
+    this._filterId = value;
+    this._filterIdChanged = true;
+  }
+
   get filterProject(): string {
     return this._filterProject;
   }
   set filterProject(value: string) {
     this._filterProject = value;
-    this.filter();
+    this._filterProjectChanged = true;
   }
   get filterBatch(): string {
     return this._filterBatch;
   }
   set filterBatch(value: string) {
     this._filterBatch = value;
-    this.filter();
+    this._filterBatchChanged = true;
   }
-  filterStatus: string;
+  get filterStatus(): string {
+    return this._filterStatus;
+  }
+
+  set filterStatus(value: string) {
+    this._filterStatus = value;
+    this._filterStatusChanged = true;
+  }
 
   get filterWOBatch(): boolean {
     return this._filterWOBatch;
   }
   set filterWOBatch(value: boolean) {
     this._filterWOBatch = value;
-    this.filter();
+    this._filterWOBatchChanged = true;
   }
 
   noFilter = false;
@@ -122,9 +147,25 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
         console.error(`Invalid Date value of \"pd\" query param ${filters.fd}`);
       }
     }
-    this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
-    this.filterId = filters.fid ?? undefined;
-    this.filterStatus = filters.fs ?? undefined;
+
+    let defaultDate = true;
+    for (let prop in filters)
+      if (filters[prop] !== undefined) {
+        defaultDate = false;
+        switch(prop) {
+          case "fid": this._filterIdChanged = true; break;
+          case "fd": this._filterDateChanged = true; break;
+          case "fs": this._filterStatusChanged = true; break;
+          case "fp": this._filterProjectChanged = true; break;
+          case "fb": this._filterBatchChanged = true; break;
+          case "fwob": this._filterWOBatchChanged = true; break;
+        }
+      }
+
+    if (filters.fd !== undefined || defaultDate)
+      this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+    this._filterId = filters.fid ?? undefined;
+    this._filterStatus = filters.fs ?? undefined;
     this._filterWOBatch = filters.fwob ?? undefined;
     this._filterProject = filters.fp ?? undefined;
     this._filterBatch = filters.fb ?? undefined;
@@ -146,7 +187,7 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
 
   getWorkPieces() {
     this.noFilter = false;
-    if (!this._filterDate?.year && !this._filterDate?.month && !this._filterDate?.day && !this._filterBatch && !this.filterId) {
+    if (!this._filterDate?.year && !this._filterDate?.month && !this._filterDate?.day && !this._filterBatch && !this._filterId) {
       this.noFilter = true;
       this.workPieces$.next([]);
       return;
@@ -161,12 +202,12 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
       with_details: false,
       after: new Date(startDate),
       before: new Date(endDate),
-      id: (this.filterId ?? "") === "" ? undefined : this.filterId,
+      id: (this._filterId ?? "") === "" ? undefined : this._filterId,
       project: !this.filterProjectCtrl.mask ? this.filterProject : undefined,
       project_mask: this.filterProjectCtrl.mask ? this.filterProject : undefined,
       batch: !this.filterBatchCtrl.mask ? this.filterBatch : undefined,
       batch_mask: this.filterBatchCtrl.mask ? this.filterBatch : undefined,
-      status: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus as WorkPieceStatus
+      status: (this._filterStatus ?? "") === "" ? undefined : this._filterStatus as WorkPieceStatus
     })
       .subscribe(r => {
         var items: WorkPieceItem[] = [];
@@ -235,12 +276,12 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
 
   filter() {
     var filters: WorkPieceFilters = {
-      fd: this.filterDate ? `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}` : undefined,
-      fid: (this.filterId ?? "") === "" ? undefined : this.filterId,
-      fp: this.filterProjectCtrl.queryParam,
-      fb: this.filterBatchCtrl.queryParam,
-      fs: (this.filterStatus ?? "") === "" ? undefined : this.filterStatus,
-      fwob: this.filterWOBatch ?? undefined
+      fd: this._filterDateChanged ? this.filterDate ? `${this.filterDate.year}-${this.filterDate.month}-${this.filterDate.day}` : undefined : undefined,
+      fid: this._filterIdChanged ? (this.filterId ?? "") === "" ? undefined : this.filterId : undefined,
+      fp: this._filterProjectChanged ? this.filterProjectCtrl.queryParam : undefined,
+      fb: this._filterBatchChanged ? this.filterBatchCtrl.queryParam : undefined,
+      fs: this._filterStatusChanged ? (this.filterStatus ?? "") === "" ? undefined : this.filterStatus : undefined,
+      fwob: this._filterWOBatchChanged ? this.filterWOBatch ?? undefined : undefined
     };
     this.filtersService.save("workpiece", filters);
     this.getWorkPieces();
@@ -302,5 +343,20 @@ export class WorkPieceComponent implements OnInit, AfterViewInit {
   getStatusDesc(code: string): string {
     var status = this.statuses.find((s) => { return s[0] === code; });
     return status ? status[1] : code;
+  }
+
+  resetFilter() {
+    this.filterId = undefined;
+    this.filterDate = undefined;
+    let date = new Date();
+    this._filterDateChanged = false;
+    this._filterDate = { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+    this.filterBatch = undefined;
+    this.filterProject = undefined;
+    this.filterWOBatch = undefined;
+    this.filterStatus = undefined;
+    this.filterBatchCtrl.queryParam = undefined;
+    this.filterProjectCtrl.queryParam = undefined;
+    this.filter();
   }
 }

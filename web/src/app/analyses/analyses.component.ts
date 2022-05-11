@@ -13,7 +13,8 @@ export interface AnalysisDef {
 }
 
 export interface AnalysisChart {
-  getChartConfiguration(data: StatData): ChartConfiguration
+  canUpdate: boolean;
+  getChartConfiguration(data: StatData): ChartConfiguration;
 }
 
 @Component({
@@ -55,7 +56,7 @@ export class AnalysesComponent implements OnInit, AfterViewInit {
     private cd: ChangeDetectorRef,
     private authService: AuthenticationService,
     public  analysis: AnalysisService
-    
+
   ) {
     this.access.canCreate = authService.hasPrivilige("post/stat/def");
     this.access.canRun = authService.hasPrivilige("get/stat/def/{id}");

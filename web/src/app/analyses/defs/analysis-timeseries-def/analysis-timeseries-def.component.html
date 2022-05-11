@@ -1,4 +1,4 @@
-<app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
+<app-analysis-datetime-def #period [def]="def" [canUpdate]="canUpdate"></app-analysis-datetime-def>
 <div class="row m-0">
   <fieldset class="filters col-12 p-4">
     <legend>szűrő</legend>
@@ -15,36 +15,36 @@
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
           <td>
-            <select class="form-control mr-2" [(ngModel)]="filter.device" [disabled]="!access.canUpdate">
+            <select class="form-control mr-2" [(ngModel)]="filter.device" [disabled]="!canUpdate">
               <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
             </select>
           </td>
           <td>
-            <app-meta-selector [device]="filter.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+            <app-meta-selector [device]="filter.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!canUpdate"></app-meta-selector>
           </td>
           <td>
-            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">
+            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!canUpdate">
               <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
             </select>
           </td>
           <td>
-            <autocomplete-input [values]="filter.valueList" [(value)]="filter.value" class="mr-2 container d-inline-block" [disabled]="!access.canUpdate"></autocomplete-input>
+            <autocomplete-input [values]="filter.valueList" [(value)]="filter.value" class="mr-2 container d-inline-block" [disabled]="!canUpdate"></autocomplete-input>
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" [disabled]="!access.canUpdate" step="0.01"/>
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_min" [disabled]="!canUpdate" step="0.01"/>
           </td>
           <td>
-            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" [disabled]="!access.canUpdate" step="0.01"/>
+            <input type="number" class="form-control mr-2" [(ngModel)]="filter.age_max" [disabled]="!canUpdate" step="0.01"/>
           </td>
           <td>
-            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="access.canUpdate">
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="canUpdate">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
       </tbody>
     </table>
-    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="access.canUpdate">
+    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="canUpdate">
       <i class="bi bi-plus"></i>
       hozzadás...
     </button>
@@ -54,15 +54,15 @@
     <div class="row form-group pl-0 py-2 pr-2 border rounded">
       <label class="col-6">mérőszám</label>
       <div class="col p-0">
-        <select class="form-control mb-2" [ngModel]="def.metric?.device" (ngModelChange)="setDevice($event, 'metric')" [disabled]="!access.canUpdate">
+        <select class="form-control mb-2" [ngModel]="def.metric?.device" (ngModelChange)="setDevice($event, 'metric')" [disabled]="!canUpdate">
           <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
         </select>
-        <app-meta-selector [device]="def.metric?.device" [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+        <app-meta-selector [device]="def.metric?.device" [selectableTypes]="['SAMPLE']" [metaList]="metaList" (change)="selectMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!canUpdate"></app-meta-selector>
       </div>
     </div>
     <div class="row form-group pr-2">
       <label class="col">x tengely</label>
-      <select class="col form-control"  [(ngModel)]="def.xaxis" [disabled]="!access.canUpdate">
+      <select class="col form-control"  [ngModel]="def.xaxis" (ngModelChange)="xaxisChange($event)" [disabled]="!canUpdate">
         <option value="timestamp">dátum</option>
         <option value="sequence">szekvencia</option>
       </select>
@@ -72,15 +72,15 @@
         <div class="row form-group border rounded pl-0 py-2 pr-2">
           <label class="col-6">elválasztó</label>
           <div class="col p-0">
-            <select class="form-control mb-2" [ngModel]="def.agg_sep?.device" (ngModelChange)="setDevice($event, 'agg_sep')" [disabled]="!access.canUpdate">
+            <select class="form-control mb-2" [ngModel]="def.agg_sep?.device" (ngModelChange)="setDevice($event, 'agg_sep')" [disabled]="!canUpdate">
               <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
             </select>
-            <app-meta-selector [device]="def.agg_sep?.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+            <app-meta-selector [device]="def.agg_sep?.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id" [disabled]="!canUpdate"></app-meta-selector>
           </div>
         </div>
         <div class="row form-group pl-0 py-2 pr-2">
           <label class="col">összesítés</label>
-          <select class="col form-control"  [(ngModel)]="def.agg_func" [disabled]="!access.canUpdate">
+          <select class="col form-control"  [(ngModel)]="def.agg_func" [disabled]="!canUpdate">
             <option value="">nincs</option>
             <option *ngFor="let item of aggFuncs" [value]="item[0]">{{item[1]}}</option>
           </select>
@@ -89,17 +89,17 @@
     </div>
     <div class="row form-group pr-2">
       <label class="col">adatsor elnevezése</label>
-      <select class="col form-control" [(ngModel)]="def.series_name" [disabled]="!access.canUpdate">
+      <select class="col form-control" [(ngModel)]="def.series_name" [disabled]="!canUpdate">
         <option *ngFor="let item of seriesNameTypes" [value]="item[0]">{{item[1]}}</option>
       </select>
     </div>
     <div class="row form-group pl-0 py-2 pr-2 border rounded">
       <label class="col-6">görbe elválasztó</label>
       <div class="col p-0">
-        <select class="form-control mb-2" [ngModel]="def.series_sep?.device" (ngModelChange)="setDevice($event, 'series_sep')" [disabled]="!access.canUpdate">
+        <select class="form-control mb-2" [ngModel]="def.series_sep?.device" (ngModelChange)="setDevice($event, 'series_sep')" [disabled]="!canUpdate">
           <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
         </select>
-        <app-meta-selector [device]="def.series_sep?.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+        <app-meta-selector [device]="def.series_sep?.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id" [disabled]="!canUpdate"></app-meta-selector>
       </div>
     </div>
   </fieldset>
@@ -107,18 +107,18 @@
     <legend>grafikon beállítás</legend>
     <div class="row form-group">
       <label class="col">megnevezés</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!access.canUpdate"/>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!canUpdate"/>
     </div>
     <div class="row form-group">
       <label class="col">rövid magyarázat</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!access.canUpdate"/>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!canUpdate"/>
     </div>
     <fieldset class="row p-4 mt-4" *ngFor="let axis of ['x', 'y']">
       <legend>{{axis}} tengely</legend>
       <div class="col">
         <div class="row form-group">
           <label class="col">felirat</label>
-          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" [disabled]="!access.canUpdate"/>
+          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" [disabled]="!canUpdate"/>
         </div>
       </div>
     </fieldset>
@@ -127,13 +127,13 @@
       <div class="col">
         <div class="row form-group">
           <label class="col">pozició</label>
-          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position" [disabled]="!access.canUpdate">
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position">
             <option *ngFor="let p of labels.legend.positions" [value]="p[0]">{{p[1]}}</option>
           </select>
         </div>
         <div class="row form-group">
           <label class="col">igazítás</label>
-          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align" [disabled]="!access.canUpdate">
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align">
             <option *ngFor="let a of labels.legend.aligns" [value]="a[0]">{{a[1]}}</option>
           </select>
         </div>

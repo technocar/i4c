@@ -13,7 +13,6 @@
       </tr>
       <tr>
         <th scope="col">megnevezés</th>
-        <th scope="col" title="jelentési frekvencia">jelentési frek.</th>
         <th scope="col" title="utolsó ellenőrzés">utolsó ell.</th>
         <th scope="col" title="utolsó hibajelentés">utolsó hibajel.</th>
         <th scope="col" title="feliratkozások száma">fel. száma</th>
@@ -35,7 +34,6 @@
       <ng-template [ngIf]="!(listFetching$ | async)">
         <tr *ngFor="let alarm of alarms$ | async">
           <td>{{alarm.name}}</td>
-          <td>{{getMaxFreqDesc(alarm)}}</td>
           <td>{{alarm.last_check | date:"yyyy.MM.dd HH:mm:ss"}}</td>
           <td>{{alarm.last_report | date:"yyyy.MM.dd HH:mm:ss"}}</td>
           <td>{{alarm.subs?.length}}</td>

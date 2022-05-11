@@ -166,6 +166,10 @@ def process_robot(section):
                             api_params["data_id"] = "pgm"
                             api_params["value_text"] = progid
                             api_params_array.append(copy.deepcopy(api_params))
+                            api_params["sequence"] += 1
+                            api_params["data_id"] = "robot_control"
+                            api_params["value_text"] = "active"
+                            api_params_array.append(copy.deepcopy(api_params))
 
                         api_params["sequence"] += 1
                         api_params["timestamp"] = get_datetime(lines[0], "%Y.%m.%d %H:%M:%S")
@@ -174,8 +178,14 @@ def process_robot(section):
                         api_params["value_text"] = value
                         api_params["value_extra"] = lines[1]
                         api_params_array.append(copy.deepcopy(api_params))
+                        api_params["value_extra"] = None
 
-                csvfile.close()
+            # reusing last timestamp
+            api_params["sequence"] += 1
+            api_params["data_id"] = "robot_control"
+            api_params["value_text"] = "inactive"
+            api_params_array.append(copy.deepcopy(api_params))
+
             conn.invoke_url("log", "POST", api_params_array)
             process_GOM(cfg["gom"], wkpcid)
             process_ReniShaw(cfg["renishaw"], wkpcid)
@@ -199,20 +209,7 @@ def safe_float(s):
 
 
 def process_GOM(section, wkpcid):
-    log.debug(f"Processing GOM files ({wkpcid})...")
-
-    api_params = {
-        "timestamp": "2021-12-07T11:20:20.405Z",
-        "sequence": None,
-        "device": "gom",
-        "instance": 0,
-        "data_id": '',
-        "value": None,
-        "value_num": None,
-        "value_text": None,
-        "value_extra": None,
-        "value_add": None
-    }
+    log.debug(f"Processing GOM files for {wkpcid}")
 
     params = check_params(section)
     if not params["OK"]:
@@ -220,83 +217,121 @@ def process_GOM(section, wkpcid):
 
     src_path = params["source-path"]
 
-    files = [entry for entry in os.listdir(src_path) if os.path.isfile(os.path.join(src_path, entry))
-             and any(entry.upper().endswith("_" + wkpcid + ext) for ext in (".CSV", ".ATOS", ".PDF"))]
-    if len(files) == 0:
-        log.debug("no files to load")
+    file_groups = [entry for entry in os.listdir(src_path)
+                   if os.path.isfile(os.path.join(src_path, entry))
+                   and (entry.upper().endswith(f"_{wkpcid}.OK") or entry.upper().endswith(f"_{wkpcid}.ERROR"))]
+
+    if len(file_groups) == 0:
+        log.debug("no file groups to load")
         return
 
-    for currentfile in files:
-        log.info("processing file %s", currentfile)
+    file_groups = [os.path.splitext(g) for g in file_groups]
 
-        fname, fext = os.path.splitext(currentfile)
-        if fext.upper() == ".CSV":
-            if not os.path.exists(os.path.join(src_path, fname + '.LOG')):
-                log.error("No log file found")
-                continue
-            api_params_array = []
+    entries = []
+    sequence = 0
 
+    for (file_group, marker) in file_groups:
+        log.debug(f"processing group {file_group}")
+
+        markfile = os.path.join(src_path, f"{file_group}{marker}")
+
+        logfile = os.path.join(src_path, f"{file_group}.log")
+        if os.path.isfile(logfile):
             log.debug("loading log")
-            with open(os.path.join(src_path, fname + ".log")) as csvfile:
-                api_params["sequence"] = 0
-                for (line_no, lines) in enumerate(csvfile):
-                    (part1, part2, part3, part4) = lines.split(' ', 3)
-                    if part3 == "*" : api_params["data_id"] = "WARNING"
-                    elif part3 == "!" : api_params["data_id"] = "ERROR"
-                    else: api_params["data_id"] = "INFO"
+            first_time = None
+            last_time = None
+            with open(logfile) as f:
+                for line in f:
+                    entry = dict(device="gom", sequence=sequence)
+                    sequence += 1
 
-                    api_params["timestamp"] = get_datetime(part1 + ' ' + part2, "%Y-%m-%d %H:%M:%S.%f")
+                    (part1, part2, part3, part4) = line.split(' ', 3)
 
-                    if line_no == 0:
-                        first_time = api_params["timestamp"]
+                    if part3 == "*" : entry["data_id"] = "WARNING"
+                    elif part3 == "!" : entry["data_id"] = "ERROR"
+                    else: entry["data_id"] = "INFO"
 
-                    api_params["value_text"] = part4.strip()
-                    api_params_array.append(copy.deepcopy(api_params))
-                    api_params["sequence"] += 1
-                csvfile.close()
+                    entry["timestamp"] = get_datetime(part1 + ' ' + part2, "%Y-%m-%d %H:%M:%S.%f")
+                    first_time = first_time or entry["timestamp"]
+                    last_time = entry["timestamp"]
 
-            api_params["value_text"] = '_'.join(fname.split('_')[0:2])
-            api_params["data_id"] = "pgm"
-            api_params["timestamp"] = first_time
-            api_params_array.append(copy.deepcopy(api_params))
-            api_params["value_text"] = None
+                    entry["value_text"] = part4.strip()
 
-            with open(os.path.join(src_path, currentfile)) as csvfile:
-                csvreader = csv.reader(csvfile, delimiter=";", quotechar=None)
+                    entries.append(entry)
+        else:
+            log.error(f"no log file found for {file_group}")
+            first_time = os.path.getctime(markfile)
+            last_time = os.path.getctime(markfile)
+
+        entry = dict(
+            device="gom",
+            timestamp=first_time,
+            sequence=sequence,
+            data_id="pgm",
+            value_text=file_group.rpartition("_")[0])
+        sequence += 1
+        entries.append(entry)
+
+        csvfile = os.path.join(src_path, f"{file_group}.csv")
+        if os.path.isfile(csvfile):
+            log.debug("loading csv")
+            with open(csvfile) as f:
+                csvreader = csv.reader(f, delimiter=";", quotechar=None)
                 for lines in csvreader:
                     if csvreader.line_num == 1:
                         idxElement = lines.index("Element")  # -> data_id
                         idxDev = lines.index("Dev")  # -> value_num
                         idxActual = lines.index("Actual")  # -> value_extra
                     else:
-                        api_params["sequence"] += 1
                         did = lines[idxElement].strip()
-                        api_params["data_id"] = did + '-DEV'
-                        api_params["value_num"] = safe_float(lines[idxDev])
-                        api_params_array.append(copy.deepcopy(api_params))
-                        api_params["sequence"] += 1
-                        api_params["data_id"] = did + '-ACTUAL'
-                        api_params["value_num"] = safe_float(lines[idxActual])
-                        api_params_array.append(copy.deepcopy(api_params))
-                csvfile.close()
 
-            log.debug(f"writing log entries: {len(api_params_array)}")
-            conn.invoke_url("log", "POST", api_params_array)
+                        entry = dict(
+                            device="gom",
+                            timestamp=last_time,
+                            sequence=sequence,
+                            data_id=f"{did}-DEV",
+                            value_num=safe_float(lines[idxDev]))
+                        sequence += 1
+                        entries.append(entry)
+
+                        entry = dict(
+                            device="gom",
+                            timestamp=last_time,
+                            sequence=sequence,
+                            data_id=f"{did}-ACTUAL",
+                            value_num=safe_float(lines[idxActual]))
+                        sequence += 1
+                        entries.append(entry)
         else:
-            with open(os.path.join(src_path, currentfile), "rb") as datafile:
-                conn.invoke_url("intfiles/v/1/" + currentfile, "PUT", datafile)
-                datafile.close()
+            log.error(f"csv not found for {file_group}")
 
-        log.debug("archiving file")
-        shutil.move(os.path.join(src_path, currentfile), os.path.join(params["archive-path"], currentfile))
-        if fext.upper() == ".CSV":
-            shutil.move(os.path.join(src_path, fname + '.log'), os.path.join(params["archive-path"], fname + '.log'))
+        for ext in (".pdf", ".atos"):
+            datafilename = f"{file_group}{ext}"
+            datafile = os.path.join(src_path, datafilename)
+            if os.path.isfile(datafile):
+                log.debug(f"uploading {datafilename}")
+                with open(datafile, "rb") as f:
+                    conn.invoke_url("intfiles/v/1/" + datafilename, "PUT", f)
+                entry = dict(
+                    device="gom",
+                    timestamp=last_time,
+                    sequence=sequence,
+                    data_id="file",
+                    value_text=datafilename)
+                sequence += 1
+                entries.append(entry)
+            else:
+                log.error(f"not found {datafilename}")
 
-        for newext in ['.ok', '.error', '.bad', '.good']:
-            fnew = fname + newext
-            if os.path.exists(os.path.join(src_path, fnew)):
-                log.debug("archiving additional file {}".format(fnew))
-                shutil.move(os.path.join(src_path, fnew), os.path.join(params["archive-path"], fnew))
+        log.debug(f"writing log entries: {len(entries)}")
+        conn.invoke_url("log", "POST", entries)
+
+        for ext in (".ok", ".error", ".pdf", ".atos", ".log", ".csv", ".bad", ".good"):
+            filename = f"{file_group}{ext}"
+            sourcefile = os.path.join(src_path, filename)
+            if os.path.isfile(sourcefile):
+                log.debug(f"archiving file {filename}")
+                shutil.move(sourcefile, os.path.join(params["archive-path"], filename))
 
 
 def process_Alarms(section):

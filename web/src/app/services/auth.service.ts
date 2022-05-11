@@ -70,7 +70,7 @@ export class AuthenticationService {
 
   extendExpiration() {
     if (this.isAuthenticated()) {
-      this.currentUserValue.expires = Date.now() + (1000 * 60 * 45);
+      this.currentUserValue.expires = Date.now() + (1000 * 60 * 60 * 24);
       this.storeUser(this.currentUserValue);
     }
   }
@@ -80,6 +80,6 @@ export class AuthenticationService {
       return false;
 
     var privs = this.currentUserValue?.privs ?? [];
-    return (privs.find((p) => p.endpoint === endpoint && ((p.features ?? []).length === 0 || !privilige || p.features.indexOf(privilige) > -1 ))) !== undefined;
+    return (privs.find((p) => p.endpoint === endpoint && (!privilige || p.features.indexOf(privilige) > -1))) !== undefined;
   }
 }

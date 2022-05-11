@@ -34,6 +34,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
 
   @Input("def") def: StatXYDef;
   @Input("xymeta") xymeta: StatXYMeta;
+  @Input("canUpdate") canUpdate: boolean;
   @ViewChild('period') period: AnalysisDatetimeDefComponent;
   @ViewChild('editor') editor: EditorComponent;
 
@@ -55,10 +56,6 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
   labels = Labels.analysis;
   _defaultTooltip = '<p>X: <span class="graphdata" contenteditable="false" spellcheck="false" id="1">{{X}}</span>  </p><p>Y: <span class="graphdata" contenteditable="false" spellcheck="false" id="2">{{Y}}</span></p>';
 
-  access = {
-    canUpdate: false
-  }
-
   quillEvents = {
     enter: {
       key: 13,
@@ -76,7 +73,6 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     private authService: AuthenticationService
   )
   {
-    this.access.canUpdate = authService.hasPrivilige("patch/stat/def/{id}", "patch any");
 
     this.editorConfig = {
       base_url: '/tinymce',
@@ -85,6 +81,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
       plugins: 'noneditable',
       toolbar: 'forecolor backcolor | bold italic underline | data',
       content_css: '/assets/tinymce.css',
+      branding: false,
       setup: (ctx) => {
         var nonEditableClass = "graphdata";
         // Register a event before certain commands run that will turn contenteditable off temporarilly on noneditable fields

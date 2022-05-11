@@ -15,6 +15,7 @@ export class FilterControlComponent implements OnInit {
   @Input("css") css: string;
   @Input("mask") mask: boolean;
   @Input("queryParam")
+  @Output("change") change: EventEmitter<any> = new EventEmitter<any>();
   get queryParam(): string {
     return this.value ? (this.mask ? `#|${this.value}|` : this.value) : undefined;
   }
@@ -42,5 +43,6 @@ export class FilterControlComponent implements OnInit {
 
   filter() {
     this.valueChange.emit((this.value ?? "") === "" ? undefined : this.value);
+    this.change.emit((this.value ?? "") === "" ? undefined : this.value);
   }
 }

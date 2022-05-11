@@ -1,7 +1,7 @@
-<app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
+<app-analysis-datetime-def #period [def]="def" [canUpdate]="canUpdate"></app-analysis-datetime-def>
 <div id="analysing_data" class="row form-group m-0 mb-4 align-items-center">
   <label class="col">Elemezendő adat</label>
-  <select #objects class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(objects.value)" [disabled]="!access.canUpdate">
+  <select #objects class="col form-control" [ngModel]="def.obj.type" (change)="objectChanged(objects.value)" [disabled]="!canUpdate">
     <option *ngFor="let obj of objects$ | async" [value]="obj.name">{{obj.displayname}}</option>
   </select>
   <fieldset class="col-12" *ngIf="(params$ | async).length > 0">
@@ -33,32 +33,32 @@
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
           <td width="30%">
-            <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!access.canUpdate">
+            <select class="form-control" [(ngModel)]="filter.field" (change)="updateFilterField(filter)" [disabled]="!canUpdate">
               <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
               <option *ngIf="!validField(filter.field)" [value]="filter.field">{{filter.field}}</option>
             </select>
           </td>
           <td width="10%">
-            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">
+            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!canUpdate">
               <option *ngFor="let op of getOperators(filter)" value="{{op}}">{{op}}</option>
             </select>
           </td>
           <td>
-            <input type="number" step="0.01" class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter._type === 'numeric' && (!filter.values || filter.values.length === 0)" [disabled]="!access.canUpdate"/>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter._type !== 'numeric' && (!filter.values || filter.values.length === 0)" [disabled]="!access.canUpdate"/>
-            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length > 0" [disabled]="!access.canUpdate">
+            <input type="number" step="0.01" class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter._type === 'numeric' && (!filter.values || filter.values.length === 0)" [disabled]="!canUpdate"/>
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter._type !== 'numeric' && (!filter.values || filter.values.length === 0)" [disabled]="!canUpdate"/>
+            <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length > 0" [disabled]="!canUpdate">
               <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
             </select>
           </td>
           <td width="5%">
-            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="access.canUpdate">
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="canUpdate">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
       </tbody>
     </table>
-    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="access.canUpdate">
+    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="canUpdate">
       <i class="bi bi-plus"></i>
       hozzadás...
     </button>
@@ -67,28 +67,28 @@
     <legend>paraméterek</legend>
     <div class="row form-group">
       <label class="col-6">x</label>
-      <select class="col form-control" [(ngModel)]="def.x" [disabled]="!access.canUpdate">
+      <select class="col form-control" [(ngModel)]="def.x" [disabled]="!canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
         <option *ngIf="!validNumField(def.x)" [value]="def.x">{{def.x}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">y</label>
-      <select class="col form-control" [(ngModel)]="def.y" [disabled]="!access.canUpdate">
+      <select class="col form-control" [(ngModel)]="def.y" [disabled]="!canUpdate">
         <option *ngFor="let field of numFields$ | async" [value]="field.name">{{field.displayname}}</option>
         <option *ngIf="!validNumField(def.y)" [value]="def.y">{{def.y}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">forma</label>
-      <select class="col form-control" [(ngModel)]="def.shape" [disabled]="!access.canUpdate">
+      <select class="col form-control" [(ngModel)]="def.shape" [disabled]="!canUpdate">
         <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
         <option *ngIf="!validField(def.shape)" [value]="def.shape">{{def.shape}}</option>
       </select>
     </div>
     <div class="row form-group">
       <label class="col-6">szín</label>
-      <select class="col form-control" [(ngModel)]="def.color" [disabled]="!access.canUpdate">
+      <select class="col form-control" [(ngModel)]="def.color" [disabled]="!canUpdate">
         <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
         <option *ngIf="!validField(def.color)" [value]="def.color">{{def.color}}</option>
       </select>
@@ -97,15 +97,15 @@
       <legend>egyéb adatok</legend>
       <div class="col-12" *ngFor="let other of others$ | async">
         <div class="row mb-2">
-          <select class="col form-control mr-2" [(ngModel)]="other.field_name" [disabled]="!access.canUpdate" (change)="updateOther()">
+          <select class="col form-control mr-2" [(ngModel)]="other.field_name" [disabled]="!canUpdate" (change)="updateOther()">
             <option *ngFor="let field of fields$ | async" [value]="field.name">{{field.displayname}}</option>
           </select>
-          <button class="btn btn-outline-danger" title="törlés" (click)="deleteOther(other.id)" *ngIf="access.canUpdate">
+          <button class="btn btn-outline-danger" title="törlés" (click)="deleteOther(other.id)" *ngIf="canUpdate">
             <i class="bi bi-trash"></i>
           </button>
         </div>
       </div>
-      <button class="btn btn-primary mt-2" (click)="newOther()" *ngIf="access.canUpdate">
+      <button class="btn btn-primary mt-2" (click)="newOther()" *ngIf="canUpdate">
         <i class="bi bi-plus"></i>
         hozzadás
       </button>
@@ -115,18 +115,18 @@
     <legend>grafikon beállítás</legend>
     <div class="row form-group">
       <label class="col">megnevezés</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!access.canUpdate"/>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!canUpdate"/>
     </div>
     <div class="row form-group">
       <label class="col">rövid magyarázat</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!access.canUpdate"/>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!canUpdate"/>
     </div>
     <fieldset class="row p-4 mt-4" *ngFor="let axis of ['x', 'y']">
       <legend>{{axis}} tengely</legend>
       <div class="col">
         <div class="row form-group">
           <label class="col">felirat</label>
-          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" [disabled]="!access.canUpdate"/>
+          <input class="col form-control" [(ngModel)]="def.visualsettings[axis + 'axis'].caption" [disabled]="!canUpdate"/>
         </div>
       </div>
     </fieldset>
@@ -135,13 +135,13 @@
       <div class="col">
         <div class="row form-group">
           <label class="col">pozició</label>
-          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position" [disabled]="!access.canUpdate">
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.position">
             <option *ngFor="let p of labels.legend.positions" [value]="p[0]">{{p[1]}}</option>
           </select>
         </div>
         <div class="row form-group">
           <label class="col">igazítás</label>
-          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align" [disabled]="!access.canUpdate">
+          <select class="col form-control" [(ngModel)]="def.visualsettings.legend.align">
             <option *ngFor="let a of labels.legend.aligns" [value]="a[0]">{{a[1]}}</option>
           </select>
         </div>
@@ -149,7 +149,7 @@
     </fieldset>
     <fieldset id="tooltip" class="p-4 mt-4 overflow-auto">
       <legend>tooltip</legend>
-      <editor #editor [disabled]="!access.canUpdate" [(ngModel)]="def.visualsettings.tooltip.html" [init]="editorConfig"></editor>
+      <editor #editor [disabled]="!canUpdate" [(ngModel)]="def.visualsettings.tooltip.html" [init]="editorConfig"></editor>
     </fieldset>
   </fieldset>
 </div>

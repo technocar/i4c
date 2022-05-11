@@ -10,7 +10,7 @@ import { map, tap } from 'rxjs/operators';
 import { ApiService } from 'src/app/services/api.service';
 import { AuthenticationService } from 'src/app/services/auth.service';
 import { Meta, StatCapabilityDefVisualSettingsInfoBoxLocation, StatData, StatDef, StatTimeSeriesDef } from 'src/app/services/models/api';
-import { AnalysisType } from './analysis.service';  
+import { AnalysisType } from './analysis.service';
 import { AnalysisTimeseriesDefComponent } from '../defs/analysis-timeseries-def/analysis-timeseries-def.component';
 import { AnalysisXyDefComponent } from '../defs/analysis-xy-def/analysis-xy-def.component';
 import { AnalysisListDefComponent } from '../defs/analysis-list-def/analysis-list-def.component';
@@ -38,6 +38,7 @@ export class AnalysisComponent implements OnInit {
   showTable: boolean = false;
   showChart: boolean = false;
   customers: string[] = [];
+  showResetZoom: boolean = false;
 
   @ViewChild('timeseries_def') timeseriesDef: AnalysisTimeseriesDefComponent;
   @ViewChild('xy_def') xyDef: AnalysisXyDefComponent;
@@ -99,6 +100,10 @@ export class AnalysisComponent implements OnInit {
 
   isOwn(): boolean {
     return this.def.user?.id == this.authService.currentUserValue.id;
+  }
+
+  canUpdate(): boolean {
+    return this.isOwn() || this.access.canUpdate;
   }
 
   hasChanges(): boolean {
@@ -279,15 +284,15 @@ export class AnalysisComponent implements OnInit {
       cont = document.createElement('div');
       cont.classList.add("cont");
       cont.append(infoBox)
-      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Top
-        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left)
+      if (this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Top
+        || this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left)
         this.chart_place.nativeElement.prepend(cont);
       else
         this.chart_place.nativeElement.append(cont);
 
-      this.chart.nativeElement.classList.remove(...['col', 'col-8']);
-      if (result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Right
-        || result.stat_def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left) {
+      this.chart.nativeElement.classList.remove(...['col', 'col-9']);
+      if (this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Right
+        || this.def.capabilitydef.visualsettings.infoboxloc === StatCapabilityDefVisualSettingsInfoBoxLocation.Left) {
         cont.classList.add("col");
         this.chart.nativeElement.classList.add("col-9")
       } else {
@@ -296,11 +301,17 @@ export class AnalysisComponent implements OnInit {
       }
     }
 
+    //this.showResetZoom = true;
+
     return this.capabilityDef.getChartConfiguration(result);
   }
 
+  resetZoom() {
+    this.capabilityDef.resetZoom(this._chartInstance);
+  }
+
   save(): Observable<boolean> {
-    if (!this.isOwn())
+    if (!this.canUpdate())
       return of(true);
 
     if (this.isNew())

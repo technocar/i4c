@@ -1,4 +1,4 @@
-<app-analysis-datetime-def #period [def]="def"></app-analysis-datetime-def>
+<app-analysis-datetime-def #period [def]="def" [canUpdate]="canUpdate"></app-analysis-datetime-def>
 <div class="row m-0">
   <fieldset class="filters col-12 p-4">
     <legend>szűrő</legend>
@@ -13,30 +13,30 @@
       <tbody>
         <tr class="filter mr-0 mt-2" *ngFor="let filter of filters$ | async">
           <td>
-            <select class="form-control mr-2" [(ngModel)]="filter.device" [disabled]="!access.canUpdate">
+            <select class="form-control mr-2" [(ngModel)]="filter.device" [disabled]="!canUpdate">
               <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
             </select>
           </td>
           <td>
-            <app-meta-selector [device]="filter.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+            <app-meta-selector [device]="filter.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="updateFilterId($event, filter)" [selectedMetaId]="filter.data_id" [disabled]="!canUpdate"></app-meta-selector>
           </td>
           <td>
-            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!access.canUpdate">
+            <select class="form-control mr-2" [(ngModel)]="filter.rel" [disabled]="!canUpdate">
               <option *ngFor="let op of eventOps" value="{{op[0]}}">{{op[1]}}</option>
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" [disabled]="!access.canUpdate"/>
+            <input class="form-control mr-2" [(ngModel)]="filter.value" [disabled]="!canUpdate"/>
           </td>
           <td>
-            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="access.canUpdate">
+            <button class="btn btn-outline-danger" title="törlés" (click)="deleteFilter(filter)" *ngIf="canUpdate">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
       </tbody>
     </table>
-    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="access.canUpdate">
+    <button class="btn btn-primary mt-4" (click)="newFilter()" *ngIf="canUpdate">
       <i class="bi bi-plus"></i>
       hozzadás...
     </button>
@@ -45,50 +45,50 @@
     <legend>paraméterek</legend>
     <div class="row form-group">
       <label class="col">eszköz</label>
-      <select #devvice_selector class="col form-control" [ngModel]="device" (change)="changeDevice(devvice_selector.value)" [disabled]="!access.canUpdate">
+      <select #devvice_selector class="col form-control" [ngModel]="device" (change)="changeDevice(devvice_selector.value)" [disabled]="!canUpdate">
         <option *ngFor="let device of devices" [value]="device.id">{{device.name}}</option>
       </select>
     </div>
     <div class="row form-group">
-      <label class="col-6">merőszám</label>
+      <label class="col-6">mérőszám</label>
       <div class="col p-0">
-        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" [device]="device" (change)="changeMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!access.canUpdate"></app-meta-selector>
+        <app-meta-selector [selectableTypes]="['SAMPLE']" [metaList]="metaList" [device]="device" (change)="changeMetric($event)" [selectedMetaId]="def.metric?.data_id" [disabled]="!canUpdate"></app-meta-selector>
       </div>
     </div>
     <div class="row form-group">
-      <label class="col">nominal</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.nominal" [disabled]="!access.canUpdate" step="0.01"/>
+      <label class="col">nominális</label>
+      <input type="number" class="col form-control" [(ngModel)]="def.nominal" [disabled]="!canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">utl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.utl" [disabled]="!access.canUpdate" step="0.01"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.utl" [disabled]="!canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">ltl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.ltl" [disabled]="!access.canUpdate" step="0.01"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.ltl" [disabled]="!canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">ucl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.ucl" [disabled]="!access.canUpdate" step="0.01"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.ucl" [disabled]="!canUpdate" step="0.01"/>
     </div>
     <div class="row form-group">
       <label class="col">lcl</label>
-      <input type="number" class="col form-control" [(ngModel)]="def.lcl" [disabled]="!access.canUpdate" step="0.01"/>
+      <input type="number" class="col form-control" [(ngModel)]="def.lcl" [disabled]="!canUpdate" step="0.01"/>
     </div>
   </fieldset>
   <fieldset class="col p-4 mt-4 ml-2">
     <legend>beállítás</legend>
     <div class="row form-group">
-      <label class="col">megnevezés</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!access.canUpdate"/>
+      <label class="col">cím</label>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.title" [disabled]="!canUpdate"/>
     </div>
     <div class="row form-group">
-      <label class="col">rövid magyarázat</label>
-      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!access.canUpdate"/>
+      <label class="col">alcím</label>
+      <input class="col form-control" [(ngModel)]="def.visualsettings.subtitle" [disabled]="!canUpdate"/>
     </div>
     <div class="row form-group">
-      <label class="col-6">plotdata</label>
-      <div class="col btn-group btn-group-toggle p-0" ngbRadioGroup name="plotdata" [(ngModel)]="def.visualsettings.plotdata" [disabled]="!access.canUpdate" >
+      <label class="col-6">mért értékek</label>
+      <div class="col btn-group btn-group-toggle p-0" ngbRadioGroup name="plotdata" [(ngModel)]="def.visualsettings.plotdata" [disabled]="!canUpdate" >
         <label ngbButtonLabel class="btn-outline-primary">
           <input ngbButton type="radio" [value]="true">igen
         </label>
@@ -98,7 +98,7 @@
       </div>
     </div>
     <div class="row form-group">
-      <label class="col">info doboz helye</label>
+      <label class="col">adattáblázat helye</label>
       <select class="col form-control" [(ngModel)]="def.visualsettings.infoboxloc">
         <option *ngFor="let loc of locations" [value]="loc[0]">{{loc[1]}}</option>
       </select>

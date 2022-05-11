@@ -55,7 +55,7 @@
     </ng-template>
   </ngb-panel>
 </ngb-accordion>
-<ngb-accordion #logs="ngbAccordion">
+<ngb-accordion #logs="ngbAccordion" *ngIf="canAccessLog">
   <ngb-panel title="Logok" cardClass="section">
     <ng-template ngbPanelContent>
       <table class="col table">
