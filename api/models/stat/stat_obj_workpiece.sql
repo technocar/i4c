@@ -73,15 +73,14 @@ with
                           and mpv.r = 1
   ),
   workpiece_gb as (
-    select case l.value_text when 'place_good_out' then 'good' when 'place_bad_out' then 'bad' else 'unknown' end as gb, l.timestamp, l.sequence
+    select l.value_text as gb, l.timestamp, l.sequence
     from log l
     cross join p
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device='robot'
-      and l.data_id = 'status'
-      and l.value_text in ('place_good_out', 'place_bad_out', 'stopped')
+      and l.device='gom'
+      and l.data_id='eval'
   ),
   discover_log as (
     select 
