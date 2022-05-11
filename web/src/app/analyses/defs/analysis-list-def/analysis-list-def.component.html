@@ -23,7 +23,7 @@
             </select>
           </td>
           <td>
-            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length === 0" [disabled]="!canUpdate" />
+            <input class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="!filter.values || filter.values?.length === 0" [disabled]="!canUpdate" />
             <select class="form-control mr-2" [(ngModel)]="filter.value" *ngIf="filter.values?.length > 0" [disabled]="!canUpdate">
               <option *ngFor="let value of filter.values" [value]="value">{{value}}</option>
             </select>
