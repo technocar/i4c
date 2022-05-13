@@ -47,6 +47,7 @@ async def alarmdef_list(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("get/alarm/defs")),
     name_mask: Optional[List[str]] = Query(None, title="Search phrase for the name."),
+    status: Optional[CommonStatusEnum] = Query(None, title="Status."),
     report_after: Optional[datetime] = Query(None, title="Occured after this time."),
     subs_status: Optional[CommonStatusEnum] = Query(None, title="Has a subscriber with the status."),
     subs_method: Optional[models.alarm.AlarmMethod] = Query(None, title="Has a subscriber via this method."),
@@ -56,7 +57,7 @@ async def alarmdef_list(
     subs_user_mask: Optional[List[str]] = Query(None, title="Search expression for a subscriber user name.")
 ):
     """List alarm definitions. Subs filters must be all satisfied by the same subscriber."""
-    return await models.alarm.alarmdef_list(credentials, name_mask, report_after,
+    return await models.alarm.alarmdef_list(credentials, name_mask, status, report_after,
                                             subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask)
 
 
