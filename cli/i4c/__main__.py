@@ -102,17 +102,18 @@ def callback(ctx, **args):
 
         for args_item, body_item in zip(args, body):
             response = action.invoke(**args_item, body=body_item)
-            origin_file_name = response.headers.get_filename()
-            if not output_file:
-                log.debug(f"streaming to stdout")
-                stream_copy(response, sys.stdout.buffer)
-            else:
-                env = make_jinja_env()
-                output_file_env = env.from_string(output_file)
-                output_file_n = output_file_env.render({"origin": origin_file_name})
-                log.debug(f"writing to file {output_file_n}")
-                with open(output_file_n, "wb") as f:
-                    stream_copy(response, f)
+            if action.response:
+                origin_file_name = response.headers.get_filename()
+                if not output_file:
+                    log.debug(f"streaming to stdout")
+                    stream_copy(response, sys.stdout.buffer)
+                else:
+                    env = make_jinja_env()
+                    output_file_env = env.from_string(output_file)
+                    output_file_n = output_file_env.render({"origin": origin_file_name})
+                    log.debug(f"writing to file {output_file_n}")
+                    with open(output_file_n, "wb") as f:
+                        stream_copy(response, f)
 
 
 def make_callback(**outer_args):
