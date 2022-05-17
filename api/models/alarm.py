@@ -406,8 +406,8 @@ class AlarmRecipPatchChange(I4cBaseModel):
     """
     status: Optional[AlarmRecipientStatus] = Field(None, title="New status.")
     fail_count: Optional[int] = Field(None, title="Number of failed sending attempts.")
-    backoff_until: Optional[datetime] = Field(None, title="Retry wait timestamp")
-    del_backoff_until: bool = Field(False, title="Clear retry wait timestamp")
+    backoff_until: Optional[datetime] = Field(None, title="Postponed until timestamp")
+    del_backoff_until: bool = Field(False, title="Clear postpone timestamp")
 
     @root_validator
     def check_exclusive(cls, values):
