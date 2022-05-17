@@ -215,6 +215,7 @@ class AlarmDefIn(I4cBaseModel):
     max_freq: Optional[float] = Field(None, title="Max checking frequency, seconds.")
     window: Optional[float] = Field(None, title="Observation window, seconds.", description="Observation window in seconds. Useful when there is no event or condition filtering.")
     subsgroup: str = Field(..., title="Subscription group to be notified.")
+    status: Optional[CommonStatusEnum] = Field(CommonStatusEnum.active, title="Status.")
 
 
 class AlarmMethod(str, Enum):
@@ -500,7 +501,7 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
     async with DatabaseConnection(pconn) as conn:
         sql_alarm = dedent("""\
                            select
-                             "id", "name", max_freq, last_check, last_report, "subsgroup", "window"
+                             "id", "name", max_freq, last_check, last_report, "subsgroup", "window", "status"
                            from "alarm"
                            where "name" = $1
                            """)
@@ -564,7 +565,8 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
                         last_check=idr["last_check"],
                         last_report=idr["last_report"],
                         subsgroup=idr["subsgroup"],
-                        subs=subs
+                        subs=subs,
+                        status=idr["status"]
                         )
 
 
@@ -575,10 +577,11 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
             new_last_check = datetime.now()
             if old_alarm is None:
                 sql_insert = dedent("""\
-                    insert into alarm (name, max_freq, last_check, subsgroup, "window") values ($1, $2, $3, $4, $5)
+                    insert into alarm (name, max_freq, last_check, subsgroup, "window", "status") values ($1, $2, $3, $4, $5, $6)
                     returning id
                     """)
-                alarm_id = (await conn.fetchrow(sql_insert, name, alarm.max_freq, new_last_check, alarm.subsgroup, alarm.window))[0]
+                alarm_id = (await conn.fetchrow(sql_insert, name, alarm.max_freq, new_last_check,
+                                                alarm.subsgroup, alarm.window, alarm.status))[0]
                 old_alarm = AlarmDef(
                         id=alarm_id,
                         name=name,
@@ -588,11 +591,15 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
                         last_check=new_last_check,
                         last_report=None,
                         subsgroup=alarm.subsgroup,
-                        subs=await alarmsub_list(credentials, group=alarm.subsgroup, pconn=conn)
+                        subs=await alarmsub_list(credentials, group=alarm.subsgroup, pconn=conn),
+                        status=alarm.status
                         )
             else:
-                sql_update = """update alarm set max_freq = $2, last_check = $3, subsgroup = $4, "window" = $5 where name = $1"""
-                await conn.execute(sql_update, name, alarm.max_freq, new_last_check, alarm.subsgroup, alarm.window)
+                sql_update = dedent("""\
+                    update alarm set max_freq = $2, last_check = $3, subsgroup = $4, "window" = $5, "status" = $6 
+                    where name = $1""")
+                await conn.execute(sql_update, name, alarm.max_freq, new_last_check,
+                                   alarm.subsgroup, alarm.window, alarm.status)
                 old_alarm.last_check = new_last_check
 
             nc = alarm.conditions
@@ -614,7 +621,7 @@ async def alarmdef_put(credentials, name, alarm: AlarmDefIn, *, pconn=None):
             return new_alarm
 
 
-async def alarmdef_list(credentials, name_mask, report_after,
+async def alarmdef_list(credentials, name_mask, status, report_after,
                         subs_status, subs_method, subs_address, subs_address_mask, subs_user, subs_user_mask,
                         *, pconn=None):
     sql = dedent("""\
@@ -631,6 +638,9 @@ async def alarmdef_list(credentials, name_mask, report_after,
         params = []
         if name_mask is not None:
             sql += "and " + common.db_helpers.filter2sql(name_mask, "res.name", params)
+        if status is not None:
+            params.append(status)
+            sql += f"and res.status = ${len(params)}\n"
         if report_after is not None:
             params.append(report_after)
             sql += f"and res.last_report >= ${len(params)}\n"
@@ -900,8 +910,13 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
     param_now = datetime.now() if override_now is None else override_now
     async with DatabaseConnection() as conn:
         async with conn.transaction(isolation='repeatable_read'):
-            sql_alarm = "select * from alarm\n"\
-                        "where (max_freq is null or last_report is null or ($1 > last_report + max_freq * interval '1 second'))"
+            sql_alarm = dedent(f"""\
+                select * from alarm
+                where
+                  status = '{CommonStatusEnum.active}' 
+                  ( max_freq is null 
+                    or last_report is null 
+                    or ($1 > last_report + max_freq * interval '1 second'))""")
             params = [param_now]
             if alarm is not None:
                 params.append(alarm)

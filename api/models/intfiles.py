@@ -174,3 +174,5 @@ async def intfiles_delete(credentials, ver, name):
                 # todo maybe delete file from disk. Delete only when no file with this hash are in use.
                 sql_update = "delete from file_int where id = $1"
                 await conn.execute(sql_update, id)
+            else:
+                raise I4cClientNotFound("No record found")
