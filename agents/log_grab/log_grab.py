@@ -25,7 +25,7 @@ robot_actions = {
     "Darab lerakva a GOM-ra (Kész)": ("state", "place_gom"),
     "GOM mérés OK (Kész)": ("gom_signal", "gom_good"),
     "GOM mérés NOK (Kész)": ("gom_signal", "gom_bad"),
-    "Darab felvéve a GOM-ról (Kész)": ("state", "pickout_gom"),
+    "Darab felvéve a GOM-ról (Kész)": ("state", "takeout_gom"),
     "Darab jelölve": ("state", "marking"),
     "Darab lefújatva": ("state", "cleaning"),
     "Darab lerakva szalagra": ("state", "place_good_out"),
