@@ -20,7 +20,7 @@ class Pong(BaseModel):
 
 
 @router.get("/noop", response_model=Pong, allow_log=False, operation_id="ping_noop",
-            summary="Test API availability.")
+            summary="Test API availability.", disconnect_guard=False)
 async def noop_get(
         request: Request,
         data: Optional[str] = Query(None, title="Will be given back in the response"),
@@ -31,7 +31,7 @@ async def noop_get(
     return {"data": data}
 
 
-@router.get("/datetime", response_model=datetime, operation_id="ping_datetime",)
+@router.get("/datetime", response_model=datetime, operation_id="ping_datetime", disconnect_guard=False)
 async def get_datetime(
     request: Request,
     dt: Optional[datetime] = Query(None, title="Timestamp, iso format, will be given back.")
@@ -44,7 +44,7 @@ async def get_datetime(
 
 
 @router.post("/noop", response_model=Dict[Any, Any], allow_log=False, operation_id="ping_post",
-            summary="Test API POST.")
+            summary="Test API POST.", disconnect_guard=False)
 async def noop_post(
         request: Request,
         data: Optional[Dict[Any, Any]] = Body(None, title="Will be given back as the response")):
@@ -111,7 +111,7 @@ async def post_bin(
 
 
 @router.get("/pwd", response_model=Pong, allow_log=False, operation_id="ping_pwd",
-            summary="Test API password auth.")
+            summary="Test API password auth.", disconnect_guard=False)
 async def pwd_get(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
@@ -123,7 +123,7 @@ async def pwd_get(
 
 
 @router.get("/sign", response_model=Pong, allow_log=False, operation_id="ping_sign",
-            summary="Test API signature auth.")
+            summary="Test API signature auth.", disconnect_guard=False)
 async def sign_get(
         request: Request,
         credentials: HTTPBasicCredentials = Depends(HTTPBasic()),
