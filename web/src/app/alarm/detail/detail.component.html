@@ -1,6 +1,14 @@
 <form class="row m-0" #form="ngForm" [noValidate]="false">
   <div class="col">
     <div class="row mb-4">
+      <div class="btn-group btn-group-toggle col-auto pr-0" ngbRadioGroup name="radioBasic" [(ngModel)]="def.status">
+        <label ngbButtonLabel class="{{def.status !== 'active' ? 'btn-outline-success' : 'btn-success'}}" title="aktív">
+          <input ngbButton type="radio" [value]="'active'">aktív
+        </label>
+        <label ngbButtonLabel class="{{def.status === 'active' ? 'btn-outline-secondary' : 'btn-secondary'}}" title="inaktív">
+          <input ngbButton type="radio" [value]="'inactive'">inaktív
+        </label>
+      </div>
       <button type="submit" class="col-auto ml-auto btn btn-outline-success" (click)="save(form)" [disabled]="form.invalid">
         <i class="bi bi-save"></i>
         mentés

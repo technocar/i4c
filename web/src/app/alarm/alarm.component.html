@@ -8,7 +8,13 @@
         <th></th>
         <th></th>
         <th><input type="datetime-local" class="form-control" [ngModel]="filters.last_report | date:'yyyy-MM-ddTHH:mm'" (ngModelChange)="filter('last_report', $event)" /></th>
-        <th></th>
+        <th>
+          <select class="form-control" [ngModel]="filters.status"  (ngModelChange)="filter('status', $event)">
+            <option [value]="''">mind</option>
+            <option [value]="'active'">aktív</option>
+            <option [value]="'inactive'">inaktív</option>
+          </select>
+        </th>
         <th></th>
       </tr>
       <tr>
@@ -16,6 +22,7 @@
         <th scope="col" title="utolsó ellenőrzés">utolsó ell.</th>
         <th scope="col" title="utolsó hibajelentés">utolsó hibajel.</th>
         <th scope="col" title="feliratkozások száma">fel. száma</th>
+        <th scope="col" title="státusz">státusz</th>
         <th scope="col">&nbsp;</th>
       </tr>
     </thead>
@@ -37,6 +44,10 @@
           <td>{{alarm.last_check | date:"yyyy.MM.dd HH:mm:ss"}}</td>
           <td>{{alarm.last_report | date:"yyyy.MM.dd HH:mm:ss"}}</td>
           <td>{{alarm.subs?.length}}</td>
+          <td>
+            <span *ngIf="alarm.status === 'active'" class="badge badge-success">aktív</span>
+            <span *ngIf="alarm.status !== 'active'" class="badge badge-secondary">inaktív</span>
+          </td>
           <td><a href="#" [routerLink]="['def', alarm.name]">részletek</a></td>
         </tr>
       </ng-template>

@@ -554,6 +554,8 @@ export interface StatCapabilityData {
   count: number
 }
 
+export enum AlarmStatus { Active = 'active', Inactive = 'inactive' }
+
 export interface Alarm {
   conditions: AlarmRule[],
   max_freq: number,
@@ -563,7 +565,8 @@ export interface Alarm {
   name: string,
   last_check: string,
   last_report: string,
-  subs: AlarmSubscription[]
+  subs: AlarmSubscription[],
+  status: AlarmStatus
 }
 
 export interface AlarmGroup {
@@ -624,7 +627,8 @@ export interface AlarmRequestParams {
   subs_address?: string,
   subs_address_mask?: string,
   subs_user?: string,
-  subs_user_mask?: string
+  subs_user_mask?: string,
+  status?: AlarmStatus
 }
 
 export interface AlarmSubscriptionGroupGrant {

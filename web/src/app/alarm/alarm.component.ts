@@ -5,13 +5,14 @@ import { BehaviorSubject } from 'rxjs';
 import { FilterControlComponent } from '../commons/filter/filter.component';
 import { ApiService } from '../services/api.service';
 import { FiltersService } from '../services/filters.service';
-import { Alarm } from '../services/models/api';
+import { Alarm, AlarmStatus } from '../services/models/api';
 import { AlarmHelpers } from './helpers';
 
 interface Filters {
   name: string,
   last_check: string,
-  last_report: string
+  last_report: string,
+  status: string
 }
 
 interface NewAlarm {
@@ -37,7 +38,8 @@ export class AlarmComponent implements OnInit, AfterViewInit {
   filters: Filters = {
     name: undefined,
     last_check: undefined,
-    last_report: undefined
+    last_report: undefined,
+    status: AlarmStatus.Active
   };
 
   newAlarm: NewAlarm = {
@@ -69,7 +71,8 @@ export class AlarmComponent implements OnInit, AfterViewInit {
     this.listFetching$.next(true);
     this.apiService.getAlarms({
       name_mask: (this.filters.name ?? "") === "" ? undefined : this.filters.name,
-      report_after: (this.filters.last_report ?? "") === "" ? undefined : new Date(this.filters.last_report)
+      report_after: (this.filters.last_report ?? "") === "" ? undefined : new Date(this.filters.last_report),
+      status: this.filters.status ? this.filters.status as AlarmStatus : undefined
     })
       .subscribe(r => {
         this.alarms$.next(r);
@@ -85,6 +88,9 @@ export class AlarmComponent implements OnInit, AfterViewInit {
       case "last_check":
       case "last_report":
         this.filters[name] = (value ?? "") === "" ? undefined : (new Date(value)).toISOString();
+        break;
+      case "status":
+        this.filters[name] = (value ?? "") === "" ? undefined : value;
         break;
       default:
         this.filters.name = this.filterNameCtrl.queryParam;
@@ -119,7 +125,8 @@ export class AlarmComponent implements OnInit, AfterViewInit {
             last_check: undefined,
             last_report: undefined,
             name: undefined,
-            subs: undefined
+            subs: undefined,
+            status: AlarmStatus.Active
           }).subscribe(r => {
             this.router.navigate([r.name]);
           }, (err) => {
