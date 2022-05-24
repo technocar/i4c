@@ -476,8 +476,8 @@ export interface StatXYFilter {
   value: string
 }
 
-export enum NumberRelation { Equal = '=', NotEqual = '!=', Lesser = '<', LesserEqual = '<=', Greater = '>', GreaterEqual = '>=' }
-export enum StringRelation { Equal = '=', NotEqual = '!=', Contains = '*', NotContains = '!*' }
+export enum NumberRelation { Equal = 'eq', NotEqual = 'neq', Lesser = 'lt', LesserEqual = 'lte', Greater = 'gt', GreaterEqual = 'gte' }
+export enum StringRelation { Equal = 'eq', NotEqual = 'neq', Contains = 'in', NotContains = 'nin' }
 
 export interface StatXYParam {
   key: string,
