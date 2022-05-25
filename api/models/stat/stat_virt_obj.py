@@ -252,12 +252,32 @@ async def load_measure_workpiece(conn, after, before, measure):
 
 
 class StatVirtObjFilterRel(str, Enum):
-    eq = "="
-    neq = "!="
-    less = "<"
-    leq = "<="
-    gtr = ">"
-    geq = ">="
+    eq = "eq"
+    neq = "neq"
+    less = "lt"
+    leq = "lte"
+    gtr = "gt"
+    geq = "gte"
+
+    def nice_value(self):
+        map = dict(eq="=",
+                   neq="!=",
+                   less="<",
+                   leq="<=",
+                   gtr=">",
+                   geq=">=")
+        return map[self]
+
+    def values(self):
+        return self, self.nice_value()
+
+    @classmethod
+    def from_nice_value(cls, nice_value):
+        for k in cls:
+            k: StatVirtObjFilterRel
+            if nice_value in k.values():
+                return k
+        raise Exception(f"`{nice_value}` not found in enum.")
 
 
 class StatVirtObjFilter(I4cBaseModel):
@@ -275,17 +295,17 @@ class StatVirtObjFilter(I4cBaseModel):
             left = float(left)
         if isinstance(current_value, int):
             left = int(left)
-        if self.rel == "=":
+        if self.rel == StatVirtObjFilterRel.eq:
             return left == current_value
-        if self.rel == "!=":
+        if self.rel == StatVirtObjFilterRel.neq:
             return left != current_value
-        if self.rel == "<":
+        if self.rel == StatVirtObjFilterRel.less:
             return left < current_value
-        if self.rel == "<=":
+        if self.rel == StatVirtObjFilterRel.leq:
             return left <= current_value
-        if self.rel == ">":
+        if self.rel == StatVirtObjFilterRel.gtr:
             return left > current_value
-        if self.rel == ">=":
+        if self.rel == StatVirtObjFilterRel.geq:
             return left >= current_value
         return False
 

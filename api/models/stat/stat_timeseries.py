@@ -29,8 +29,13 @@ class StatTimeseriesFilter(I4cBaseModel):
     @classmethod
     async def load_filters(cls, conn, timeseries):
         sql = "select * from stat_timeseries_filter where timeseries = $1"
-        res = await conn.fetch(sql, timeseries)
-        return [StatTimeseriesFilter(**r) for r in res]
+        res_d = await conn.fetch(sql, timeseries)
+        res = []
+        for r in res_d:
+            res.append(StatTimeseriesFilter(id=r["id"], device=r["device"], data_id=r["data_id"],
+                                            rel=CondEventRel.from_nice_value(r["rel"]), value=r["value"],
+                                            age_min=r["age_min"], age_max=r["age_max"]))
+        return res
 
     async def insert_to_db(self, ts_id, conn):
         sql_insert = dedent("""\
@@ -43,7 +48,7 @@ class StatTimeseriesFilter(I4cBaseModel):
             returning id
             """)
         self.id = (await conn.fetchrow(sql_insert, ts_id,
-                                       self.device, self.data_id, self.rel,
+                                       self.device, self.data_id, self.rel.nice_value(),
                                        self.value, self.age_min, self.age_max))[0]
 
     def __eq__(self, other):

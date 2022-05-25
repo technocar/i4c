@@ -25,10 +25,28 @@ class DeviceAuto(str, Enum):
 
 class CondEventRel(str, Enum):
     """Relation for condition, event data type."""
-    eq = "="
-    neq = "!="
-    contains = "*"
-    not_contains = "!*"
+    eq = "eq"
+    neq = "neq"
+    contains = "in"
+    not_contains = "nin"
+
+    def nice_value(self):
+        map = dict(eq="=",
+                   neq="!=",
+                   contains="*",
+                   not_contains="!*")
+        return map[self]
+
+    def values(self):
+        return self, self.nice_value()
+
+    @classmethod
+    def from_nice_value(cls, nice_value):
+        for k in cls:
+            k: CondEventRel
+            if nice_value in k.values():
+                return k
+        raise Exception(f"`{nice_value}` not found in enum.")
 
 
 class CommonStatusEnum(str, Enum):

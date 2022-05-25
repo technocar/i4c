@@ -9,7 +9,7 @@ from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from .stat_common import StatObject, StatVisualSettings, resolve_time_period, StatObjectParamType
-from .stat_virt_obj import statdata_virt_obj_fields, StatVirtObjFilter, statdata_virt_obj_filter
+from .stat_virt_obj import statdata_virt_obj_fields, StatVirtObjFilter, statdata_virt_obj_filter, StatVirtObjFilterRel
 
 
 class StatXYOther(I4cBaseModel):
@@ -46,7 +46,8 @@ class StatXYFilter(StatVirtObjFilter):
         res_d = await conn.fetch(sql, xy_id)
         res = []
         for r in res_d:
-            res.append(StatXYFilter(id=r["id"], field=r["field_name"], rel=r["rel"], value=r["value"]))
+            res.append(StatXYFilter(id=r["id"], field=r["field_name"],
+                                    rel=StatVirtObjFilterRel.from_nice_value(r["rel"]), value=r["value"]))
         return res
 
     async def insert_to_db(self, xy_id, conn):
@@ -55,7 +56,7 @@ class StatXYFilter(StatVirtObjFilter):
                 values ($1, $2, $3, $4)
             returning id
             """)
-        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field, self.rel, self.value))[0]
+        self.id = (await conn.fetchrow(sql_insert, xy_id, self.field, self.rel.nice_value(), self.value))[0]
 
     def __eq__(self, other):
         if not isinstance(other, StatXYFilter):

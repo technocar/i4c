@@ -41,14 +41,36 @@ class DataPointLog(DataPointBase):
 
 class LogCondEventRel(str, Enum):
     """Relation for condition, event data type."""
-    eq = "="
-    neq = "!="
-    less = "<"
-    leq = "<="
-    gtr = ">"
-    geq = ">="
-    contains = "*"
-    not_contains = "!*"
+    eq = "eq"
+    neq = "neq"
+    less = "lt"
+    leq = "lte"
+    gtr = "gt"
+    geq = "gte"
+    contains = "in"
+    not_contains = "nin"
+
+    def nice_value(self):
+        map = dict(eq="=",
+                   neq="!=",
+                   less="<",
+                   leq="<=",
+                   gtr=">",
+                   geq=">=",
+                   contains="*",
+                   not_contains="!*")
+        return map[self]
+
+    def values(self):
+        return self, self.nice_value()
+
+    @classmethod
+    def from_nice_value(cls, nice_value):
+        for k in cls:
+            k: LogCondEventRel
+            if nice_value in k.values():
+                return k
+        raise Exception(f"`{nice_value}` not found in enum.")
 
 
 def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, name, val, extra, rel, *,
@@ -64,7 +86,7 @@ def get_find_sql(params, timestamp, sequence, before_count, after_count, categ, 
     elif rel == LogCondEventRel.not_contains:
         srel = 'not like \'%\'||<val>||\'%\''
     else:
-        srel = rel + " <val>"
+        srel = rel.nice_value() + " <val>"
 
     if before_count is None and after_count is None:
         before_count = 1

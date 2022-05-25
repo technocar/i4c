@@ -47,12 +47,32 @@ class AlarmCondSampleAggSlopeKind(str, Enum):
 
 class AlarmCondSampleRel(str, Enum):
     """Relation for numeric values."""
-    eq = "="
-    neq = "!="
-    less = "<"
-    leq = "<="
-    gtr = ">"
-    geq = ">="
+    eq = "eq"
+    neq = "neq"
+    less = "lt"
+    leq = "lte"
+    gtr = "gt"
+    geq = "gte"
+
+    def nice_value(self):
+        map = dict(eq="=",
+                   neq="!=",
+                   less="<",
+                   leq="<=",
+                   gtr=">",
+                   geq=">=")
+        return map[self]
+
+    def values(self):
+        return self, self.nice_value()
+
+    @classmethod
+    def from_nice_value(cls, nice_value):
+        for k in cls:
+            k: AlarmCondSampleRel
+            if nice_value in k.values():
+                return k
+        raise Exception(f"`{nice_value}` not found in enum.")
 
 
 class AlarmCondSample(I4cBaseModel):
@@ -89,7 +109,7 @@ class AlarmCondSample(I4cBaseModel):
             """)
         await conn.fetchrow(sql_insert, alarm_id, AlarmCondLogRowCategory.sample, self.device,
                             self.data_id, self.aggregate_period, self.aggregate_count,
-                            self.aggregate_method, self.rel, self.value)
+                            self.aggregate_method, self.rel.nice_value(), self.value)
 
 
     @root_validator
@@ -134,7 +154,7 @@ class AlarmCondEvent(I4cBaseModel):
             returning id
             """)
         await conn.fetchrow(sql_insert, alarm_id, AlarmCondLogRowCategory.event, self.device,
-                            self.data_id, self.rel, self.value,
+                            self.data_id, self.rel.nice_value(), self.value,
                             self.age_min, self.age_max)
 
 
@@ -537,7 +557,7 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
                                                                 aggregate_period=r["aggregate_period"],
                                                                 aggregate_count=r["aggregate_count"],
                                                                 aggregate_method=r["aggregate_method"],
-                                                                rel=r["rel"],
+                                                                rel=AlarmCondSampleRel.from_nice_value(r["rel"]),
                                                                 value=r["value_num"],
                                                                 age_min=r["age_min"],
                                                                 age_max=r["age_max"])))
@@ -545,7 +565,7 @@ async def alarmdef_get(credentials, name, *, pconn=None) -> Optional[AlarmDef]:
                 conds.append(AlarmCondId(id=r["id"],
                                          event=AlarmCondEvent(device=r["device"],
                                                               data_id=r["data_id"],
-                                                              rel=r["rel"],
+                                                              rel=CondEventRel.from_nice_value(r["rel"]),
                                                               value=r["value_text"],
                                                               age_min=r["age_min"],
                                                               age_max=r["age_max"])))
@@ -857,21 +877,21 @@ def check_rel(rel, left, right):
         return False
     if right is None:
         return False
-    if rel == "=":
+    if rel in ("=", "eq"):
         return left == right
-    if rel == "!=":
+    if rel in ("!=", "neq"):
         return left != right
-    if rel == "*":
+    if rel in ("*", "in"):
         return left in right
-    if rel == "!*":
+    if rel in ("!*", "nin"):
         return left not in right
-    if rel == "<":
+    if rel in ("<", "lt"):
         return left < right
-    if rel == "<=":
+    if rel in ("<=", "lte"):
         return left <= right
-    if rel == ">":
+    if rel in (">", "gt"):
         return left > right
-    if rel == ">=":
+    if rel in (">=", "gte"):
         return left >= right
     return False
 
