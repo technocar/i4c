@@ -11,9 +11,9 @@ from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
 from common.tools import optimize_timestamp_label
-from models import CondEventRel, alarm
-from models.alarm import prev_iterator
+from models import CondEventRel
 from .stat_common import StatAggMethod, StatVisualSettings, resolve_time_period, calc_aggregate
+from ..common import prev_iterator, check_rel, series_check_load_sql, series_check_load_extra_sql
 
 
 class StatTimeseriesFilter(I4cBaseModel):
@@ -85,6 +85,8 @@ class StatTimeseriesSepEvent(I4cBaseModel):
     """Time series query, Event selection."""
     device: str = Field(..., title="Device.")
     data_id: str = Field(..., title="Event type.")
+    value: Optional[str] = Field(None, title="Value filter.")
+    value_extra: Optional[str] = Field(None, title="Value extra filter.")
 
     @classmethod
     def create_from_dict(cls, d, prefix):
@@ -93,7 +95,7 @@ class StatTimeseriesSepEvent(I4cBaseModel):
         else:
             d = dict(d)
         if all(x is not None for x in (d["device"], d["data_id"])):
-            return StatTimeseriesSepEvent(device=d["device"], data_id=d["data_id"])
+            return StatTimeseriesSepEvent(device=d["device"], data_id=d["data_id"], value=d["value"], value_extra=d["value_extra"])
         return None
 
 
@@ -141,12 +143,16 @@ class StatTimeseriesDef(I4cBaseModel):
                                          after, before, duration,
                                          metric_device, metric_data_id, agg_func,
                                          agg_sep_device, agg_sep_data_id, series_name,
-                                         series_sep_device, series_sep_data_id, xaxis)
+                                         series_sep_device, series_sep_data_id, xaxis,
+                                         agg_sep_value, agg_sep_value_extra, series_sep_value, 
+                                         series_sep_value_extra)
             select $1,
                    $2, $3, $4::varchar(200)::interval,
                    $5, $6, $7,
                    $8, $9, $10,
-                   $11, $12, $13
+                   $11, $12, $13,
+                   $14, $15, $16,
+                   $17
             """)
         await conn.execute(sql_insert, stat_id, *self.get_sql_params())
 
@@ -165,7 +171,14 @@ class StatTimeseriesDef(I4cBaseModel):
 
                 self.series_sep.device if self.series_sep is not None else None,
                 self.series_sep.data_id if self.series_sep is not None else None,
-                self.xaxis]
+                self.xaxis,
+
+                self.agg_sep.value if self.agg_sep is not None else None,
+                self.agg_sep.value_extra if self.agg_sep is not None else None,
+                self.series_sep.value if self.series_sep is not None else None,
+
+                self.series_sep.value_extra if self.series_sep is not None else None,
+                ]
 
 
     async def update_to_db(self, stat_id, new_state, conn):
@@ -192,7 +205,13 @@ class StatTimeseriesDef(I4cBaseModel):
 
               series_sep_device=$11,
               series_sep_data_id=$12,
-              xaxis=$13
+              xaxis=$13,
+              
+              agg_sep_value=$14,
+              agg_sep_value_extra=$15,
+              series_sep_value=$16,
+              
+              series_sep_value_extra=$17              
             where id = $1
             """)
         await conn.execute(sql_update, stat_id, *new_state.get_sql_params())
@@ -250,10 +269,10 @@ async def statdata_get_timeseries(credentials, st_id:int, st_timeseriesdef: Stat
     filters = await conn.fetch("select * from stat_timeseries_filter where timeseries = $1", st_id)
     # todo 5: maybe use "timestamp" AND "sequence" for intervals instead of "timestamp" only
     for filter in filters:
-        db_series = await conn.fetch(alarm.alarm_check_load_sql, filter["device"], filter["data_id"], after, before)
+        db_series = await conn.fetch(series_check_load_sql, filter["device"], filter["data_id"], after, before)
         current_series = series_intersect.Series()
         for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
-            if alarm.check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
+            if check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
                 age_min = timedelta(seconds=filter["age_min"] if filter["age_min"] and filter["age_min"] > 0 else 0)
                 age_max = timedelta(seconds=filter["age_max"]) if filter["age_max"] else None
                 if r_series_prev["timestamp"] + age_min < r_series["timestamp"]:
@@ -295,27 +314,35 @@ async def statdata_get_timeseries(credentials, st_id:int, st_timeseriesdef: Stat
         current_series.y.append(aggregated_value)
 
     if len(total_series) > 0:
-        md_series = await conn.fetch(alarm.alarm_check_load_sql,
+        md_series = await conn.fetch(series_check_load_sql,
                                      st_timeseriesdef.metric.device,
                                      st_timeseriesdef.metric.data_id,
                                      total_series[0].start or after,
                                      total_series[-1].end or before)
         agg_sep_ts = []
         if st_timeseriesdef.agg_sep:
-            agg_sep_series = await conn.fetch(alarm.alarm_check_load_sql,
-                                         st_timeseriesdef.agg_sep.device,
-                                         st_timeseriesdef.agg_sep.data_id,
-                                         total_series[0].start or after,
-                                         total_series[-1].end or before)
+            agg_sep_series = await conn.fetch(series_check_load_extra_sql,
+                                              st_timeseriesdef.agg_sep.device,
+                                              st_timeseriesdef.agg_sep.data_id,
+                                              total_series[0].start or after,
+                                              total_series[-1].end or before)
+            if st_timeseriesdef.agg_sep.value is not None:
+                agg_sep_series = [r for r in agg_sep_series if r["value_text"] == st_timeseriesdef.agg_sep.value]
+            if st_timeseriesdef.agg_sep.value_extra is not None:
+                agg_sep_series = [r for r in agg_sep_series if r["value_extra"] == st_timeseriesdef.agg_sep.value]
             agg_sep_ts = [r["timestamp"] for r in agg_sep_series]
 
         series_sep_ts = []
         if st_timeseriesdef.series_sep:
-            series_sep_series = await conn.fetch(alarm.alarm_check_load_sql,
-                                         st_timeseriesdef.series_sep.device,
-                                         st_timeseriesdef.series_sep.data_id,
-                                         total_series[0].start or after,
-                                         total_series[-1].end or before)
+            series_sep_series = await conn.fetch(series_check_load_extra_sql,
+                                                 st_timeseriesdef.series_sep.device,
+                                                 st_timeseriesdef.series_sep.data_id,
+                                                 total_series[0].start or after,
+                                                 total_series[-1].end or before)
+            if st_timeseriesdef.series_sep.value is not None:
+                series_sep_series = [r for r in series_sep_series if r["value_text"] == st_timeseriesdef.series_sep.value]
+            if st_timeseriesdef.series_sep.value_extra is not None:
+                series_sep_series = [r for r in series_sep_series if r["value_extra"] == st_timeseriesdef.series_sep.value]
             series_sep_ts = [(r["timestamp"], r["value_text"]) for r in series_sep_series]
 
         agg_values = []

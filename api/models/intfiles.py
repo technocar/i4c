@@ -11,7 +11,6 @@ import common
 import common.db_helpers
 from common import I4cBaseModel, DatabaseConnection
 from common.exceptions import I4cClientError, I4cClientNotFound
-import tempfile
 from starlette.requests import Request
 
 

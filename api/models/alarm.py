@@ -11,7 +11,7 @@ from common.exceptions import I4cInputValidationError, I4cClientNotFound
 from common import I4cBaseModel, DatabaseConnection, write_debug_sql, series_intersect
 from common.tools import frac_index
 from models import CommonStatusEnum, CondEventRel
-from models.common import PatchResponse
+from models.common import PatchResponse, series_check_load_sql, check_rel, prev_iterator
 
 
 async def get_alarm_id(conn, name: str):
@@ -55,12 +55,12 @@ class AlarmCondSampleRel(str, Enum):
     geq = "gte"
 
     def nice_value(self):
-        map = dict(eq="=",
-                   neq="!=",
-                   less="<",
-                   leq="<=",
-                   gtr=">",
-                   geq=">=")
+        map = { AlarmCondSampleRel.eq: "=",
+                AlarmCondSampleRel.neq: "!=",
+                AlarmCondSampleRel.less: "<",
+                AlarmCondSampleRel.leq: "<=",
+                AlarmCondSampleRel.gtr: ">",
+                AlarmCondSampleRel.geq: ">=" }
         return map[self]
 
     def values(self):
@@ -859,42 +859,6 @@ async def patch_alarmsub(credentials, id, patch: AlarmSubPatchBody):
 
             return PatchResponse(changed=True)
 
-alarm_check_load_sql = open("models/alarm_check_load.sql").read()
-
-
-def prev_iterator(iterable, *, include_first=True):
-    prev = None
-    include_next = include_first
-    for current in iterable:
-        if include_next:
-            yield prev, current
-        include_next = True
-        prev = current
-
-
-def check_rel(rel, left, right):
-    if left is None:
-        return False
-    if right is None:
-        return False
-    if rel in ("=", "eq"):
-        return left == right
-    if rel in ("!=", "neq"):
-        return left != right
-    if rel in ("*", "in"):
-        return left in right
-    if rel in ("!*", "nin"):
-        return left not in right
-    if rel in ("<", "lt"):
-        return left < right
-    if rel in ("<=", "lte"):
-        return left <= right
-    if rel in (">", "gt"):
-        return left > right
-    if rel in (">=", "gte"):
-        return left >= right
-    return False
-
 
 def calc_aggregate(method, agg_values, slope_kind: AlarmCondSampleAggSlopeKind):
     agg_values = [v for v in agg_values if v["value_num"] is not None]
@@ -964,8 +928,8 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                     if total_series is not None and row_cond["log_row_category"] == AlarmCondLogRowCategory.sample:
                         last_check_mod = min((i for i in (last_check_mod, total_series[0].start) if i is not None), default=None)
                     write_debug_sql(f"alarm_check_load_series_{row_alarm_recno}_{row_cond_recno}.sql",
-                                    alarm_check_load_sql, row_cond["device"], row_cond["data_id"], last_check_mod, param_now)
-                    db_series = await conn.fetch(alarm_check_load_sql, row_cond["device"], row_cond["data_id"], last_check_mod, param_now)
+                                    series_check_load_sql, row_cond["device"], row_cond["data_id"], last_check_mod, param_now)
+                    db_series = await conn.fetch(series_check_load_sql, row_cond["device"], row_cond["data_id"], last_check_mod, param_now)
                     current_series = series_intersect.Series()
                     agg_values = []
                     for r_series_prev, r_series in prev_iterator(db_series, include_first=False):

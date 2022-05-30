@@ -51,14 +51,14 @@ class LogCondEventRel(str, Enum):
     not_contains = "nin"
 
     def nice_value(self):
-        map = dict(eq="=",
-                   neq="!=",
-                   less="<",
-                   leq="<=",
-                   gtr=">",
-                   geq=">=",
-                   contains="*",
-                   not_contains="!*")
+        map = { LogCondEventRel.eq: "=",
+                LogCondEventRel.neq: "!=",
+                LogCondEventRel.less: "<",
+                LogCondEventRel.leq: "<=",
+                LogCondEventRel.gtr: ">",
+                LogCondEventRel.geq: ">=",
+                LogCondEventRel.contains: "*",
+                LogCondEventRel.not_contains: "!*"}
         return map[self]
 
     def values(self):

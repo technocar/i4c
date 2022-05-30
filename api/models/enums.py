@@ -31,10 +31,10 @@ class CondEventRel(str, Enum):
     not_contains = "nin"
 
     def nice_value(self):
-        map = dict(eq="=",
-                   neq="!=",
-                   contains="*",
-                   not_contains="!*")
+        map = { CondEventRel.eq: "=",
+                CondEventRel.neq: "!=",
+                CondEventRel.contains: "*",
+                CondEventRel.not_contains: "!*"}
         return map[self]
 
     def values(self):

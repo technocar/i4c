@@ -11,9 +11,10 @@ from common import series_intersect
 from common.exceptions import I4cServerError
 from common import I4cBaseModel
 from common.cmp_list import cmp_list
-from models import CondEventRel, alarm
+from models import CondEventRel
 from models.alarm import prev_iterator
 from .stat_common import resolve_time_period
+from ..common import series_check_load_sql, check_rel
 
 
 class StatCapabilityFilter(I4cBaseModel):
@@ -28,7 +29,8 @@ class StatCapabilityFilter(I4cBaseModel):
     async def load_filters(cls, conn, capability):
         sql = "select * from stat_capability_filter where capability = $1"
         res = await conn.fetch(sql, capability)
-        return [StatCapabilityFilter(**r) for r in res]
+        return [StatCapabilityFilter( id=r["id"], device=r["device"], data_id=r["data_id"],
+                                      rel=CondEventRel.from_nice_value(r["rel"]), value=r["value"]) for r in res]
 
     async def insert_to_db(self, ts_id, conn):
         sql_insert = dedent("""\
@@ -249,10 +251,10 @@ async def statdata_get_capability(credentials, st_id:int, st_capabilitydef: Stat
     filters = await conn.fetch("select * from stat_capability_filter where capability = $1", st_id)
     # todo 5: maybe use "timestamp" AND "sequence" for intervals instead of "timestamp" only
     for filter in filters:
-        db_series = await conn.fetch(alarm.alarm_check_load_sql, filter["device"], filter["data_id"], after, before)
+        db_series = await conn.fetch(series_check_load_sql, filter["device"], filter["data_id"], after, before)
         current_series = series_intersect.Series()
         for r_series_prev, r_series in prev_iterator(db_series, include_first=False):
-            if alarm.check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
+            if check_rel(filter["rel"], filter["value"], r_series_prev["value_text"]):
                 t = series_intersect.TimePeriod(r_series_prev["timestamp"], r_series["timestamp"])
                 current_series.add(t)
         total_series = series_intersect.Series.intersect(total_series, current_series)
@@ -261,7 +263,7 @@ async def statdata_get_capability(credentials, st_id:int, st_capabilitydef: Stat
 
     res = dict(points=[], mean=None, sigma=None, c=None, ck=None)
     if len(total_series) > 0:
-        md_series = await conn.fetch(alarm.alarm_check_load_sql,
+        md_series = await conn.fetch(series_check_load_sql,
                                      st_capabilitydef.metric.device,
                                      st_capabilitydef.metric.data_id,
                                      total_series[0].start or after,

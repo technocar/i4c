@@ -260,12 +260,12 @@ class StatVirtObjFilterRel(str, Enum):
     geq = "gte"
 
     def nice_value(self):
-        map = dict(eq="=",
-                   neq="!=",
-                   less="<",
-                   leq="<=",
-                   gtr=">",
-                   geq=">=")
+        map = { StatVirtObjFilterRel.eq: "=",
+                StatVirtObjFilterRel.neq: "!=",
+                StatVirtObjFilterRel.less: "<",
+                StatVirtObjFilterRel.leq: "<=",
+                StatVirtObjFilterRel.gtr: ">",
+                StatVirtObjFilterRel.geq: ">=" }
         return map[self]
 
     def values(self):
