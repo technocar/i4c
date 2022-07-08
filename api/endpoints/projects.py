@@ -91,8 +91,8 @@ async def post_projects_version(
 async def patch_project_version(
     request: Request,
     credentials: HTTPBasicCredentials = Depends(common.security_checker("patch/projects/{name}/v/{ver}")),
-    name: str = Path(...),
-    ver: int = Path(...),
+    name: str = Path(..., title="Project name."),
+    ver: int = Path(..., title="Project version number."),
     patch: models.projects.ProjectVersionPatchBody = Body(...),
 ):
     """Change a project version if conditions are met."""
