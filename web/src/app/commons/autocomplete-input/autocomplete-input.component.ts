@@ -16,6 +16,7 @@ export class AutocompleteInputComponent implements OnInit, ControlValueAccessor 
   @Input() disabled: boolean = false;
   @Input() name: string;
   @Input() cssClass: string;
+  @Input() placeholder: string;
   @Output() valueChange: EventEmitter<string> = new EventEmitter();
 
   @ViewChild('valuesSelector', {static: true}) instance: NgbTypeahead;

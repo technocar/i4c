@@ -49,6 +49,9 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
 
   devices: Device[] = [];
 
+  valuesOfAggSep: string[] = [];
+  valuesOfSeriesSep: string[] = [];
+
   constructor(
     private apiService: ApiService,
     private authService: AuthenticationService
@@ -87,6 +90,8 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     }
     this.setDefualtVisualSettings();
     this.xaxisChange(this.def.xaxis as StatTimeSeriesName);
+    this.valuesOfAggSep = this.getMetaValues(this.def.agg_sep?.data_id, this.def.agg_sep?.device);
+    this.valuesOfSeriesSep = this.getMetaValues(this.def.series_sep?.data_id, this.def.series_sep?.device);
   }
 
   setDefualtVisualSettings() {
@@ -185,6 +190,8 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
       data_id: meta.data_id,
       device: meta.device
     };
+
+    this.valuesOfAggSep = this.getMetaValues(meta.data_id, meta.device);
   }
 
   selectSeriesSep(meta: Meta) {
@@ -192,6 +199,7 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
       data_id: meta.data_id,
       device: meta.device
     };
+    this.valuesOfSeriesSep = this.getMetaValues(meta.data_id, meta.device);
   }
 
   xaxisChange(xaxis: StatTimeSeriesName) {
@@ -202,6 +210,10 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
       if (s)
         this.def.visualsettings.xaxis.caption = s[1];
     }
+  }
+
+  getMetaValues(id: string, device: string): string[] {
+    return this.metaList.find(m => m.data_id === id && m.device === device)?.value_list ?? [];
   }
 
   getChartConfiguration(data: StatData): ChartConfiguration {

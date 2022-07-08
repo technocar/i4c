@@ -120,7 +120,9 @@ export interface Meta {
   type?: string,
   subtype?: string,
   unit?: string,
-  value_list?: string[]
+  value_list?: string[],
+  value?: string,
+  value_extra?: string
 }
 
 export interface FindResponse {

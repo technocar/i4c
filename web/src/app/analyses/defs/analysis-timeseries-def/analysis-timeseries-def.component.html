@@ -76,6 +76,12 @@
               <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
             </select>
             <app-meta-selector [device]="def.agg_sep?.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectAggSep($event)" [selectedMetaId]="def.agg_sep?.data_id" [disabled]="!canUpdate"></app-meta-selector>
+            <div class="p-2 px-3">
+              <autocomplete-input [values]="valuesOfAggSep" [(value)]="def.agg_sep.value" [placeholder]="'érték'"></autocomplete-input>
+            </div>
+            <div class="">
+              <input class="form-control" [(ngModel)]="def.agg_sep.value_extra" [placeholder]="'extra'">
+            </div>
           </div>
         </div>
         <div class="row form-group pl-0 py-2 pr-2">
@@ -100,6 +106,12 @@
           <option *ngFor="let device of devices" value="{{device.id}}">{{device.name}}</option>
         </select>
         <app-meta-selector [device]="def.series_sep?.device" [selectableTypes]="['EVENT']" [metaList]="metaList" (change)="selectSeriesSep($event)" [selectedMetaId]="def.series_sep?.data_id" [disabled]="!canUpdate"></app-meta-selector>
+        <div class="p-2 px-3">
+          <autocomplete-input [values]="valuesOfSeriesSep" [(value)]="def.series_sep.value" [placeholder]="'érték'"></autocomplete-input>
+        </div>
+        <div class="">
+          <input class="form-control" [(ngModel)]="def.series_sep.value_extra" [placeholder]="'extra'">
+        </div>
       </div>
     </div>
   </fieldset>
