@@ -48,9 +48,9 @@ robot_alarms = {
     "Vészkör Hiba": "error_emergency_circuit"
 }
 
-cfg = None
-conn = None
-log = None
+cfg: dict
+conn: i4c.I4CConnection
+log: logging.Logger
 
 
 def init_globals():
@@ -279,20 +279,33 @@ def process_GOM(section, wkpcid):
                 csvreader = csv.reader(f, delimiter=";", quotechar=None)
                 for lines in csvreader:
                     if csvreader.line_num == 1:
-                        idxElement = lines.index("Element")  # -> data_id
-                        idxDev = lines.index("Dev")  # -> value_num
-                        idxActual = lines.index("Actual")  # -> value_extra
+                        if "Element" in lines:
+                            idxElement = lines.index("Element")
+                            # this is incorrect, we should combine with the Property column.
+                            # however, for backward compatibility, we keep this.
+                            # there is a new format anyway that uses Name, and it contains the entire name in one.
+                        elif "Name" in lines:
+                            idxElement = lines.index("Name")
+                        else:
+                            raise Exception("GOM CSV header is missing an Element or Name column.")
+
+                        idxActual = lines.index("Actual")
+                        if "Dev" in lines:
+                            idxDev = lines.index("Dev")
+                        else:
+                            idxDev = None
                     else:
                         did = lines[idxElement].strip()
 
-                        entry = dict(
-                            device="gom",
-                            timestamp=last_time,
-                            sequence=sequence,
-                            data_id=f"{did}-DEV",
-                            value_num=safe_float(lines[idxDev]))
-                        sequence += 1
-                        entries.append(entry)
+                        if idxDev is not None:
+                            entry = dict(
+                                device="gom",
+                                timestamp=last_time,
+                                sequence=sequence,
+                                data_id=f"{did}-DEV",
+                                value_num=safe_float(lines[idxDev]))
+                            sequence += 1
+                            entries.append(entry)
 
                         entry = dict(
                             device="gom",
