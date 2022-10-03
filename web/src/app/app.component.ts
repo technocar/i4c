@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router';
+import { SwUpdate } from '@angular/service-worker';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ApiService, Download, DownloadState } from './services/api.service';
@@ -12,7 +13,7 @@ import { DownloadService } from './services/download.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'webmonitor';
   loading: boolean = false;
   downloading: boolean = false;
@@ -32,7 +33,8 @@ export class AppComponent {
     private downloadService: DownloadService,
     private apiService: ApiService,
     private authService: AuthenticationService,
-    private breadcrumbService: BreadcrumbService
+    private breadcrumbService: BreadcrumbService,
+    private swUpdate: SwUpdate
   ) {
     authService.currentUser.subscribe(r => {
       this.access.subscriptions = authService.hasPrivilige("get/alarm/subs");
@@ -79,6 +81,18 @@ export class AppComponent {
         this.downloadErrorMsg = apiService.getErrorMsg(err).toString();
       }
     );
+  }
+
+  ngOnInit(): void {
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.available
+      .subscribe(e => {
+        console.info(e);
+        if (e.available) {
+          console.info(`currentVersion=[${e.current}`);
+        }
+      });
+    }
   }
 
   cancelDownload() {
