@@ -4,7 +4,7 @@ import { forkJoin, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AuthenticationService } from './auth.service';
-import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate, AlarmGroup } from './models/api';
+import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate, AlarmGroup, StringRelation } from './models/api';
 import { DeviceType } from './models/constants';
 import { AnalysisService } from '../analyses/analysis/analysis.service';
 
@@ -218,10 +218,10 @@ export class ApiService {
 
   getEventOperations(): string[][] {
     return [
-      ['*', $localize `:@@event_operation_*=:∈`],
-      ['!*', $localize `:@@event_operation_*!=:∉`],
-      ['=', $localize `:@@event_operation_=:=`],
-      ['!=', $localize `:@@event_operation_!=:≠`]
+      [StringRelation.Contains, $localize `:@@event_operation_*=:∈`],
+      [StringRelation.NotContains, $localize `:@@event_operation_*!=:∉`],
+      [StringRelation.Equal, $localize `:@@event_operation_=:=`],
+      [StringRelation.NotEqual, $localize `:@@event_operation_!=:≠`]
     ];
   }
 
