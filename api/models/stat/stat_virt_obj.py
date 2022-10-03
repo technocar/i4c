@@ -86,8 +86,8 @@ async def get_objmeta(credentials, after: Optional[datetime], *, pconn=None, wit
                                 from log l
                                 where
                                   l.timestamp >= $1
-                                  and l.device='gom'
-                                  and l.data_id='eval'
+                                  and l.device='robot'
+                                  and l.data_id='gom_signal'
                                 order by 1
                                 """))
 

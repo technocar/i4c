@@ -79,8 +79,8 @@ with
     where
       l.timestamp >= p.after
       and l.timestamp <= p.before
-      and l.device='gom'
-      and l.data_id='eval'
+      and l.device='robot'
+      and l.data_id='gom_signal'
   ),
   discover_log as (
     select 
