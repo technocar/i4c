@@ -19,8 +19,9 @@ export class DownloadService {
       this._observers.push(observer);
 
       return {
-        unsubscribe() {
-          this._observers.splice(this._observers.indexOf(observer), 1);
+        unsubscribe: () => {
+          if (this._observers)
+            this._observers.splice(this._observers.indexOf(observer), 1);
         }
       }
     });
