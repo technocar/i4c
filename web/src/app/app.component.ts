@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 import { ApiService, Download, DownloadState } from './services/api.service';
 import { AuthenticationService } from './services/auth.service';
 import { Breadcrumb, BreadcrumbService } from './services/breadcrumb.service';
@@ -24,6 +25,7 @@ export class AppComponent {
   access = {
     subscriptions: false
   }
+  appVersion = environment.appVersion;
 
   constructor(
     private router: Router,

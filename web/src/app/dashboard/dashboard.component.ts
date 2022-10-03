@@ -138,7 +138,7 @@ export class DashboardComponent implements OnInit {
 
   stopUpdateInterval() {
     this._stopped = true;
-    if (this._updateInterval) {
+    if (this._updateInterval !== undefined) {
       clearInterval(this._updateInterval);
       this._updateInterval = undefined;
     }
