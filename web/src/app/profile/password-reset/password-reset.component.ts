@@ -54,7 +54,6 @@ export class PasswordResetComponent implements OnInit {
       password: new FormControl('', Validators.compose([
         Validators.required,
         Validators.minLength(6),
-        Validators.pattern('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[a-zA-Z0-9]+$'),
         matchValidator('password2', true)
       ])),
       password2: new FormControl('', [
