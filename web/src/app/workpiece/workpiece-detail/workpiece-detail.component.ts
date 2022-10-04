@@ -89,7 +89,7 @@ export class WorkpieceDetailComponent implements OnInit {
   }
 
   getFile(filename: string) {
-    var download = this.apiService.getFile(filename + "1", 1);
+    var download = this.apiService.getFile(filename, 1);
     this.downloadService.register(download);
     this.downloadService.download();
   }
