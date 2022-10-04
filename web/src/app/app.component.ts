@@ -95,10 +95,9 @@ export class AppComponent implements OnInit {
       this.swUpdate.available
       .subscribe(e => {
         console.info(e);
-        if (e.available) {
-          console.info(`currentVersion=[${e.current}`);
-          this.swUpdate.activateUpdate();
-        }
+        console.info(`currentVersion=[${e.current}`);
+        console.info(`newVersion=[${e.available}`);
+        this.swUpdate.activateUpdate();
       });
     }
   }
