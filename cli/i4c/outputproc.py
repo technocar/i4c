@@ -88,7 +88,10 @@ def process_json(response, outexpr, outfile, template):
         if not isinstance(item, dict):
             itemdict = {"value": item}
         else:
-            itemdict = item
+            def sanitize(s):
+                s = s.replace("-", "_")
+                return s
+            itemdict = {sanitize(k): v for (k,v) in item.items()}
 
         if template:
             for (code, name) in enumerate(ctrlchars):
