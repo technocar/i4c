@@ -898,9 +898,9 @@ async def check_alarmevent(credentials, alarm: str, max_count, *, override_last_
                 select * from alarm
                 where
                   status = '{CommonStatusEnum.active}' 
-                  ( max_freq is null 
-                    or last_report is null 
-                    or ($1 > last_report + max_freq * interval '1 second'))""")
+                  and ( max_freq is null 
+                        or last_report is null 
+                        or ($1 > last_report + max_freq * interval '1 second'))""")
             params = [param_now]
             if alarm is not None:
                 params.append(alarm)
