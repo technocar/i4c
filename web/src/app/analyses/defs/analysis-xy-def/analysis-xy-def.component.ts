@@ -167,6 +167,9 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
         value: (p.value ?? "") === "" ? null : p.value
       });
 
+    if (this.def.obj?.type === undefined)
+      this.def.obj = undefined;
+
     return this.def;
   }
 
@@ -193,6 +196,10 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
         field_name: o
       }
     }));
+
+    if (this.def.obj === undefined)
+      this.def.obj = { type: undefined, params: [] }
+
     this.getMeta();
   }
 
@@ -279,7 +286,7 @@ export class AnalysisXyDefComponent implements OnInit, AfterViewInit, AnalysisDe
     fields.splice(0, 0, ...[emptyField]);
     this.fields$.next(fields);
     this.numFields$.next(obj.length > 0 ? fields.filter(f => f.type === StatMetaObjectFieldType.Numeric) : []);
-    this.params$.next(obj[0].params.map(p => <ObjParam>{ label: p.label, name: p.name, type: p.type, value: this.def.obj?.params?.find(dp => dp.key === p.name)?.value }));
+    this.params$.next(obj.length > 0 ? obj[0].params.map(p => <ObjParam>{ label: p.label, name: p.name, type: p.type, value: this.def.obj?.params?.find(dp => dp.key === p.name)?.value }): []);
   }
 
   deleteFilter(filter: Filter) {
