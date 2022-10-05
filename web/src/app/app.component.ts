@@ -97,7 +97,7 @@ export class AppComponent implements OnInit {
         console.info(e);
         console.info(`currentVersion=[${e.current}`);
         console.info(`newVersion=[${e.available}`);
-        this.swUpdate.activateUpdate();
+        this.swUpdate.activateUpdate().then(() => location.reload());
       });
     }
   }
