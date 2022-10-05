@@ -307,6 +307,7 @@ export class ApiService {
               download.contentType = response.body.type;
               download.filename = this.getFileName(response);
               download.state = DownloadState.Done;
+              download.statusCode = 200;
               this.saveAs(download);
             } else {
               download.content = event.body;
