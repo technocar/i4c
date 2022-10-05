@@ -1,7 +1,7 @@
 import { HttpClient, HttpEvent, HttpEventType, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { forkJoin, Observable, of } from 'rxjs';
-import { distinctUntilChanged, map } from 'rxjs/operators';
+import { BehaviorSubject, forkJoin, Observable, of, throwError } from 'rxjs';
+import { catchError, distinctUntilChanged, filter, map, takeUntil, takeWhile } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { AuthenticationService } from './auth.service';
 import { ErrorDetail, EventValues, FindParams, ListItem, Meta, Project, ProjectInstall, ProjectInstallParams, ProjectStatus, SnapshotResponse, User, WorkPiece, WorkPieceParams, WorkPieceBatch, WorkPieceUpdate, UpdateResult, ToolListParams, Tool, Device, ToolUsage, StatDef, StatDefParams, StatDefUpdate, StatData, StatXYMetaObjectParam, StatXYMeta, Alarm, AlarmRequestParams, AlarmSubscription, AlarmSubscriptionRequestParams, AlarmSubscriptionGroupGrant, AlarmSubscriptionUpdate, AlarmGroup, StringRelation } from './models/api';
@@ -77,7 +77,9 @@ export interface Download {
   contentType?: string;
   filename?: string;
   progress: number,
-  state: DownloadState
+  state: DownloadState,
+  statusCode: number,
+  error?: any
 }
 
 @Injectable({
@@ -112,13 +114,13 @@ export class ApiService {
   getErrorMsg(error: any): string | string[] {
     console.log(error);
 
-    error = error.error ?? error;
+    error = error?.error?.status ?? error;
 
     if (!error)
       return "Ismeretlen hiba!";
 
     if (!error.detail)
-      return typeof error === "string" ? error : error.message
+      return typeof error === "string" ? error : (error.message ?? error.statusText)
 
     if (Array.isArray(error.detail)) {
       let details: ErrorDetail[] = error.detail;
@@ -276,20 +278,44 @@ export class ApiService {
   }
 
   getFile(filename: string, version: number): Observable<Download> {
+    var error$ = new BehaviorSubject(false);
     return this.http.get(`${this._apiUrl}/intfiles/v/${version}/${filename}`, { observe: 'events', reportProgress: true, responseType: 'blob' as 'json' })
       .pipe(
+        catchError((err, caught) => {
+          error$.next(true);
+          throw err;
+        }),
+        takeWhile(() => error$.value !== true),
+        filter((event: HttpEvent<Blob>) => {
+          switch(event.type) {
+            case HttpEventType.DownloadProgress:
+            case HttpEventType.Response:
+              return true;
+            default:
+              return false;
+          }
+        }),
         map((event: HttpEvent<Blob>) => {
-          var download: Download = { progress: 0, content: null, state: DownloadState.Pending };
+          var download: Download = { progress: 0, content: null, state: DownloadState.Pending, statusCode: 0 };
           if (event.type === HttpEventType.DownloadProgress) {
             download.progress = event.loaded / event.total * 100.00;
             download.state = DownloadState.InProgress;
           } else if (event.type === HttpEventType.Response) {
-            let response = event as HttpResponse<Blob>;
-            download.content = response.body;
-            download.contentType = response.body.type;
-            download.filename = this.getFileName(response);
-            download.state = DownloadState.Done;
-            this.saveAs(download);
+            if (event.status === 200) {
+              let response = event as HttpResponse<Blob>;
+              download.content = response.body;
+              download.contentType = response.body.type;
+              download.filename = this.getFileName(response);
+              download.state = DownloadState.Done;
+              download.statusCode = 200;
+              this.saveAs(download);
+            } else {
+              download.content = event.body;
+              download.contentType = event.body.type;
+              download.filename = "";
+              download.state = DownloadState.Done;
+              download.statusCode = event.status;
+            }
           }
           return download;
         }),

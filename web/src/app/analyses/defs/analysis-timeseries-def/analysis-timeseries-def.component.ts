@@ -92,6 +92,11 @@ export class AnalysisTimeseriesDefComponent implements OnInit, AnalysisDef, Anal
     this.xaxisChange(this.def.xaxis as StatTimeSeriesName);
     this.valuesOfAggSep = this.getMetaValues(this.def.agg_sep?.data_id, this.def.agg_sep?.device);
     this.valuesOfSeriesSep = this.getMetaValues(this.def.series_sep?.data_id, this.def.series_sep?.device);
+
+    if (this.def.agg_sep === undefined)
+      this.def.agg_sep = { data_id: undefined, device: DeviceType.Empty };
+    if (this.def.series_sep === undefined)
+      this.def.series_sep = { data_id: undefined, device: DeviceType.Empty };
   }
 
   setDefualtVisualSettings() {

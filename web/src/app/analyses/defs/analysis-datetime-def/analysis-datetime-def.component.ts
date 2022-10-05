@@ -39,10 +39,15 @@ export class AnalysisDatetimeDefComponent implements OnInit, AnalysisDef {
       this.direction = this.def.after ? 1 : -1;
       this.timestamp = this.def.after ?? this.def.before ?? this.timestamp;
       if (this.def.duration && this.def.duration.length > 2) {
-        if (!isNaN(+this.def.duration[1]))
-          this.count = parseInt(this.def.duration[1]);
-        if (['Y', 'M', 'd', 'H'].indexOf(this.def.duration[2]))
-          this.period = this.def.duration[2];
+        let p = "";
+        for (let i = 1; i < this.def.duration.length - 1; i++)
+          p += this.def.duration[i];
+
+        if (!isNaN(parseInt(p)))
+          this.count = parseInt(p);
+
+        if (['Y', 'M', 'd', 'H'].indexOf(this.def.duration[this.def.duration.length - 1]) > -1)
+          this.period = this.def.duration[this.def.duration.length - 1];
       }
     }
   }

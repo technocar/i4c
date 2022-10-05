@@ -71,16 +71,23 @@ export class AppComponent implements OnInit {
             this.downloadProgress = 0;
           }
           this.downloadProgress = d.progress;
-        } else if (d.state === DownloadState.Done) {
+        } else if (d.state === DownloadState.Done && d.statusCode === 200) {
           this.downloading = false;
+        } else {
+          this.showDownloadError(d.error);
         }
       },
       (err) => {
-        if (this.downloadError)
-          this.downloadError = true;
-        this.downloadErrorMsg = apiService.getErrorMsg(err).toString();
+        this.showDownloadError(err);
       }
     );
+  }
+
+  showDownloadError(err: any) {
+    if (!this.downloadError)
+      this.downloadError = true;
+    this.downloadErrorMsg = this.apiService.getErrorMsg(err).toString();
+    this.downloading = true;
   }
 
   ngOnInit(): void {
@@ -88,9 +95,9 @@ export class AppComponent implements OnInit {
       this.swUpdate.available
       .subscribe(e => {
         console.info(e);
-        if (e.available) {
-          console.info(`currentVersion=[${e.current}`);
-        }
+        console.info(`currentVersion=[${e.current}`);
+        console.info(`newVersion=[${e.available}`);
+        this.swUpdate.activateUpdate().then(() => location.reload());
       });
     }
   }

@@ -112,6 +112,23 @@ export class AnalysisComponent implements OnInit {
     return (JSON.stringify(this.origDef ?? {}) !== JSON.stringify(this.def ?? {}));
   }
 
+  init() {
+    switch (this.analysisType) {
+      case AnalysisType.TimeSeries:
+        this.showChart = true;
+        break;
+      case AnalysisType.XY:
+        this.showChart = true;
+        break;
+      case AnalysisType.List:
+        this.showTable = true;
+        break;
+      case AnalysisType.Capability:
+        this.showChart = true;
+        break;
+    }
+  }
+
   buildDef() {
     switch (this.analysisType) {
       case AnalysisType.TimeSeries:
@@ -134,9 +151,9 @@ export class AnalysisComponent implements OnInit {
   }
 
   getResult() {
+    this.init();
     if (this.access.canUpdate) {
       this.buildDef();
-
       if (this.hasChanges()) {
         this.def.modified = (new Date()).toISOString();
       }
@@ -194,8 +211,8 @@ export class AnalysisComponent implements OnInit {
 
     try {
       if (result.listdata) {
-        this.table.nativeElement.append(this.buildListTable(result));
         this.showTable = true;
+        this.table.nativeElement.append(this.buildListTable(result));
       }
     }
     catch(err) {
