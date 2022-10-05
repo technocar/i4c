@@ -367,8 +367,9 @@ async def statdata_virt_obj_fields(credentials, after, before, virt_obj: StatObj
         age_max = [x.value for x in virt_obj.params if x.key == "age_max"]
         age_max = timedelta(seconds=float(age_max[0])) if age_max[0] else None
         prod_measure = [x.value_num for x in prods_measure
-                        if (mf_start + age_min <= x.timestamp < mf_end
-                            and (x.timestamp < mf_start + age_max if age_max is not None else True))]
+                        if (mf_start + age_min <= x.timestamp)
+                            and (x.timestamp < mf_end if mf_end is not None else True)
+                            and (x.timestamp < mf_start + age_max if age_max is not None else True)]
         return calc_aggregate(agg, prod_measure, from_record=False)
 
     async def get_detail_field_workpiece(dbo, field_name, agg_measures):
